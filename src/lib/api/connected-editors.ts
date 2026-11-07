@@ -69,12 +69,18 @@ export interface Settings {
 	writes_per_minute: number;
 	/** The most writes a minute the operator lets a tenant allow one connection. */
 	max_writes_per_minute: number;
+	/** The content types forms may save posts into. Empty means none. */
+	form_schemas: string[];
+	/** The slugs of the flows forms may start. Only the shape of each is checked when saved. */
+	form_flows: string[];
 	/** Set when a save shortened the lifetime. */
 	note?: string;
 }
 
 /** A settings change names only what it changes, so two owners editing different fields both keep theirs. */
-export type SettingsPatch = Partial<Pick<Settings, 'allowed' | 'lifetime_days' | 'show_schemas' | 'writes_per_minute'>>;
+export type SettingsPatch = Partial<
+	Pick<Settings, 'allowed' | 'lifetime_days' | 'show_schemas' | 'writes_per_minute' | 'form_schemas' | 'form_flows'>
+>;
 
 const code = (c: string) => `${CONNECTIONS_URL}/requests/${encodeURIComponent(c)}`;
 

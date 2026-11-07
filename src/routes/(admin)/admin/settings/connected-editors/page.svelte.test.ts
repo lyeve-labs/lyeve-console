@@ -87,6 +87,9 @@ function props(over: Record<string, unknown> = {}, form: unknown = null) {
 			mfaEnrolled: false,
 			settings: { ok: true, value: SETTINGS },
 			schemas: ['posts', 'products'],
+			formSchemas: [],
+			flows: null,
+			formsPreset: false,
 			...over,
 		} as never,
 		form: form as never,
@@ -575,7 +578,8 @@ describe('the settings card', () => {
 	it('saves the other settings together under one Save', () => {
 		render(Page, { props: props() });
 		const cards = [...document.querySelectorAll('form[action="?/setting"]')];
-		expect(cards).toHaveLength(2);
+		// The switch, the limits, and where forms can send, each saved on its own.
+		expect(cards).toHaveLength(3);
 		const limits = cards.find((f) => f.querySelector('input[name="field"][value="limits"]')) as HTMLFormElement;
 		expect(limits.querySelector('[name="lifetime_days"]')).not.toBeNull();
 		expect(limits.querySelector('#writes-per-minute')).not.toBeNull();
@@ -583,7 +587,7 @@ describe('the settings card', () => {
 		const saves = [...limits.querySelectorAll('button[type="submit"]')].map((b) => b.textContent?.trim());
 		expect(saves).toEqual(['Save']);
 		// The switch saves itself, so its card has no Save at all.
-		const allowed = cards.find((f) => f !== limits) as HTMLFormElement;
+		const allowed = cards.find((f) => f.querySelector('input[name="field"][value="allowed"]')) as HTMLFormElement;
 		expect(allowed.querySelector('button[type="submit"]')).toBeNull();
 	});
 
@@ -628,5 +632,76 @@ describe('the settings card', () => {
 			props: props({}, { settingError: { field: 'writes_per_minute', message: 'Writes must be between 1 and 120 a minute.' } }),
 		});
 		expect(said()).toContain('Writes must be between 1 and 120 a minute.');
+	});
+});
+
+describe('where forms can send', () => {
+	const FORM_SETTINGS = { ...SETTINGS, form_schemas: ['form_submissions'], form_flows: ['notify', 'gone'] };
+	const FORM_SCHEMAS = [
+		{ name: 'form_submissions', label: 'Form submissions' },
+		{ name: 'contact_messages', label: 'Contact messages' },
+	];
+	const FLOWS = [
+		{ id: 'f1', slug: 'notify', name: 'Notify sales', status: 'disabled', formTrigger: true },
+		{ id: 'f2', slug: 'nightly', name: 'Nightly report', status: 'active', formTrigger: false },
+	];
+
+	function formsCard(): HTMLFormElement {
+		return document.querySelector('form[action="?/setting"] input[name="field"][value="forms"]')?.closest('form') as HTMLFormElement;
+	}
+
+	it('offers the content types and only the flows a form can start, with the reason beside each that starts nothing', () => {
+		render(Page, { props: props({ settings: { ok: true, value: FORM_SETTINGS }, formSchemas: FORM_SCHEMAS, flows: { ok: true, value: FLOWS } }) });
+		const card = formsCard();
+		expect(card.textContent).toContain('Form submissions');
+		expect(card.textContent).toContain('Notify sales');
+		expect(card.textContent).toContain('This flow is not active, so forms that send to it start nothing.');
+		expect(card.textContent).toContain('No flow uses this slug any more. Clear it, then save.');
+		expect(card.textContent).not.toContain('Nightly report');
+		expect(card.querySelector('input[name="form_schemas_offered"]')).not.toBeNull();
+		expect(card.querySelector('input[name="form_flows_offered"]')).not.toBeNull();
+	});
+
+	it('draws a failed flow read as a failure and saves no flow list', () => {
+		render(Page, {
+			props: props({
+				settings: { ok: true, value: FORM_SETTINGS },
+				formSchemas: FORM_SCHEMAS,
+				flows: { ok: false, gate: { state: 'error', message: 'Could not load flows.' } },
+			}),
+		});
+		expect(said()).toContain('Could not load flows.');
+		expect(formsCard().querySelector('input[name="form_flows_offered"]')).toBeNull();
+	});
+
+	it('says the flow plugin is not running instead of offering no flows', () => {
+		render(Page, { props: props({ settings: { ok: true, value: FORM_SETTINGS }, formSchemas: FORM_SCHEMAS }) });
+		expect(said()).toContain('The flow plugin is not running on this instance, so forms cannot start flows.');
+	});
+
+	it('offers the forms preset while its submissions type is not allowed', () => {
+		render(Page, { props: props({ settings: { ok: true, value: { ...SETTINGS, form_schemas: [], form_flows: [] } }, formsPreset: true }) });
+		const preset = document.querySelector('[data-testid="forms-preset"]');
+		expect(preset?.textContent).toContain('Add the Forms and Form submissions content types');
+		expect(preset?.querySelector('form[action="?/formsPreset"]')).not.toBeNull();
+	});
+
+	it('only offers to allow the submissions type when it exists already', () => {
+		render(Page, {
+			props: props({ settings: { ok: true, value: { ...SETTINGS, form_schemas: [], form_flows: [] } }, formSchemas: FORM_SCHEMAS, formsPreset: true }),
+		});
+		expect(said()).toContain('Let forms save posts into the Form submissions content type you already have.');
+	});
+
+	it('links the schema builder when the preset is not offered or answered 404', () => {
+		const empty = { settings: { ok: true, value: { ...SETTINGS, form_schemas: [], form_flows: [] } } };
+		render(Page, { props: props({ ...empty, formsPreset: true }, { presetMissing: true }) });
+		expect(document.querySelector('form[action="?/formsPreset"]')).toBeNull();
+		expect(document.querySelector('[data-testid="forms-preset-link"] a')?.getAttribute('href')).toBe('/admin/schema');
+	});
+
+	it('offers no preset once its submissions type is allowed', () => {
+		render(Page, { props: props({ settings: { ok: true, value: FORM_SETTINGS }, formSchemas: FORM_SCHEMAS, formsPreset: true }) });
+		expect(document.querySelector('[data-testid="forms-preset"]')).toBeNull();
 	});
 });

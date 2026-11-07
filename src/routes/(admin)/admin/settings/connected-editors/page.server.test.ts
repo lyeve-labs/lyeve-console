@@ -412,3 +412,107 @@ describe('setting', () => {
 		expect(calls).toEqual([]);
 	});
 });
+
+describe('where forms can send', () => {
+	const FULL = { state: 'named', running: ['builder', 'flow', 'schema'], withheld: [] };
+	const trigger = { type: 'trigger.event', config: { kind: 'system', name: 'builder.form.submitted' } };
+	const FORMS_ROUTES: Routes = {
+		...LISTED,
+		'GET /api/admin/schemas': json([
+			{ name: 'contact_messages', display_name: 'Contact messages' },
+			{ name: 'form_submissions', display_name: 'Form submissions' },
+			{ name: 'posts', display_name: 'Posts', public_delivery: true },
+			{ name: 'lyeve_builder_pages', display_name: 'Pages' },
+		]),
+		'GET /api/admin/flows': json({
+			data: [
+				{ id: 'f1', slug: 'notify', name: 'Notify', status: 'active', version: 1, trigger_type: 'trigger.event' },
+				{ id: 'f2', slug: 'hook', name: 'Hook', status: 'active', version: 1, trigger_type: 'trigger.http' },
+			],
+			total: 2,
+		}),
+		'GET /api/admin/flows/f1/versions/1': json({ definition: { trigger } }),
+		'GET /api/admin/schemas/presets': json({ presets: [{ id: 'forms', name: 'Forms', description: '', schemas: [] }] }),
+	};
+
+	it('offers the types forms can save into, the preset type first, with the flows and the preset', async () => {
+		const { event } = loadEvent(FORMS_ROUTES, { plugins: FULL });
+		const out = (await load(event)) as Record<string, unknown>;
+		// A type the delivery API serves and the builder's own types are never offered.
+		expect(out.formSchemas).toEqual([
+			{ name: 'form_submissions', label: 'Form submissions' },
+			{ name: 'contact_messages', label: 'Contact messages' },
+		]);
+		expect(out.flows).toEqual({
+			ok: true,
+			value: [
+				{ id: 'f1', slug: 'notify', name: 'Notify', status: 'active', formTrigger: true },
+				{ id: 'f2', slug: 'hook', name: 'Hook', status: 'active', formTrigger: false },
+			],
+		});
+		expect(out.formsPreset).toBe(true);
+	});
+
+	it('reads no flows and no preset for a reader who cannot change the settings', async () => {
+		const { event, calls } = loadEvent(FORMS_ROUTES, { plugins: FULL, roles: ['editor'] });
+		const out = (await load(event)) as Record<string, unknown>;
+		expect(out.flows).toBeNull();
+		expect(out.formsPreset).toBe(false);
+		expect(calls.some((c) => c.path.startsWith('/api/admin/flows') || c.path.startsWith('/api/admin/schemas/presets'))).toBe(false);
+	});
+
+	it.each([
+		[
+			{ field: 'forms', form_schemas_offered: '1', form_schemas: ['form_submissions'], form_flows_offered: '1', form_flows: ['notify'] },
+			{ form_schemas: ['form_submissions'], form_flows: ['notify'] },
+		],
+		// A flow list that failed to load leaves the flows as they are.
+		[{ field: 'forms', form_schemas_offered: '1' }, { form_schemas: [] }],
+	])('saves only the lists the form offered', async (fields, body) => {
+		const { event, calls } = act(fields, { [`PUT ${BASE}/settings`]: json(SETTINGS) });
+		expect(await actions.setting(event)).toMatchObject({ saved: { field: 'forms' } });
+		expect(calls).toEqual([{ method: 'PUT', path: `${BASE}/settings`, body }]);
+	});
+
+	it('lands a refused flow slug on the flow list', async () => {
+		const { event } = act(
+			{ field: 'forms', form_flows_offered: '1', form_flows: ['Bad'] },
+			{ [`PUT ${BASE}/settings`]: refusal(422, 'settings_invalid', 'Choose a flow slug.', { field: 'form_flows' }) },
+		);
+		expect(((await actions.setting(event)) as Failure).data.settingError).toEqual({ field: 'form_flows', message: 'Choose a flow slug.' });
+	});
+
+	it('applies the forms preset and allows its submissions type', async () => {
+		const { event, calls } = act(
+			{},
+			{
+				'GET /api/admin/schemas': json([{ name: 'posts' }]),
+				[`GET ${BASE}/settings`]: json({ ...SETTINGS, form_schemas: ['contact_messages'] }),
+				'POST /api/admin/schemas/presets/forms': json({ created: ['forms', 'form_submissions'] }),
+				[`PUT ${BASE}/settings`]: json({ ...SETTINGS, form_schemas: ['contact_messages', 'form_submissions'] }),
+			},
+		);
+		expect(await actions.formsPreset(event)).toMatchObject({ presetApplied: { created: true } });
+		expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({ form_schemas: ['contact_messages', 'form_submissions'] });
+	});
+
+	it('only allows the submissions type when it exists already', async () => {
+		const { event, calls } = act(
+			{},
+			{
+				'GET /api/admin/schemas': json([{ name: 'form_submissions' }]),
+				[`GET ${BASE}/settings`]: json({ ...SETTINGS, form_schemas: [] }),
+				[`PUT ${BASE}/settings`]: json({ ...SETTINGS, form_schemas: ['form_submissions'] }),
+			},
+		);
+		expect(await actions.formsPreset(event)).toMatchObject({ presetApplied: { created: false } });
+		expect(calls.some((c) => c.method === 'POST')).toBe(false);
+		expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({ form_schemas: ['form_submissions'] });
+	});
+
+	it('says the preset is missing on a 404 and saves nothing', async () => {
+		const { event, calls } = act({}, { 'GET /api/admin/schemas': json([]), [`GET ${BASE}/settings`]: json({ ...SETTINGS, form_schemas: [] }) });
+		expect(await actions.formsPreset(event)).toMatchObject({ status: 404, data: { presetMissing: true } });
+		expect(calls.some((c) => c.method === 'PUT')).toBe(false);
+	});
+});
