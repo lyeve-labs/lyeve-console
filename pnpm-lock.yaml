@@ -22,8 +22,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0(@lyeve-labs/client@0.7.0)
       '@lyeve-labs/ui-kit':
-        specifier: ^0.52.0
-        version: 0.52.0(@lucide/svelte@1.47.0(svelte@5.57.1))(svelte@5.57.1)(tailwindcss@4.3.3)
+        specifier: ^0.53.0
+        version: 0.53.0(@lucide/svelte@1.47.0(svelte@5.57.1))(svelte@5.57.1)(tailwindcss@4.3.3)
       '@tiptap/core':
         specifier: ^3.31.3
         version: 3.31.3(@tiptap/pm@3.31.3)
@@ -317,8 +317,8 @@ packages:
     resolution: {integrity: sha512-gmjevlNmCanXZLZxtkqbGkupz0cwPGwbVoThK/zwv7s5zXwVPlmxRRiS1saYDgLSBvzP/sJeIZmTzlZdYkl0/A==}
     engines: {node: '>=24'}
 
-  '@lyeve-labs/ui-kit@0.52.0':
-    resolution: {integrity: sha512-epsb8oUqUO9p/nPppCHYO+Ba0V3C+yoiDSGJVsf+f2hw7AgrZGFM1L6+KS4JqEYZbCr/6gI224I+KBJn1WKqMw==}
+  '@lyeve-labs/ui-kit@0.53.0':
+    resolution: {integrity: sha512-0EycPGHbRmP3WggL4yuTpUJ3rg7S0QEf9Vq03mB2SeI0wM9ztTNSDsEdRzzjs2pIC0tjOX4XbOA0g9I0+J8pJw==}
     engines: {node: '>=24'}
     peerDependencies:
       '@lucide/svelte': '>=0.511.0 <2'
@@ -2205,7 +2205,7 @@ snapshots:
 
   '@lyeve-labs/client@0.7.0': {}
 
-  '@lyeve-labs/ui-kit@0.52.0(@lucide/svelte@1.47.0(svelte@5.57.1))(svelte@5.57.1)(tailwindcss@4.3.3)':
+  '@lyeve-labs/ui-kit@0.53.0(@lucide/svelte@1.47.0(svelte@5.57.1))(svelte@5.57.1)(tailwindcss@4.3.3)':
     dependencies:
       '@lucide/svelte': 1.47.0(svelte@5.57.1)
       svelte: 5.57.1

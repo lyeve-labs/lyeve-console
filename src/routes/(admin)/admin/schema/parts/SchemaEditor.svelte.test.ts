@@ -259,7 +259,7 @@ describe('SchemaEditor', () => {
 		await fireEvent.input(precision);
 		await tick();
 		const box = precision.closest('[data-field]') as HTMLElement;
-		await fireEvent.click(within(box).getByRole('button', { name: 'Decrease' }));
+		await fireEvent.click(within(box).getByRole('button', { name: 'Decrease precision' }));
 		expect(props.schema.fields[1].precision).toBe(37);
 		expect(precision.value).toBe('37');
 	});
