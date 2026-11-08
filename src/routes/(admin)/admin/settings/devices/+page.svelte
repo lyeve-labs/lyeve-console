@@ -69,7 +69,7 @@
 
 <PageShell
 	title="Trusted devices"
-	description="See the browsers trusted for your account, and forget any you no longer use."
+	description="See the devices you trust, and forget any you no longer use."
 	width="wide"
 	back={{ href: '/admin/settings', label: 'Settings' }}
 >
@@ -86,16 +86,16 @@
 		{/if}
 
 		<section class="flex flex-col gap-4">
-			<SectionHeading level={2}>This browser</SectionHeading>
+			<SectionHeading level={2}>This device</SectionHeading>
 			{#if thisOne}
 				<Alert tone="success">
-					This browser is already trusted, as {deviceLabel(thisOne)}.
+					This device is already trusted, as {deviceLabel(thisOne)}.
 				</Alert>
 			{:else}
 				<Card pad="md">
 					<form method="POST" action="?/trust" use:enhance={trustThis} class="flex flex-col gap-4">
 						<p class="max-w-prose text-sm text-muted">
-							Trusting remembers the browser you're using now. To trust another browser, open this page in that browser.
+							You can trust only the device you're using now. Each browser counts as its own device, so open this page in each browser you want to trust.
 						</p>
 						<!-- The label sits above the row and the hint under the input alone,
 						     so the button stays level with the input box. -->
@@ -111,7 +111,7 @@
 										bind:value={label}
 										required
 									/>
-									<Button variant="primary" type="submit">Trust this browser</Button>
+									<Button variant="primary" type="submit">Trust this device</Button>
 								</div>
 							{/snippet}
 						</Field>
@@ -121,7 +121,7 @@
 		</section>
 
 		<section class="flex flex-col gap-4">
-			<SectionHeading level={2}>Remembered devices</SectionHeading>
+			<SectionHeading level={2}>Your trusted devices</SectionHeading>
 
 			{#if data.devices.length === 0}
 				<EmptyState
@@ -145,7 +145,7 @@
 						description="The search covers this page only. Clear it, or go to the next page."
 					/>
 				{:else}
-					<Table label="Remembered devices">
+					<Table label="Your trusted devices">
 						<thead>
 							<tr>
 								<th scope="col">Device</th>

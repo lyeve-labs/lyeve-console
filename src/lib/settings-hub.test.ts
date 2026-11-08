@@ -83,6 +83,14 @@ describe('settings hub', () => {
 		expect(settingsHub(adminNav(SUPER), { twoFactor: true, trustedDevices: false, connectedEditors: false })[0].entries.map((e) => e.id)).not.toContain('devices');
 	});
 
+	// Trusting a device lowers the sign-in risk score. It never decides whether
+	// a second step is asked, so the entry promises no skip.
+	it('describes trusted devices by what trusting one does', () => {
+		const entry = settingsHub(adminNav(SUPER), { twoFactor: true, trustedDevices: true, connectedEditors: false })[0].entries.find((e) => e.id === 'devices');
+		expect(entry?.description).toBe('Trust the devices you sign in from to lower their sign-in risk score, and forget any you no longer use.');
+		expect(entry?.description).not.toMatch(/browser|skip|second step/i);
+	});
+
 	it('lists two-factor only while the plugin behind it runs', () => {
 		const own = settingsHub(adminNav(SUPER), { twoFactor: false, trustedDevices: false, connectedEditors: false })[0];
 		expect(own.entries.map((e) => e.id)).toEqual(['account']);

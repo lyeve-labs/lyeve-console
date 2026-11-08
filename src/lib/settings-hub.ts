@@ -134,7 +134,7 @@ export function settingsHub(tree: NavTree, personal: PersonalPages): HubGroup[] 
 				? [{ id: 'mfa', label: 'Two-factor authentication', href: '/admin/settings/mfa', icon: ShieldCheck, description: 'Add a second sign-in step with an authenticator app, and manage your recovery codes.' }]
 				: []),
 			...(personal.trustedDevices
-				? [{ id: 'devices', label: 'Trusted devices', href: '/admin/settings/devices', icon: MonitorSmartphone, description: 'See the browsers that skip the second step, and forget any of them.' }]
+				? [{ id: 'devices', label: 'Trusted devices', href: '/admin/settings/devices', icon: MonitorSmartphone, description: 'Trust the devices you sign in from to lower their sign-in risk score, and forget any you no longer use.' }]
 				: []),
 			...(personal.connectedEditors
 				? [{ id: 'connected-editors', label: 'Builder connections', href: '/admin/settings/connected-editors', icon: Link2, description: 'Approve and revoke the browsers that edit pages from the builder.' }]
