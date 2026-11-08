@@ -255,10 +255,10 @@ describe('API keys page', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Copy key' }));
 		await vi.advanceTimersByTimeAsync(0);
-		expect(screen.getByText('Copy failed')).toBeTruthy();
+		expect(screen.getByText('Could not copy. Select the value and copy it yourself.')).toBeTruthy();
 
 		await vi.advanceTimersByTimeAsync(1500);
-		expect(screen.queryByText('Copy failed')).toBeNull();
+		expect(screen.queryByText('Could not copy. Select the value and copy it yourself.')).toBeNull();
 		expect(screen.getByText(hint)).toBeTruthy();
 	});
 });

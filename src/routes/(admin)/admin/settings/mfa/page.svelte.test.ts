@@ -222,10 +222,10 @@ describe('two-factor authentication page', () => {
 
 		await fireEvent.click(getByRole('button', { name: 'Copy all codes' }));
 		await vi.advanceTimersByTimeAsync(0);
-		expect(getByText('Copy failed')).toBeTruthy();
+		expect(getByText('Could not copy. Try again.')).toBeTruthy();
 
 		await vi.advanceTimersByTimeAsync(1500);
-		expect(queryByText('Copy failed')).toBeNull();
+		expect(queryByText('Could not copy. Try again.')).toBeNull();
 		expect(getByText(/If the copy fails, write them down before you leave this page\./)).toBeTruthy();
 	});
 });
