@@ -209,11 +209,12 @@ const PAGE_PLUGIN: Readonly<Record<string, PluginName>> = {
 const PRIVACY_PLUGINS: readonly PluginName[] = [PLUGIN.schema, PLUGIN.productAnalytics];
 
 /**
- * Pages that belong to a plugin and have no sidebar row, by path. The account
- * menu and the settings hub link the first two, and a tenant's own pages are
- * linked from its menu.
+ * Pages with no sidebar row, by path, each with its title and the plugin it
+ * belongs to, if any. The account menu and the settings hub link the first
+ * three, and a tenant's own pages are linked from its menu.
  */
-const UNLISTED_PAGES: readonly { href: string; label: string; plugin: PluginName }[] = [
+const UNLISTED_PAGES: readonly { href: string; label: string; plugin?: PluginName }[] = [
+	{ href: '/admin/settings/account', label: 'Account and appearance' },
 	{ href: '/admin/settings/mfa', label: 'Two-factor authentication', plugin: PLUGIN.mfa },
 	{ href: '/admin/settings/devices', label: 'Trusted devices', plugin: PLUGIN.deviceFingerprint },
 	{ href: '/admin/settings/connected-editors', label: 'Builder connections', plugin: PLUGIN.builder },
@@ -750,6 +751,12 @@ export function adminTrail(pathname: string, items: NavTree): string[] {
 	};
 	walk(items, []);
 
+	// A page with no row of its own is named by its title, under the row that
+	// encloses it, so the header never stops at Settings on a settings page.
+	const unlisted = UNLISTED_PAGES.find((p) => path === p.href || path.startsWith(p.href + '/'));
+	if (unlisted && (!best || unlisted.href.length > best.length)) {
+		return [...(best?.trail ?? []), unlisted.label].slice(-2);
+	}
 	return best ? best.trail.slice(-2) : [];
 }
 

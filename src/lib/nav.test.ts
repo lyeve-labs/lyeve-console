@@ -477,7 +477,21 @@ describe('adminSection', () => {
 	it('names a depth-0 destination and its detail pages by the destination alone', () => {
 		expect(adminSection('/admin/flows', tree)).toBe('Flows');
 		expect(adminSection('/admin/flows/f1', tree)).toBe('Flows');
-		expect(adminSection('/admin/settings/mfa', tree)).toBe('Settings');
+	});
+
+	it('names a page with no sidebar row by its own title, under the row that encloses it', () => {
+		for (const roles of [['super_admin'], ['viewer']]) {
+			const nav = adminNav(roles);
+			expect(adminSection('/admin/settings/mfa', nav)).toBe('Settings / Two-factor authentication');
+			expect(adminSection('/admin/settings/devices', nav)).toBe('Settings / Trusted devices');
+			expect(adminSection('/admin/settings/account', nav)).toBe('Settings / Account and appearance');
+			expect(adminSection('/admin/settings/connected-editors', nav)).toBe('Settings / Builder connections');
+			expect(adminSection('/admin/settings/connected-editors/builder', nav)).toBe('Settings / Builder connections');
+		}
+		// A tenant's own page is named by its menu row when the menu lists it.
+		const custom = customizeNav(tree, { hidden: [], pinned: [], links: [], pages: [{ slug: 'launch', title: 'Launch' }] }, ['super_admin']);
+		expect(adminSection('/admin/pages/launch', custom)).toBe('Pages / Launch');
+		expect(adminSection('/admin/pages/launch', tree)).toBe('Pages');
 	});
 
 	it('names the deepest section this reader can actually see', () => {

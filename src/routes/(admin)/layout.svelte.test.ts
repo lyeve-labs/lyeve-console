@@ -237,6 +237,14 @@ describe('admin shell active row', () => {
 	});
 });
 
+describe('admin shell header', () => {
+	it('names a page the sidebar does not list by its own title', async () => {
+		await mount(SUPER, '/admin/settings/mfa');
+
+		expect(screen.getByText('Settings / Two-factor authentication')).toBeTruthy();
+	});
+});
+
 describe('admin shell mobile drawer', () => {
 	it('puts Users on screen the moment the drawer opens', async () => {
 		await mount(SUPER, '/admin', true);
