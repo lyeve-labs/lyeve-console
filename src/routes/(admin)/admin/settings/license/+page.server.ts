@@ -34,6 +34,9 @@ const EXCHANGE_FAILURES: Readonly<Record<string, string>> = {
 		'Could not reach the license server, so the key was not checked. The current license is unchanged. Try again.',
 	'the license server returned a token that does not verify':
 		'Could not verify the license returned for this key. The current license is unchanged. Trying the same key again fails the same way.',
+	'license key exchange is not configured on this engine':
+		'This engine cannot exchange a key with the license server. Paste the license token instead. The current license is unchanged.',
+	// The same refusal from an engine released before the API said "engine".
 	'license key exchange is not configured on this instance':
 		'This engine cannot exchange a key with the license server. Paste the license token instead. The current license is unchanged.',
 };

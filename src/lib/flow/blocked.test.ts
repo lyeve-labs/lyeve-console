@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BLOCKED_MESSAGE, BLOCKED_TEXT, blockedText, isBlockedMessage, missingPlugin, missingPluginOf } from './blocked';
+import { BLOCKED_MESSAGE, BLOCKED_MESSAGE_BEFORE, BLOCKED_TEXT, blockedText, isBlockedMessage, missingPlugin, missingPluginOf } from './blocked';
 import { blockedRunError, missingTypeErrors } from './fixtures';
 
 describe('blocked', () => {
@@ -7,6 +7,7 @@ describe('blocked', () => {
 		expect(blockedRunError.error).toBe(BLOCKED_MESSAGE);
 		expect(isBlockedMessage(BLOCKED_MESSAGE)).toBe(true);
 		expect(isBlockedMessage(` ${BLOCKED_MESSAGE}\n`)).toBe(true);
+		expect(isBlockedMessage(BLOCKED_MESSAGE_BEFORE), 'an engine released before the rename').toBe(true);
 		expect(isBlockedMessage('flow is not published')).toBe(false);
 		expect(isBlockedMessage(null)).toBe(false);
 	});

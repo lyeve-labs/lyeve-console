@@ -12,13 +12,17 @@
 import type { ValidationError } from '$lib/api/flows';
 
 /** The static message of a 422 on a run of a blocked flow, verbatim. */
-export const BLOCKED_MESSAGE = 'flow is blocked: a node type it uses is not available on this instance';
+export const BLOCKED_MESSAGE = 'flow is blocked: a node type it uses is not available on this engine';
+
+/** The same message from a flow plugin released before the API said "engine". */
+export const BLOCKED_MESSAGE_BEFORE = 'flow is blocked: a node type it uses is not available on this instance';
 
 /** What every blocked surface says, before the plugin is known. */
 export const BLOCKED_TEXT = 'A node type this flow uses is not available on this instance.';
 
 export function isBlockedMessage(message: string | null | undefined): boolean {
-	return (message ?? '').trim() === BLOCKED_MESSAGE;
+	const trimmed = (message ?? '').trim();
+	return trimmed === BLOCKED_MESSAGE || trimmed === BLOCKED_MESSAGE_BEFORE;
 }
 
 /**
