@@ -28,7 +28,7 @@
 <fieldset class="flex min-w-0 flex-col gap-3" aria-describedby="{idPrefix}-limits-hint">
 	<legend class="mb-1 text-sm font-medium text-fg">Request limits</legend>
 	<p id="{idPrefix}-limits-hint" class="text-xs text-muted">
-		Enter 0 for no limit. A key over a limit gets a 429 until its hour, day or month ends in UTC.
+		Enter 0 for no limit. A key over a limit gets a 429 with a Retry-After header until its hour, day or month ends in UTC.
 	</p>
 	<!-- Three across once the drawer has the room, read from its width rather
 	     than the window's, and one under another below that. -->
