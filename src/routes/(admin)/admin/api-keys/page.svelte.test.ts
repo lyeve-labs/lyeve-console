@@ -240,7 +240,8 @@ describe('API keys page', () => {
 		setup([key({})], {}, { created: true, raw_key: 'ly_live_secret', key_name: 'deploy' });
 		const field = screen.getByLabelText('API key');
 		expect(field.tagName).toBe('TEXTAREA');
-		expect(field.className).toContain('break-all');
+		expect(field.className).toContain('wrap-anywhere');
+		expect(field.className).toContain('whitespace-pre-wrap');
 	});
 
 	it('keeps the way to copy the key by hand after a copy fails', async () => {
