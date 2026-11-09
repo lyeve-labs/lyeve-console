@@ -212,8 +212,8 @@ describe('Goroutine engine', () => {
 		const form = [...section(container).querySelectorAll('form')][0];
 		const alert = () => [...form.querySelectorAll('[aria-live="polite"], [role="alert"]')].map((el) => el.textContent ?? '').join(' ');
 		await vi.waitFor(() => expect(alert()).toContain('Applied'));
-		expect(alert()).not.toContain('lasts until the engine restarts');
-		expect(form.textContent).toContain('The change lasts until the engine restarts.');
+		expect(alert()).not.toContain('stays after a restart');
+		expect(form.textContent).toContain('The change applies to every replica and stays after a restart.');
 	});
 
 	it('says the engine did not answer instead of drawing empty tiles', () => {
