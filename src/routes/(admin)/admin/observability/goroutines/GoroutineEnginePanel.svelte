@@ -76,7 +76,7 @@
 		<!-- The confirmation clears itself. The caveat is a standing fact about
 		     the value now in force, so it stays beside the form. -->
 		<Alert tone="success" autoDismiss>Applied.</Alert>
-		<p class="text-xs text-muted">The change lasts until the engine restarts.</p>
+		<p class="text-xs text-muted">The change applies to every replica and stays after a restart.</p>
 	{/if}
 {/snippet}
 
@@ -88,7 +88,7 @@
 	<div class="flex flex-wrap items-center gap-2">
 		<SectionHeading level={2}>Goroutine engine</SectionHeading>
 		<Badge tone="violet" size="sm">Beta</Badge>
-		<span class="text-xs text-faint">Changes last until the engine restarts.</span>
+		<span class="text-xs text-faint">Changes apply to every replica and stay after a restart.</span>
 	</div>
 
 	{#if !geAnswered}
