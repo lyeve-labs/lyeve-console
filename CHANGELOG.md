@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Versions are listed newest first.
 
+## [0.28.0] - 2026-11-11
+
+### Changed
+
+- A saved content type in the schema builder opens on tabs named Definition, API and History, with History for a super admin only. Its routes and its history sat in disclosures under the whole field list. A new content type has only its definition and shows no tabs. The History tab counts the changes waiting in its queue, and the history is read only while that tab is shown.
+- The API key drawers lay out the hourly, daily and monthly request limits as one captioned row once the drawer is wide enough, and stack them below that, under a hint that says 0 means no limit and that a key over a limit gets a 429 with a Retry-After header until its hour, day or month ends in UTC.
+- The console moves to ui-kit 0.55.0. Every button variant is one height at each size, and a medium button lines up with a text field. A list or calendar opened from a field stays inside the visible area and inside a panel's scrollbar, a segmented control in a narrow panel stacks its options instead of breaking a label across lines, and a number field's stepper at its bound keeps its frame.
+
+### Fixed
+
+- The schema builder no longer scrolls the whole page, which slid its toolbar under the top bar. The labels kept for screen readers stay inside the editor's own scrolling area.
+- The schema builder's field rows split by the width of the editor rather than the window, so a row in a narrow editor beside an open list no longer breaks apart.
+- The flow editor's inspector keeps its header readable at every width. The side effects badge moved beside the node type, so the node's name no longer wraps word by word at the inspector's narrowest and the header stays inside its box.
+
 ## [0.27.0] - 2026-11-11
 
 ### Added
