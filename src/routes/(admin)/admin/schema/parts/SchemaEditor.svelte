@@ -928,7 +928,7 @@
 
 	</div>
 	{:else if activeTab === 'api' && saved}
-	<div class="flex min-w-0 flex-col gap-3 text-sm text-muted" role="tabpanel" aria-label="API" tabindex="0">
+	<div class="flex min-w-0 flex-col gap-3 text-sm text-muted" role="tabpanel" aria-label="API">
 		<p>
 			Read and write this content type's entries through these routes. Reads need a bearer token. Writes need the
 			editor, admin or super admin role. See the
@@ -958,7 +958,7 @@
 		</ul>
 	</div>
 	{:else if activeTab === 'history' && saved && isSuperAdmin}
-	<div class="min-w-0" role="tabpanel" aria-label="History" tabindex="0">
+	<div class="min-w-0" role="tabpanel" aria-label="History">
 		<SchemaHistory {ddl} />
 	</div>
 	{/if}
