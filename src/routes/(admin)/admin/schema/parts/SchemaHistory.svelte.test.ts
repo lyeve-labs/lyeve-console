@@ -25,12 +25,6 @@ function setup(fill: (ddl: DdlHistory) => void = () => {}) {
 }
 
 describe('SchemaHistory', () => {
-	it('reads the history when the section is opened', async () => {
-		const { submit } = setup();
-		await fireEvent.click(screen.getByRole('button', { name: /History/ }));
-		expect(submit).toHaveBeenCalledTimes(1);
-	});
-
 	it('draws placeholders while the read is on its way', () => {
 		setup((d) => {
 			d.open = true;

@@ -1,10 +1,14 @@
+<script lang="ts" module>
+	export type EditorTab = 'definition' | 'api' | 'history';
+</script>
+
 <script lang="ts">
-	import { Alert, Badge, Button, Checkbox, Collapsible, CopyButton, Input, NumberInput, SectionHeading, SegmentedControl, Select, type SelectOption } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Button, Checkbox, Collapsible, CopyButton, Input, NumberInput, SectionHeading, SegmentedControl, Select, Tabs, type SelectOption } from '@lyeve-labs/ui-kit';
 	import type { FieldType, Schema, SchemaField, TransportMode, TransportName } from '@lyeve-labs/client';
 	import { dndzone, type DndEvent } from 'svelte-dnd-action';
 	import { tick } from 'svelte';
 	import type { Action } from 'svelte/action';
-	import { BookOpen, Code, GripVertical, Link2, Pencil, Plus, RefreshCw, Trash2, TriangleAlert } from '@lucide/svelte';
+	import { BookOpen, GripVertical, Link2, Pencil, Plus, RefreshCw, Trash2, TriangleAlert } from '@lucide/svelte';
 	import { collectionRoutes } from '$lib/api/collection-api';
 	import { curlFor } from '$lib/api/request-preview';
 	import { RELATION_KINDS, planRelation, planSchemaRelations, tableName, type RelationType } from '$lib/relations';
@@ -38,6 +42,7 @@
 		isSuperAdmin,
 		ddl,
 		onrename,
+		tab = $bindable('definition'),
 	}: {
 		schema: Schema;
 		localizedCleared: Record<string, string>;
@@ -54,7 +59,32 @@
 		isSuperAdmin: boolean;
 		ddl: DdlHistory;
 		onrename: () => void;
+		/** The tab on screen. The page holds it, so it outlives a switch between the list and the canvas. */
+		tab?: EditorTab;
 	} = $props();
+
+	/**
+	 * A saved table has an API and, for a super admin, a history, each a tab
+	 * beside its definition. A new one has only the definition, so it draws no
+	 * strip. A tab that is not offered falls back to the definition.
+	 */
+	const tabItems = $derived<{ id: EditorTab; label: string; count?: number }[]>(
+		saved
+			? [
+					{ id: 'definition', label: 'Definition' },
+					{ id: 'api', label: 'API' },
+					...(isSuperAdmin ? [{ id: 'history' as const, label: 'History', count: ddl.view?.pending || undefined }] : []),
+				]
+			: []
+	);
+	const activeTab = $derived<EditorTab>(tabItems.some((t) => t.id === tab) ? tab : 'definition');
+	const tabbed = $derived(tabItems.length > 0);
+
+	function chooseTab(id: string) {
+		tab = id as EditorTab;
+		// The history is read when it is first shown, not when the table opens.
+		if (tab === 'history') ddl.open = true;
+	}
 
 	type SystemColumn = 'with_created_at' | 'with_updated_at' | 'with_soft_delete' | 'with_localization';
 
@@ -365,6 +395,14 @@
 	</div>
 
 
+	<!-- Under the live region, so a failed save shows whichever tab is open. -->
+	{#if tabbed}
+		<Tabs items={tabItems} active={activeTab} onchange={chooseTab} />
+	{/if}
+
+	{#if activeTab === 'definition'}
+	<!-- The kit's tabs carry no ids, so each panel names itself. -->
+	<div class="flex min-w-0 flex-col gap-4" role={tabbed ? 'tabpanel' : undefined} aria-label={tabbed ? 'Definition' : undefined}>
 	<fieldset disabled={!canWrite} class="flex min-w-0 flex-col gap-4">
 	<legend class="sr-only">Definition of {schema.display_name || schema.name || 'the new schema'}</legend>
 	<div class="grid min-w-0 gap-3 @xl:grid-cols-2">
@@ -887,42 +925,41 @@
 	</div>
 </Collapsible>
 
-{#if saved}
-	<Collapsible label="This collection's API" icon={Code}>
-		<div class="space-y-3 text-sm text-muted">
-			<p>
-				The content API serves this collection at its machine name. Reads need a
-				bearer token. Writes need the editor, admin or super_admin role. See the
-				<a href="/admin/api-reference" class="text-brand hover:underline">API reference</a>
-				for every parameter.
-			</p>
-			<ul class="space-y-2">
-				{#each collectionRoutes(schema.name) as route (route.method + route.path)}
-					{@const preview = curlFor(route)}
-					<li class="rounded-lg border border-line bg-surface p-3">
-						<div class="flex flex-wrap items-center gap-2">
-							<Badge tone={methodTone(route.method)} class="font-mono">{route.method}</Badge>
-							<code class="min-w-0 flex-1 truncate font-mono text-xs text-fg">{route.path}</code>
-							<span class="text-xs text-faint">{route.summary}</span>
-							<!-- The words say what is copied. Every row's button reads the same,
-							     so the tooltip names the route and becomes its description. -->
-							<CopyButton
-								value={preview}
-								text="curl"
-								title="Copy a curl request for {route.method} {route.path}"
-								size={ICON.xs}
-								class="shrink-0"
-							/>
-						</div>
-					</li>
-				{/each}
-			</ul>
-		</div>
-	</Collapsible>
-
-	{#if isSuperAdmin}
+	</div>
+	{:else if activeTab === 'api' && saved}
+	<div class="flex min-w-0 flex-col gap-3 text-sm text-muted" role="tabpanel" aria-label="API">
+		<p>
+			Read and write this content type's entries through these routes. Reads need a bearer token. Writes need the
+			editor, admin or super admin role. See the
+			<a href="/admin/api-reference" class="text-brand hover:underline">API reference</a>
+			for every parameter.
+		</p>
+		<ul class="space-y-2">
+			{#each collectionRoutes(schema.name) as route (route.method + route.path)}
+				{@const preview = curlFor(route)}
+				<li class="rounded-lg border border-line bg-surface p-3">
+					<div class="flex flex-wrap items-center gap-2">
+						<Badge tone={methodTone(route.method)} class="font-mono">{route.method}</Badge>
+						<code class="min-w-0 flex-1 truncate font-mono text-xs text-fg">{route.path}</code>
+						<span class="text-xs text-faint">{route.summary}</span>
+						<!-- The words say what is copied. Every row's button reads the same,
+						     so the tooltip names the route and becomes its description. -->
+						<CopyButton
+							value={preview}
+							text="curl"
+							title="Copy a curl request for {route.method} {route.path}"
+							size={ICON.xs}
+							class="shrink-0"
+						/>
+					</div>
+				</li>
+			{/each}
+		</ul>
+	</div>
+	{:else if activeTab === 'history' && saved && isSuperAdmin}
+	<div class="min-w-0" role="tabpanel" aria-label="History">
 		<SchemaHistory {ddl} />
+	</div>
 	{/if}
-{/if}
 </div>
 </div>

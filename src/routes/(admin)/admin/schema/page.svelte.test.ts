@@ -225,7 +225,7 @@ describe('schema builder relation panel', () => {
 
 	it('shows the selected collection its own API, with a request to copy', async () => {
 		await openPosts();
-		await fireEvent.click(screen.getByRole('button', { name: /This collection's API/ }));
+		await fireEvent.click(screen.getByRole('tab', { name: 'API' }));
 		const paths = screen.getAllByText(/^\/api\/v1\/content\/posts/);
 		expect(paths.length).toBeGreaterThanOrEqual(6);
 		expect(screen.queryByText(/\{schema\}/)).toBeNull();
@@ -236,7 +236,7 @@ describe('schema builder relation panel', () => {
 		const writeText = vi.fn(async (_text: string) => {});
 		Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
 		await openPosts();
-		await fireEvent.click(screen.getByRole('button', { name: /This collection's API/ }));
+		await fireEvent.click(screen.getByRole('tab', { name: 'API' }));
 		vi.useFakeTimers();
 		const copy = screen.getByRole('button', { name: 'curl', description: 'Copy a curl request for POST /api/v1/content/posts' });
 		const status = copyFrame(copy).querySelector('[aria-live="polite"]')!;
@@ -253,7 +253,7 @@ describe('schema builder relation panel', () => {
 
 	it('shows a tooltip on a collection request copy control', async () => {
 		await openPosts();
-		await fireEvent.click(screen.getByRole('button', { name: /This collection's API/ }));
+		await fireEvent.click(screen.getByRole('tab', { name: 'API' }));
 		const description = 'Copy a curl request for POST /api/v1/content/posts';
 		const button = screen.getByRole('button', { name: 'curl', description });
 		expect(copyFrame(button).textContent).toContain(description);
@@ -371,6 +371,18 @@ describe('schema builder saving', () => {
 		expect(screen.queryByTestId('schema-problems')).toBeNull();
 		expect(document.activeElement?.id).toMatch(/^relation-target-/);
 		expect(document.activeElement?.getAttribute('aria-invalid')).toBe('true');
+	});
+
+	it('shows the Definition tab before it takes the reader to a problem', async () => {
+		await openPosts();
+		await fireEvent.click(screen.getByRole('button', { name: 'Add relation' }));
+		await fireEvent.click(screen.getByRole('tab', { name: 'API' }));
+		expect(screen.queryByRole('button', { name: 'Add relation' })).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: /2 problems/ }));
+		await fireEvent.click(screen.getByRole('button', { name: /Pick the schema this relation points at/ }));
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.getByRole('tab', { name: 'Definition' }).getAttribute('aria-selected')).toBe('true');
+		expect(document.activeElement?.id).toMatch(/^relation-target-/);
 	});
 
 	it('disables Save with nothing to save, as the flow editor does', async () => {
@@ -678,12 +690,12 @@ describe('schema builder history and transfer', () => {
 	it('shows a saved table its history to a super admin only', async () => {
 		const { unmount } = render(SchemaPage, { props: { data: data({ isSuperAdmin: true }), form: null } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
-		expect(screen.getByRole('button', { name: /History/ })).toBeTruthy();
+		expect(screen.getByRole('tab', { name: /History/ })).toBeTruthy();
 		unmount();
 
 		render(SchemaPage, { props: { data: data({ isSuperAdmin: false }), form: null } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
-		expect(screen.queryByRole('button', { name: /History/ })).toBeNull();
+		expect(screen.queryByRole('tab', { name: /History/ })).toBeNull();
 	});
 
 	it('offers export to an admin and import to a super admin', async () => {
