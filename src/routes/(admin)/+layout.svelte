@@ -17,7 +17,7 @@
 	} from '@lyeve-labs/ui-kit';
 	import { BookOpen, LifeBuoy, LogOut, MonitorSmartphone, Settings, ShieldCheck, Sparkles } from '@lucide/svelte';
 	import AssistantPanel from '$lib/components/assistant/AssistantPanel.svelte';
-	import { AssistantSession } from '$lib/assistant/session.svelte';
+	import { AssistantSession, pageContext } from '$lib/assistant/session.svelte';
 	import { ICON } from '$lib/icon';
 	import ConfirmFallback from '$lib/components/ConfirmFallback.svelte';
 	import DbStatus from '$lib/components/DbStatus.svelte';
@@ -100,10 +100,7 @@
 	const hasAssistant = $derived(runs(plugins, PLUGIN.ai));
 	let assistantOpen = $state(false);
 	const assistant = new AssistantSession({ form: activeAssistForm });
-	const assistantPage = () => ({
-		path: page.url.pathname,
-		title: document.title,
-	});
+	const assistantPage = () => pageContext(page);
 
 	let navOpen = $state(false);
 	// On a phone the drawer is a modal over the page. A link in it opens its

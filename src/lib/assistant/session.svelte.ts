@@ -55,6 +55,15 @@ export interface PageContext {
 	title: string;
 }
 
+/**
+ * The page as the request describes it. The title is the route's pattern,
+ * never the document's title, because an entry's tab title is a value from
+ * the entry, and that value may sit in a field marked No AI.
+ */
+export function pageContext(page: { url: URL; route: { id: string | null } }): PageContext {
+	return { path: page.url.pathname, title: page.route.id ?? '' };
+}
+
 interface Deps {
 	fetch?: typeof fetch;
 	/** The form the panel works on, when one is open. */

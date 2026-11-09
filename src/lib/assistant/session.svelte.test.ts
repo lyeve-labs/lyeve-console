@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { activeAssistForm } from '@lyeve-labs/ui-kit';
 import type { FieldType, SchemaField } from '@lyeve-labs/client';
 import ContentForm from '$lib/components/ContentForm.svelte';
-import { ASK_URL, AssistantSession, RUN_URL } from './session.svelte';
+import { ASK_URL, AssistantSession, RUN_URL, pageContext } from './session.svelte';
 import { fakeFetch, frame, refusedWith, sse } from './test-support';
 
 afterEach(cleanup);
@@ -48,6 +48,19 @@ describe('AssistantSession', () => {
 				],
 			},
 		});
+		expect(JSON.stringify(sent[0].body)).not.toContain('Call the patient');
+	});
+
+	it('describes an entry page without its tab title, which can hold a No AI value', async () => {
+		document.title = 'Call the patient on Monday - LyEve Console';
+		const formValues = $state({ notes: 'Call the patient on Monday' });
+		render(ContentForm, { props: { label: 'Articles entry', fields: [field('notes', 'text', { no_ai: true })], formValues } });
+		await settle();
+		const { fn, sent } = fakeFetch(sse(frame('done', {})));
+		const session = new AssistantSession({ fetch: fn, form: activeAssistForm });
+		const route = { id: '/(admin)/admin/content/[schema]/[id]' };
+		await session.ask('Summarize this entry', pageContext({ url: new URL('http://localhost/admin/content/articles/5c2168a8'), route }));
+		expect(sent[0].body.page).toEqual({ path: '/admin/content/articles/5c2168a8', title: route.id });
 		expect(JSON.stringify(sent[0].body)).not.toContain('Call the patient');
 	});
 
