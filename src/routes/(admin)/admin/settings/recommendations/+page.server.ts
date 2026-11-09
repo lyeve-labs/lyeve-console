@@ -1,23 +1,20 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
-import { section, type Section } from '$lib/api/gate';
 import {
-	RECOMMENDATIONS_OK,
 	generateFeed,
 	isAlreadyRunning,
 	isUserId,
 	readAbStats,
-	recommendationsGate,
 	refreshAll,
 	type AbStats,
-	type RecommendationsGate,
 	readTrending,
 	type TrendingItem,
 } from '$lib/api/recommendations';
+import { type Gate, GATE_OK, section, type Section } from '$lib/api/gate';
 
 /** An account the preview can run for. */
 interface Reader {
@@ -35,7 +32,7 @@ export const load: PageServerLoad = async (event) => {
 	if (notRunning(plugins, PLUGIN.recommendations)) {
 		return {
 			stats: null as AbStats | null,
-			gate: { state: 'absent' } as RecommendationsGate,
+			gate: { state: 'absent' } as Gate,
 			canRecompute,
 			trending: { ok: false, gate: { state: 'absent' } } as Section<TrendingItem[]>,
 			readers: { ok: true, value: [] } as Section<Reader[]>,
@@ -43,13 +40,6 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const client = authedClient(event);
-	// The trending list is read beside the split: a list the reader cannot
-	// see is no reason to hide the split, and the reverse.
-	const trending = await section(
-		readTrending(client),
-		'Could not load the trending list.',
-	);
-
 	/*
 	 * The accounts the preview can be run for.
 	 *
@@ -61,31 +51,28 @@ export const load: PageServerLoad = async (event) => {
 	 * Only for the role that may run the preview. An admin who cannot generate a
 	 * feed has no reason to be handed a roster of accounts.
 	 */
-	const readers: Section<Reader[]> = canRecompute
-		? await section(
+	const readersRead: Promise<Section<Reader[]>> = canRecompute
+		? section(
 				client
 					.get<Reader[]>('/api/admin/users?limit=200')
 					.then((rows) => (Array.isArray(rows) ? rows : [])),
 				'Could not load the accounts.',
 			)
-		: { ok: true, value: [] };
-	try {
-		return {
-			stats: await readAbStats(client),
-			gate: RECOMMENDATIONS_OK,
-			canRecompute,
-			trending,
-			readers,
-		};
-	} catch (err) {
-		return {
-			stats: null,
-			gate: recommendationsGate(err),
-			canRecompute,
-			trending,
-			readers,
-		};
-	}
+		: Promise.resolve({ ok: true, value: [] });
+	// The three reads are independent: a list the reader cannot see is no
+	// reason to hide the split, and the reverse.
+	const [trending, readers, split] = await Promise.all([
+		section(readTrending(client), 'Could not load the trending list.'),
+		readersRead,
+		section(readAbStats(client), 'Could not load the recommendation split.'),
+	]);
+	return {
+		stats: split.ok ? split.value : null,
+		gate: split.ok ? GATE_OK : split.gate,
+		canRecompute,
+		trending,
+		readers,
+	};
 };
 
 export const actions: Actions = {
@@ -111,7 +98,7 @@ export const actions: Actions = {
 					error: 'A recompute is already running. Wait for it to finish.',
 				});
 			}
-			return fail(400, { action: 'refresh', error: actionError(err, 'Could not start the recompute. Try again.') });
+			return tagged('refresh', actionFailure(err, 'Could not start the recompute. Try again.'));
 		}
 	},
 
@@ -122,13 +109,13 @@ export const actions: Actions = {
 		const userId = String(form.get('user_id') ?? '').trim();
 		if (!userId) return fail(400, { action: 'preview', error: 'Enter a user id.' });
 		if (!isUserId(userId)) {
-			return fail(400, { action: 'preview', error: 'That is not a user id. Pick a reader by email, or paste the id from the Users page.' });
+			return fail(400, { action: 'preview', error: 'That is not a user id. Choose a reader by email, or paste the id from the Users page.' });
 		}
 		try {
 			const entries = await generateFeed(client, userId);
 			return { previewFor: userId, feed: entries ?? [] };
 		} catch (err) {
-			return fail(400, { action: 'preview', error: actionError(err, 'Could not generate the feed. Try again.') });
+			return tagged('preview', actionFailure(err, 'Could not generate the feed. Try again.'));
 		}
 	},
 };

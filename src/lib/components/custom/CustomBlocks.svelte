@@ -5,6 +5,7 @@
 	import { ICON } from '$lib/icon';
 	import { isExternal, visibleTo, type ResolvedBlock } from '$lib/api/customization';
 	import { formatDate } from '$lib/format';
+	import { couldNotLoad } from '$lib/outage';
 
 	/**
 	 * Draws a tenant's page from its blocks. Markdown is rendered as elements,
@@ -29,7 +30,7 @@
 					<SectionHeading level={3}>{block.title || `Latest in ${block.schema}`}</SectionHeading>
 				{/snippet}
 				{#if block.entries === null}
-					<p class="text-sm text-muted">Could not load these entries. Reload the page to try again.</p>
+					<p class="text-sm text-muted">{couldNotLoad('these entries', { reload: true })}</p>
 				{:else if block.entries.length === 0}
 					<p class="text-sm text-muted">No entries yet.</p>
 				{:else}

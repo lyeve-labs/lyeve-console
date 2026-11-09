@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { getPluginStatus, type PluginStatus } from '@lyeve-labs/client-rest';
 import { GATE_OK, gateOf, type Gate } from '$lib/api/gate';
 import { authedClient, loadUser } from '$lib/server/authz';
+import { couldNotLoad } from '$lib/outage';
 
 /**
  * The plugin status, read on every visit rather than taken from the shell's
@@ -19,7 +20,7 @@ export const load: PageServerLoad = async (event) => {
 		(report) => ({ plugins: report.plugins ?? [], gate: GATE_OK as Gate }),
 		(err: unknown) => ({
 			plugins: [] as PluginStatus[],
-			gate: gateOf(err, 'Could not load the plugin status.'),
+			gate: gateOf(err, couldNotLoad('the plugin status')),
 		}),
 	);
 };

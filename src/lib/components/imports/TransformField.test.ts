@@ -51,7 +51,7 @@ describe('TransformField', () => {
 		expect(draft.separator).toBe(';');
 	});
 
-	it('marks the transforms a license is needed for when the install has none', async () => {
+	it('marks the transforms a license is needed for when the engine has none', async () => {
 		setup(blank(), false);
 		await fireEvent.click(document.getElementById('m1-transform') as HTMLElement);
 		const names = screen.getAllByRole('option').map((o) => o.textContent?.trim());

@@ -10,6 +10,7 @@
 	import { submitter } from '$lib/forms.svelte';
 	import type { Release } from '$lib/api/content-releases';
 	import type { Refusal } from '$lib/api/refusal';
+	import { couldNotLoad } from '$lib/outage';
 
 	interface Props {
 		releases: Pick<Release, 'id' | 'name' | 'status'>[];
@@ -56,7 +57,7 @@
 			</p>
 		{/if}
 		{#if failed}
-			<p class="text-sm text-muted">Could not load releases. Reload the page to try again.</p>
+			<p class="text-sm text-muted">{couldNotLoad('releases', { reload: true })}</p>
 		{:else if options.length === 0}
 			<p class="text-sm text-muted">
 				No release is open for changes. <a class="text-brand" href="/admin/releases">Create one</a> to publish this entry with others.

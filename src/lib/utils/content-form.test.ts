@@ -165,6 +165,31 @@ describe('serialize', () => {
 		expect(JSON.parse(json).count).toBe(42);
 	});
 
+	it('sends a safe integer as a number and a larger one as its digits', () => {
+		const fields = [field({ name: 'n', field_type: 'integer' })];
+		expect(JSON.parse(serialize(fields, { n: ' 42 ' })).n).toBe(42);
+		expect(JSON.parse(serialize(fields, { n: '-9223372036854775808' })).n).toBe('-9223372036854775808');
+		expect(JSON.parse(serialize(fields, { n: 9007199254740991 })).n).toBe(9007199254740991);
+		expect(JSON.parse(serialize(fields, { n: '' })).n).toBeNull();
+	});
+
+	it('sends an integer that is not a plain whole number as typed, for the API to refuse', () => {
+		const fields = [field({ name: 'n', field_type: 'integer' })];
+		expect(JSON.parse(serialize(fields, { n: '12.5' })).n).toBe('12.5');
+		expect(JSON.parse(serialize(fields, { n: '1e3' })).n).toBe('1e3');
+	});
+
+	it('sends a decimal as its trimmed string, never as a number', () => {
+		const fields = [field({ name: 'price', field_type: 'decimal', precision: 10, scale: 2 })];
+		expect(JSON.parse(serialize(fields, { price: ' 19.90 ' })).price).toBe('19.90');
+		expect(JSON.parse(serialize(fields, { price: '' })).price).toBeNull();
+	});
+
+	it('sends a decimal holding a comma as typed, for the API to refuse rather than to read as a point', () => {
+		const fields = [field({ name: 'price', field_type: 'decimal', precision: 10, scale: 2 })];
+		expect(JSON.parse(serialize(fields, { price: '1,000' })).price).toBe('1,000');
+	});
+
 	it('null for empty number field', () => {
 		const json = serialize([field({ name: 'count', field_type: 'number' })], { count: '' });
 		expect(JSON.parse(json).count).toBeNull();
@@ -462,3 +487,4 @@ describe('datetime round trip - load then save with no edit', () => {
 		expect(roundTrip('Etc/GMT-9', '2026-01-02T12:04:05+09:00')).toBe('2026-01-02T03:04:05.000Z');
 	});
 });
+

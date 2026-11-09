@@ -227,7 +227,7 @@ describe('Login page after a session ended', () => {
 		const { container } = render(LoginPage, {
 			props: props({ data: { oauthProviders: [], samlProviders: [], ended: true } }),
 		});
-		expect(container.textContent).toContain('Your session ended. Sign in again to continue.');
+		expect(container.textContent).toContain('Your session ended. Sign in again.');
 	});
 
 	it('says nothing of it on an ordinary visit', () => {

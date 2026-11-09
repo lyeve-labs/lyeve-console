@@ -1,22 +1,22 @@
 import type { PageServerLoad, Actions } from './$types';
-import { fail, isRedirect, redirect } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import {
-	AB_OK,
-	abGate,
 	createExperiment,
 	deleteExperiment,
 	listExperiments,
 	transition,
 	updateExperiment,
-	type AbGate,
 	type Experiment,
 	type Transition,
 } from '$lib/api/ab-testing';
+import { type Gate, GATE_OK, section } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
+import { asked } from '$lib/server/asked';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -51,28 +51,23 @@ export const load: PageServerLoad = async (event) => {
 			limit,
 			offset,
 			hasMore: false,
-			gate: { state: 'absent' } as AbGate,
+			gate: { state: 'absent' } as Gate,
 		};
 	}
 
 	const client = authedClient(event);
-	let experiments: Experiment[] = [];
-	let total: number | null = null;
-	let hasMore = false;
-	let gate: AbGate = AB_OK;
-	try {
-		const page = pageOf(await listExperiments(client, limit + 1, offset), limit, offset);
-		const back = pastEndOffset(page.rows.length, limit, offset, page.total);
-		if (back !== null) redirect(307, withOffset(event.url, back));
-		experiments = page.rows;
-		total = page.total;
-		hasMore = page.hasMore;
-	} catch (err) {
-		if (isRedirect(err)) throw err;
-		gate = abGate(err);
+	const read = await section(
+		listExperiments(client, limit + 1, offset).then((res) => pageOf(res, limit, offset)),
+		couldNotLoad('experiments'),
+	);
+	if (!read.ok) {
+		return { experiments: [] as Experiment[], total: null as number | null, limit, offset, hasMore: false, gate: read.gate };
 	}
+	const page = read.value;
+	const back = pastEndOffset(page.rows.length, limit, offset, page.total);
+	if (back !== null) redirect(307, withOffset(event.url, back));
 
-	return { experiments, total, limit, offset, hasMore, gate };
+	return { experiments: page.rows, total: page.total, limit, offset, hasMore: page.hasMore, gate: GATE_OK };
 };
 
 async function save(event: Parameters<Actions[string]>[0], id: string | null) {
@@ -114,7 +109,7 @@ async function save(event: Parameters<Actions[string]>[0], id: string | null) {
 		if (id) await updateExperiment(client, id, body);
 		else await createExperiment(client, body);
 	} catch (err) {
-		return fail(400, { action, error: actionError(err, 'Could not save the experiment. Try again.') });
+		return tagged(action, actionFailure(err, 'Could not save the experiment. Try again.'));
 	}
 	return { saved: name };
 }
@@ -129,36 +124,51 @@ export const actions: Actions = {
 		return save(event, id);
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const client = authedClient(event);
-		const form = await event.request.formData();
-		const id = String(form.get('id') ?? '');
-		if (!id) return fail(400, { action: 'delete', error: 'This form is missing its experiment. Reload the page and try again.' });
-		try {
-			await deleteExperiment(client, id);
-		} catch (err) {
-			return fail(400, { action: 'delete', error: actionError(err, 'Could not delete the experiment. Try again.') });
-		}
-		return { removed: id };
-	},
+	delete: asked(
+		{
+			question: 'Delete this experiment?',
+			detail: 'Its variants, metrics and recorded exposures are deleted too.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['admin', 'super_admin']);
+			const client = authedClient(event);
+			const form = await event.request.formData();
+			const id = String(form.get('id') ?? '');
+			if (!id) return fail(400, { action: 'delete', error: 'This form is missing its experiment. Reload the page and try again.' });
+			try {
+				await deleteExperiment(client, id);
+			} catch (err) {
+				return tagged('delete', actionFailure(err, 'Could not delete the experiment. Try again.'));
+			}
+			return { removed: id };
+		},
+	),
 
 	// One action for all four moves. The engine decides whether a move is legal
 	// and answers 409 naming both statuses when it is not, so the message it
 	// sends is relayed rather than replaced: it says more than this side knows.
-	move: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const client = authedClient(event);
-		const form = await event.request.formData();
-		const id = String(form.get('id') ?? '');
-		const move = String(form.get('move') ?? '') as Transition;
-		if (!id) return fail(400, { action: 'move', error: 'This form is missing its experiment. Reload the page and try again.' });
-		if (!MOVES.includes(move)) return fail(400, { action: 'move', error: 'That change is not available for this experiment. Reload the page and try again.' });
-		try {
-			await transition(client, id, move);
-		} catch (err) {
-			return fail(400, { action: 'move', error: actionError(err, 'Could not change the experiment. Try again.') });
-		}
-		return { moved: move };
-	},
+	move: asked(
+		{
+			question: 'Stop this experiment?',
+			detail: 'A stopped experiment cannot be started again. Pause it instead if you mean to come back to it.',
+			label: 'Stop',
+		},
+		async (event) => {
+			await requireRole(event, ['admin', 'super_admin']);
+			const client = authedClient(event);
+			const form = await event.request.formData();
+			const id = String(form.get('id') ?? '');
+			const move = String(form.get('move') ?? '') as Transition;
+			if (!id) return fail(400, { action: 'move', error: 'This form is missing its experiment. Reload the page and try again.' });
+			if (!MOVES.includes(move)) return fail(400, { action: 'move', error: 'That change is not available for this experiment. Reload the page and try again.' });
+			try {
+				await transition(client, id, move);
+			} catch (err) {
+				return tagged('move', actionFailure(err, 'Could not change the experiment. Try again.'));
+			}
+			return { moved: move };
+		},
+		(form) => form.get('move') === 'stop',
+	),
 };

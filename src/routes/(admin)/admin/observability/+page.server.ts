@@ -1,28 +1,12 @@
-import type { Actions, PageServerLoad } from './$types';
-import { ApiError } from '@lyeve-labs/client';
-import { error, fail } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
+import { error } from '@sveltejs/kit';
 import { section } from '$lib/api/gate';
 import { latencyTop } from '$lib/api/observability';
-import {
-	byOwnerRows,
-	parseAsyncHooksForm,
-	parseParallelForm,
-	parsePoolForm,
-	putAsyncHooks,
-	putParallel,
-	putPoolSize,
-	readGoroutineEngine,
-	type AsyncHooksView,
-	type GoroutineEngineViews,
-	type ParallelView,
-	type PoolView,
-} from '$lib/api/goroutine-engine';
-import { refusalOf } from '$lib/api/refusal';
-import { actionError } from '$lib/server/action-error';
-import { authedClient, requireRole } from '$lib/server/authz';
+import { readGoroutineEngine } from '$lib/api/goroutine-engine';
+import { authedClient } from '$lib/server/authz';
 import { goroutineCount } from '$lib/server/goroutines';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { couldNotLoad } from '$lib/outage';
+import { rolesInWords } from '$lib/roles';
 
 /**
  * What the engine answers at /api/admin/pool/health: one flat snapshot of the
@@ -33,7 +17,7 @@ import { notRunning } from '$lib/plugins';
  * Declared as always present, they would render a Healthy badge over tiles
  * measuring nothing.
  */
-export interface PoolHealth {
+interface PoolHealth {
 	engine?: string;
 	healthy: boolean;
 	latency_ms?: number;
@@ -49,7 +33,7 @@ export interface PoolHealth {
 	message?: string;
 }
 
-export interface LatencyStats {
+interface LatencyStats {
 	method: string;
 	path: string;
 	count: number;
@@ -62,7 +46,7 @@ export interface LatencyStats {
 	samples: number;
 }
 
-export interface LatencyResponse {
+interface LatencyResponse {
 	tracker?: Record<string, unknown>;
 	slowest: LatencyStats[];
 	total: number;
@@ -72,30 +56,17 @@ export interface LatencyResponse {
 // failed. A zeroed snapshot would read on screen as a pool with no connections
 // open, and an empty ranking as an engine that has timed nothing.
 const FAILED = {
-	pool: 'Could not load pool health.',
-	latency: 'Could not load latency rankings.',
+	pool: couldNotLoad('pool health'),
+	latency: couldNotLoad('latency rankings'),
 } as const;
 
-/** Which of the three tunable forms an action answered for. */
-export type TunableForm = 'pool' | 'parallel' | 'asyncHooks';
-
-/**
- * The goroutine engine's panel: the views every admin may read, and whether
- * this session may write them. The writes need super_admin and a license
- * that lets tuning through, which the plugin reports as `licensed`. A form
- * that could only ever answer 403 or 402 is shown disabled with the reason,
- * rather than as a form that fails.
- */
-export interface GoroutineEnginePanel extends GoroutineEngineViews {
-	byOwner: ReturnType<typeof byOwnerRows>;
-	superAdmin: boolean;
-}
+const READERS = ['admin', 'super_admin'];
 
 export const load: PageServerLoad = async (event) => {
 	const { url, parent } = event;
-	const { user, plugins } = await parent();
-	if (!user.roles.some((r) => ['super_admin', 'admin'].includes(r))) {
-		error(403, 'Only an admin or a super admin can open this page.');
+	const { user } = await parent();
+	if (!user.roles.some((r) => READERS.includes(r))) {
+		error(403, `Only ${rolesInWords(READERS)} can open this page.`);
 	}
 
 	const client = authedClient(event);
@@ -110,66 +81,7 @@ export const load: PageServerLoad = async (event) => {
 		readGoroutineEngine(client),
 	]);
 
-	const goroutineEngine: GoroutineEnginePanel = {
-		...views,
-		byOwner: byOwnerRows(views.snapshot),
-		superAdmin: user.roles.includes('super_admin'),
-	};
-
-	// The tail is the logging plugin's stream. Without the plugin the stream is
-	// refused on every attempt, so the page says so rather than opening it.
-	const logTail = !notRunning(plugins, PLUGIN.logging);
-
-	return { poolHealth, latency, top, goroutines: goroutineCount(views.snapshot), goroutineEngine, logTail };
-};
-
-/**
- * A refused write, as the form beside the tiles reports it. A 402 is the
- * license saying no, so it travels as the refusal every page renders the
- * same way. A 422 carries the plugin's own bounds message, which names the
- * field and the limit, so it is relayed as written. Anything else is the
- * fallback sentence.
- */
-function tunableFailure(form: TunableForm, err: unknown, fallback: string) {
-	const refused = refusalOf(err);
-	if (refused) return fail(402, { form, refused });
-	if (err instanceof ApiError && err.status === 422) {
-		return fail(422, { form, error: actionError(err, fallback) });
-	}
-	return fail(400, { form, error: actionError(err, fallback) });
-}
-
-async function saveTunable<T>(
-	form: TunableForm,
-	fallback: string,
-	write: () => Promise<T>,
-): Promise<{ form: TunableForm; saved: true; view: T } | ReturnType<typeof tunableFailure>> {
-	try {
-		return { form, saved: true, view: await write() };
-	} catch (err) {
-		return tunableFailure(form, err, fallback);
-	}
-}
-
-export const actions: Actions = {
-	pool: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const parsed = parsePoolForm(await event.request.formData());
-		if ('error' in parsed) return fail(422, { form: 'pool' as const, error: parsed.error });
-		return saveTunable<PoolView>('pool', 'Could not resize the pool. Try again.', () => putPoolSize(authedClient(event), parsed.body));
-	},
-
-	parallel: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const parsed = parseParallelForm(await event.request.formData());
-		if ('error' in parsed) return fail(422, { form: 'parallel' as const, error: parsed.error });
-		return saveTunable<ParallelView>('parallel', 'Could not save the parallel engine settings. Try again.', () => putParallel(authedClient(event), parsed.body));
-	},
-
-	asyncHooks: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const parsed = parseAsyncHooksForm(await event.request.formData());
-		if ('error' in parsed) return fail(422, { form: 'asyncHooks' as const, error: parsed.error });
-		return saveTunable<AsyncHooksView>('asyncHooks', 'Could not save the async hook settings. Try again.', () => putAsyncHooks(authedClient(event), parsed.body));
-	},
+	// The pool row's goroutine figure is the runtime's count from the
+	// goroutine engine's snapshot. Its tuning panel is a tab of its own.
+	return { poolHealth, latency, top, goroutines: goroutineCount(views.snapshot) };
 };

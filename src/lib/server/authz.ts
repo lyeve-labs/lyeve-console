@@ -1,7 +1,7 @@
 import { error, redirect, type RequestEvent } from '@sveltejs/kit';
 import { ApiError, createClient, type HttpClient } from '@lyeve-labs/client';
 import { getMe } from '@lyeve-labs/client-rest';
-import type { User } from '@lyeve-labs/client';
+import type { SchemaField, User } from '@lyeve-labs/client';
 import {
 	CSRF_COOKIE,
 	CSRF_COOKIE_INSECURE,
@@ -12,6 +12,8 @@ import {
 import { sessionEndedTarget } from '$lib/server/session-refresh';
 import { refusalOf, refusalText } from '$lib/api/refusal';
 import { BUSY, OUTAGE } from '$lib/outage';
+import { SESSION_ENDED } from '$lib/session';
+import { rolesInWords } from '$lib/roles';
 
 /** The headers that carry the session, in lower case. Only `authedHeaders` sets them. */
 const SESSION_HEADERS = new Set(['authorization', 'x-csrf-token']);
@@ -58,15 +60,81 @@ export function authedHeaders(event: SessionRead): Record<string, string> {
 export function authedClient(event: RequestEvent, extra: Record<string, string> = {}): HttpClient {
 	const allowed = Object.entries(extra).filter(([name]) => !SESSION_HEADERS.has(name.toLowerCase()));
 	const headers = { ...Object.fromEntries(allowed), ...authedHeaders(event) };
-	return createClient((url, init) =>
-		event.fetch(url, {
-			...init,
-			headers: { ...init?.headers, ...headers },
-		})
+	return createClient(async (url, init) =>
+		keepingSource(
+			await event.fetch(url, {
+				...init,
+				headers: { ...init?.headers, ...headers },
+			})
+		)
 	);
 }
 
-const NO_SEAT = 'This instance has no admin seat left for this account.';
+/**
+ * The text each parsed response came from, so a reader that knows which
+ * fields are integers can read them again without rounding. Keyed weakly, so
+ * the text goes when the parsed value does.
+ */
+const sources = new WeakMap<object, string>();
+
+/** A successful response parses as usual, and its text is kept beside the result. */
+function keepingSource(res: Response): Response {
+	if (!res.ok) return res;
+	res.json = async () => {
+		const text = await res.text();
+		const value: unknown = JSON.parse(text);
+		if (value !== null && typeof value === 'object') sources.set(value, text);
+		return value;
+	};
+	return res;
+}
+
+/**
+ * Keeps the digits of an integer JSON.parse would round. The reviver's third
+ * argument carries each number's source text, so a plain whole number outside
+ * the safe range comes back as that text. A fraction, an exponent form and a
+ * number too large for a double come back as JSON.parse reads them.
+ */
+function keepIntegerDigits(_key: string, value: unknown, context?: { source?: string }): unknown {
+	if (typeof value !== 'number' || Number.isSafeInteger(value)) return value;
+	const source = context?.source;
+	return source !== undefined && /^-?\d+$/.test(source) ? source : value;
+}
+
+/**
+ * The response a value was parsed from, parsed again with every integer past
+ * 2^53 kept as its digits. Undefined for a value no response produced.
+ */
+export function exactParse(value: unknown): unknown {
+	if (value === null || typeof value !== 'object') return undefined;
+	const text = sources.get(value);
+	return text === undefined ? undefined : JSON.parse(text, keepIntegerDigits);
+}
+
+/**
+ * `plain` with each integer field taken from `exact` where the exact read
+ * kept digits a double would round. An integer field holds up to 19 digits
+ * and a double 15 or 16, so a save of the plain value would write a rounded
+ * number back. Only integer fields change: a json field holds whatever
+ * numbers its author wrote, and they stay numbers.
+ */
+export function withExactIntegers(
+	fields: readonly SchemaField[],
+	plain: Record<string, unknown>,
+	exact: unknown,
+): Record<string, unknown> {
+	if (exact === null || typeof exact !== 'object') return plain;
+	const from = exact as Record<string, unknown>;
+	let out = plain;
+	for (const f of fields) {
+		if (f.field_type !== 'integer' || typeof from[f.name] !== 'string') continue;
+		if (out === plain) out = { ...plain };
+		out[f.name] = from[f.name];
+	}
+	return out;
+}
+
+const NO_SEAT = 'This engine has no admin seat left for this account.';
 const UNREACHABLE = 'Access to the admin is blocked for this account or network.';
 
 /**
@@ -170,7 +238,7 @@ export async function loadUser(event: RequestEvent): Promise<User> {
 export async function requireUser(event: RequestEvent): Promise<User> {
 	const user = await sessionUser(authedClient(event));
 	if (!user) {
-		error(401, 'Session invalid or expired');
+		error(401, SESSION_ENDED);
 	}
 	return user;
 }
@@ -194,7 +262,7 @@ export async function requireRole(event: RequestEvent, roles: string[]): Promise
  */
 export function assertRole(user: User, roles: string[]): User {
 	if (!roles.some((r) => user.roles.includes(r))) {
-		error(403, `This needs one of these roles: ${roles.join(', ')}.`);
+		error(403, `Only ${rolesInWords(roles)} can do this.`);
 	}
 	return user;
 }

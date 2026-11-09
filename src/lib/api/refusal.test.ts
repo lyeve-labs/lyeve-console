@@ -39,38 +39,38 @@ describe('refusalOf', () => {
 describe('refusalText', () => {
 	it('says the count against the ceiling in the words of the cap', () => {
 		expect(refusalText({ kind: 'cap', cap: 'example.items', limit: 4, current: 4, upgradeUrl: '' })).toBe(
-			"You're using 4 of 4 items, the most this instance allows. A license that allows more lifts the limit. Removing one also makes room.",
+			"You're using 4 of 4 items, the most this engine allows. A license that allows more lifts the limit. Removing one also makes room.",
 		);
 	});
 
 	it('says only the ceiling when the count is missing', () => {
 		expect(refusalText({ kind: 'cap', cap: 'example.widget_slots', limit: 9, current: null, upgradeUrl: '' })).toContain(
-			'This instance allows at most 9 widget slots.',
+			'This engine allows at most 9 widget slots.',
 		);
 	});
 
 	it('states the seat count, then more seats with a license, then how to free one', () => {
 		expect(refusalText({ kind: 'cap', cap: 'admin.seats', limit: 7, current: 7, upgradeUrl: '' })).toBe(
-			"Every admin seat is taken. You're using 7 of 7, the most this instance allows. A license that allows more lifts the limit. Removing the admin role from an account also frees a seat. Editors and viewers take no seat.",
+			"Every admin seat is taken. You're using 7 of 7, the most this engine allows. A license that allows more lifts the limit. Removing the admin role from an account also frees a seat. Editors and viewers take no seat.",
 		);
 	});
 
 	it('names a license as the way forward before removing one', () => {
 		const text = refusalText({ kind: 'cap', cap: 'example.items', limit: null, current: null, upgradeUrl: '' });
-		expect(text).toBe('This instance is at its limit for items. A license that allows more lifts the limit. Removing one also makes room.');
+		expect(text).toBe('This engine is at its limit for items. A license that allows more lifts the limit. Removing one also makes room.');
 		expect(text.indexOf('license')).toBeLessThan(text.indexOf('Removing'));
 	});
 
-	it('names the capability a feature refusal needs', () => {
+	it('says a feature refusal without the capability it names', () => {
 		const r = { kind: 'feature', feature: 'example-feature', plugin: 'example', upgradeUrl: '' } as const;
-		expect(refusalText(r)).toBe('The license on this instance does not include example-feature. Nothing was changed.');
-		expect(refusalTitle(r)).toBe('This needs example-feature');
+		expect(refusalText(r)).toBe('This is not enabled on this engine. Nothing was changed.');
+		expect(refusalTitle(r)).toBe('Not enabled on this engine');
 	});
 
 	it('words a feature refusal that names no capability', () => {
 		const r = { kind: 'feature', feature: '', plugin: '', upgradeUrl: '' } as const;
-		expect(refusalText(r)).toBe('This needs a capability the license on this instance does not include. Nothing was changed.');
-		expect(refusalTitle(r)).toBe('This is not enabled on this instance');
+		expect(refusalText(r)).toBe('This is not enabled on this engine. Nothing was changed.');
+		expect(refusalTitle(r)).toBe('Not enabled on this engine');
 	});
 });
 

@@ -14,6 +14,7 @@
 		Toaster,
 	} from '@lyeve-labs/ui-kit';
 	import { BookOpen, LifeBuoy, LogOut, MonitorSmartphone, Settings, ShieldCheck } from '@lucide/svelte';
+	import ConfirmFallback from '$lib/components/ConfirmFallback.svelte';
 	import DbStatus from '$lib/components/DbStatus.svelte';
 	import RouteProgress from '$lib/components/RouteProgress.svelte';
 	import NotRunning from '$lib/components/NotRunning.svelte';
@@ -26,6 +27,7 @@
 	import { PLUGIN } from '$lib/plugin-names';
 	import { notRunning, runs, whyNotRunning, UNNAMED } from '$lib/plugins';
 	import { rolesLabel } from '$lib/device-login';
+	import { couldNotLoad } from '$lib/outage';
 	import type { LayoutData } from './$types';
 	import type { Snippet } from 'svelte';
 
@@ -155,7 +157,7 @@
 	bind:collapsed={sidebarCollapsed}
 	rail={shell.focus}
 	headerHidden={shell.focus}
-	sidebarLabel="Admin sidebar"
+	sidebarLabel="Console sidebar"
 >
 	{#snippet brand({ rail })}
 		<!-- The rail is 56px and its row has the inline gutter: the 28px mark fits
@@ -197,7 +199,7 @@
 			<SidebarNav
 				items={navItems}
 				activePath={page.url.pathname}
-				label="Admin sections"
+				label="Console sections"
 				storageKey="lyeve-admin-nav"
 				collapsed={rail}
 				class="min-h-0 w-full flex-1 px-inline"
@@ -253,7 +255,7 @@
 		<!-- A failed read is not an empty install. The engine's own pages stay,
 		     and this says why the plugin pages are missing. -->
 		<Banner tone="warn">
-			Could not load the list of running plugins, so the sidebar shows only the built-in pages. Reload the page to try again.
+			{couldNotLoad('the list of running plugins')} The sidebar shows only the built-in pages. Reload the page to try again.
 		</Banner>
 	{/if}
 	{#if gated}
@@ -261,6 +263,7 @@
 			<NotRunning level={2} title={gated.title} plugin={gated.plugin} reason={gated.reason} {operator} />
 		</PageShell>
 	{:else}
+		<ConfirmFallback />
 		{@render children()}
 	{/if}
 </AppShell>

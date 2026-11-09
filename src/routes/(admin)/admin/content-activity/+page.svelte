@@ -6,7 +6,8 @@
 	import { ACTIVITY_ACTIONS, actionLabel } from '$lib/api/content-history';
 	import { pageNumber, pageOffset } from '$lib/api/list';
 	import { listQuery } from '$lib/back';
-	import { NO_VALUE, formatCount, formatDateTime } from '$lib/format';
+	import { NO_VALUE, formatCount, formatDateTime, plural } from '$lib/format';
+	import { couldNotLoad } from '$lib/outage';
 	import { ICON } from '$lib/icon';
 	import { shortId } from '$lib/utils/entry-identity';
 	import type { PageData } from './$types';
@@ -76,7 +77,7 @@
 	title="Content activity"
 	description={data.total === null
 		? 'See who changed which entry, when and from where.'
-		: `${formatCount(data.total)} ${data.total === 1 ? 'change' : 'changes'}`}
+		: `${formatCount(data.total)} ${plural(data.total, 'change')}`}
 	width="wide"
 	back={{ href: '/admin/content', label: 'Content' }}
 >
@@ -118,7 +119,7 @@
 			</p>
 		{/if}
 		{#if data.superAdmin && !data.tenants.ok}
-			<p class="text-xs text-muted">Could not load the tenants for the filter. Reload the page to try again.</p>
+			<p class="text-xs text-muted">{couldNotLoad('the tenants for the filter', { reload: true })}</p>
 		{/if}
 	{/if}
 

@@ -2,12 +2,14 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { type HttpClient, type Schema, type SchemaField } from '@lyeve-labs/client';
 import { getSchemas, getSchema } from '@lyeve-labs/client-rest';
-import { authedClient, requireUser } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { authedClient, exactParse, requireUser, withExactIntegers } from '$lib/server/authz';
+import { actionFailure } from '$lib/server/action-error';
+import { couldNotLoad } from '$lib/outage';
 import { readError } from '$lib/server/read-error';
 import { section, type Section } from '$lib/api/gate';
 import { pageWindow, pastEndOffset, totalOf, withOffset, type ListEnvelope } from '$lib/api/list';
 import { fieldKey } from '$lib/utils/content-form';
+import { asked } from '$lib/server/asked';
 
 /** One row of the admin content listing, before it is reshaped for the table. */
 type EntryRow = {
@@ -40,8 +42,8 @@ function statusFrom(url: URL): EntryStatus | null {
 	return (ENTRY_STATUSES as readonly string[]).includes(asked ?? '') ? (asked as EntryStatus) : null;
 }
 
-const ENTRIES_FAILED = 'Could not load entries.';
-const SCHEMAS_FAILED = 'Could not load the other collections.';
+const ENTRIES_FAILED = couldNotLoad('entries');
+const SCHEMAS_FAILED = couldNotLoad('the other content types');
 
 /**
  * Entries are listed through the admin API, which holds every entry with its
@@ -60,7 +62,7 @@ export const load: PageServerLoad = async (event) => {
 
 	const [schemas, schemaDef, listed] = await Promise.all([
 		section<Schema[]>(getSchemas(client), SCHEMAS_FAILED),
-		getSchema(params.schema, client).catch((err: unknown) => readError(err, `Schema "${params.schema}" not found`)),
+		getSchema(params.schema, client).catch((err: unknown) => readError(err, `Content type "${params.schema}" not found`)),
 		section(client.get<ListEnvelope<EntryRow>>(`/api/admin/content?${query}`), ENTRIES_FAILED),
 	]);
 
@@ -70,12 +72,17 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const rows = listed.value.data ?? [];
-	const entries: ListedEntry[] = rows.map((e) => ({
+	// The table shows an integer field's stored digits, which the plain read
+	// rounds past 2^53.
+	const exactRows = ((exactParse(listed.value) as ListEnvelope<EntryRow> | undefined)?.data ?? []) as EntryRow[];
+	const entries: ListedEntry[] = rows.map((e, i) => ({
 		id: e.id,
 		created_at: e.created_at,
 		updated_at: e.updated_at,
 		data: {
-			...(e.body && typeof e.body === 'object' ? e.body : {}),
+			...(e.body && typeof e.body === 'object'
+				? withExactIntegers(schemaDef.fields ?? [], e.body as Record<string, unknown>, exactRows[i]?.body)
+				: {}),
 			...(e.title !== undefined ? { title: e.title } : {}),
 			_status: e.status ?? 'published',
 		} as Record<string, unknown>,
@@ -164,18 +171,25 @@ async function nameRelatedEntries(
 }
 
 export const actions: Actions = {
-	delete: async (event) => {
-		await requireUser(event);
-		const { request } = event;
-		const client = authedClient(event);
-		const form = await request.formData();
-		const id = form.get('id') as string;
-		if (!id) return fail(400, { error: 'This form is missing its entry. Reload the page and try again.' });
-		try {
-			await client.delete(`/api/admin/content/${encodeURIComponent(id)}`);
-			return { ok: true };
-		} catch (err) {
-			return fail(400, { error: actionError(err, 'Could not delete the entry. Try again.') });
-		}
-	},
+	delete: asked(
+		{
+			question: 'Delete this entry?',
+			detail: 'Its revisions and translations are deleted too.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireUser(event);
+			const { request } = event;
+			const client = authedClient(event);
+			const form = await request.formData();
+			const id = form.get('id') as string;
+			if (!id) return fail(400, { error: 'This form is missing its entry. Reload the page and try again.' });
+			try {
+				await client.delete(`/api/admin/content/${encodeURIComponent(id)}`);
+				return { ok: true };
+			} catch (err) {
+				return actionFailure(err, 'Could not delete the entry. Try again.');
+			}
+		},
+	),
 };

@@ -12,10 +12,11 @@ import { actions, load } from './+page.server';
 
 function event(form: Record<string, string> = {}) {
 	const data = new FormData();
+	data.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(form)) data.set(k, v);
 	return {
 		parent: async () => ({ plugins: { state: 'named', running: ['audit'], withheld: [] } }),
-		request: { formData: async () => data },
+		request: { formData: async () => data, clone: () => ({ formData: async () => data }) },
 	} as never;
 }
 
@@ -40,7 +41,7 @@ describe('audit sinks', () => {
 		const out = (await actions.create(event({ kind: 'splunk', name: 'S', url: 'https://s.example.com' }))) as {
 			data: { fields: Record<string, string> };
 		};
-		expect(out.data.fields.secret).toBe('The HEC token is required');
+		expect(out.data.fields.secret).toBe('Enter the HEC token.');
 		expect(engine.post).not.toHaveBeenCalled();
 	});
 
@@ -77,7 +78,7 @@ describe('editing a destination', () => {
 	});
 
 	it('relays a refusal under its own action', async () => {
-		engine.put.mockRejectedValue(new ApiError(400, 'url must be https', {}));
+		engine.put.mockRejectedValue(new ApiError(400, 'url must be https', { error: 'url must be https', code: 'bad_request' }));
 		const out = (await actions.update(event(EDIT))) as Failure;
 		expect(out.data).toMatchObject({ action: 'update' });
 		expect(String(out.data.error)).toContain('url must be https');
@@ -107,7 +108,7 @@ describe('deleting a destination', () => {
 	});
 
 	it('relays a refusal under its own action', async () => {
-		engine.delete.mockRejectedValue(new ApiError(404, 'sink not found', {}));
+		engine.delete.mockRejectedValue(new ApiError(404, 'sink not found', { error: 'sink not found', code: 'not_found' }));
 		const out = (await actions.delete(event({ id: 's1' }))) as Failure;
 		expect(out.data).toMatchObject({ action: 'delete' });
 		expect(String(out.data.error)).toContain('sink not found');

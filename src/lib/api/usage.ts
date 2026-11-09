@@ -17,14 +17,13 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
-import type { ListEnvelope } from './list';
+import { query, type ListEnvelope } from './list';
 import { formatBytes, formatCount } from '$lib/format';
 import { shortId } from '$lib/utils/entry-identity';
 
-export const QUOTAS_URL = '/api/admin/quotas';
-export const REQUESTS_URL = '/api/admin/quota-requests';
-export const TENANTS_URL = '/api/admin/usage/tenants';
+const QUOTAS_URL = '/api/admin/quotas';
+const REQUESTS_URL = '/api/admin/quota-requests';
+const TENANTS_URL = '/api/admin/usage/tenants';
 
 export interface Quota {
 	id: string;
@@ -81,15 +80,6 @@ export interface TenantUsage {
 	media_count: number;
 }
 
-export type UsageGate = Gate;
-
-export const USAGE_OK: UsageGate = GATE_OK;
-
-/** What a refused usage read means, read the way every plugin's is. */
-export function usageGate(err: unknown): UsageGate {
-	return gateOf(err, 'Could not load usage.');
-}
-
 export async function listQuotas(
 	client: HttpClient,
 	limit = 50,
@@ -110,9 +100,7 @@ export async function listRequests(
 	status = '',
 	limit = REQUESTS_LIMIT
 ): Promise<ListEnvelope<QuotaRequest>> {
-	const qs = new URLSearchParams({ limit: String(limit), offset: '0' });
-	if (status) qs.set('status', status);
-	return client.get<ListEnvelope<QuotaRequest>>(`${REQUESTS_URL}?${qs}`);
+	return client.get<ListEnvelope<QuotaRequest>>(`${REQUESTS_URL}${query({ limit, offset: 0, status })}`);
 }
 
 /** Every tenant's usage this period. Super admin only. */
@@ -162,7 +150,7 @@ export async function deleteQuota(client: HttpClient, tenantId: string): Promise
 
 const GIB = 1024 ** 3;
 
-/** GiB, the unit the editor speaks, to the bytes the engine stores. */
+/** GB of 1,024 MB, the unit the editor speaks, to the bytes the engine stores. */
 export function gibToBytes(gib: number): number {
 	return Number.isFinite(gib) && gib > 0 ? Math.round(gib * GIB) : 0;
 }
@@ -174,7 +162,7 @@ export function bytesToGib(b: number): number {
 /**
  * The bytes a byte limit field posts: the stored value while the field still
  * shows what it showed when the editor opened, so a limit the editor can only
- * round to hundredths of a GiB is sent back unchanged.
+ * round to hundredths of a GB is sent back unchanged.
  */
 export function keptBytes(gib: number, shownGib: number, storedBytes: number): number {
 	return gib === shownGib ? storedBytes : gibToBytes(gib);
@@ -182,7 +170,7 @@ export function keptBytes(gib: number, shownGib: number, storedBytes: number): n
 
 /**
  * The quota a form names. A field that is not a non-negative number reads as
- * 0. A byte limit posted in bytes wins over the same limit in GiB.
+ * 0. A byte limit posted in bytes wins over the same limit in GB.
  */
 export function quotaFrom(form: FormData): QuotaInput {
 	const n = (key: string) => {

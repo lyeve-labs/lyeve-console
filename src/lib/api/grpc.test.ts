@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '@lyeve-labs/client';
 import {
-	grpcGate,
 	grpcHealth,
 	healthTone,
 	loopbackOnly,
@@ -111,19 +109,5 @@ describe('reflection', () => {
 		expect(reflectionNote(status({ reflection: false }))).toContain('generated stubs');
 		expect(reflectionNote(status({ listening: false }))).toBe('');
 		expect(reflectionNote(null)).toBe('');
-	});
-});
-
-describe('the gate sorts a refusal by what it means', () => {
-	it('tells a 402, a 404 and any other failure apart', () => {
-		expect(grpcGate(new ApiError(402, 'payment required')).state).toBe('locked');
-		expect(grpcGate(new ApiError(404, 'not found')).state).toBe('absent');
-		expect(grpcGate(new ApiError(500, 'internal error')).state).toBe('error');
-		expect(grpcGate(new ApiError(503, 'unavailable')).state).toBe('unavailable');
-	});
-
-	it('never reports a failed read as a listener that is up', () => {
-		const gate = grpcGate(new Error('network'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load the gRPC status.');
 	});
 });

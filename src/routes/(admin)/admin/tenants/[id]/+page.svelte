@@ -24,7 +24,7 @@
 	import type { TenantMember } from '$lib/api/tenant-access';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { confirmed, fieldErrors } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, fieldErrors } from '$lib/forms.svelte';
 	import { formRefusal } from '$lib/api/refusal';
 	import type { PageData, ActionData } from './$types';
 
@@ -94,18 +94,15 @@
 	 * next. A failed removal shows above the members.
 	 */
 	type MemberFailure = { action?: string; memberError?: string; fields?: Record<string, string> } | null;
-	let openedOver = $state.raw<unknown>(null);
-	const memberFailure = $derived(form as MemberFailure);
-	const grantError = $derived(
-		memberFailure?.action === 'grant' && form !== openedOver ? memberFailure.memberError : undefined,
-	);
-	const revokeError = $derived(memberFailure?.action === 'revoke' ? memberFailure.memberError : undefined);
+	const memberFailure = drawerFailure(() => form as MemberFailure, ['grant']);
+	const grantError = $derived(memberFailure.drawer?.memberError);
+	const revokeError = $derived(memberFailure.page?.action === 'revoke' ? memberFailure.page.memberError : undefined);
 	// A grant refused at the admin seat ceiling renders with the numbers and
 	// the link the engine sent.
 	const grantRefusal = $derived(grantError ? formRefusal(form) : null);
 
 	function openNewMember() {
-		openedOver = form;
+		memberFailure.opened();
 		editingMember = null;
 		memberEmail = '';
 		memberRoles = ['viewer'];
@@ -113,7 +110,7 @@
 	}
 
 	function openEditMember(m: TenantMember) {
-		openedOver = form;
+		memberFailure.opened();
 		editingMember = m;
 		memberEmail = m.email;
 		memberRoles = m.roles.filter((r) => r !== 'super_admin');
@@ -209,7 +206,7 @@
 					id="tenant-features"
 					label="Available to this tenant"
 					placeholder="Nothing"
-					hint="Tenants can only use plugins this instance runs. Removing a plugin here affects this tenant only: its routes return 403, its screens leave the tenant's admin, and its capabilities are turned off."
+					hint="Only plugins this engine runs can be turned on. Turning one off affects only this tenant: its requests to the plugin are refused, its screens leave the console and its capabilities are turned off."
 					searchable
 					options={featureOptions}
 					bind:value={available}
@@ -327,7 +324,7 @@
 
 <Drawer bind:open={memberOpen} title={editingMember ? `Roles for ${editingMember.email}` : 'New member'}>
 	<form method="post" action="?/grant" id="member-form" use:enhance={saveMember} class="flex flex-col gap-4">
-		<FormErrors message={grantError} fields={grantError ? fieldErrors(form) : {}} refused={grantRefusal} />
+		<FormErrors message={grantError} fields={fieldErrors(memberFailure.drawer)} refused={grantRefusal} />
 		{#if editingMember}
 			<input type="hidden" name="user_id" value={editingMember.id} />
 			<Input id="member-email" label="Account" value={memberEmail} disabled />

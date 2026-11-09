@@ -1,4 +1,5 @@
 import type { HttpClient, SchemaField } from '@lyeve-labs/client';
+import { record } from './narrow';
 
 /** Where a translation is in its life. */
 export type TranslationStatus = 'draft' | 'translated' | 'outdated';
@@ -38,10 +39,6 @@ export interface LocalePreferences {
 	fallback_chain: string[];
 }
 
-function asObject(v: unknown): Record<string, unknown> {
-	return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
-}
-
 function asStrings(v: unknown): string[] {
 	return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
 }
@@ -54,8 +51,8 @@ export function toTranslation(raw: Record<string, unknown>): Translation {
 		entry_id: typeof raw.entry_id === 'string' ? raw.entry_id : undefined,
 		locale: String(raw.locale ?? ''),
 		title: typeof raw.title === 'string' ? raw.title : '',
-		body: asObject(raw.body),
-		meta: raw.meta === undefined ? undefined : asObject(raw.meta),
+		body: record(raw.body),
+		meta: raw.meta === undefined ? undefined : record(raw.meta),
 		translation_status:
 			status === 'translated' || status === 'outdated' ? status : 'draft',
 		updated_at: typeof raw.updated_at === 'string' ? raw.updated_at : undefined,
@@ -92,8 +89,8 @@ export async function listTranslations(client: HttpClient, entryId: string): Pro
 	const res = await client.get<unknown>(
 		`/api/admin/content/${encodeURIComponent(entryId)}/translations?limit=100&offset=0`,
 	);
-	const rows = Array.isArray(res) ? res : (asObject(res).data ?? []);
-	return (Array.isArray(rows) ? rows : []).map((r) => toTranslation(asObject(r)));
+	const rows = Array.isArray(res) ? res : (record(res).data ?? []);
+	return (Array.isArray(rows) ? rows : []).map((r) => toTranslation(record(r)));
 }
 
 export function createTranslation(

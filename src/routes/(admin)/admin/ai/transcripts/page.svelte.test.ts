@@ -2,7 +2,7 @@
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Page from './+page.svelte';
-import { fixtureSettings, fixtureTranscript } from '$lib/components/ai/fixtures';
+import { fixtureSettings, fixtureTranscript } from '$lib/components/ai/test-support/fixtures';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
@@ -60,7 +60,7 @@ describe('AI transcripts page', () => {
 
 	it('paints the forbidden state and no table', () => {
 		const { getByText, container } = setup({ gate: { state: 'forbidden' } });
-		expect(getByText('Your role cannot read AI transcripts.')).toBeTruthy();
+		expect(getByText('Only an admin or a super admin can open AI transcripts.')).toBeTruthy();
 		expect(container.querySelector('table')).toBeNull();
 	});
 });

@@ -131,7 +131,7 @@
 					<SectionHeading level={2}>Waiting for the engine</SectionHeading>
 					<p class="text-muted">
 						Could not reach the engine. If it is starting or restarting, this page continues once it is up. If
-						this lasts, check that the engine is running and that the admin's CORE_INTERNAL_URL points at it.
+						this lasts, check that the engine is running and that the console's CORE_INTERNAL_URL points at it.
 					</p>
 					<p class="flex items-center gap-2 text-sm text-muted" role="status">
 						<Spinner size={ICON.sm} />
@@ -181,7 +181,7 @@
 
 					{#if modeStatus.secrets_included}
 						<Alert tone="warn">
-							These secrets are shown only once. Copy them now and store them where the engine reads its settings.
+							These secrets are shown only once. Copy them now and store them with the engine's settings.
 							The engine does not save them, so they are gone after it restarts.
 						</Alert>
 					{:else if generatedSecrets.length > 0}
@@ -273,7 +273,7 @@
 						label="Password"
 						autocomplete="new-password"
 						required
-						hint="The engine's password policy sets the rules. If this password breaks one, the error names it."
+						hint="It must meet the engine's password policy. If it breaks a rule, you'll see which one."
 						error={errors.password ?? serverFields.password}
 					/>
 
@@ -281,7 +281,6 @@
 						id="confirm"
 						name="confirm"
 						label="Confirm password"
-						placeholder="Repeat your password"
 						autocomplete="new-password"
 						required
 						error={errors.confirm}

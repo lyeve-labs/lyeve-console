@@ -29,7 +29,7 @@
 	import { confirmed, fieldErrors, submitter } from '$lib/forms.svelte';
 	import { narrows } from '$lib/narrow';
 	import { ROLE_OPTIONS, roleTone } from '$lib/roles';
-	import { formatCount, formatDate } from '$lib/format';
+	import { formatCount, formatDate, plural } from '$lib/format';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
 	import {
@@ -166,7 +166,7 @@
 		return confirmed(
 			`Delete API key ${name}?`,
 			'Anything that uses this key stops working, and the key is removed from the list. This cannot be undone.',
-			{ confirmLabel: 'Delete', success: `Deleted ${name}` },
+			{ confirmLabel: 'Delete', success: `${name} deleted.` },
 		);
 	}
 
@@ -181,7 +181,7 @@
 		return confirmed(
 			`Revoke key ${name}?`,
 			'Anything that uses this key stops working immediately. The key stays in the list and cannot be used again.',
-			{ confirmLabel: 'Revoke', success: `Revoked ${name}` },
+			{ confirmLabel: 'Revoke', success: `${name} revoked.` },
 		);
 	}
 
@@ -207,7 +207,7 @@
 
 <PageShell
 	title="API keys"
-	description="Create machine-to-machine credentials, each limited to the schemas, routes and request limits you choose."
+	description="Create machine-to-machine credentials, each limited to the content types, routes and request limits you choose."
 	width="wide"
 >
 	{#snippet actions()}
@@ -219,7 +219,7 @@
 	{/snippet}
 
 	<p class="text-sm text-muted">
-		For automation that calls the admin API, such as a deploy script that creates schemas, use an
+		For automation that calls the admin API, such as a deploy script that creates content types, use an
 		<a href="/admin/admin-tokens" class="text-brand hover:underline">admin token</a> instead. It has scoped grants, an expiry and a request log.
 	</p>
 
@@ -247,19 +247,19 @@
 		</EmptyState>
 	{:else}
 		{#if neverExpiring > 0}
-			<Alert tone="warn" title="{neverExpiring} admin {neverExpiring === 1 ? 'key never expires' : 'keys never expire'}">
+			<Alert tone="warn" title="{neverExpiring} admin {plural(neverExpiring, 'key never expires', 'keys never expire')}">
 				A key with the admin or super admin role expires within {MAX_PRIVILEGED_KEY_DAYS} days. A key marked No expiry keeps working until it is revoked. Replace each with one that expires, then revoke it.
 			</Alert>
 		{/if}
 		{#if adminRoleKeys > 0}
-			<Alert tone="warn" title="{adminRoleKeys} {adminRoleKeys === 1 ? 'key carries' : 'keys carry'} an admin role">
+			<Alert tone="warn" title="{adminRoleKeys} {plural(adminRoleKeys, 'key carries', 'keys carry')} an admin role">
 				The admin API refuses a key with an admin role. Move automation that calls it to <a class="underline" href="/admin/admin-tokens">admin tokens</a>. These keys still work on the content API.
 			</Alert>
 		{/if}
 		<ListToolbar label="Filter API keys">
 			{#snippet search()}
 				<label for="key-search" class="sr-only">Search this page</label>
-				<SearchInput id="key-search" bind:value={query} placeholder="Name, role or schema on this page" />
+				<SearchInput id="key-search" bind:value={query} placeholder="Name, role or content type on this page" />
 			{/snippet}
 			{#snippet filters()}
 				<SegmentedControl label="Status" labelHidden bind:value={status} options={STATUSES} />
@@ -278,7 +278,7 @@
 					<th scope="col">Name</th>
 					<th scope="col">Roles</th>
 					<th scope="col">Scopes</th>
-					<th scope="col">Schemas</th>
+					<th scope="col">Content types</th>
 					<th scope="col">Status</th>
 					<th scope="col">Created</th>
 					<th scope="col">Expires</th>
@@ -294,7 +294,7 @@
 						<td data-cell="nowrap" class="font-medium">{key.name}</td>
 						<td data-cell="nowrap">
 							<div class="flex flex-wrap gap-1">
-								{#each key.roles as role}
+								{#each key.roles as role (role)}
 									<Badge tone={roleTone(role)} size="sm">{role}</Badge>
 								{/each}
 								{#if key.roles.length === 0}
@@ -466,8 +466,8 @@
 	<Modal open title="API key created" onclose={() => (showRawKey = false)}>
 		<div class="flex flex-col gap-4">
 			<p class="text-sm text-fg">
-				Your API key <strong class="text-fg">{rawKeyName}</strong> has been created. Copy it now.
-				It will not be shown again.
+				Your API key <strong class="text-fg">{rawKeyName}</strong> is ready. Copy it now. It is not shown
+				again.
 			</p>
 			<CopyField
 				id="raw-api-key"

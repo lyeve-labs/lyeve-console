@@ -108,7 +108,7 @@
 		return confirmed(
 			`Delete user ${email}?`,
 			'Their sessions end immediately and their audit trail is kept. This cannot be undone.',
-			{ confirmLabel: 'Delete', success: `Deleted ${email}` },
+			{ confirmLabel: 'Delete', success: `${email} deleted.` },
 		);
 	}
 
@@ -192,7 +192,7 @@
 
 <PageShell
 	title="Users"
-	description="Manage the admin accounts on this instance. Only super admins can use this page."
+	description="Manage the accounts that sign in to this engine."
 	width="wide"
 >
 	{#snippet actions()}
@@ -214,7 +214,7 @@
 	{:else if rows.length === 0}
 		<EmptyState
 			title="No users yet"
-			description="Create an account to give someone access to this instance."
+			description="Create an account to give someone access to this engine."
 		>
 			{#snippet iconSnippet()}
 				<Users size={ICON.lg} />
@@ -370,7 +370,7 @@
 				     here keeps a refusal for a missing tenant from reading as a
 				     fault in the fields the operator filled in. -->
 				<Alert tone="warn" title="Could not load the tenants">
-					You cannot choose a tenant for this account, and an install with several tenants refuses an account without one. Reload the page to try again.
+					You cannot choose a tenant for this account. On an engine with several tenants, each account needs one. Reload the page to try again.
 				</Alert>
 			{:else if tenants.length > 1}
 				<input type="hidden" name="tenant_required" value="1" />
@@ -435,7 +435,7 @@
 			id="set-pw-remove-passkeys"
 			name="remove_passkeys"
 			label="Remove this account's passkeys"
-			description="Recommended. The owner can add their passkeys again after signing in."
+			description="Recommended. They can add their passkeys again after signing in."
 			bind:checked={removePasskeys}
 		/>
 	</form>

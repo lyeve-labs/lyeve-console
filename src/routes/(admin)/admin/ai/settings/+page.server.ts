@@ -82,7 +82,7 @@ export const actions: Actions = {
 		await requireRole(event, ['super_admin']);
 		const data = await event.request.formData();
 		const key = String(data.get('key') ?? '').trim();
-		if (!INSTANCE_KEYS.includes(key)) return fail(400, { scope: 'config', key, error: 'This page cannot change that setting.' });
+		if (!INSTANCE_KEYS.includes(key)) return fail(400, { scope: 'config', key, error: 'This form is missing its setting. Reload the page and try again.' });
 		const value = String(data.get('value') ?? '').trim();
 		if (key === 'ai_transcript_retention' && !/^\d+(?:\.\d+)?(?:h|m|s)$/.test(value)) {
 			return fail(400, { scope: 'config', key, error: 'Enter a duration in hours, minutes or seconds, such as 720h. The minimum is 1h.' });

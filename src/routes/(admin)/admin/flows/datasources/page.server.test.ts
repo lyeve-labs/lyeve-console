@@ -46,7 +46,7 @@ function loadEvent(routes: Record<string, Route>) {
 
 function actionEvent(form: FormData, routes: Record<string, Route>) {
 	const { fetch, calls } = fetchFor(routes);
-	return { calls, event: { fetch, cookies: mockCookies(), request: { formData: async () => form }, url: new URL('http://localhost/admin/flows/datasources'), params: {} } as never };
+	return { calls, event: { fetch, cookies: mockCookies(), request: { formData: async () => form, clone: () => ({ formData: async () => form }) }, url: new URL('http://localhost/admin/flows/datasources'), params: {} } as never };
 }
 
 const body = (calls: { url: string; init?: RequestInit }[], method: string) =>
@@ -132,7 +132,7 @@ describe('admin/flows/datasources actions', () => {
 		const result = (await actions.create(event)) as { status: number; data: { error: string; refused: boolean } };
 		expect(result.status).toBe(402);
 		expect(result.data.refused).toBe(true);
-		expect(result.data.error).toBe('Datasources are not enabled on this instance.');
+		expect(result.data.error).toBe('Datasources are not enabled on this engine.');
 		expect(result.data.error).not.toContain('example-capability');
 	});
 
@@ -351,7 +351,7 @@ describe('admin/flows/datasources actions', () => {
 
 	it('refuses a scheme missing what it cannot work without, before the engine sees it', async () => {
 		for (const [auth, message] of [
-			[{ auth_type: 'basic', auth_password: 'pw' }, 'needs a user'],
+			[{ auth_type: 'basic', auth_password: 'pw' }, 'Enter a user'],
 			[{ auth_type: 'oauth2_client_credentials', auth_client_id: 'cid' }, 'token URL'],
 			[{ auth_type: 'digest' }, 'authentication type'],
 		] as const) {
@@ -391,7 +391,7 @@ describe('admin/flows/datasources actions', () => {
 		form.set('name', 'x');
 		form.set('kind', 'http');
 		form.set('base_url', 'https://x');
-		const { event } = actionEvent(form, { '/datasources': () => json({ error: 'name already exists' }, 409) });
+		const { event } = actionEvent(form, { '/datasources': () => json({ error: 'name already exists', code: 'conflict' }, 409) });
 		const result = (await actions.create(event)) as { status: number; data: { error: string } };
 		expect(result.data.error).toBe('name already exists');
 	});
@@ -406,6 +406,7 @@ describe('admin/flows/datasources actions', () => {
 
 	it('delete removes by id', async () => {
 		const form = new FormData();
+		form.set('confirmed', 'yes');
 		form.set('id', 'd1');
 		const { event, calls } = actionEvent(form, { '/datasources/d1': () => new Response(null, { status: 204 }) });
 		await actions.delete(event);

@@ -35,6 +35,8 @@
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
+	import { plural } from '$lib/format';
+	import { tracked } from '$lib/forms.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -59,9 +61,17 @@
 	// Import from URL: a file on another site copied into the library through
 	// the engine, which refuses private addresses and checks it as an upload.
 	let importOpen = $state(false);
-	let importing = $state(false);
 	let importUrl = $state('');
 	let importPublic = $state(false);
+	const importSubmit = tracked(() => async ({ result, update }) => {
+		await update({ reset: false });
+		if (result.type === 'success') {
+			importOpen = false;
+			importUrl = '';
+			importPublic = false;
+			toast.success('File imported.');
+		}
+	});
 	const importError = $derived(form && 'importError' in form ? String(form.importError ?? '') : '');
 	let uploadError = $state('');
 	let picker = $state<HTMLInputElement | undefined>(undefined);
@@ -85,16 +95,13 @@
 	// and a delete or reload that drops the row shuts the drawer.
 	let selectedId = $state<string | null>(null);
 	const selected = $derived(selectedId ? (items.find((it) => it.id === selectedId) ?? null) : null);
-	let deleteId = $state('');
-	let deleting = $state(false);
-	let deleteForm = $state<HTMLFormElement | undefined>(undefined);
 
-	async function requestDelete(item: MediaItem) {
-		deleteId = item.id;
-		// The hidden input takes the id on the next render. Submitting before
-		// that posts the previous one.
+	// The drawer's opener was the deleted file's tile, so focus would fall to
+	// the page body. It goes to the library's own control.
+	async function deleted() {
+		selectedId = null;
 		await tick();
-		deleteForm?.requestSubmit();
+		document.querySelector<HTMLElement>('[data-media-upload]')?.focus();
 	}
 
 	async function handleUpload(e: Event) {
@@ -149,14 +156,14 @@
 		// what makes it visible from page three or from inside a search.
 		if (uploaded > 0) {
 			await goto('/admin/media', { invalidateAll: true });
-			toast.success(`Uploaded ${uploaded} ${uploaded === 1 ? 'file' : 'files'}`);
+			toast.success(`Uploaded ${uploaded} ${plural(uploaded, 'file')}`);
 		}
 	}
 </script>
 
 <PageShell
 	title="Media library"
-	description={data.items.ok ? `${total} ${total === 1 ? 'file' : 'files'}` : undefined}
+	description={data.items.ok ? `${total} ${plural(total, 'file')}` : undefined}
 	width="wide"
 >
 	{#snippet actions()}
@@ -273,19 +280,7 @@
 		action="?/importUrl"
 		id="import-form"
 		class="flex flex-col gap-4"
-		use:enhance={() => {
-			importing = true;
-			return async ({ result, update }) => {
-				importing = false;
-				await update({ reset: false });
-				if (result.type === 'success') {
-					importOpen = false;
-					importUrl = '';
-					importPublic = false;
-					toast.success('File imported.');
-				}
-			};
-		}}
+		use:enhance={importSubmit.enhance}
 	>
 		<FormErrors message={importError || undefined} />
 		<Input id="import-url" name="url" label="Address" type="url" mono required placeholder="https://example.com/logo.png" bind:value={importUrl} />
@@ -294,13 +289,12 @@
 	</form>
 	{#snippet footer()}
 		<Button variant="secondary" onclick={() => (importOpen = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="import-form" disabled={!importUrl.trim()} loading={importing}>Import</Button>
+		<Button variant="primary" type="submit" form="import-form" disabled={!importUrl.trim()} loading={importSubmit.pending}>Import</Button>
 	{/snippet}
 </Drawer>
 
 <MediaPreviewDrawer
 	item={selected}
-	{deleting}
 	aiEnabled={data.aiEnabled}
 	suggestion={form && 'described' in form && form.described && form.described.id === selected?.id ? form.described.text : ''}
 	deleteError={form && 'deleteError' in form && 'deleteId' in form && form.deleteId === selected?.id ? String(form.deleteError ?? '') : ''}
@@ -311,34 +305,5 @@
 	transformError={transformFailure?.error ?? ''}
 	transformRefused={transformFailure?.refused ?? null}
 	onclose={() => (selectedId = null)}
-	ondelete={requestDelete}
+	ondeleted={deleted}
 />
-
-<!-- The drawer asks, the page deletes: the request is a form action, so it
-     works the way every other write in the admin does and the drawer never
-     talks to the API. -->
-<form
-	method="POST"
-	action="?/delete"
-	class="hidden"
-	aria-hidden="true"
-	bind:this={deleteForm}
-	use:enhance={() => {
-		deleting = true;
-		const name = selected?.filename ?? 'file';
-		return async ({ result, update }) => {
-			deleting = false;
-			if (result.type === 'success') selectedId = null;
-			await update();
-			if (result.type === 'success') {
-				toast.success(`Deleted ${name}`);
-				// The drawer's opener was the deleted file's tile, so focus would
-				// fall to the page body. It goes to the library's own control.
-				await tick();
-				document.querySelector<HTMLElement>('[data-media-upload]')?.focus();
-			}
-		};
-	}}
->
-	<input type="hidden" name="id" value={deleteId} />
-</form>

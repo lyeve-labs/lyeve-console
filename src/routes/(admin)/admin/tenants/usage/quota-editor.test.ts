@@ -13,8 +13,10 @@ import { actions } from './+page.server';
 
 function event(fields: Record<string, string | string[]>, params: Record<string, string> = {}) {
 	const data = new FormData();
+	data.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) for (const one of Array.isArray(v) ? v : [v]) data.append(k, one);
-	return { params, request: { formData: async () => data } } as never;
+	const url = new URL('http://admin/admin/tenants/usage');
+	return { params, url, request: new Request(url, { method: 'POST', body: data }) } as never;
 }
 
 type Failure = { status: number; data: Record<string, unknown> };

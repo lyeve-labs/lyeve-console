@@ -18,7 +18,9 @@ describe('assistRefusal', () => {
 		expect(assistRefusal(new ApiError(404, 'not found'))).toEqual({ state: 'off' });
 		expect(assistRefusal(new ApiError(503, 'flow validator is not registered', { error: 'flow validator is not registered' }))).toEqual({ state: 'unavailable', message: 'flow validator is not registered' });
 		expect(assistRefusal(new ApiError(503, '', {}))).toEqual({ state: 'unavailable', message: 'The flow validator is not available on this engine.' });
-		expect(assistRefusal(new ApiError(422, 'prompt is too long'))).toEqual({ state: 'error', message: 'prompt is too long' });
+		expect(assistRefusal(new ApiError(422, 'prompt is too long', { error: 'prompt is too long', code: 'http_422' }))).toEqual({ state: 'error', message: 'prompt is too long' });
+		// A 4xx with no code came from something in front of the engine.
+		expect(assistRefusal(new ApiError(413, 'Request Entity Too Large'))).toEqual({ state: 'error', message: 'The assistant did not answer. Try again.' });
 		expect(assistRefusal(new ApiError(500, 'pq: connection refused'))).toEqual({ state: 'error', message: 'The assistant did not answer. Try again.' });
 		expect(assistRefusal(new Error('boom'))).toEqual({ state: 'error', message: 'The assistant did not answer. Try again.' });
 	});

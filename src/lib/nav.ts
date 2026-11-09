@@ -209,13 +209,15 @@ const PAGE_PLUGIN: Readonly<Record<string, PluginName>> = {
 const PRIVACY_PLUGINS: readonly PluginName[] = [PLUGIN.schema, PLUGIN.productAnalytics];
 
 /**
- * Pages that belong to a plugin and have no sidebar row, by path. The account
- * menu and the settings hub link the first two, and a tenant's own pages are
- * linked from its menu.
+ * Pages with no sidebar row, by path, each with its title and the plugin it
+ * belongs to, if any. The account menu and the settings hub link the first
+ * three, and a tenant's own pages are linked from its menu.
  */
-const UNLISTED_PAGES: readonly { href: string; label: string; plugin: PluginName }[] = [
+const UNLISTED_PAGES: readonly { href: string; label: string; plugin?: PluginName }[] = [
+	{ href: '/admin/settings/account', label: 'Account and appearance' },
 	{ href: '/admin/settings/mfa', label: 'Two-factor authentication', plugin: PLUGIN.mfa },
 	{ href: '/admin/settings/devices', label: 'Trusted devices', plugin: PLUGIN.deviceFingerprint },
+	{ href: '/admin/settings/connected-editors', label: 'Builder connections', plugin: PLUGIN.builder },
 	{ href: '/admin/pages', label: 'Pages', plugin: PLUGIN.multitenant },
 ];
 
@@ -303,8 +305,9 @@ export function adminNav(roles: readonly string[], inputs: NavInputs = {}): NavT
 			{ id: 'api-reference', label: 'API reference', href: '/admin/api-reference', icon: BookOpen },
 			// The executing half of the reference. It sits beside it because a
 			// reader who wants to know what an endpoint answers is one row away
-			// from the page that documents it.
-			{ id: 'api-labs', label: 'API labs', href: '/admin/api-labs', icon: FlaskConical },
+			// from the page that documents it. 'prefix', so each lab's tab marks
+			// this row.
+			{ id: 'api-labs', label: 'API labs', href: '/admin/api-labs', icon: FlaskConical, match: 'prefix' },
 		),
 		// The other protocol the instance answers on. It files with delivery
 		// because that is the question it answers: how content gets out.
@@ -316,8 +319,9 @@ export function adminNav(roles: readonly string[], inputs: NavInputs = {}): NavT
 			// The endpoint takes any signed-in caller, but the page reads the
 			// schema by introspection, which the GraphQL plugin answers for an
 			// admin unless the instance opens it to everyone. The persisted
-			// queries beside it are an admin route.
-			{ id: 'graphql', label: 'GraphQL', href: '/admin/settings/graphql', icon: Braces },
+			// queries beside it are an admin route, on a tab of their own, so
+			// the row takes 'prefix'.
+			{ id: 'graphql', label: 'GraphQL', href: '/admin/settings/graphql', icon: Braces, match: 'prefix' },
 			// Releases decide when a set of entries goes out, so they file with
 			// how content leaves rather than with the daily editing above.
 			// 'prefix', so a release's own page marks this row.
@@ -454,6 +458,8 @@ export function adminNav(roles: readonly string[], inputs: NavInputs = {}): NavT
 						label: 'Tenant costs',
 						href: '/admin/tenants/costs',
 						icon: Coins,
+						// 'prefix', so the budgets and prices tabs mark this row.
+						match: 'prefix' as const,
 					},
 			  ]
 			: []),
@@ -492,8 +498,8 @@ export function adminNav(roles: readonly string[], inputs: NavInputs = {}): NavT
 				// caller's tenant's, the way the content they read is.
 				{ id: 'data-export', label: 'Data export', href: '/admin/data-export', icon: Download },
 				// Bulk imports are the other direction and belong beside the
-				// export they mirror.
-				{ id: 'imports', label: 'Imports', href: '/admin/imports', icon: Upload },
+				// export they mirror. 'prefix', so the templates tab marks this row.
+				{ id: 'imports', label: 'Imports', href: '/admin/imports', icon: Upload, match: 'prefix' as const },
 				// The section owns its overview and lists the pages below it, the
 				// way AI does.
 				{
@@ -502,22 +508,25 @@ export function adminNav(roles: readonly string[], inputs: NavInputs = {}): NavT
 					href: '/admin/observability',
 					icon: Activity,
 					match: 'prefix' as const,
+					// Telemetry, the profiler, the cache and request capture each
+					// keep their tabs on routes below their own, so each takes
+					// 'prefix' and a tab marks its row.
 					children: [
-						{ id: 'telemetry', label: 'Telemetry', href: '/admin/observability/telemetry', icon: Radio },
+						{ id: 'telemetry', label: 'Telemetry', href: '/admin/observability/telemetry', icon: Radio, match: 'prefix' as const },
 						// Both describe every tenant: the profiler samples every
 						// request, and a captured statement carries a query's text.
 						...(superAdmin
 							? [
-									{ id: 'profiler', label: 'Profiler', href: '/admin/observability/profiler', icon: Flame },
+									{ id: 'profiler', label: 'Profiler', href: '/admin/observability/profiler', icon: Flame, match: 'prefix' as const },
 									{ id: 'slow-queries', label: 'Slow queries', href: '/admin/observability/queries', icon: Timer },
 								]
 							: []),
 						{ id: 'synthetic', label: 'Synthetic monitoring', href: '/admin/observability/synthetic', icon: Radar },
 						{ id: 'errors', label: 'Errors', href: '/admin/observability/errors', icon: Bug },
-						{ id: 'cache', label: 'Cache', href: '/admin/observability/cache', icon: Database },
+						{ id: 'cache', label: 'Cache', href: '/admin/observability/cache', icon: Database, match: 'prefix' as const },
 						// The tenant's own captured requests, their rules and
 						// the sets replayed together.
-						{ id: 'captures', label: 'Request capture', href: '/admin/observability/captures', icon: History },
+						{ id: 'captures', label: 'Request capture', href: '/admin/observability/captures', icon: History, match: 'prefix' as const },
 						{ id: 'idempotency', label: 'Idempotency', href: '/admin/observability/idempotency', icon: KeyRound },
 					],
 				},
@@ -547,7 +556,7 @@ export function adminNav(roles: readonly string[], inputs: NavInputs = {}): NavT
 		// maturity the tree is not making.
 	};
 	// The widget this tenant's own pages render. The admin login is not on
-	// it: the console always challenges with the install's own settings.
+	// it: the console always challenges with the instance's own settings.
 	const captcha: NavNode = {
 		id: 'captcha',
 		label: 'Captcha',
@@ -569,6 +578,8 @@ export function adminNav(roles: readonly string[], inputs: NavInputs = {}): NavT
 		label: 'Rate limits',
 		href: '/admin/settings/rate-limits/tenant',
 		icon: Gauge,
+		// 'prefix', so the refusal history tab marks this row.
+		match: 'prefix',
 	};
 	// Which content types keep versions and for how long. The content plugin
 	// serves the settings to an admin and a super admin.
@@ -656,7 +667,8 @@ export function adminNav(roles: readonly string[], inputs: NavInputs = {}): NavT
 				{ id: 'gdpr', label: 'Privacy requests', href: '/admin/gdpr', icon: Scale },
 				// What is redacted and who read it in the clear. It sits in
 				// Settings beside GDPR because both answer the same auditor.
-				{ id: 'pii', label: 'PII masking', href: '/admin/settings/pii', icon: EyeOff },
+				// 'prefix', so the unmasked reads tab marks this row.
+				{ id: 'pii', label: 'PII masking', href: '/admin/settings/pii', icon: EyeOff, match: 'prefix' },
 				customization,
 				captcha,
 				signIn,
@@ -739,6 +751,12 @@ export function adminTrail(pathname: string, items: NavTree): string[] {
 	};
 	walk(items, []);
 
+	// A page with no row of its own is named by its title, under the row that
+	// encloses it, so the header never stops at Settings on a settings page.
+	const unlisted = UNLISTED_PAGES.find((p) => path === p.href || path.startsWith(p.href + '/'));
+	if (unlisted && (!best || unlisted.href.length > best.length)) {
+		return [...(best?.trail ?? []), unlisted.label].slice(-2);
+	}
 	return best ? best.trail.slice(-2) : [];
 }
 
@@ -747,6 +765,11 @@ export function adminSection(pathname: string, items: NavTree, name = PRODUCT_NA
 	const trail = adminTrail(pathname, items);
 	return trail.length > 0 ? trail.join(' / ') : name;
 }
+
+// Every entry, whoever reads: which plugin draws a page is a fact about the
+// page, and the role gate is the page's own. The tree takes no input past the
+// role, so it is built once, on first use, rather than on every navigation.
+let everyEntry: NavTree | undefined;
 
 /** The entry that owns a page: the longest href at or above the path, by prefix. */
 function owner(pathname: string): { href: string; label: string; plugin: PluginName | undefined } | undefined {
@@ -762,9 +785,7 @@ function owner(pathname: string): { href: string; label: string; plugin: PluginN
 			if (node.children) walk(node.children);
 		}
 	};
-	// Every entry, whoever reads: which plugin draws a page is a fact about
-	// the page, and the role gate is the page's own.
-	walk(adminNav(['super_admin']));
+	walk(everyEntry ??= adminNav(['super_admin']));
 	for (const page of UNLISTED_PAGES) consider(page.href, page.label, page.plugin);
 	return best;
 }
@@ -805,17 +826,7 @@ export interface NavCustomization {
 export function customizeNav(tree: NavTree, custom: NavCustomization | null | undefined, roles: readonly string[]): NavTree {
 	if (!custom) return tree;
 	const hidden = new Set(custom.hidden);
-	const drop = (nodes: NavTree): NavTree => {
-		const kept: NavNode[] = [];
-		for (const node of nodes) {
-			if (hidden.has(node.id)) continue;
-			const children = node.children ? drop(node.children) : undefined;
-			if (node.href === undefined && children !== undefined && children.length === 0) continue;
-			kept.push(children === undefined ? node : { ...node, children });
-		}
-		return kept;
-	};
-	const shaped = drop(tree);
+	const shaped = prune(tree, (id) => !hidden.has(id));
 
 	const byId = new Map<string, NavNode>();
 	const index = (nodes: NavTree) => {

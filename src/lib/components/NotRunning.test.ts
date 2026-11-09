@@ -25,13 +25,13 @@ describe('NotRunning', () => {
 	it('says a withheld page was withheld from this tenant, to every reader', () => {
 		const { container, getByTestId } = mount({ state: 'withheld' }, false);
 		expect(getByTestId('not-running').dataset.state).toBe('withheld');
-		expect(said(container)).toContain('Withheld from this tenant');
-		expect(said(container)).toContain('turned off Search for this tenant');
+		expect(said(container)).toContain('Turned off for this tenant');
+		expect(said(container)).toContain('Search is turned off for this tenant');
 	});
 
 	it('shows the error of a plugin that failed to start, with the way to its details', () => {
 		const { container, getByRole } = mount({ state: 'failed', error: 'index missing' });
-		expect(said(container)).toContain('Failed to start');
+		expect(said(container)).toContain('Stopped at startup');
 		expect(said(container)).toContain('index missing');
 		expect(getByRole('link', { name: 'Plugin details' }).getAttribute('href')).toBe('/admin/plugins/search');
 	});
@@ -46,7 +46,7 @@ describe('NotRunning', () => {
 		const failed = render(NotRunning, {
 			props: { title: 'Search', plugin: 'search', reason: { state: 'failed', error: 'boom' }, level: 2 },
 		});
-		expect(failed.getByRole('heading', { name: 'Failed to start', level: 2 })).toBeTruthy();
+		expect(failed.getByRole('heading', { name: 'Stopped at startup', level: 2 })).toBeTruthy();
 		cleanup();
 		const locked = render(NotRunning, {
 			props: { title: 'Search', plugin: 'search', reason: { state: 'not-enabled', upgradeUrl: '' }, level: 2 },
@@ -103,12 +103,12 @@ describe('NotRunning', () => {
 		}
 		expect(text).toMatchInlineSnapshot(`
 			{
-			  "failed": "Failed to start The search plugin stopped with an error at startup. Plugin details",
+			  "failed": "Stopped at startup The search plugin stopped with an error at startup. Plugin details",
 			  "not-built": "Not part of this build The search plugin is not included in this build.",
-			  "not-enabled": "Search Not enabled on this instance.",
+			  "not-enabled": "Search Not enabled on this engine.",
 			  "not-started": "Not started The search plugin is included in this build but did not start. Plugin details",
-			  "unexplained": "Not running The plugin behind this page is not running. No reason was given. Plugin details",
-			  "withheld": "Withheld from this tenant An administrator turned off Search for this tenant. Ask them to turn it back on.",
+			  "unexplained": "Not running The plugin behind this page is not running. Plugin details",
+			  "withheld": "Turned off for this tenant Search is turned off for this tenant. Ask a super admin to turn it back on.",
 			}
 		`);
 	});

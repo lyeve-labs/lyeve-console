@@ -1,37 +1,14 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { errorCodeOf } from '$lib/api/limits';
 import { authedClient, requireRole } from '$lib/server/authz';
 import { sessionTenant } from '$lib/server/session-refresh';
 import { actionFailure } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
-import {
-	CAPTURE_OK,
-	CONFIRM_WRITES,
-	MAX_RETENTION_SECONDS,
-	MAX_SET_CAPTURES,
-	MIN_RETENTION_SECONDS,
-	RULE_METHODS,
-	captureGate,
-	capturePatternIsSound,
-	createCaptureRule,
-	createReplaySet,
-	deleteCaptureRule,
-	deleteReplaySet,
-	listCaptureRules,
-	listCaptures,
-	listReplaySets,
-	replaySet,
-	updateCaptureRule,
-	type Capture,
-	type CaptureGate,
-	type CaptureRule,
-	type ReplaySet,
-	type RuleMethod,
-} from '$lib/api/request-capture';
+import { MAX_SET_CAPTURES, createReplaySet, listCaptures, type Capture } from '$lib/api/request-capture';
+import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
 import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { gateOf, type Gate } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -52,22 +29,16 @@ export const load: PageServerLoad = async (event) => {
 		limit,
 		offset,
 		hasMore: false,
-		rules: [] as CaptureRule[],
-		rulesRead: false,
-		rulesGate: null as Gate | null,
-		sets: [] as ReplaySet[],
-		setsRead: false,
-		setsGate: null as Gate | null,
 		licensed: null as boolean | null,
 	};
 
 	// The shell says why the page is unavailable while its plugin does not run.
 	if (notRunning(plugins, PLUGIN.requestCapture)) {
-		return { ...empty, gate: { state: 'absent' } as CaptureGate };
+		return { ...empty, gate: { state: 'absent' } as Gate };
 	}
 
 	const client = authedClient(event);
-	let gate: CaptureGate = CAPTURE_OK;
+	let gate: Gate = GATE_OK;
 	let licensed: boolean | null = null;
 	let page = { rows: [] as Capture[], total: null as number | null, hasMore: false };
 	try {
@@ -76,32 +47,11 @@ export const load: PageServerLoad = async (event) => {
 		page = { rows: p.rows, total: p.total, hasMore: p.hasMore };
 		if (typeof read?.licensed === 'boolean') licensed = read.licensed;
 	} catch (err) {
-		gate = captureGate(err);
+		gate = gateOf(err, couldNotLoad('captures'));
 	}
 	if (gate.state !== 'ok') return { ...empty, gate };
 	const back = pastEndOffset(page.rows.length, limit, offset, page.total);
 	if (back !== null) redirect(307, withOffset(event.url, back));
-
-	// The rules and the sets are their own reads. Losing one says so in its
-	// section and never reads as having none.
-	const [rules, sets] = await Promise.all([
-		listCaptureRules(client)
-			.then((r) => ({ rows: r?.data ?? [], read: true, licensed: r?.licensed, gate: null }))
-			.catch((err: unknown) => ({
-				rows: [] as CaptureRule[],
-				read: false,
-				licensed: undefined,
-				gate: gateOf(err, 'Could not load capture rules.'),
-			})),
-		listReplaySets(client)
-			.then((r) => ({ rows: r?.data ?? [], read: true, gate: null }))
-			.catch((err: unknown) => ({
-				rows: [] as ReplaySet[],
-				read: false,
-				gate: gateOf(err, 'Could not load replay sets.'),
-			})),
-	]);
-	if (licensed === null && typeof rules.licensed === 'boolean') licensed = rules.licensed;
 
 	return {
 		superAdmin,
@@ -111,95 +61,13 @@ export const load: PageServerLoad = async (event) => {
 		limit,
 		offset,
 		hasMore: page.hasMore,
-		rules: rules.rows,
-		rulesRead: rules.read,
-		rulesGate: rules.gate as Gate | null,
-		sets: sets.rows,
-		setsRead: sets.read,
-		setsGate: sets.gate as Gate | null,
 		licensed,
 		gate,
 	};
 };
 
-function method(raw: FormDataEntryValue | null): RuleMethod | null {
-	const m = String(raw ?? '*').toUpperCase();
-	return (RULE_METHODS as readonly string[]).includes(m) ? (m as RuleMethod) : null;
-}
-
-/**
- * Saves a rule from its drawer, or switches one off from its row. A failure
- * names the drawer it came from, and a row's names none, so the page says it.
- */
-async function saveRule(event: Parameters<Actions[string]>[0], id: string | null, drawer: 'rule' | null = 'rule') {
-	await requireRole(event, ['admin', 'super_admin']);
-	const client = authedClient(event);
-	const form = await event.request.formData();
-
-	const pattern = String(form.get('route_pattern') ?? '').trim();
-	if (!capturePatternIsSound(pattern)) {
-		return fail(400, {
-			error: 'Enter an absolute path, such as /api/v1/orders/{id} or /api/v1/**. A segment can be * or a {name}, and ** can only come last.',
-			drawer,
-		});
-	}
-	const m = method(form.get('method'));
-	if (!m) return fail(400, { error: 'Choose a method, or every method.', drawer });
-	const percent = Number(form.get('sample_percent'));
-	if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
-		return fail(400, { error: 'Enter a sample percentage from 0 to 100.', drawer });
-	}
-	const retention = Math.floor(Number(form.get('retention_seconds')));
-	if (!Number.isFinite(retention) || retention < MIN_RETENTION_SECONDS || retention > MAX_RETENTION_SECONDS) {
-		return fail(400, { error: 'Choose a retention from an hour to 30 days.', drawer });
-	}
-
-	const body = {
-		route_pattern: pattern,
-		method: m,
-		sample_rate: Math.round(percent * 10) / 1000,
-		retention_seconds: retention,
-		enabled: form.get('enabled') === 'true',
-	};
-	try {
-		if (id) await updateCaptureRule(client, id, body);
-		else await createCaptureRule(client, body);
-	} catch (err) {
-		const failed = actionFailure(err, 'Could not save the rule. Try again.');
-		return fail(failed.status, { ...failed.data, drawer });
-	}
-	return { savedRule: pattern };
-}
-
-function idOf(form: FormData): string {
-	return String(form.get('id') ?? '').trim();
-}
-
 export const actions: Actions = {
-	createRule: (event) => saveRule(event, null),
-
-	updateRule: async (event) => {
-		const form = await event.request.clone().formData();
-		// A rule switched off from its row was not saved from the drawer, so
-		// its failure is the page's to report.
-		const fromRow = form.get('from') === 'row';
-		if (!idOf(form)) return fail(400, { error: 'This form is missing its rule. Reload the page and try again.', drawer: fromRow ? null : 'rule' });
-		return saveRule(event, idOf(form), fromRow ? null : 'rule');
-	},
-
-	deleteRule: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const form = await event.request.formData();
-		const id = idOf(form);
-		if (!id) return fail(400, { error: 'This form is missing its rule. Reload the page and try again.' });
-		try {
-			await deleteCaptureRule(authedClient(event), id);
-		} catch (err) {
-			return actionFailure(err, 'Could not delete the rule. Try again.');
-		}
-		return { removedRule: id };
-	},
-
+	// The set is made here because the selection it names lives on this page.
 	createSet: async (event) => {
 		await requireRole(event, ['admin', 'super_admin']);
 		const form = await event.request.formData();
@@ -217,40 +85,5 @@ export const actions: Actions = {
 			return fail(failed.status, { ...failed.data, drawer: 'set' });
 		}
 		return { savedSet: name };
-	},
-
-	deleteSet: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const form = await event.request.formData();
-		const id = idOf(form);
-		if (!id) return fail(400, { error: 'This form is missing its replay set. Reload the page and try again.' });
-		try {
-			await deleteReplaySet(authedClient(event), id);
-		} catch (err) {
-			return actionFailure(err, 'Could not delete the replay set. Try again.');
-		}
-		return { removedSet: id };
-	},
-
-	replaySet: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const form = await event.request.formData();
-		const id = idOf(form);
-		if (!id) return fail(400, { error: 'This form is missing its replay set. Reload the page and try again.' });
-		const writes = form.get('confirm_mutating') === 'true';
-		try {
-			const out = await replaySet(authedClient(event), id, writes);
-			return { replay: out };
-		} catch (err) {
-			// The plugin refuses a set holding a write before any of it runs,
-			// so asking again with the writes confirmed is safe.
-			if (!writes && errorCodeOf(err) === CONFIRM_WRITES) {
-				return fail(428, {
-					error: 'This set includes a request that writes data. Replaying it repeats the write.',
-					needsWrites: id,
-				});
-			}
-			return actionFailure(err, 'Could not replay the set. Try again.');
-		}
 	},
 };

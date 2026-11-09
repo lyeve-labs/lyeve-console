@@ -5,7 +5,11 @@ import type { Cookies, RequestEvent } from '@sveltejs/kit';
 // @ts-expect-error SvelteKit ships this module without type declarations.
 import { get_cookies } from '../../../node_modules/@sveltejs/kit/src/runtime/server/cookie.js';
 import { authedHeaders } from '$lib/server/authz';
-import { refreshSession, needsRefresh, resetSessionRefresh, tradeOnce } from './session-refresh';
+
+type SessionRefresh = typeof import('./session-refresh');
+let refreshSession: SessionRefresh['refreshSession'];
+let needsRefresh: SessionRefresh['needsRefresh'];
+let tradeOnce: SessionRefresh['tradeOnce'];
 
 const NOW = Date.parse('2026-10-14T12:00:00Z');
 
@@ -75,10 +79,12 @@ async function redirectOf(fn: () => Promise<unknown>): Promise<{ status: number;
 	}
 }
 
-beforeEach(() => {
+// The module keeps its trades in memory, so each test loads it afresh.
+beforeEach(async () => {
 	vi.useFakeTimers({ toFake: ['Date'] });
 	vi.setSystemTime(NOW);
-	resetSessionRefresh();
+	vi.resetModules();
+	({ refreshSession, needsRefresh, tradeOnce } = await import('./session-refresh'));
 });
 
 afterEach(() => {

@@ -79,7 +79,6 @@ export const EMPTY_SETTINGS: CustomizationSettings = {
 
 export const NO_CUSTOMIZATION: Customization = { entitled: false, settings: EMPTY_SETTINGS, pages: [] };
 
-const enc = encodeURIComponent;
 
 export async function getCustomization(client: HttpClient): Promise<Customization> {
 	const res = await client.get<Customization>('/api/admin/customization');
@@ -103,15 +102,15 @@ export function saveCustomization(client: HttpClient, settings: CustomizationSet
 }
 
 export function getCustomPage(client: HttpClient, slug: string): Promise<CustomPage> {
-	return client.get<CustomPage>(`/api/admin/customization/pages/${enc(slug)}`);
+	return client.get<CustomPage>(`/api/admin/customization/pages/${encodeURIComponent(slug)}`);
 }
 
 export function saveCustomPage(client: HttpClient, page: CustomPage): Promise<CustomPage> {
-	return client.put<CustomPage>(`/api/admin/customization/pages/${enc(page.slug)}`, page);
+	return client.put<CustomPage>(`/api/admin/customization/pages/${encodeURIComponent(page.slug)}`, page);
 }
 
 export function deleteCustomPage(client: HttpClient, slug: string): Promise<unknown> {
-	return client.delete(`/api/admin/customization/pages/${enc(slug)}`);
+	return client.delete(`/api/admin/customization/pages/${encodeURIComponent(slug)}`);
 }
 
 /**

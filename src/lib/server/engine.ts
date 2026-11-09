@@ -148,7 +148,7 @@ export function consoleSignature(
 /**
  * The signature over the host the browser addressed. This server calls the
  * engine at an internal address, so the engine reads its own name in the
- * Host header and, on an install with several tenants, resolves no tenant
+ * Host header and, on an instance with several tenants, resolves no tenant
  * for a page nobody has signed in to yet. The host travels beside the
  * request's signature and is bound to it, so it vouches for this one request
  * and nothing else. An engine that does not check it ignores both headers.
@@ -216,7 +216,7 @@ export function signEngineRequest(
  * sign-in. Behind a proxy the adapter reads it from the header its
  * HOST_HEADER names. An ORIGIN setting fixes it to one name, so every
  * signed-out page shows the brand and sign-in providers of whichever tenant
- * that name is mapped to, and the stock ones when it maps to none. An install
+ * that name is mapped to, and the stock ones when it maps to none. An instance
  * that serves each tenant its admin on the tenant's own domain leaves ORIGIN
  * unset.
  */
@@ -258,10 +258,3 @@ export function engineFetch(
  * image's health check gives up at five seconds.
  */
 export const ENGINE_READY_TIMEOUT_MS = 3000;
-
-/**
- * How long the engine has to answer the pool health read. Without it a
- * stalled engine holds the request, and the caller waiting on it, open until
- * the socket gives up.
- */
-export const POOL_HEALTH_TIMEOUT_MS = 5000;

@@ -1,3 +1,5 @@
+import { text } from './narrow';
+import { plural } from '../format';
 /**
  * The alert channels every monitoring plugin offers, in the one shape they
  * all answer and accept: email recipients, a Slack and a Discord URL, a
@@ -8,7 +10,7 @@
  * was read and sends it back unchanged, and the plugin reads a masked value as
  * "keep the one stored". Clearing a field removes that channel.
  *
- * Email works on every install. A plugin may refuse a new or changed chat,
+ * Email works on every instance. A plugin may refuse a new or changed chat,
  * webhook or PagerDuty channel with 402, and some plugins say beforehand
  * whether they would, through `licensed` on their own read.
  */
@@ -38,10 +40,6 @@ export function parseEmails(raw: string): string[] {
 		.split(/[\n,]/)
 		.map((e) => e.trim())
 		.filter(Boolean);
-}
-
-function text(v: unknown): string {
-	return typeof v === 'string' ? v.trim() : '';
 }
 
 /** A channels object as a plugin answered it, with every member typed. */
@@ -78,7 +76,7 @@ export function channelSummary(c: AlertChannels | null | undefined): string {
 	if (!c || !hasChannels(c)) return 'No channels';
 	const parts: string[] = [];
 	const n = c.email?.length ?? 0;
-	if (n) parts.push(n === 1 ? '1 email' : `${n} emails`);
+	if (n) parts.push(`${n} ${plural(n, 'email')}`);
 	if (c.slack_url) parts.push('Slack');
 	if (c.discord_url) parts.push('Discord');
 	if (c.webhook_url) parts.push('Webhook');

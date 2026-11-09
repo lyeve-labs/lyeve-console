@@ -189,3 +189,46 @@ export function withOffset(url: URL, offset: number): string {
 	next.searchParams.set('offset', String(offset));
 	return `${next.pathname}${next.search}`;
 }
+
+/**
+ * A query string from named parameters, in the order given, with a leading
+ * `?`. An undefined or empty value is left out, and no parameter at all is an
+ * empty string, so a caller appends it to a path unconditionally.
+ */
+export function query(params: Record<string, string | number | undefined>): string {
+	const qs = new URLSearchParams();
+	for (const [k, v] of Object.entries(params)) {
+		if (v !== undefined && v !== '') qs.set(k, String(v));
+	}
+	const s = qs.toString();
+	return s ? `?${s}` : '';
+}
+
+/** One page as a walk reads it: its rows, and the count the endpoint states or null. */
+export interface ReadPage<T> {
+	rows: T[];
+	total: number | null;
+}
+
+/**
+ * Every row of a paged list, a page at a time. The walk ends at a short page,
+ * at the stated total, once `enough` holds, or before a page that would start
+ * at `cap` rows. An endpoint that never sends a short page or a total needs a
+ * finite `cap`, or the walk does not end.
+ */
+export async function readAll<T>(
+	read: (limit: number, offset: number) => Promise<ReadPage<T>>,
+	pageSize: number,
+	cap = Infinity,
+	enough: (rows: readonly T[]) => boolean = () => false
+): Promise<ReadPage<T>> {
+	const rows: T[] = [];
+	let total: number | null = null;
+	for (let offset = 0; offset < cap; offset += pageSize) {
+		const page = await read(pageSize, offset);
+		rows.push(...page.rows);
+		total = page.total;
+		if (page.rows.length < pageSize || (total !== null && rows.length >= total) || enough(rows)) break;
+	}
+	return { rows, total };
+}

@@ -11,12 +11,10 @@
  * Every replay is asked for with a dry run first because the plugin offers
  * one, and because a replay that fans out cannot be taken back.
  */
-import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 
-export const EVENTS_URL = '/api/admin/events';
-export const REPLAY_URL = '/api/admin/events/replay';
+const EVENTS_URL = '/api/admin/events';
+const REPLAY_URL = '/api/admin/events/replay';
 
 /** One published event as GET /api/admin/events lists it. */
 export interface EventRow {
@@ -55,15 +53,6 @@ interface Page<T> {
 	total_count?: number;
 }
 
-export type EventsGate = Gate;
-
-export const EVENTS_OK: EventsGate = GATE_OK;
-
-/** What a refused event log read means, read the way every plugin's is. */
-export function eventsGate(err: unknown): EventsGate {
-	return gateOf(err, 'Could not load the event log.');
-}
-
 export async function listEvents(
 	client: HttpClient,
 	limit: number,
@@ -93,14 +82,6 @@ export async function startReplay(
 	body: ReplayRequest,
 ): Promise<ReplayRun> {
 	return client.post<ReplayRun>(REPLAY_URL, body);
-}
-
-/** The tone a run's status wears, in the kit's own vocabulary. */
-export function runTone(status: ReplayStatus): StatusTone {
-	if (status === 'completed') return 'success';
-	if (status === 'failed') return 'danger';
-	if (status === 'running') return 'warn';
-	return 'neutral';
 }
 
 /**

@@ -30,7 +30,7 @@ describe('ContentForm', () => {
 		const { getByText } = render(ContentForm, {
 			props: { fields: [], formValues },
 		});
-		expect(getByText('This schema has no editable fields.')).toBeTruthy();
+		expect(getByText('This content type has no editable fields.')).toBeTruthy();
 	});
 
 	it('renders a labeled input for each field seeded from formValues', () => {

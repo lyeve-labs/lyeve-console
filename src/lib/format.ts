@@ -67,6 +67,14 @@ export function hasTrace(traceId: string | null | undefined): boolean {
 	return id.length > 0 && !/^0+$/.test(id);
 }
 
+/**
+ * The word for a count: `entry` for one and `entries` for any other number,
+ * zero included. `many` is needed only where adding an s is wrong.
+ */
+export function plural(count: number, one: string, many = `${one}s`): string {
+	return count === 1 ? one : many;
+}
+
 /** Placeholder for a value the engine did not send. */
 export const NO_VALUE = '-';
 
@@ -152,8 +160,13 @@ export function formatCount(value: number | null | undefined, fallback: string =
 	return COUNT_FORMAT.format(Math.round(value));
 }
 
-/** A fraction as a percentage to one decimal place: `0.0123` reads `1.2%`. */
-export function formatPercent(fraction: number): string {
+/**
+ * A fraction as a percentage to one decimal place: `0.0123` reads `1.2%`.
+ * One decimal, because a rate quoted to four looks measured to a precision
+ * the sample does not support.
+ */
+export function formatPercent(fraction: number | null | undefined, fallback: string = NO_VALUE): string {
+	if (typeof fraction !== 'number' || !Number.isFinite(fraction)) return fallback;
 	return `${(fraction * 100).toFixed(1)}%`;
 }
 
@@ -184,6 +197,16 @@ export function formatBytes(size: number | null | undefined, largest: ByteUnit =
 }
 
 /**
+ * A byte count that can be negative, such as a heap slope: `-512 B`, `2.0 KB`.
+ * `formatBytes` reads a negative number as nothing, which is right for a size
+ * and wrong for a change.
+ */
+export function formatSignedBytes(size: number | null | undefined, fallback: string = NO_VALUE): string {
+	if (typeof size !== 'number' || !Number.isFinite(size)) return fallback;
+	return size < 0 ? `-${formatBytes(-size)}` : formatBytes(size);
+}
+
+/**
  * Two registers, and which one a surface uses is a decision, not a habit.
  *
  * `formatDateTime` states the instant, and it is what a record, a log line or
@@ -195,8 +218,8 @@ export function formatBytes(size: number | null | undefined, largest: ByteUnit =
  * Both live here for every section, so the same fact is written one way
  * everywhere, and a hover never falls back to a raw ISO string.
  */
-function plural(n: number, unit: string): string {
-	return `${n} ${unit}${n === 1 ? '' : 's'} ago`;
+function ago(n: number, unit: string): string {
+	return `${n} ${plural(n, unit)} ago`;
 }
 
 /** `3 minutes ago`, `just now`, or an empty string for no timestamp. */
@@ -206,27 +229,35 @@ export function relativeTime(value: string | null | undefined, now: Date = new D
 	if (Number.isNaN(at.getTime())) return '';
 	const seconds = Math.max(0, (now.getTime() - at.getTime()) / 1000);
 	if (seconds < 5) return 'just now';
-	if (seconds < 60) return plural(Math.floor(seconds), 'second');
+	if (seconds < 60) return ago(Math.floor(seconds), 'second');
 	const minutes = seconds / 60;
-	if (minutes < 60) return plural(Math.floor(minutes), 'minute');
+	if (minutes < 60) return ago(Math.floor(minutes), 'minute');
 	const hours = minutes / 60;
-	if (hours < 24) return plural(Math.floor(hours), 'hour');
+	if (hours < 24) return ago(Math.floor(hours), 'hour');
 	const days = hours / 24;
-	if (days < 7) return plural(Math.floor(days), 'day');
-	if (days < 30) return plural(Math.floor(days / 7), 'week');
-	if (days < 365) return plural(Math.floor(days / 30), 'month');
-	return plural(Math.floor(days / 365), 'year');
+	if (days < 7) return ago(Math.floor(days), 'day');
+	if (days < 30) return ago(Math.floor(days / 7), 'week');
+	if (days < 365) return ago(Math.floor(days / 30), 'month');
+	return ago(Math.floor(days / 365), 'year');
 }
 
 /**
- * A measured response time at the precision it was measured: `342 ms`, and
- * `1.50 s` from a second up, with two decimals because a reader compares it
- * against a threshold.
+ * A measured time in milliseconds at the precision it was measured: `400 µs`,
+ * `1.5 ms`, `342 ms`, `1.50 s` and `2m 05s`. Below ten milliseconds and in
+ * seconds a decimal carries a difference a reader compares against a
+ * threshold, and past that it is noise. Each unit is chosen by the value as it
+ * prints, so a time that rounds up to the next unit shows in that unit rather
+ * than as `1000 ms` or `60.00 s`.
  */
 export function formatMillis(ms: number | null | undefined, fallback: string = NO_VALUE): string {
 	if (typeof ms !== 'number' || !Number.isFinite(ms)) return fallback;
-	if (ms >= 1000) return `${(ms / 1000).toFixed(2)} s`;
-	return `${Math.round(ms)} ms`;
+	if (ms > 0 && Math.round(ms * 1e6) < 1000) return `${Math.round(ms * 1e6)} ns`;
+	if (ms > 0 && Math.round(ms * 1000) < 1000) return `${Math.round(ms * 1000)} µs`;
+	if (ms > 0 && Number(ms.toFixed(1)) < 10) return `${ms.toFixed(1)} ms`;
+	if (Math.round(ms) < 1000) return `${Math.round(ms)} ms`;
+	if (Number((ms / 1000).toFixed(2)) < 60) return `${(ms / 1000).toFixed(2)} s`;
+	const total = Math.round(ms / 1000);
+	return `${Math.floor(total / 60)}m ${String(total % 60).padStart(2, '0')}s`;
 }
 
 const GO_UNIT_MS: Record<string, number> = { h: 3_600_000, m: 60_000, s: 1000, ms: 1, us: 1e-3, 'µs': 1e-3, ns: 1e-6 };

@@ -20,8 +20,10 @@ import {
 	type StepUp,
 } from '$lib/api/admin-tokens';
 import { pageWindow, pastEndOffset, rowsOf, statedTotal, totalOf, withOffset } from '$lib/api/list';
-import { forbiddenText, gateOf, section, type Section } from '$lib/api/gate';
-import { BUSY } from '$lib/outage';
+import { gateOf, section, type Gate, type Section } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
+import { rolesInWords } from '$lib/roles';
+import { asked } from '$lib/server/asked';
 
 /** The engine pages this list at fifty and refuses more than a hundred. */
 const PAGE = 50;
@@ -34,30 +36,23 @@ export interface RequestLog {
 	total: number;
 	limit: number;
 	offset: number;
-	error?: string;
-}
-
-function loadError(err: unknown, what: string): string {
-	const gate = gateOf(err, `Could not load the ${what}. Reload the page to try again.`);
-	if (gate.state === 'unavailable') return `The engine is unavailable, so the ${what} did not load. Try again in a moment.`;
-	if (gate.state === 'busy') return BUSY.body;
-	if (gate.state === 'forbidden') return forbiddenText(`the ${what}`);
-	return `Could not load the ${what}. Reload the page to try again.`;
+	/** Why the log did not load. A 404 reads as absent: the token is gone, or the reader cannot view it. */
+	gate?: Gate;
 }
 
 export const load: PageServerLoad = async (event) => {
 	const { url } = event;
 	const user = await loadUser(event);
-	if (!user.roles.some((r) => OWNER_ROLES.includes(r))) error(403, 'Only an admin or a super admin can open this page.');
+	if (!user.roles.some((r) => OWNER_ROLES.includes(r))) error(403, `Only ${rolesInWords(OWNER_ROLES)} can open this page.`);
 	const superAdmin = user.roles.includes('super_admin');
 	const client = authedClient(event);
 	const { limit, offset } = pageWindow(url, PAGE, MAX_PAGE);
 
 	const [list, grants, mfa, tenants] = await Promise.all([
-		section(listAdminTokens(client, limit, offset), 'Could not load the admin tokens.'),
+		section(listAdminTokens(client, limit, offset), couldNotLoad('the admin tokens')),
 		// The grants are the create form's only required choice, so a failed
 		// read is said in the form rather than drawn as a catalog with none.
-		section(listAdminGrants(client), 'Could not load the grants, so you cannot create a token right now. Reload the page to try again.'),
+		section(listAdminGrants(client), 'Could not load the grants, so you cannot create a token. Reload the page to try again.'),
 		// Which step-up the engine will ask for. An unreadable status leaves it
 		// unknown: the form asks for the password, and an engine that wants a
 		// code says so and the form switches.
@@ -68,7 +63,7 @@ export const load: PageServerLoad = async (event) => {
 		superAdmin
 			? section(
 					listTenants(client, 500, 0).then((r) => r.items),
-					'Could not load the tenants.'
+					couldNotLoad('the tenants')
 				)
 			: Promise.resolve<Section<Tenant[]>>({ ok: true, value: [] }),
 	]);
@@ -112,14 +107,13 @@ export const load: PageServerLoad = async (event) => {
 				offset: logOffset,
 			};
 		} else {
-			const err = read.err;
 			log = {
 				token: logToken,
 				rows: [],
 				total: 0,
 				limit: PAGE,
 				offset: logOffset,
-				error: err instanceof ApiError && err.status === 404 ? 'This token does not exist, or you cannot view it.' : loadError(err, 'request log'),
+				gate: gateOf(read.err, couldNotLoad('the request log')),
 			};
 		}
 	}
@@ -219,24 +213,31 @@ export const actions: Actions = {
 		}
 	},
 
-	revoke: async (event) => {
-		await requireRole(event, OWNER_ROLES);
-		const data = await event.request.formData();
-		const id = String(data.get('id') ?? '');
-		try {
-			await revokeAdminToken(authedClient(event), id);
-			return { revoked: true };
-		} catch (err) {
-			const status = err instanceof ApiError ? err.status : 500;
-			const message =
-				status === 409
-					? 'This token was already revoked.'
-					: status === 403
-						? 'Only the owner of a token or a super admin can revoke it.'
-						: status === 503
-							? 'Could not revoke the token. Try again in a moment.'
-							: 'Could not revoke the token. Try again.';
-			return fail(400, { action: 'revoke', error: message, fields: {} });
-		}
-	},
+	revoke: asked(
+		{
+			question: 'Revoke this token?',
+			detail: 'Anything calling the admin API with it is refused from now on. The token stays listed as revoked and cannot be used again.',
+			label: 'Revoke',
+		},
+		async (event) => {
+			await requireRole(event, OWNER_ROLES);
+			const data = await event.request.formData();
+			const id = String(data.get('id') ?? '');
+			try {
+				await revokeAdminToken(authedClient(event), id);
+				return { revoked: true };
+			} catch (err) {
+				const status = err instanceof ApiError ? err.status : 500;
+				const message =
+					status === 409
+						? 'This token was already revoked.'
+						: status === 403
+							? 'Only the owner of a token or a super admin can revoke it.'
+							: status >= 500
+								? 'Check whether the token was revoked, then try again.'
+								: 'Could not revoke the token. Try again.';
+				return fail(400, { action: 'revoke', error: message, fields: {} });
+			}
+		},
+	),
 };

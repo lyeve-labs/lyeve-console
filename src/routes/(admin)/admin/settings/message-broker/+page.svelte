@@ -2,15 +2,13 @@
 	import {
 		Alert,
 		Badge,
-		Button,
 		Card,
 		PageShell,
 		SectionHeading,
 		Stat,
 		Table,
 	} from '@lyeve-labs/ui-kit';
-	import { invalidateAll } from '$app/navigation';
-	import { RefreshCw } from '@lucide/svelte';
+	import RefreshButton from '$lib/components/RefreshButton.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import {
 		BACKEND_SETTINGS,
@@ -23,21 +21,10 @@
 		hasBroker,
 		healthTone,
 	} from '$lib/api/messagebroker';
-	import { NO_VALUE, formatDateTime } from '$lib/format';
+	import { NO_VALUE, formatDateTime, plural } from '$lib/format';
 	import type { PageData } from './$types';
-	import { ICON } from '$lib/icon';
 
 	let { data }: { data: PageData } = $props();
-
-	let refreshing = $state(false);
-	async function refresh() {
-		refreshing = true;
-		try {
-			await invalidateAll();
-		} finally {
-			refreshing = false;
-		}
-	}
 
 	const health = $derived(brokerHealth(data.status));
 	const broker = $derived(hasBroker(data.status));
@@ -55,16 +42,14 @@
 >
 	{#snippet actions()}
 		{#if data.permitted && data.gate.state === 'ok'}
-			<Button variant="secondary" size="sm" onclick={refresh} loading={refreshing}>
-				<RefreshCw size={ICON.sm} /> Refresh
-			</Button>
+			<RefreshButton />
 		{/if}
 	{/snippet}
 
 	{#if !data.permitted}
 		<Alert tone="brand">
-			Only a super admin can view the broker status, because it shows infrastructure outside this
-			instance and covers every tenant.
+			Only a super admin can see the broker status, because it shows infrastructure outside this
+			engine and covers every tenant.
 		</Alert>
 	{:else if data.gate.state !== 'ok'}
 		<GateNotice
@@ -81,7 +66,7 @@
 
 		{#if data.status.degraded}
 			<Alert tone="warn">
-				The message broker plugin is not enabled on this instance, so events are dropped instead of
+				The message broker plugin is not enabled on this engine, so events are dropped instead of
 				published.
 			</Alert>
 		{:else if outbox?.enabled && outbox.available && (outbox.dead > 0 || data.status.failed > 0)}
@@ -90,34 +75,33 @@
 			<Alert tone={outbox.dead > 0 ? 'danger' : 'warn'}>
 				{#if outbox.dead > 0}
 					{outbox.dead}
-					{outbox.dead === 1 ? 'event' : 'events'} failed every retry and never reached the broker.
+					{plural(outbox.dead, 'event')} failed every retry and never reached the broker.
 				{/if}
 				{outbox.pending}
-				{outbox.pending === 1 ? 'event is' : 'events are'} waiting in the outbox.
+				{plural(outbox.pending, 'event is', 'events are')} waiting in the outbox.
 				{#if data.status.failed > 0}
 					The broker refused {data.status.failed} publish
-					{data.status.failed === 1 ? 'attempt' : 'attempts'} since the engine last started. The outbox
+					{plural(data.status.failed, 'attempt')} since the engine last started. The outbox
 					retries a refused event until the broker accepts it or it reaches its retry limit.
 				{/if}
 			</Alert>
 		{:else if outbox?.enabled && !outbox.available && data.status.failed > 0}
 			<Alert tone="warn">
 				The broker refused {data.status.failed} publish
-				{data.status.failed === 1 ? 'attempt' : 'attempts'} since the engine last started. The outbox
-				retries them, but its counts could not be loaded, so it is unknown whether any event was lost.
+				{plural(data.status.failed, 'attempt')} since the engine last started. The outbox
+				retries them. Could not load the outbox counts.
 			</Alert>
 		{:else if data.status.failed > 0}
 			<Alert tone="danger">
 				The broker refused {data.status.failed}
-				{data.status.failed === 1 ? 'event' : 'events'}. Refused events are not retried, but the
-				content changes behind them were all saved. No other screen reports these
-				failures.
+				{plural(data.status.failed, 'event')}. Refused events are not retried, but the content
+				changes behind them were all saved.
 			</Alert>
 		{:else if data.status.dropped > 0 && !data.status.connected}
 			<Alert tone="warn">
 				{data.status.dropped}
-				{data.status.dropped === 1 ? 'event' : 'events'} were dropped because no broker connection
-				was open. Check this instance's broker configuration, not the broker.
+				{plural(data.status.dropped, 'event')} were dropped because no broker connection was open.
+				Check this engine's broker configuration.
 			</Alert>
 		{/if}
 
@@ -155,8 +139,7 @@
 			{/if}
 		</div>
 		<p class="text-xs text-muted">
-			Counted since the engine last started. A restart resets them to zero, so a low number does
-			not mean a quiet week.
+			Counted since the engine last started. A restart resets them to zero.
 			{#if !broker}
 				With no broker set, Published counts events that were discarded.
 			{:else if rate !== null}
@@ -224,7 +207,7 @@
 						<td class="text-xs text-faint">
 							{broker && data.status.last_publish_at
 								? formatDateTime(data.status.last_publish_at)
-								: 'Nothing published yet'}
+								: HEALTH_LABELS.idle}
 						</td>
 					</tr>
 				</tbody>
@@ -239,7 +222,7 @@
 						<div class="flex flex-col gap-2 text-sm text-muted">
 							<SectionHeading level={3}>What is published</SectionHeading>
 							<p>
-								Every content create, update and delete is published as JSON: the event type, schema,
+								Every content create, update and delete is published as JSON: the event type, content type,
 								tenant, the record and an event id to deduplicate on. A broker outage delays events
 								rather than losing them.
 							</p>
@@ -248,7 +231,7 @@
 					</Card>
 					<Card>
 						<div class="flex flex-col gap-2 text-sm text-muted">
-							<SectionHeading level={3}>Send to this instance</SectionHeading>
+							<SectionHeading level={3}>Send to this engine</SectionHeading>
 							<p>
 								A flow whose trigger is <span class="font-medium text-fg">Message received</span> runs once
 								per message under its tenant's namespace. Give it a group and every instance sharing the
@@ -278,7 +261,7 @@
 			<!-- One run of text per sentence end: a line break inside the markup
 			     before a period renders as a space in front of it. -->
 			<p class="text-xs text-muted">
-				The broker is configured by the deployment, through <span class="font-mono">EVENT_BUS</span
+				The broker is configured through <span class="font-mono">EVENT_BUS</span
 				>{#if backendSettings.length}{' '}and {backendSettings.join(', ')}{/if}.
 				{backendSettings.length
 					? 'Set them as environment variables or in the configuration file'

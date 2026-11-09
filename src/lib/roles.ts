@@ -19,6 +19,22 @@ export const ROLES = ['viewer', 'editor', 'admin', 'super_admin'] as const;
 
 export type Role = (typeof ROLES)[number];
 
+/** A role as a sentence names it: "a super admin", "an editor". */
+function roleInWords(role: string): string {
+	const name = role.replaceAll('_', ' ');
+	return `${/^[aeiou]/.test(name) ? 'an' : 'a'} ${name}`;
+}
+
+/**
+ * The roles a check admits, as a refusal names them, least privileged first:
+ * "an admin or a super admin". A role outside the four goes last.
+ */
+export function rolesInWords(roles: readonly string[]): string {
+	const rank = (r: string) => ((ROLES as readonly string[]).includes(r) ? ROLES.indexOf(r as Role) : ROLES.length);
+	const named = [...roles].sort((a, b) => rank(a) - rank(b)).map(roleInWords);
+	return named.length < 2 ? (named[0] ?? '') : `${named.slice(0, -1).join(', ')} or ${named[named.length - 1]}`;
+}
+
 /** The same four as picker options. The value is the role the engine stores. */
 export const ROLE_OPTIONS: { value: string; label: string }[] = ROLES.map((role) => ({
 	value: role,

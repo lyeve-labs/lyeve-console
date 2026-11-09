@@ -48,6 +48,7 @@ function write(fields: Record<string, string>, opts: { roles?: string[]; reply?:
 		return opts.reply?.clone() ?? json({});
 	});
 	const form = new FormData();
+	form.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) form.set(k, v);
 	const url = new URL('http://admin/admin/settings/oauth');
 	return { calls, event: { fetch, cookies, url, request: new Request(url, { method: 'POST', body: form }) } as never };
@@ -104,7 +105,7 @@ describe('OAuth provider writes', () => {
 	});
 
 	it.each(['create', 'update', 'delete'] as const)('relays the engine refusal on %s under its action', async (name) => {
-		const { event } = write(PROVIDER, { reply: json({ error: 'issuer_url must use https' }, 422) });
+		const { event } = write(PROVIDER, { reply: json({ error: 'issuer_url must use https', code: 'http_422' }, 422) });
 		const out = (await actions[name](event)) as Failure;
 		expect(out.data).toEqual({ action: name, error: 'issuer_url must use https' });
 	});

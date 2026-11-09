@@ -1,11 +1,10 @@
 <script lang="ts">
 	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { LICENSE_PAGE, formRefusal } from '$lib/api/refusal';
-	import { Alert, Badge, Button, Drawer, EmptyState, Input, PageShell, Select, Table, Textarea, Toggle, confirm } from '@lyeve-labs/ui-kit';
+	import { formRefusal } from '$lib/api/refusal';
+	import { Alert, Badge, Button, Drawer, EmptyState, Input, PageShell, Select, Table, Textarea, Toggle } from '@lyeve-labs/ui-kit';
 	import { MailPlus, Pencil, Plus, Trash2 } from '@lucide/svelte';
 	import { enhance } from '$app/forms';
-	import { tick } from 'svelte';
-	import { submitter } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, submitter } from '$lib/forms.svelte';
 	import type { ActionData, PageData } from './$types';
 	import { TRIGGER_EVENT_LABELS, type EmailTrigger } from '$lib/api/email-triggers';
 	import GateNotice from '$lib/components/GateNotice.svelte';
@@ -19,10 +18,9 @@
 	 * only one that came back after it opened, so a failed delete never reads
 	 * as a failure of the next form opened. A failed delete shows above the list.
 	 */
-	const failure = $derived(form as { action?: string; error?: string } | null);
-	let openedOver = $state.raw<unknown>(null);
-	const saveFailure = $derived(failure?.action === 'save' && form !== openedOver ? failure : null);
-	const deleteFailure = $derived(failure?.action === 'delete' ? failure : null);
+	const failure = drawerFailure(() => form as { action?: string; error?: string } | null, ['save']);
+	const saveFailure = $derived(failure.drawer);
+	const deleteFailure = $derived(failure.page?.action === 'delete' ? failure.page : null);
 	const pageRefusal = $derived(deleteFailure ? formRefusal(deleteFailure) : null);
 	const saveRefusal = $derived(saveFailure ? formRefusal(saveFailure) : null);
 
@@ -39,7 +37,7 @@
 		const names = [...schemaNames];
 		const current = editing?.schema;
 		if (current && current !== '*' && !names.includes(current)) names.push(current);
-		return [{ value: '*', label: 'Every schema' }, ...names.map((s) => ({ value: s, label: s }))];
+		return [{ value: '*', label: 'Every content type' }, ...names.map((s) => ({ value: s, label: s }))];
 	});
 	// A draft or archived template is refused at send time, so the list offers
 	// the active ones and says so when there are none. A list that did not
@@ -81,7 +79,7 @@
 		toField = 'email';
 		locale = '';
 		enabled = true;
-		openedOver = form;
+		failure.opened();
 		open = true;
 	}
 
@@ -95,19 +93,12 @@
 		toField = t.to_field;
 		locale = t.locale;
 		enabled = t.enabled;
-		openedOver = form;
+		failure.opened();
 		open = true;
 	}
 
-	let deleteId = $state('');
-	let deleteForm = $state<HTMLFormElement>();
-
-	async function askDelete(t: EmailTrigger) {
-		const ok = await confirm(`Delete trigger ${t.name}`, 'Mail stops going out for this event.', { confirmLabel: 'Delete' });
-		if (!ok) return;
-		deleteId = t.id;
-		await tick();
-		deleteForm?.requestSubmit();
+	function confirmDelete(t: EmailTrigger) {
+		return confirmed(`Delete trigger ${t.name}?`, 'Mail stops going out for this event.', { confirmLabel: 'Delete' });
 	}
 
 	const save = submitter(() => (open = false));
@@ -122,7 +113,7 @@
 <PageShell
 	title="Email triggers"
 	documentTitle="Email triggers - Settings"
-	description="Send a template when a record is written or a review moves, without building a flow. For a condition or a second step, use a flow with the send templated email node."
+	description="Send a template when a record is written or a review moves."
 	width="wide"
 	back={{ href: '/admin/settings/email', label: 'Email' }}
 >
@@ -146,10 +137,7 @@
 
 	{#if data.triggers.ok && writeRefusal}
 		<Alert tone="warn" title="Triggers cannot be created or changed">
-			{#snippet children()}Creating or editing a trigger needs {writeRefusal.kind === 'feature' && writeRefusal.feature
-					? writeRefusal.feature
-					: 'a capability'}, which this instance's license does not include. You can still delete
-				triggers. <a class="text-brand underline" href={LICENSE_PAGE}>View the license</a>.{/snippet}
+			{#snippet children()}Creating or editing a trigger is not enabled on this engine. You can still delete triggers.{/snippet}
 		</Alert>
 	{/if}
 
@@ -187,7 +175,7 @@
 								{#if !t.enabled}<Badge tone="neutral" size="sm">off</Badge>{/if}
 							</span>
 						</td>
-						<td class="text-sm text-muted">{eventLabel(t.event)} in <span class="font-mono text-xs">{t.schema === '*' ? 'every schema' : t.schema}</span></td>
+						<td class="text-sm text-muted">{eventLabel(t.event)} in <span class="font-mono text-xs">{t.schema === '*' ? 'every content type' : t.schema}</span></td>
 						<td data-cell="nowrap" class="font-mono text-xs text-fg">{t.template_key}</td>
 						<td class="text-sm text-muted">{recipients(t)}</td>
 						<td>
@@ -201,9 +189,12 @@
 							>
 									<Pencil size={ICON.sm} />
 								</Button>
-								<Button variant="ghost" size="sm" onclick={() => askDelete(t)} aria-label="Delete {t.name}">
-									<Trash2 size={ICON.sm} class="text-danger" />
-								</Button>
+								<form method="POST" action="?/delete" use:enhance={confirmDelete(t)}>
+									<input type="hidden" name="id" value={t.id} />
+									<Button variant="ghost" size="sm" type="submit" aria-label="Delete {t.name}">
+										<Trash2 size={ICON.sm} class="text-danger" />
+									</Button>
+								</form>
 							</div>
 						</td>
 					</tr>
@@ -229,8 +220,8 @@
 			value={schema}
 			onvaluechange={(v) => (schema = v)}
 			hint={data.schemas.ok
-			? 'The schema whose records the trigger watches. For a review event, choose the schema of the entry under review.'
-			: 'Could not load schemas, so only every schema is listed. Reload the page to try again.'}
+			? 'The content type whose records the trigger watches. For a review event, choose the content type of the entry under review.'
+			: 'Could not load content types, so only every content type is listed. Reload the page to try again.'}
 		/>
 		<Select
 			id="trigger-template"
@@ -270,6 +261,3 @@
 	{/snippet}
 </Drawer>
 
-<form method="POST" action="?/delete" use:enhance bind:this={deleteForm} class="hidden">
-	<input type="hidden" name="id" value={deleteId} />
-</form>

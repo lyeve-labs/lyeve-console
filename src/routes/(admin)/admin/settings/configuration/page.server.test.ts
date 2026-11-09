@@ -214,7 +214,7 @@ describe('configuration save', () => {
 	it('relays a refusal written for the operator', async () => {
 		mockedCreateClient.mockReturnValue({
 			put: vi.fn(async () => {
-				throw new ApiError(400, 'APP_ENV must be one of development, production');
+				throw new ApiError(400, 'APP_ENV must be one of development, production', { error: 'APP_ENV must be one of development, production', code: 'bad_request' });
 			}),
 		} as never);
 

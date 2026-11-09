@@ -7,6 +7,7 @@ import { notRunning } from '$lib/plugins';
 import { getLocales, putLocales, type LocalePreferences } from '$lib/api/localization';
 import { parsePreferences } from '$lib/localization/preferences';
 import { section, type Section } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();
@@ -17,7 +18,7 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		locales: await section(
 			getLocales(authedClient(event)),
-			'Could not load locales.',
+			couldNotLoad('locales'),
 		),
 	};
 };

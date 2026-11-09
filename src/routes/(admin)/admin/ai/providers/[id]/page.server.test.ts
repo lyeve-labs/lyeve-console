@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { actions, load } from './+page.server';
-import { fixtureProvider, fixtureSettings } from '$lib/components/ai/fixtures';
-import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '$lib/components/ai/test-events';
+import { fixtureProvider, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
+import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '$lib/components/ai/test-support/events';
 
 const id = fixtureProvider.id;
 const path = `/admin/ai/providers/${id}`;
@@ -18,7 +18,7 @@ describe('admin/ai/providers/[id] load', () => {
 	it('tells a missing row from the tenant switch by what the settings read said', async () => {
 		const routes = { [`/api/admin/ai/providers/${id}`]: () => refused(404, 'not found') };
 		const on = loadEvent(routes, { path, params: { id } });
-		await expect(load(on.event)).rejects.toMatchObject({ status: 404 });
+		await expect(load(on.event)).rejects.toMatchObject({ status: 404, body: { message: 'This provider no longer exists.' } });
 		const off = loadEvent(routes, { path, params: { id }, settings: { ...fixtureSettings, enabled: false } });
 		expect(((await load(off.event)) as Loaded).gate).toEqual({ state: 'off' });
 	});
@@ -55,7 +55,7 @@ describe('admin/ai/providers/[id] actions', () => {
 	// is not the tenant missing a provider.
 	it('says the provider did not answer when the model list answers 503', async () => {
 		const { event } = actionEvent({ [`/providers/${id}/models`]: () => refused(503, 'failed to list models') }, new FormData(), { path, params: { id } });
-		expect(await actions.models(event)).toMatchObject({ status: 400, data: { scope: 'models', error: 'Could not load the models from this provider. Try again.' } });
+		expect(await actions.models(event)).toMatchObject({ status: 400, data: { scope: 'models', error: 'Could not load the models from this provider.' } });
 	});
 
 	it('asks capabilities for the model named in the form', async () => {

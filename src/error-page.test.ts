@@ -15,7 +15,7 @@ const page = (() => {
 describe('the last-resort error page', () => {
 	it("is the console's own page, with the status and a way to try again", () => {
 		expect(page).toContain('%sveltekit.status%');
-		expect(page).toContain('Something went wrong');
+		expect(page).toContain('Could not open this page');
 		expect(page).toMatch(/<a [^>]*href=""[^>]*>Try again<\/a>/);
 		expect(page).toMatch(/<a [^>]*href="\/admin"[^>]*>/);
 	});

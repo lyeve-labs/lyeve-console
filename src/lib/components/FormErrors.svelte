@@ -2,6 +2,7 @@
 	import { Alert } from '@lyeve-labs/ui-kit';
 	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
 	import type { Refusal } from '$lib/api/refusal';
+	import { plural } from '$lib/format';
 
 	/**
 	 * The banner an action's failure is announced through.
@@ -33,7 +34,7 @@
 	// here would say everything twice. The summary says how many there are, which
 	// is what a reader at the top of a form cannot otherwise tell.
 	const summary = $derived(
-		count === 0 ? '' : `${count} field${count === 1 ? '' : 's'} need${count === 1 ? 's' : ''} attention.`
+		count === 0 ? '' : `${count} ${plural(count, 'field needs', 'fields need')} attention.`
 	);
 
 	const text = $derived([message, summary].filter(Boolean).join(' '));

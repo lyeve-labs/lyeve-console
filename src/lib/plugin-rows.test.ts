@@ -48,7 +48,7 @@ describe('stateOf', () => {
 		expect(stateOf(status('search', { phase: 'failed', active: false }))).toBe('failed');
 	});
 
-	it('calls a plugin the instance does not enable not enabled', () => {
+	it('calls a plugin the engine does not enable not enabled', () => {
 		expect(stateOf(status('search', { entitled: false, active: false, phase: 'registered' }))).toBe('not-enabled');
 	});
 

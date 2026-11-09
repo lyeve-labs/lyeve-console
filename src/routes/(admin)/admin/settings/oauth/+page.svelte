@@ -19,7 +19,7 @@
 	import type { OAuthProvider } from '@lyeve-labs/client';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { enhance } from '$app/forms';
-	import { confirmed, tracked } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, tracked } from '$lib/forms.svelte';
 	import { KeyRound, Pencil, Plus, Trash2 } from '@lucide/svelte';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
@@ -27,20 +27,10 @@
 	import { ICON } from '$lib/icon';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
-	const refusal = $derived(formRefusal(form));
 
-	/*
-	 * Each failure names the action that caused it. The drawer shows only a
-	 * failed save, and only one that came back after it was opened, so a failed
-	 * delete never reads as a failure of the form opened next. A failed delete
-	 * shows above the list.
-	 */
-	const failure = $derived(form as { error?: string; action?: string } | null);
-	const savedInDrawer = $derived(failure?.action === 'create' || failure?.action === 'update');
-	let openedOver = $state.raw<unknown>(null);
-	const drawerFresh = $derived(savedInDrawer && form !== openedOver);
-	const pageRefusal = $derived(savedInDrawer ? null : refusal);
-	const formError = $derived(savedInDrawer ? '' : (failure?.error ?? ''));
+	// The drawer shows a failed save, and a failed delete shows above the list.
+	type Failure = { error?: string; action?: string } | null;
+	const failure = drawerFailure(() => form as Failure, ['create', 'update']);
 
 	// One drawer for both writes: a null target is a new provider.
 	let open = $state(false);
@@ -69,7 +59,7 @@
 		return confirmed(
 			`Delete provider ${providerLabel(name)}?`,
 			'People who sign in through it can no longer sign in this way.',
-			{ confirmLabel: 'Delete provider', success: `Deleted ${providerLabel(name)}` },
+			{ confirmLabel: 'Delete', success: `${providerLabel(name)} deleted.` },
 		);
 	}
 
@@ -92,7 +82,7 @@
 		rolesClaim = 'roles';
 		defaultRoles = 'editor';
 		enabled = false;
-		openedOver = form;
+		failure.opened();
 		open = true;
 	}
 
@@ -106,7 +96,7 @@
 		rolesClaim = p.roles_claim;
 		defaultRoles = p.default_roles.join(', ');
 		enabled = p.enabled;
-		openedOver = form;
+		failure.opened();
 		open = true;
 	}
 
@@ -137,7 +127,7 @@
 		{/if}
 	{/snippet}
 
-	<FormErrors message={formError} refused={pageRefusal} />
+	<FormErrors message={failure.page?.error ?? ''} refused={formRefusal(failure.page)} />
 
 	{#if data.providers.ok}
 		<div class="grid gap-4 sm:grid-cols-3">
@@ -153,7 +143,7 @@
 		{:else if providers.length === 0}
 			<EmptyState
 				title="No OAuth providers yet"
-				description="Add an OpenID Connect provider to offer single sign-on on the login page."
+				description="Add an OpenID Connect provider to offer single sign-on on the sign-in page."
 			>
 				{#snippet iconSnippet()}
 					<KeyRound size={ICON.lg} />
@@ -168,7 +158,7 @@
 			<ListToolbar label="Filter providers">
 				{#snippet search()}
 					<label for="oauth-search" class="sr-only">Search providers</label>
-					<SearchInput id="oauth-search" bind:value={narrow} placeholder="Search providers" />
+					<SearchInput id="oauth-search" bind:value={narrow} placeholder="Name, issuer or client ID" />
 				{/snippet}
 			</ListToolbar>
 
@@ -245,7 +235,7 @@
 	>
 		<!-- A refused save keeps the drawer open, so the reason has to be in it
 		     and not behind the panel on the page. -->
-		<FormErrors message={drawerFresh ? failure?.error : undefined} refused={drawerFresh ? refusal : null} />
+		<FormErrors message={failure.drawer?.error} refused={formRefusal(failure.drawer)} />
 		{#if editing}<input type="hidden" name="id" value={editing.id} />{/if}
 		<Input
 			id="provider-name"

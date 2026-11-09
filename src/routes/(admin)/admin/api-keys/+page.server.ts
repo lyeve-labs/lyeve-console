@@ -3,7 +3,7 @@ import { fail, error, redirect } from '@sveltejs/kit';
 import { authedClient, loadUser, requireRole } from '$lib/server/authz';
 import { revokeAPIKey, deleteAPIKey } from '@lyeve-labs/client-rest';
 import type { APIKey } from '@lyeve-labs/client';
-import { actionError, actionFailure } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import {
 	createKey,
 	keyExpiryProblem,
@@ -18,6 +18,9 @@ import { cleanScopes, fetchKeyScopeCatalog } from '$lib/api/key-access';
 import { listSchemaNames } from '$lib/api/search-settings';
 import { pageWindow, pastEndOffset, rowsOf, statedTotal, totalOf, withOffset } from '$lib/api/list';
 import { section, type Section } from '$lib/api/gate';
+import { rolesInWords } from '$lib/roles';
+import { couldNotLoad } from '$lib/outage';
+import { asked } from '$lib/server/asked';
 
 /**
  * A failed write tagged with the action that made it. Every action answers
@@ -40,14 +43,14 @@ export interface UsageSummary {
 export const load: PageServerLoad = async (event) => {
 	const { url } = event;
 	const user = await loadUser(event);
-	if (!user.roles.includes('super_admin')) error(403, 'Only a super admin can open this page.');
+	if (!user.roles.includes('super_admin')) error(403, `Only ${rolesInWords(['super_admin'])} can open this page.`);
 	const client = authedClient(event);
 	// The endpoint pages at fifty, so a read that names no window shows the
 	// first fifty keys as every key the instance has.
 	const { limit, offset } = pageWindow(url, 50, 500);
 	const read = await section(
 		listKeys(client, limit, offset),
-		'Could not load the API keys.'
+		couldNotLoad('the API keys')
 	);
 	const rows = read.ok ? rowsOf(read.value) : [];
 	if (read.ok) {
@@ -72,7 +75,7 @@ export const load: PageServerLoad = async (event) => {
 				rows.map((k) => k.id),
 				month,
 			),
-			'Could not load the usage.',
+			couldNotLoad('the usage'),
 		);
 		if (usage.ok) {
 			for (const u of Array.isArray(usage.value) ? usage.value : []) usageMap[u.api_key_id] = u;
@@ -86,8 +89,8 @@ export const load: PageServerLoad = async (event) => {
 	// route narrows the drawer. A failed read narrows it too, and the drawer
 	// says which part could not be read.
 	const [catalogRead, schemaRead] = await Promise.all([
-		section(fetchKeyScopeCatalog(client), 'Could not load the route catalog.'),
-		section(listSchemaNames(client), 'Could not load the schemas.'),
+		section(fetchKeyScopeCatalog(client), couldNotLoad('the route catalog')),
+		section(listSchemaNames(client), couldNotLoad('the content types')),
 	]);
 	const catalog = catalogRead.ok ? catalogRead.value : null;
 	const schemaNames = schemaRead.ok ? schemaRead.value : [];
@@ -207,29 +210,43 @@ export const actions: Actions = {
 		return { limited: id };
 	},
 
-	revoke: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const { request } = event;
-		const client = authedClient(event);
-		const data = await request.formData();
-		const id = String(data.get('id') ?? '');
-		try {
-			await revokeAPIKey(id, client);
-		} catch (err) {
-			return fail(400, { action: 'revoke', error: actionError(err, 'Could not revoke the API key. Try again.') });
-		}
-	},
+	revoke: asked(
+		{
+			question: 'Revoke this key?',
+			detail: 'Anything that uses this key stops working immediately. The key stays in the list and cannot be used again.',
+			label: 'Revoke',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const { request } = event;
+			const client = authedClient(event);
+			const data = await request.formData();
+			const id = String(data.get('id') ?? '');
+			try {
+				await revokeAPIKey(id, client);
+			} catch (err) {
+				return tagged('revoke', actionFailure(err, 'Could not revoke the API key. Try again.'));
+			}
+		},
+	),
 
-	delete: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const { request } = event;
-		const client = authedClient(event);
-		const data = await request.formData();
-		const id = String(data.get('id') ?? '');
-		try {
-			await deleteAPIKey(id, client);
-		} catch (err) {
-			return fail(400, { action: 'delete', error: actionError(err, 'Could not delete the API key. Try again.') });
-		}
-	}
+	delete: asked(
+		{
+			question: 'Delete this API key?',
+			detail: 'Anything that uses this key stops working, and the key is removed from the list. This cannot be undone.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const { request } = event;
+			const client = authedClient(event);
+			const data = await request.formData();
+			const id = String(data.get('id') ?? '');
+			try {
+				await deleteAPIKey(id, client);
+			} catch (err) {
+				return tagged('delete', actionFailure(err, 'Could not delete the API key. Try again.'));
+			}
+		},
+	),
 };

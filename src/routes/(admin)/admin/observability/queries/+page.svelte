@@ -12,7 +12,8 @@
 		Table,
 		Pagination,
 	} from '@lyeve-labs/ui-kit';
-	import { goto, invalidateAll } from '$app/navigation';
+	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import { goto } from '$app/navigation';
 	import { Lightbulb, RefreshCw, Search, Timer } from '@lucide/svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import { page } from '$app/state';
@@ -35,16 +36,6 @@
 	let { data }: { data: PageData } = $props();
 
 	const here = $derived(`${page.url.pathname}${page.url.search}`);
-
-	let refreshing = $state(false);
-	async function refresh() {
-		refreshing = true;
-		try {
-			await invalidateAll();
-		} finally {
-			refreshing = false;
-		}
-	}
 
 	// Narrowing happens on what is on screen. The plugin samples after the
 	// fact and offers no server-side filter, so a filter that pretended to
@@ -108,17 +99,12 @@
 	back={{ href: '/admin/observability', label: 'Observability' }}
 >
 	{#snippet actions()}
-		<Button variant="secondary" size="sm" onclick={refresh} loading={refreshing}>
-			<RefreshCw size={ICON.sm} /> Refresh
-		</Button>
+		<RefreshButton />
 	{/snippet}
 
 	{#if data.gate.state === 'capture_store'}
 		<Alert tone="warn">
-			<p>
-				Could not load the slow query log. Its table may be missing until a pending
-				migration runs.
-			</p>
+			<p>Could not load the slow query log.</p>
 			<!-- A plain link to this address asks for a fresh document, as the
 			     shared notice's retry does, so it works before hydration. -->
 			<div class="mt-3">
@@ -170,8 +156,8 @@
 
 				{#if data.analyzeFailed}
 					<Alert tone="warn">
-						Could not explain these statements as {data.dialect}. Each instance uses one SQL
-						dialect, and EXPLAIN differs between dialects. Try the dialect this instance uses.
+						Could not explain these statements as {data.dialect}. Choose the dialect this
+						engine's database uses.
 					</Alert>
 				{:else if data.dialect && data.analysis && suggestions.length === 0}
 					<p class="text-sm text-muted">{noSuggestionText(data.dialect, data.analysis)}</p>

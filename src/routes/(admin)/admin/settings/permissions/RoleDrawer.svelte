@@ -55,7 +55,7 @@
 			required
 		/>
 		<p class="text-sm text-muted">
-			A new role can do nothing with any schema or flow until you grant it an action.
+			A new role can do nothing with any content type or flow until you grant it an action.
 		</p>
 	</form>
 	{#snippet footer()}

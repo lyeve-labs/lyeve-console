@@ -4,7 +4,7 @@
  * The broker is configured by the deployment, not through the admin, so there
  * is nothing here to write. What there is to read matters more than usual:
  * publishing is fire and forget by design, because failing the hook would stop
- * the CMS accepting content whenever the broker is down. The cost of that
+ * the engine accepting content whenever the broker is down. The cost of that
  * choice is that a broker can refuse every event for a week without anything
  * in the product saying so.
  *
@@ -17,9 +17,8 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 
-export const STATUS_URL = '/api/admin/messagebroker/status';
+const STATUS_URL = '/api/admin/messagebroker/status';
 
 export interface PublishFailure {
 	topic: string;
@@ -59,15 +58,6 @@ export interface OutboxStatus {
 	dead: number;
 	oldest_pending_at?: string | null;
 	oldest_pending_age_seconds?: number;
-}
-
-export type BrokerGate = Gate;
-
-export const BROKER_OK: BrokerGate = GATE_OK;
-
-/** What a refused broker read means, read the way every plugin's is. */
-export function brokerGate(err: unknown): BrokerGate {
-	return gateOf(err, 'Could not load the broker status.');
 }
 
 export async function readStatus(client: HttpClient): Promise<BrokerStatus> {
@@ -143,9 +133,9 @@ export const HEALTH_LABELS: Readonly<Record<BrokerHealth, string>> = {
 	retrying: 'The broker refused events, and the outbox is retrying them',
 	lost: 'Events failed after every retry',
 	undelivered: 'Some events were dropped',
-	disabled: 'Dropping events, not enabled on this instance',
+	disabled: 'Dropping events, not enabled on this engine',
 	discarding: 'No broker, events are discarded',
-	idle: 'Nothing published yet',
+	idle: 'No events published yet',
 };
 
 export function healthTone(h: BrokerHealth): StatusTone {
@@ -192,7 +182,7 @@ export function connectionGuide(backend: string, topicPrefix = ''): ConnectionGu
 	switch (backend) {
 		case 'nats':
 			return {
-				listen: "Subscribe to lyeve.tenant.<tenant>.> on the LYEVE_EVENTS stream, for example nats sub 'lyeve.tenant.acme.>'. Narrow it to a schema with lyeve.tenant.acme.orders.*.",
+				listen: "Subscribe to lyeve.tenant.<tenant>.> on the LYEVE_EVENTS stream, for example nats sub 'lyeve.tenant.acme.>'. Narrow it to a content type with lyeve.tenant.acme.orders.*.",
 				send: "Publish to lyeve.tenant.<tenant>.<subject>, for example nats pub lyeve.tenant.acme.orders.paid '{\"id\":42}'.",
 			};
 		case 'kafka': {

@@ -31,11 +31,14 @@ const RENEW_TIMEOUT_MS = 45_000;
  */
 const EXCHANGE_FAILURES: Readonly<Record<string, string>> = {
 	'the license server could not be reached':
-		'Could not reach the license server, so the key was not checked. The current license is unchanged. Try again in a moment.',
+		'Could not reach the license server, so the key was not checked. The current license is unchanged. Try again.',
 	'the license server returned a token that does not verify':
-		'The license server returned a token that could not be verified. The current license is unchanged. Trying the same key again fails the same way.',
+		'Could not verify the license returned for this key. The current license is unchanged. Trying the same key again fails the same way.',
+	'license key exchange is not configured on this engine':
+		'This engine cannot exchange a key with the license server. Paste the license token instead. The current license is unchanged.',
+	// The same refusal from an engine released before the API said "engine".
 	'license key exchange is not configured on this instance':
-		'This instance cannot exchange a key with the license server. Paste the license token instead. The current license is unchanged.',
+		'This engine cannot exchange a key with the license server. Paste the license token instead. The current license is unchanged.',
 };
 
 /** Roles the engine gives the entitlements to. Nobody else has a license to read. */
@@ -44,7 +47,7 @@ const READER_ROLES = ['admin', 'super_admin'];
 export const load: PageServerLoad = async (event) => {
 	const user = await loadUser(event);
 	if (!user.roles.some((role) => READER_ROLES.includes(role))) {
-		error(403, forbiddenText('the license'));
+		error(403, forbiddenText('this page', READER_ROLES));
 	}
 
 	// Read here rather than taken from the shell, which kept its answer across

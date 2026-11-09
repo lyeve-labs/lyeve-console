@@ -1,31 +1,8 @@
 // @vitest-environment jsdom
-import { render, cleanup, fireEvent } from '@testing-library/svelte';
+import { render, cleanup } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
-const kit = vi.hoisted(() => ({ confirm: vi.fn(async () => true) }));
-vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
-	...(await importOriginal<Record<string, unknown>>()),
-	confirm: kit.confirm,
-}));
-
-/**
- * Press a row's delete, accept the question, and return its title and what
- * the hidden form held when it was sent. The value has to be in the form by
- * then, which is what waiting on the next render before sending is for.
- */
-async function pressDelete(button: HTMLElement, field: string): Promise<{ title: string; sent: string }> {
-	let sent = '';
-	const spy = vi.spyOn(HTMLFormElement.prototype, 'requestSubmit').mockImplementation(function (this: HTMLFormElement) {
-		sent = (this.querySelector(`input[name="${field}"]`) as HTMLInputElement | null)?.value ?? '';
-	});
-	kit.confirm.mockClear();
-	await fireEvent.click(button);
-	await vi.waitFor(() => expect(spy).toHaveBeenCalled());
-	spy.mockRestore();
-	return { title: String((kit.confirm.mock.calls[0] as unknown[] | undefined)?.[0] ?? ''), sent };
-}
-
+vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import GraphqlPage from './+page.svelte';
 
@@ -40,17 +17,12 @@ const ROOTS = {
 	subscription: [],
 };
 
-const props = (over: Record<string, unknown> = {}, form: unknown = null) => ({
+const props = (over: Record<string, unknown> = {}) => ({
 	data: {
 		gate: { state: 'ok' },
 		schema: { ok: true, value: { roots: ROOTS, refused: null } },
-		persisted: { ok: true, value: [] },
-		persistedTotal: 0,
-		limit: 50,
-		offset: 0,
 		...over,
 	} as never,
-	form: form as never,
 });
 
 function nameCell(container: HTMLElement, name: string): HTMLTableCellElement {
@@ -94,55 +66,6 @@ describe('Schema field names', () => {
 	});
 });
 
-describe('Persisted queries', () => {
-	it('says a failed read failed rather than that there are none, and offers no create', () => {
-		const { container, queryByText, queryByRole } = render(GraphqlPage, {
-			props: props({ persisted: { ok: false, gate: { state: 'forbidden' } } }),
-		});
-		expect(container.textContent).toContain('Your role cannot open persisted queries');
-		expect(queryByText('No persisted queries yet')).toBeNull();
-		expect(queryByRole('button', { name: 'New persisted query' })).toBeNull();
-	});
-
-	it('offers the create from the first-run state', () => {
-		const { getByText, getAllByRole } = render(GraphqlPage, { props: props() });
-		expect(getByText('No persisted queries yet')).toBeTruthy();
-		expect(getAllByRole('button', { name: 'New persisted query' })).toHaveLength(2);
-	});
-});
-
-describe('the register drawer', () => {
-	const drawerText = () => document.body.querySelector('form#persisted-form')?.textContent ?? '';
-	const query = { query_hash: 'abc123', query: '{ posts { id } }', operation_name: 'Posts', description: '', enabled: true, auto_registered: false };
-
-	it('shows a refused register inside the open drawer', async () => {
-		const { getAllByRole, rerender } = render(GraphqlPage, { props: props() });
-		await fireEvent.click(getAllByRole('button', { name: 'New persisted query' })[0]);
-		await rerender(props({}, { action: 'register', error: 'Could not register the query. Try again.' }));
-		expect(drawerText()).toContain('Could not register the query. Try again.');
-	});
-
-	it('shows a failed delete above the list and leaves a newly opened drawer clean', async () => {
-		const failed = 'Could not delete the query. Try again.';
-		const { container, getByRole } = render(GraphqlPage, {
-			props: props({ persisted: { ok: true, value: [query] } }, { action: 'delete', error: failed }),
-		});
-		expect(container.textContent).toContain(failed);
-		await fireEvent.click(getByRole('button', { name: 'New persisted query' }));
-		expect(drawerText()).not.toContain(failed);
-	});
-});
-
-describe('persisted query delete', () => {
-	it('names the query and sends its hash', async () => {
-		const query = { query_hash: 'abc123', query: '{ posts { id } }', operation_name: 'Posts', description: '', enabled: true, auto_registered: false };
-		const { getByRole } = render(GraphqlPage, { props: props({ persisted: { ok: true, value: [query] } }) });
-		const out = await pressDelete(getByRole('button', { name: 'Delete Posts' }), 'hash');
-		expect(out.title).toBe('Delete persisted query Posts?');
-		expect(out.sent).toBe('abc123');
-	});
-});
-
 describe('the endpoint table', () => {
 	it('keeps each method and path on one line, so a narrow screen scrolls the table instead of breaking the path', () => {
 		const { container } = render(GraphqlPage, { props: props() });
@@ -151,23 +74,6 @@ describe('the endpoint table', () => {
 		);
 		expect(cells).toHaveLength(2);
 		for (const td of cells) expect(td.getAttribute('data-cell')).toBe('nowrap');
-	});
-});
-
-describe('a persisted query list past one page', () => {
-	const query = { query_hash: 'abc123def456', operation_name: 'Landing', query: '{ x }', description: '', enabled: true };
-
-	it('pages through the rest rather than leaving them out', () => {
-		const { container } = render(GraphqlPage, { props: props({ persisted: { ok: true, value: [query] }, persistedTotal: 340 }) });
-		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href'));
-		expect(hrefs).toContain('/admin/settings/graphql?limit=50&offset=50');
-		expect(container.textContent).not.toContain('Showing the first');
-	});
-
-	it('offers no other page when the list is whole', () => {
-		const { container } = render(GraphqlPage, { props: props({ persisted: { ok: true, value: [query] }, persistedTotal: 1 }) });
-		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
-		expect(hrefs.filter((h) => h.includes('offset='))).toEqual([]);
 	});
 });
 
@@ -187,5 +93,19 @@ describe('layout on narrow and medium screens', () => {
 		const grid = nameCell(container, 'landing_page').closest('.grid') as HTMLElement;
 		expect(grid.className).toContain('xl:grid-cols-3');
 		expect(grid.className).not.toContain('lg:grid-cols-3');
+	});
+});
+
+describe('the schema tab', () => {
+	it('opens the GraphQL lab from its try button', () => {
+		const { getByRole } = render(GraphqlPage, { props: props() });
+		expect(getByRole('link', { name: /Try it in API labs/ }).getAttribute('href')).toBe('/admin/api-labs/graphql');
+	});
+
+	it('marks its own tab and sends the allowlist to the other', () => {
+		const { getByRole, container } = render(GraphqlPage, { props: props() });
+		expect(getByRole('tab', { name: 'Schema' }).getAttribute('aria-selected')).toBe('true');
+		expect(container.textContent?.replace(/\s+/g, ' ')).toContain('the query must be on the Persisted queries tab.');
+		expect(container.textContent).not.toContain('No persisted queries yet');
 	});
 });

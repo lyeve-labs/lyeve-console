@@ -68,7 +68,7 @@ describe('release page', () => {
 
 	it('renders a refused write as the refusal notice', () => {
 		const { getAllByTestId } = setup({}, { error: 'x', refused: { kind: 'feature', feature: 'example-capability', plugin: 'example', upgradeUrl: '' } });
-		expect(getAllByTestId('refusal-notice')[0].textContent).toContain('example-capability');
+		expect(getAllByTestId('refusal-notice')[0].textContent).toContain('Not enabled on this engine');
 	});
 
 	it('offers no edits once the release went out', () => {

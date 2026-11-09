@@ -32,7 +32,7 @@
 		type ConfigBundle,
 		type SyncPlan,
 	} from '$lib/api/config-sync';
-	import { formatDateTime } from '$lib/format';
+	import { formatDateTime, plural } from '$lib/format';
 	import { ICON } from '$lib/icon';
 
 	let { form }: { form: ActionData } = $props();
@@ -125,8 +125,8 @@
 		const ok = await confirm(
 			'Apply this bundle?',
 			prune
-				? 'This instance will match the bundle. Flows, permission rules and webhooks that are not in the bundle will be deleted. Content types are never deleted.'
-				: 'This instance will match the bundle. Nothing missing from the bundle is deleted.',
+				? 'This engine will match the bundle. Flows, permission rules and webhooks that are not in the bundle are deleted. Content types are never deleted.'
+				: 'This engine will match the bundle. Nothing missing from the bundle is deleted.',
 			{ confirmLabel: 'Apply' },
 		);
 		if (!ok || !syncForm) return;
@@ -171,7 +171,7 @@
 
 <PageShell
 	title="Config sync"
-	description="Move content types, flows, permission rules, webhooks and settings from one instance to another in one bundle. Content is never included."
+	description="Move content types, flows, permission rules, webhooks and settings from one engine to another in one bundle. Content is never included."
 	width="wide"
 >
 	{#snippet actions()}
@@ -182,7 +182,7 @@
 		<RefusalNotice refusal={refused} />
 	{/if}
 
-	<Card title="Export this instance" description="Download every section as one file to apply on another instance.">
+	<Card title="Export this engine" description="Download every section as one file to apply on another engine.">
 		<form method="POST" action="?/export" use:enhance={exportEnhance} class="flex flex-col gap-4" data-testid="export-form">
 			<PasswordInput
 				id="export-passphrase"
@@ -192,7 +192,7 @@
 				required
 				bind:value={exportPass}
 				error={scope === 'export' ? errors.passphrase : undefined}
-				hint="At least {MIN_PASSPHRASE} characters. It encrypts every webhook secret and header in the bundle, and you need it to apply the bundle on another instance. Store it separately from the file."
+				hint="At least {MIN_PASSPHRASE} characters. It encrypts every webhook secret and header in the bundle, and you need it to apply the bundle on another engine. Store it separately from the file."
 			/>
 			{#if exportMessage}
 				<Alert tone="danger">{exportMessage}</Alert>
@@ -219,7 +219,7 @@
 		</form>
 	</Card>
 
-	<Card title="Apply a bundle" description="Compare a bundle with this instance, dry run it, then apply it.">
+	<Card title="Apply a bundle" description="Compare a bundle with this engine, dry run it, then apply it.">
 		<form
 			method="POST"
 			action="?/diff"
@@ -254,7 +254,7 @@
 			<Checkbox
 				id="sync-prune"
 				label="Delete items not in the bundle"
-				description="Removes flows, permission rules and webhooks that exist only on this instance. Content types are never deleted."
+				description="Removes flows, permission rules and webhooks that exist only on this engine. Content types are never deleted."
 				bind:checked={prune}
 			/>
 			{#if syncMessage}
@@ -275,7 +275,7 @@
 	</Card>
 
 	{#if result && result.applied}
-		<Alert tone="success" autoDismiss>Applied. This instance now matches the bundle.</Alert>
+		<Alert tone="success" autoDismiss>Applied. This engine now matches the bundle.</Alert>
 		<DescriptionList
 			items={[
 				{ term: 'Content types written', value: namesOrNone(result.schemas_applied) },
@@ -308,11 +308,11 @@
 				<p class="text-sm text-muted">Nothing was written.</p>
 			{/if}
 			{#if blocked}
-				<Alert tone="danger" title="{plan.problems} {plan.problems === 1 ? 'problem stops' : 'problems stop'} the apply">
+				<Alert tone="danger" title="{plan.problems} {plural(plan.problems, 'problem stops', 'problems stop')} the apply">
 					Fix every problem below, here or in the bundle, before you apply. Nothing is written until then.
 				</Alert>
 			{:else if plan.changes === 0}
-				<Alert tone="success">This instance already matches the bundle.</Alert>
+				<Alert tone="success">This engine already matches the bundle.</Alert>
 			{/if}
 
 			{#each sections as name (name)}

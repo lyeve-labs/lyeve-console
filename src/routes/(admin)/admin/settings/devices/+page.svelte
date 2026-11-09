@@ -3,7 +3,9 @@
 		Alert,
 		Badge,
 		Button,
+		Card,
 		EmptyState,
+		Field,
 		Input,
 		PageShell,
 		SectionHeading,
@@ -67,7 +69,7 @@
 
 <PageShell
 	title="Trusted devices"
-	description="See the browsers trusted for your account, and forget any you no longer use."
+	description="See the devices you trust, and forget any you no longer use."
 	width="wide"
 	back={{ href: '/admin/settings', label: 'Settings' }}
 >
@@ -75,8 +77,8 @@
 		<GateNotice
 			level={2}
 			gate={data.gate}
-			title="Device recognition"
-			absent="Device recognition is not included in this build."
+			title="Trusted devices"
+			absent="Trusted devices are not included in this build."
 		/>
 	{:else}
 		{#if formError}
@@ -84,39 +86,42 @@
 		{/if}
 
 		<section class="flex flex-col gap-4">
-			<SectionHeading level={2}>This browser</SectionHeading>
+			<SectionHeading level={2}>This device</SectionHeading>
 			{#if thisOne}
 				<Alert tone="success">
-					This browser is already trusted, as {deviceLabel(thisOne)}.
+					This device is already trusted, as {deviceLabel(thisOne)}.
 				</Alert>
 			{:else}
-				<p class="text-xs text-muted">
-					Trusting remembers the browser you're using now. To trust another browser, open this page in that browser.
-				</p>
-				<form
-					method="POST"
-					action="?/trust"
-					use:enhance={trustThis}
-					class="flex max-w-md flex-col items-start gap-3"
-				>
-					<div class="w-full">
-						<Input
-							id="device-label"
-							name="label"
-							label="Name this device"
-							placeholder={suggestedName}
-							hint="Something you will recognize in the list."
-							bind:value={label}
-							required
-						/>
-					</div>
-					<Button variant="primary" type="submit">Trust this browser</Button>
-				</form>
+				<Card pad="md">
+					<form method="POST" action="?/trust" use:enhance={trustThis} class="flex flex-col gap-4">
+						<p class="max-w-prose text-sm text-muted">
+							You can trust only the device you're using now. Each browser counts as its own device, so open this page in each browser you want to trust.
+						</p>
+						<!-- The label sits above the row and the hint under the input alone,
+						     so the button stays level with the input box. -->
+						<Field id="device-label" label="Name this device" required>
+							{#snippet children(field)}
+								<div class="flex flex-col items-start gap-3 sm:flex-row">
+									<Input
+										id={field.id}
+										name="label"
+										class="w-full sm:w-80"
+										placeholder={suggestedName}
+										hint="Something you will recognize in the list."
+										bind:value={label}
+										required
+									/>
+									<Button variant="primary" type="submit">Trust this device</Button>
+								</div>
+							{/snippet}
+						</Field>
+					</form>
+				</Card>
 			{/if}
 		</section>
 
 		<section class="flex flex-col gap-4">
-			<SectionHeading level={2}>Remembered devices</SectionHeading>
+			<SectionHeading level={2}>Your trusted devices</SectionHeading>
 
 			{#if data.devices.length === 0}
 				<EmptyState
@@ -137,10 +142,10 @@
 				{#if visible.length === 0}
 					<EmptyState
 						title="No devices match this search"
-						description="The search covers this page only. Clear it or go to another page."
+						description="The search covers this page only. Clear it, or go to the next page."
 					/>
 				{:else}
-					<Table label="Remembered devices">
+					<Table label="Your trusted devices">
 						<thead>
 							<tr>
 								<th scope="col">Device</th>

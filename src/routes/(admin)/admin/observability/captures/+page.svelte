@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CaptureTabs from '$lib/components/CaptureTabs.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
@@ -14,31 +15,14 @@
 		PageShell,
 		Pagination,
 		SectionHeading,
-		Select,
 		Table,
-		Toggle,
-		confirm as confirmDialog,
 		toast,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import { confirmed, tracked } from '$lib/forms.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import { History, Pencil, Play, Plus, Trash2 } from '@lucide/svelte';
-	import {
-		MAX_SET_CAPTURES,
-		RULE_METHODS,
-		capturePath,
-		diffChanged,
-		methodLabel,
-		retentionLabel,
-		retentionOptions,
-		sampleLabel,
-		type CaptureRule,
-		type ReplaySet,
-		type RuleMethod,
-		type SetReplay,
-	} from '$lib/api/request-capture';
-	import { NO_VALUE, formatDateTime } from '$lib/format';
+	import { tracked } from '$lib/forms.svelte';
+	import { History, Plus } from '@lucide/svelte';
+	import { MAX_SET_CAPTURES, capturePath } from '$lib/api/request-capture';
+	import { NO_VALUE, formatDateTime, plural } from '$lib/format';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
 	import { httpStatusTone } from '$lib/tones';
@@ -52,18 +36,11 @@
 	const fromDrawer = $derived(
 		form && 'drawer' in form && typeof form.drawer === 'string' ? form.drawer : null,
 	);
-	// The plugin refuses a new rule or a new replay set on an install whose
-	// license leaves them out, so neither is offered there. Switching a rule
-	// off and deleting one stay allowed.
+	// The plugin refuses a new replay set on an install whose license leaves
+	// it out, so none is offered there.
 	const canCreate = $derived(data.licensed !== false);
 	const NOT_INCLUDED = 'Not included in this license';
-	const EDIT_REFUSED = `${NOT_INCLUDED}. Switch the rule off or delete it.`;
 	const formError = $derived((form as { error?: string } | null)?.error ?? '');
-	const needsWrites = $derived((form as { needsWrites?: string } | null)?.needsWrites ?? '');
-	const replay = $derived((form as { replay?: SetReplay } | null)?.replay ?? null);
-	const replayedSet = $derived(replay ? data.sets.find((s) => s.id === replay.set_id) : undefined);
-	const capturesById = $derived(new Map(data.captures.map((c) => [c.id, c])));
-	const enabledRules = $derived(data.rules.filter((r) => r.enabled).length);
 
 	let selected = $state<string[]>([]);
 	// The plugin refuses a set that names a capture another tenant sent. A
@@ -75,44 +52,6 @@
 	function toggleCapture(id: string, on: boolean) {
 		selected = on ? [...new Set([...selected, id])] : selected.filter((x) => x !== id);
 	}
-
-	let ruleOpen = $state(false);
-	let editing = $state<CaptureRule | null>(null);
-	let routePattern = $state('/api/v1/**');
-	let ruleMethod = $state<RuleMethod>('*');
-	let samplePercent = $state('100');
-	let retention = $state('86400');
-	let ruleEnabled = $state(true);
-
-	function openCreate() {
-		editing = null;
-		routePattern = '/api/v1/**';
-		ruleMethod = '*';
-		samplePercent = '100';
-		retention = '86400';
-		ruleEnabled = true;
-		ruleOpen = true;
-	}
-
-	function openEdit(r: CaptureRule) {
-		editing = r;
-		routePattern = r.route_pattern;
-		ruleMethod = r.method;
-		samplePercent = String(Math.round(r.sample_rate * 1000) / 10);
-		retention = String(r.retention_seconds);
-		ruleEnabled = r.enabled;
-		ruleOpen = true;
-	}
-
-	const saveRule = tracked(() => {
-		const verb = editing ? 'saved' : 'created';
-		const subject = routePattern;
-		return async ({ result, update }) => {
-			if (result.type !== 'failure') ruleOpen = false;
-			await update();
-			if (result.type === 'success') toast.success(`Rule for ${subject} ${verb}.`);
-		};
-	});
 
 	let setOpen = $state(false);
 	let setName = $state('');
@@ -133,60 +72,17 @@
 			if (result.type === 'success') toast.success(`Replay set ${subject} created.`);
 		};
 	});
-
-	function remove(what: string, detail: string): SubmitFunction {
-		return confirmed(
-			`Delete ${what}?`,
-			detail,
-			{ confirmLabel: 'Delete', success: `Deleted ${what}` },
-		);
-	}
-
-	/**
-	 * A replay sends each request again with the caller's own credentials in
-	 * place of the redacted ones, so the confirm says that before it runs.
-	 */
-	function runSet(s: ReplaySet, writes: boolean): SubmitFunction {
-		return async ({ cancel }) => {
-			const ok = await confirmDialog(
-				writes ? `Replay ${s.name}, writes included?` : `Replay ${s.name}?`,
-				writes
-					? 'Every request in the set runs again with your credentials, and each write is repeated.'
-					: 'Every request in the set runs again against this instance with your credentials in place of the ones that were redacted.',
-				{ confirmLabel: 'Replay' },
-			);
-			if (!ok) {
-				cancel();
-				return;
-			}
-			return async ({ update }) => {
-				await update({ reset: false });
-			};
-		};
-	}
 </script>
 
 <PageShell
 	title="Request capture"
 	description={data.superAdmin
-		? 'Review requests every tenant sent, with their responses, and replay them to compare.'
-		: 'Review requests this tenant sent, with their responses, and replay them to compare.'}
+		? 'See the requests every tenant sent and save a selection as a replay set.'
+		: 'See the requests this tenant sent and save a selection as a replay set.'}
 	width="wide"
 	back={{ href: '/admin/observability', label: 'Observability' }}
 >
-	{#snippet actions()}
-		{#if data.gate.state === 'ok'}
-			<Button
-				variant="primary"
-				size="sm"
-				onclick={openCreate}
-				disabled={!canCreate}
-				title={canCreate ? undefined : NOT_INCLUDED}
-			>
-				<Plus size={ICON.sm} /> New rule
-			</Button>
-		{/if}
-	{/snippet}
+	<CaptureTabs active="captures" captures={data.gate.state === 'ok' ? (data.total ?? undefined) : undefined} />
 
 	{#if data.gate.state !== 'ok'}
 		<GateNotice
@@ -198,18 +94,6 @@
 	{:else}
 		{#if refusal && !fromDrawer}
 			<RefusalNotice {refusal} />
-		{:else if needsWrites}
-			{@const s = data.sets.find((x) => x.id === needsWrites)}
-			<Alert tone="warn" title="This set includes a write">
-				<p>Replaying it repeats each write against this instance. Nothing in the set has run yet.</p>
-				{#if s}
-					<form method="POST" action="?/replaySet" class="mt-3" use:enhance={runSet(s, true)}>
-						<input type="hidden" name="id" value={s.id} />
-						<input type="hidden" name="confirm_mutating" value="true" />
-						<Button variant="secondary" size="sm" type="submit">Replay including writes</Button>
-					</form>
-				{/if}
-			</Alert>
 		{:else if formError && !fromDrawer}
 			<Alert tone="danger">{formError}</Alert>
 		{/if}
@@ -221,211 +105,6 @@
 				can always switch a rule off or delete it.
 			</Alert>
 		{/if}
-
-		<section class="flex flex-col gap-4" aria-label="Capture rules">
-			<SectionHeading level={2}>Capture rules</SectionHeading>
-			<p class="text-sm text-muted">
-				{#if enabledRules > 0}
-					Only requests that match an enabled rule are kept, sampled at its rate and kept for its retention.
-					The first matching rule applies.
-				{:else}
-					With no enabled rule, every request is kept for a day. Once a rule is enabled, only requests that
-					match a rule are kept.
-				{/if}
-			</p>
-			{#if !data.rulesRead}
-				{#if data.rulesGate}
-					<GateNotice gate={data.rulesGate} title="the capture rules" absent="Capture rules need a newer version of the request capture plugin." />
-				{:else}
-					<Alert tone="danger">Could not load capture rules. Reload the page to try again.</Alert>
-				{/if}
-			{:else if data.rules.length === 0}
-				<EmptyState title="No capture rules yet" description="Every request this tenant sends is kept for a day.">
-					{#snippet iconSnippet()}
-						<History size={ICON.lg} />
-					{/snippet}
-					{#snippet action()}
-						<Button variant="secondary" onclick={openCreate} disabled={!canCreate} title={canCreate ? undefined : NOT_INCLUDED}>
-							<Plus size={ICON.sm} /> New rule
-						</Button>
-					{/snippet}
-				</EmptyState>
-			{:else}
-				<Table label="Capture rules">
-					<thead>
-						<tr>
-							<th scope="col">Route</th>
-							<th scope="col">Method</th>
-							<th scope="col">Sample</th>
-							<th scope="col">Kept for</th>
-							<th scope="col">State</th>
-							<th scope="col"><span class="sr-only">Actions</span></th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each data.rules as r (r.id)}
-							<tr>
-								<td class="max-w-md truncate font-mono text-xs" title={r.route_pattern}>{r.route_pattern}</td>
-								<td data-cell="nowrap" class="text-xs">{methodLabel(r.method)}</td>
-								<td data-cell="nowrap" class="font-mono text-xs">{sampleLabel(r.sample_rate)}</td>
-								<td data-cell="nowrap" class="text-xs">{retentionLabel(r.retention_seconds)}</td>
-								<td data-cell="nowrap">
-									<Badge tone={r.enabled ? 'success' : 'neutral'} dot>{r.enabled ? 'Capturing' : 'Off'}</Badge>
-								</td>
-								<td data-cell="nowrap">
-									<div class="flex items-center justify-end gap-1">
-										{#if !canCreate && r.enabled}
-											<!-- The plugin refuses any change that leaves a rule enabled on
-											     this license, so the drawer is not offered. Switching the
-											     rule off stays allowed, from the row. -->
-											<Button
-												variant="ghost"
-												size="sm"
-												aria-label="Edit {r.route_pattern}"
-												disabled
-												title={EDIT_REFUSED}
-											>
-												<Pencil size={ICON.sm} />
-											</Button>
-											<form method="POST" action="?/updateRule" use:enhance>
-												<input type="hidden" name="from" value="row" />
-												<input type="hidden" name="id" value={r.id} />
-												<input type="hidden" name="route_pattern" value={r.route_pattern} />
-												<input type="hidden" name="method" value={r.method} />
-												<input type="hidden" name="sample_percent" value={String(Math.round(r.sample_rate * 1000) / 10)} />
-												<input type="hidden" name="retention_seconds" value={String(r.retention_seconds)} />
-												<input type="hidden" name="enabled" value="false" />
-												<Button variant="ghost" size="sm" type="submit" aria-label="Switch off {r.route_pattern}">
-													Switch off
-												</Button>
-											</form>
-										{:else}
-											<Button variant="ghost" size="sm" aria-label="Edit {r.route_pattern}" onclick={() => openEdit(r)}>
-												<Pencil size={ICON.sm} />
-											</Button>
-										{/if}
-										<form
-											method="POST"
-											action="?/deleteRule"
-											use:enhance={remove(
-												`the rule for ${r.route_pattern}`,
-												'The captures it kept stay until their retention ends.',
-											)}
-										>
-											<input type="hidden" name="id" value={r.id} />
-											<Button variant="ghost" size="sm" type="submit" aria-label="Delete {r.route_pattern}">
-												<Trash2 size={ICON.sm} class="text-danger" />
-											</Button>
-										</form>
-									</div>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</Table>
-			{/if}
-		</section>
-
-		<section class="flex flex-col gap-4" aria-label="Replay sets">
-			<SectionHeading level={2}>Replay sets</SectionHeading>
-			{#if !data.setsRead}
-				{#if data.setsGate}
-					<GateNotice gate={data.setsGate} title="the replay sets" absent="Replay sets need a newer version of the request capture plugin." />
-				{:else}
-					<Alert tone="danger">Could not load replay sets. Reload the page to try again.</Alert>
-				{/if}
-			{:else if data.sets.length === 0}
-				<p class="text-sm text-muted">
-					No replay sets yet. Select captures below and save them as a set to replay them together and compare
-					each response with the original.
-				</p>
-			{:else}
-				<Table label="Replay sets">
-					<thead>
-						<tr>
-							<th scope="col">Set</th>
-							<th scope="col">Captures</th>
-							<th scope="col">Created</th>
-							<th scope="col"><span class="sr-only">Actions</span></th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each data.sets as s (s.id)}
-							<tr>
-								<td class="font-medium text-fg">{s.name}</td>
-								<td data-cell="nowrap" class="font-mono text-xs">{s.capture_ids.length}</td>
-								<td data-cell="nowrap" class="text-xs text-faint">{formatDateTime(s.created_at)}</td>
-								<td data-cell="nowrap">
-									<div class="flex items-center justify-end gap-1">
-										<form method="POST" action="?/replaySet" use:enhance={runSet(s, false)}>
-											<input type="hidden" name="id" value={s.id} />
-											<Button variant="ghost" size="sm" type="submit" aria-label="Replay {s.name}" title="Replay">
-												<Play size={ICON.sm} />
-											</Button>
-										</form>
-										<form
-											method="POST"
-											action="?/deleteSet"
-											use:enhance={remove(s.name, 'Its captures are kept. Only the set is deleted.')}
-										>
-											<input type="hidden" name="id" value={s.id} />
-											<Button variant="ghost" size="sm" type="submit" aria-label="Delete {s.name}">
-												<Trash2 size={ICON.sm} class="text-danger" />
-											</Button>
-										</form>
-									</div>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</Table>
-			{/if}
-
-			{#if replay}
-				<div class="flex flex-col gap-3" data-testid="replay-results">
-					<SectionHeading level={3}>Replayed {replayedSet?.name ?? 'the set'}</SectionHeading>
-					<p class="text-sm text-muted">
-						{replay.results.filter((r) => r.diff && !diffChanged(r.diff)).length} of {replay.results.length} returned
-						the same response as when captured.
-					</p>
-					{#each replay.results as r (r.capture_id)}
-						{@const original = capturesById.get(r.capture_id)}
-						<div class="rounded border border-line bg-surface-2 p-3">
-							<div class="flex flex-wrap items-center gap-2">
-								{#if r.method && r.path}
-									<span class="font-mono text-xs text-fg">{r.method} {r.path}</span>
-								{:else if original}
-									<span class="font-mono text-xs text-fg">{original.method} {capturePath(original.url)}</span>
-								{:else}
-									<span class="font-mono text-xs text-faint">{r.capture_id}</span>
-								{/if}
-								{#if r.error}
-									<Badge tone="danger">Not replayed</Badge>
-								{:else if r.diff}
-									<Badge tone={diffChanged(r.diff) ? 'warn' : 'success'} dot>
-										{diffChanged(r.diff) ? 'Changed' : 'Same'}
-									</Badge>
-								{/if}
-							</div>
-							{#if r.error}
-								<p class="mt-1 text-xs text-muted">{r.error}</p>
-							{:else if r.diff}
-								<p class="mt-1 font-mono text-xs text-muted">
-									Status {r.diff.status_code1} then {r.diff.status_code2}, {Math.round(r.diff.duration1_ms)} ms then
-									{Math.round(r.diff.duration2_ms)} ms
-								</p>
-								{#if r.diff.headers_diff}
-									<pre class="mt-2 overflow-x-auto font-mono text-xs text-muted">{r.diff.headers_diff}</pre>
-								{/if}
-								{#if r.diff.body_diff}
-									<pre class="mt-2 overflow-x-auto font-mono text-xs text-muted">{r.diff.body_diff}</pre>
-								{/if}
-							{/if}
-						</div>
-					{/each}
-				</div>
-			{/if}
-		</section>
 
 		<section class="flex flex-col gap-4" aria-label="Captures">
 			<div class="flex flex-wrap items-center justify-between gap-2">
@@ -520,66 +199,6 @@
 	{/if}
 </PageShell>
 
-<Drawer bind:open={ruleOpen} title={editing ? 'Edit rule' : 'New rule'}>
-	<form id="capture-rule-form" method="POST" action={editing ? '?/updateRule' : '?/createRule'} use:enhance={saveRule.enhance}>
-		<FormErrors
-			message={fromDrawer === 'rule' ? formError || undefined : undefined}
-			refused={fromDrawer === 'rule' ? refusal : null}
-		/>
-		{#if editing}
-			<input type="hidden" name="id" value={editing.id} />
-		{/if}
-		<div class="flex flex-col gap-4">
-			<Input
-				id="capture-pattern"
-				name="route_pattern"
-				label="Route"
-				hint="An absolute path. A segment can be * or a {'{name}'} for any one segment. ** can only come last."
-				bind:value={routePattern}
-				required
-			/>
-			<Select
-				id="capture-method"
-				name="method"
-				label="Method"
-				bind:value={ruleMethod}
-				options={RULE_METHODS.map((m) => ({ value: m, label: methodLabel(m) }))}
-			/>
-			<Input
-				id="capture-sample"
-				name="sample_percent"
-				label="Sample, as a percentage"
-				hint="The share of matching requests kept. 100 keeps every one."
-				bind:value={samplePercent}
-			/>
-			<Select
-				id="capture-retention"
-				name="retention_seconds"
-				label="Kept for"
-				hint="From an hour to 30 days. Replays of a capture are kept just as long."
-				bind:value={retention}
-				options={retentionOptions(editing?.retention_seconds)}
-			/>
-			<input type="hidden" name="enabled" value={ruleEnabled ? 'true' : 'false'} />
-			<!-- Applying a rule needs the license. A rule that is off can still
-			     be edited and saved off. -->
-			<Toggle
-				id="capture-enabled"
-				label="Apply this rule"
-				bind:checked={ruleEnabled}
-				disabled={!canCreate && !ruleEnabled}
-				hint={!canCreate && !ruleEnabled ? `${NOT_INCLUDED}, so the rule stays off.` : undefined}
-			/>
-		</div>
-	</form>
-	{#snippet footer()}
-		<Button variant="secondary" onclick={() => (ruleOpen = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="capture-rule-form" loading={saveRule.pending}>
-			{editing ? 'Save' : 'Create'}
-		</Button>
-	{/snippet}
-</Drawer>
-
 <Drawer bind:open={setOpen} title="New replay set">
 	<form id="replay-set-form" method="POST" action="?/createSet" use:enhance={saveSet.enhance}>
 		<FormErrors
@@ -593,7 +212,7 @@
 			<Input id="set-name" name="name" label="Name" bind:value={setName} required />
 			<p class="text-sm text-muted">
 				{selected.length}
-				{selected.length === 1 ? 'capture' : 'captures'}, replayed in the order they were selected. A capture that
+				{plural(selected.length, 'capture')}, replayed in the order they were selected. A capture that
 				expires before a replay is reported as not replayed and the rest still run.
 			</p>
 		</div>

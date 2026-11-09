@@ -47,7 +47,7 @@ export interface RelationKind {
 	/** The cardinality, in the words a data model uses for it. */
 	cardinality: string;
 	/** Which table the save writes to, which the four kind names alone do not say. */
-	storage: 'this schema' | 'the other schema' | 'a pivot table';
+	storage: 'this content type' | 'the other content type' | 'a pivot table';
 	/** One line, short enough for a picker row. */
 	blurb: string;
 }
@@ -61,29 +61,29 @@ export const RELATION_KINDS: RelationKind[] = [
 		type: 'belongs_to',
 		label: 'Belongs to one',
 		cardinality: 'many to one',
-		storage: 'this schema',
-		blurb: 'Adds the key column to this schema. No other kind does.',
+		storage: 'this content type',
+		blurb: 'Adds the key column to this content type. No other kind does.',
 	},
 	{
 		type: 'has_one',
 		label: 'Has one',
 		cardinality: 'one to one',
-		storage: 'the other schema',
-		blurb: 'Uses a key column on the other schema. Adds no column here.',
+		storage: 'the other content type',
+		blurb: 'Uses a key column on the other content type. Adds no column here.',
 	},
 	{
 		type: 'has_many',
 		label: 'Has many',
 		cardinality: 'one to many',
-		storage: 'the other schema',
-		blurb: 'Uses a key column on the other schema. Adds no column here.',
+		storage: 'the other content type',
+		blurb: 'Uses a key column on the other content type. Adds no column here.',
 	},
 	{
 		type: 'many_to_many',
 		label: 'Has and belongs to many',
 		cardinality: 'many to many',
 		storage: 'a pivot table',
-		blurb: 'Creates a join table. Neither schema gets a new column.',
+		blurb: 'Creates a join table. Neither content type gets a new column.',
 	},
 ];
 
@@ -157,7 +157,7 @@ export function planRelation(
 
 	const kind = relationKind(field.relation_type ?? 'belongs_to');
 	const target = schemas.find((s) => s.name === field.relation_to);
-	const here = label(from, from.name || 'this schema');
+	const here = label(from, from.name || 'this content type');
 	const there = label(target, field.relation_to);
 	const thisTable = tableName(from.name || 'this');
 	const thatTable = tableName(field.relation_to);
@@ -223,7 +223,7 @@ export function planRelation(
 		kind,
 		sentence: many
 			? `Each ${here} row has many ${there} rows.`
-			: `Each ${here} row has one ${there} row. Only one is expected, but nothing enforces it. If several ${there} rows point here, the first one is used.`,
+			: `Each ${here} row has one ${there} row. The limit is not enforced, so if several ${there} rows point here, the first one is used.`,
 		creates: [],
 		reads: `${thatTable}.${column}`,
 		flags: `Neither applies. The key is ${thatTable}.${column}, and Req and Idx on it belong to ${there}.`,
@@ -232,7 +232,7 @@ export function planRelation(
 			? satisfied
 				? null
 				: `${there} has no field named ${requires.field}, so ${thatTable}.${column} does not exist and this relation returns ${many ? 'an empty list' : 'nothing'}.`
-			: `${field.relation_to} is not a schema in this tenant.`,
+			: `${field.relation_to} is not a content type in this tenant.`,
 	};
 }
 

@@ -1,15 +1,13 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError, actionFailure } from '$lib/server/action-error';
+import { actionFailure } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import {
 	ALERT_STATUSES,
-	ERROR_OK,
 	acknowledge,
 	assign,
-	errorGate,
 	isTriageAction,
 	listAlerts,
 	listCodes,
@@ -18,10 +16,11 @@ import {
 	type AlertStatus,
 	type ErrorAlert,
 	type ErrorCode,
-	type ErrorGate,
 	type EventPage,
 } from '$lib/api/error-tracking';
+import { type Gate, GATE_OK, section } from '$lib/api/gate';
 import { pageWindow, pastEndOffset, rowsOf, withOffset } from '$lib/api/list';
+import { couldNotLoad } from '$lib/outage';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -39,39 +38,38 @@ export const load: PageServerLoad = async (event) => {
 	const { limit, offset } = pageWindow(event.url, DEFAULT_LIMIT, MAX_LIMIT);
 	const status = statusFilter(event.url);
 
-	const client = authedClient(event);
-	let alerts: ErrorAlert[] = [];
-	let total: number | null = null;
+	const unread = {
+		alerts: [] as ErrorAlert[],
+		codes: [] as ErrorCode[],
+		total: null as number | null,
+		limit,
+		offset,
+		status,
+		events: null as EventPage | null,
+	};
 	// The shell says why the page is unavailable while its plugin does not run.
-	let gate: ErrorGate = notRunning(plugins, PLUGIN.errorTracking) ? { state: 'absent' } : ERROR_OK;
-	if (gate.state === 'ok') {
-		try {
-			({ alerts, total } = await listAlerts(client, limit, offset, status));
-		} catch (err) {
-			gate = errorGate(err);
-		}
-		if (gate.state === 'ok') {
-			const back = pastEndOffset(alerts.length, limit, offset, total);
-			if (back !== null) redirect(307, withOffset(event.url, back));
-		}
-	}
+	if (notRunning(plugins, PLUGIN.errorTracking)) return { ...unread, gate: { state: 'absent' } as Gate };
 
-	// The catalog gives each fingerprint its severity and its remediation
-	// text. Losing it costs the labels, never the list.
-	const codes =
-		gate.state === 'ok'
-			? await listCodes(client)
-					.then((c) => rowsOf(c))
-					.catch((): ErrorCode[] => [])
-			: [];
+	const client = authedClient(event);
+	const [read, codes, events] = await Promise.all([
+		section(listAlerts(client, limit, offset, status), couldNotLoad('errors')),
+		// The catalog gives each fingerprint its severity and its remediation
+		// text. Losing it costs the labels, never the list.
+		listCodes(client)
+			.then((c) => rowsOf(c))
+			.catch((): ErrorCode[] => []),
+		// The newest occurrences, and how many older ones this instance does not
+		// read. Losing them costs the band, never the alert list, and a failed
+		// read is said as one rather than as no events.
+		listEvents(client, EVENT_LIMIT).catch((): EventPage | null => null),
+	]);
+	if (!read.ok) return { ...unread, gate: read.gate };
 
-	// The newest occurrences, and how many older ones this install does not
-	// read. Losing them costs the band, never the alert list, and a failed
-	// read is said as one rather than as no events.
-	const events: EventPage | null =
-		gate.state === 'ok' ? await listEvents(client, EVENT_LIMIT).catch(() => null) : null;
+	const { alerts, total } = read.value;
+	const back = pastEndOffset(alerts.length, limit, offset, total);
+	if (back !== null) redirect(307, withOffset(event.url, back));
 
-	return { alerts, codes, total, limit, offset, gate, status, events };
+	return { alerts, codes, total, limit, offset, gate: GATE_OK, status, events };
 };
 
 export const actions: Actions = {
@@ -84,7 +82,7 @@ export const actions: Actions = {
 		try {
 			await acknowledge(client, id);
 		} catch (err) {
-			return fail(400, { error: actionError(err, 'Could not acknowledge the alert. Try again.') });
+			return actionFailure(err, 'Could not acknowledge the alert. Try again.');
 		}
 		return { acknowledged: id };
 	},

@@ -18,6 +18,7 @@ import {
 	type HistoryMode,
 	type HistorySettings,
 } from '$lib/api/content-history';
+import { asked } from '$lib/server/asked';
 
 /** The roles the plugin lets change history settings. */
 const EDITORS = ['admin', 'super_admin'];
@@ -123,16 +124,23 @@ export const actions: Actions = {
 		}
 	},
 
-	deleteType: async (event) => {
-		await requireRole(event, EDITORS);
-		const schema = String((await event.request.formData()).get('schema') ?? '').trim();
-		if (!schema) return fail(400, { action: 'deleteType', error: 'Choose a content type first.' });
-		try {
-			const { commits, held } = await deleteTypeHistory(authedClient(event), schema);
-			return { action: 'deleteType', deleted: schema, commits, held };
-		} catch (err) {
-			const failed = actionFailure(err, 'Could not delete the history. Nothing was removed. Try again.');
-			return fail(failed.status, { action: 'deleteType', ...failed.data });
-		}
-	},
+	deleteType: asked(
+		{
+			question: 'Delete every version of this content type?',
+			detail: 'The entries stay as they are. Their stored versions cannot be recovered.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, EDITORS);
+			const schema = String((await event.request.formData()).get('schema') ?? '').trim();
+			if (!schema) return fail(400, { action: 'deleteType', error: 'Choose a content type first.' });
+			try {
+				const { commits, held } = await deleteTypeHistory(authedClient(event), schema);
+				return { action: 'deleteType', deleted: schema, commits, held };
+			} catch (err) {
+				const failed = actionFailure(err, 'Could not delete the history. Nothing was removed. Try again.');
+				return fail(failed.status, { action: 'deleteType', ...failed.data });
+			}
+		},
+	),
 };

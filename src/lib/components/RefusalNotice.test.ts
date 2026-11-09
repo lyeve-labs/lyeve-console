@@ -15,11 +15,12 @@ describe('RefusalNotice', () => {
 		expect(getByRole('link', { name: 'View the license' }).getAttribute('href')).toBe('/admin/settings/license');
 	});
 
-	it('names the capability a feature refusal needs', () => {
+	it('says a feature refusal in the neutral locked state, without the capability', () => {
 		const { container } = render(RefusalNotice, {
 			props: { refusal: { kind: 'feature', feature: 'example-feature', plugin: 'example', upgradeUrl: '' } },
 		});
-		expect(container.textContent).toContain('This needs example-feature');
+		expect(container.textContent).toContain('Not enabled on this engine');
+		expect(container.textContent).not.toContain('example-feature');
 	});
 
 	it('names a license before removing one, and offers the link the engine sent for more', () => {
@@ -27,7 +28,7 @@ describe('RefusalNotice', () => {
 		const { container, getByRole } = render(RefusalNotice, {
 			props: { refusal: { kind: 'cap', cap: 'example.items', limit: 4, current: 4, upgradeUrl: link } },
 		});
-		expect(container.textContent).toContain("You're using 4 of 4 items, the most this instance allows. A license that allows more lifts the limit. Removing one also makes room.");
+		expect(container.textContent).toContain("You're using 4 of 4 items, the most this engine allows. A license that allows more lifts the limit. Removing one also makes room.");
 		expect(getByRole('link', { name: 'View the license' }).getAttribute('href')).toBe('/admin/settings/license');
 		// The link names neither a plan nor an add-on, so it keeps words of its own.
 		const more = getByRole('link', { name: 'How to raise the limit' });

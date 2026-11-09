@@ -33,6 +33,13 @@ describe('FieldCell', () => {
 		expect(getByText('42')).toBeTruthy();
 	});
 
+	it('renders a decimal with its trailing zeros', () => {
+		const { getByText } = render(FieldCell, {
+			props: { field: field('decimal', { precision: 10, scale: 2 }), value: '19.90' },
+		});
+		expect(getByText('19.90')).toBeTruthy();
+	});
+
 	it('renders a success badge for a true boolean', () => {
 		const { getByText } = render(FieldCell, {
 			props: { field: field('boolean'), value: true },

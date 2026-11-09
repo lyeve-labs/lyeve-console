@@ -46,7 +46,7 @@
 
 	const clear = confirmed(
 		'Clear the tenant captcha settings?',
-		"This tenant's pages and flows go back to the install's captcha, and the stored secret is deleted.",
+		"This tenant's pages and flows go back to this engine's captcha, and the stored secret is deleted.",
 		{ confirmLabel: 'Clear', success: 'Captcha settings cleared.' },
 	);
 </script>
@@ -65,8 +65,8 @@
 			absent="Captcha is not included in this build."
 		/>
 	{:else}
-		<Alert tone="brand" title="The admin login always uses the install's captcha">
-			These settings apply to this tenant's own pages and flows. Signing in to this console always uses the install's captcha, so a wrong key here cannot lock you out.
+		<Alert tone="brand" title="Signing in to the console always uses this engine's captcha">
+			These settings apply to this tenant's own pages and flows. Signing in to the console always uses this engine's captcha, so a wrong key here cannot lock you out.
 		</Alert>
 
 		<FormErrors message={formError} refused={refusal} />
@@ -79,16 +79,16 @@
 						{#if settings.source === 'tenant' && tenant}
 							This tenant's flows use {providerLabel(tenant.provider)} with its own keys.
 						{:else if settings.instance.enabled}
-							This tenant's flows use the install's {providerLabel(settings.instance.provider)}.
+							This tenant's flows use this engine's {providerLabel(settings.instance.provider)}.
 						{:else}
-							No captcha is in use. Neither this tenant nor the install has one set.
+							No captcha is in use. Neither this tenant nor this engine has one set.
 						{/if}
 					</p>
 					<p class="text-muted">
-						The install's captcha:
+						This engine's captcha:
 						{settings.instance.enabled ? providerLabel(settings.instance.provider) : 'not set'}.
 						<Badge tone={settings.source === 'tenant' ? 'brand' : 'neutral'}>
-							{settings.source === 'tenant' ? 'Tenant settings' : 'Install settings'}
+							{settings.source === 'tenant' ? 'Tenant settings' : 'Engine settings'}
 						</Badge>
 					</p>
 				</div>
@@ -99,7 +99,7 @@
 			<SectionHeading level={2}>Tenant settings</SectionHeading>
 			{#if !settings.licensed}
 				<p class="text-sm text-muted" id="captcha-license-note">
-					Saving tenant captcha settings needs a license this install does not have. Settings already saved still apply, and you can always clear them.
+					Tenant captcha settings are not enabled on this engine. Settings already saved still apply, and you can always clear them.
 				</p>
 			{/if}
 			<Card pad="md">

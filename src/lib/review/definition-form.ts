@@ -1,4 +1,6 @@
 import { CONDITION_OPS, type ConditionOp, type StageCondition, type StageInput } from '$lib/api/review';
+import { text } from '$lib/api/narrow';
+import { couldNotLoad } from '$lib/outage';
 
 /** The SLA ceiling the plugin accepts, in seconds: ten days. */
 export const MAX_SLA_SECONDS = 864000;
@@ -10,10 +12,6 @@ export const MAX_QUORUM = 100;
 export const MAX_CONDITION_VALUES = 100;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function text(v: unknown): string {
-	return typeof v === 'string' ? v.trim() : '';
-}
 
 /** The values of an `in` condition, one per comma or line. */
 export function conditionValues(raw: string): string[] {
@@ -31,7 +29,7 @@ function conditionOf(r: Record<string, unknown>, n: number): { condition?: Stage
 	const field = text(r.condition_field);
 	if (!field) return {};
 	const op = text(r.condition_op) as ConditionOp;
-	if (!(CONDITION_OPS as readonly string[]).includes(op)) return { error: `Stage ${n}: pick how the condition compares.` };
+	if (!(CONDITION_OPS as readonly string[]).includes(op)) return { error: `Stage ${n}: choose how the condition compares.` };
 	if (op === 'exists') return { condition: { field, op } };
 	const raw = text(r.condition_value);
 	if (op === 'in') {
@@ -58,7 +56,7 @@ export function parseStages(raw: string): { stages: StageInput[] } | { error: st
 	try {
 		parsed = JSON.parse(raw || '[]');
 	} catch {
-		return { error: 'Could not read the stages. Reload the page and try again.' };
+		return { error: couldNotLoad('the stages', { reload: true }) };
 	}
 	if (!Array.isArray(parsed) || parsed.length === 0) {
 		return { error: 'A definition needs at least one stage.' };

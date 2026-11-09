@@ -1,17 +1,14 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import { readError } from '$lib/server/read-error';
-import { section } from '$lib/api/gate';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import { ApiError } from '@lyeve-labs/client';
 import {
-	AB_OK,
 	EXPERIMENTS_URL,
 	METRIC_TYPES,
-	abGate,
 	createMetric,
 	createVariant,
 	deleteMetric,
@@ -19,13 +16,15 @@ import {
 	listMetrics,
 	listVariants,
 	readResults,
-	type AbGate,
 	type Experiment,
 	type ExperimentResults,
 	type Metric,
 	type MetricType,
 	type Variant,
 } from '$lib/api/ab-testing';
+import { type Gate, GATE_OK, section } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
+import { asked } from '$lib/server/asked';
 
 function metricType(value: string): MetricType | null {
 	return METRIC_TYPES.includes(value as MetricType) ? (value as MetricType) : null;
@@ -45,7 +44,7 @@ export const load: PageServerLoad = async (event) => {
 	} catch (err) {
 		// The page has nothing to draw without the experiment, and a plugin this
 		// instance is not enabled for is not an experiment that is missing.
-		if (err instanceof ApiError && err.status === 402) error(402, 'A/B testing is not enabled on this instance.');
+		if (err instanceof ApiError && err.status === 402) error(402, 'A/B testing is not enabled on this engine.');
 		readError(err, 'No such experiment');
 	}
 
@@ -53,12 +52,12 @@ export const load: PageServerLoad = async (event) => {
 	// and keeps its failure, so a panel that could not be read never offers
 	// to add the first row of a list that may already have rows.
 	const [variants, metrics, results] = await Promise.all([
-		section<Variant[]>(listVariants(client, id), 'Could not load the variants.'),
-		section<Metric[]>(listMetrics(client, id), 'Could not load the metrics.'),
-		section<ExperimentResults>(readResults(client, id), 'Could not load the results.'),
+		section<Variant[]>(listVariants(client, id), couldNotLoad('the variants')),
+		section<Metric[]>(listMetrics(client, id), couldNotLoad('the metrics')),
+		section<ExperimentResults>(readResults(client, id), couldNotLoad('the results')),
 	]);
 
-	const gate: AbGate = AB_OK;
+	const gate: Gate = GATE_OK;
 	return { experiment, variants, metrics, results, gate };
 };
 
@@ -85,24 +84,31 @@ export const actions: Actions = {
 				is_control: form.get('is_control') === 'true',
 			});
 		} catch (err) {
-			return fail(400, { action: 'addVariant', error: actionError(err, 'Could not add the variant. Try again.') });
+			return tagged('addVariant', actionFailure(err, 'Could not add the variant. Try again.'));
 		}
 		return { saved: name };
 	},
 
-	removeVariant: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const client = authedClient(event);
-		const form = await event.request.formData();
-		const vid = String(form.get('vid') ?? '');
-		if (!vid) return fail(400, { action: 'removeVariant', error: 'This form is missing its variant. Reload the page and try again.' });
-		try {
-			await deleteVariant(client, event.params.id, vid);
-		} catch (err) {
-			return fail(400, { action: 'removeVariant', error: actionError(err, 'Could not remove the variant. Try again.') });
-		}
-		return { removed: vid };
-	},
+	removeVariant: asked(
+		{
+			question: 'Remove this variant?',
+			detail: 'Exposures already recorded for it are kept, and the results still count people who saw it.',
+			label: 'Remove',
+		},
+		async (event) => {
+			await requireRole(event, ['admin', 'super_admin']);
+			const client = authedClient(event);
+			const form = await event.request.formData();
+			const vid = String(form.get('vid') ?? '');
+			if (!vid) return fail(400, { action: 'removeVariant', error: 'This form is missing its variant. Reload the page and try again.' });
+			try {
+				await deleteVariant(client, event.params.id, vid);
+			} catch (err) {
+				return tagged('removeVariant', actionFailure(err, 'Could not remove the variant. Try again.'));
+			}
+			return { removed: vid };
+		},
+	),
 
 	addMetric: async (event) => {
 		await requireRole(event, ['admin', 'super_admin']);
@@ -129,22 +135,29 @@ export const actions: Actions = {
 				metric_type: kind,
 			});
 		} catch (err) {
-			return fail(400, { action: 'addMetric', error: actionError(err, 'Could not add the metric. Try again.') });
+			return tagged('addMetric', actionFailure(err, 'Could not add the metric. Try again.'));
 		}
 		return { saved: name };
 	},
 
-	removeMetric: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const client = authedClient(event);
-		const form = await event.request.formData();
-		const mid = String(form.get('mid') ?? '');
-		if (!mid) return fail(400, { action: 'removeMetric', error: 'This form is missing its metric. Reload the page and try again.' });
-		try {
-			await deleteMetric(client, event.params.id, mid);
-		} catch (err) {
-			return fail(400, { action: 'removeMetric', error: actionError(err, 'Could not remove the metric. Try again.') });
-		}
-		return { removed: mid };
-	},
+	removeMetric: asked(
+		{
+			question: 'Remove this metric?',
+			detail: 'The events it counted stay recorded.',
+			label: 'Remove',
+		},
+		async (event) => {
+			await requireRole(event, ['admin', 'super_admin']);
+			const client = authedClient(event);
+			const form = await event.request.formData();
+			const mid = String(form.get('mid') ?? '');
+			if (!mid) return fail(400, { action: 'removeMetric', error: 'This form is missing its metric. Reload the page and try again.' });
+			try {
+				await deleteMetric(client, event.params.id, mid);
+			} catch (err) {
+				return tagged('removeMetric', actionFailure(err, 'Could not remove the metric. Try again.'));
+			}
+			return { removed: mid };
+		},
+	),
 };

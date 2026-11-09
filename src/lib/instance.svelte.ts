@@ -39,7 +39,7 @@ export interface Instance {
 	licenseModule(): boolean;
 }
 
-const INSTANCE_KEY = Symbol('lyeve-admin-instance');
+const INSTANCE_KEY = Symbol('lyeve-console-instance');
 
 /** What the layout read that the instance answers from. */
 export interface InstanceSource {

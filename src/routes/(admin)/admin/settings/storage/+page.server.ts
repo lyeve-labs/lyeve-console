@@ -1,24 +1,23 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { actionError, actionFailure } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import {
-	STORAGE_OK,
 	createProvider,
 	deleteProvider,
 	providerBodyFrom,
 	updateProvider,
 	listProviders,
-	storageGate,
 	testMessage,
 	testPassed,
 	testProvider,
-	type StorageGate,
 	type StorageProvider,
 } from '$lib/api/storage';
+import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
 import { rowsOf } from '$lib/api/list';
+import { asked } from '$lib/server/asked';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins, user } = await event.parent();
@@ -29,12 +28,12 @@ export const load: PageServerLoad = async (event) => {
 	const client = authedClient(event);
 	let providers: StorageProvider[] = [];
 	// The shell says why the page is unavailable while its plugin does not run.
-	let gate: StorageGate = notRunning(plugins, PLUGIN.storage) ? { state: 'absent' } : STORAGE_OK;
+	let gate: Gate = notRunning(plugins, PLUGIN.storage) ? { state: 'absent' } : GATE_OK;
 	if (gate.state === 'ok') {
 		try {
 			providers = rowsOf(await listProviders(client));
 		} catch (err) {
-			gate = storageGate(err);
+			gate = gateOf(err, 'Could not load storage providers.');
 		}
 	}
 
@@ -57,7 +56,8 @@ export const actions: Actions = {
 			}
 			return { tested: id };
 		} catch (err) {
-			return fail(400, { error: actionError(err, 'Could not test the provider. Try again.') });
+			const failed = actionFailure(err, 'Could not test the provider. Try again.');
+			return fail(failed.status, failed.data);
 		}
 	},
 
@@ -88,17 +88,25 @@ export const actions: Actions = {
 		}
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const client = authedClient(event);
-		const form = await event.request.formData();
-		const id = String(form.get('id') ?? '');
-		if (!id) return fail(400, { error: 'This form is missing its provider. Reload the page and try again.' });
-		try {
-			await deleteProvider(client, id);
-		} catch (err) {
-			return fail(400, { error: actionError(err, 'Could not delete the provider. Try again.') });
-		}
-		return { removed: id };
-	},
+	delete: asked(
+		{
+			question: 'Delete this provider?',
+			detail: 'Files already stored there stay where they are, but this engine can no longer read them.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const client = authedClient(event);
+			const form = await event.request.formData();
+			const id = String(form.get('id') ?? '');
+			if (!id) return fail(400, { error: 'This form is missing its provider. Reload the page and try again.' });
+			try {
+				await deleteProvider(client, id);
+			} catch (err) {
+				const failed = actionFailure(err, 'Could not delete the provider. Try again.');
+				return fail(failed.status, failed.data);
+			}
+			return { removed: id };
+		},
+	),
 };

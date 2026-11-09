@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '@lyeve-labs/client';
 import {
-	deviceGate,
 	deviceLabel,
 	deviceName,
 	looksLikeThisDevice,
@@ -61,19 +59,5 @@ describe('marking the browser reading the page', () => {
 		expect(looksLikeThisDevice(device(), null)).toBe(false);
 		expect(looksLikeThisDevice(device(), '')).toBe(false);
 		expect(looksLikeThisDevice(device({ user_agent: '' }), '')).toBe(false);
-	});
-});
-
-describe('the gate sorts a refusal by what it means', () => {
-	it('tells a 402, a 404 and any other failure apart', () => {
-		expect(deviceGate(new ApiError(402, 'payment required')).state).toBe('locked');
-		expect(deviceGate(new ApiError(404, 'not found')).state).toBe('absent');
-		expect(deviceGate(new ApiError(500, 'internal error')).state).toBe('error');
-		expect(deviceGate(new ApiError(503, 'database error')).state).toBe('unavailable');
-	});
-
-	it('never reports a failed read as an empty list', () => {
-		const gate = deviceGate(new Error('network'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load your devices.');
 	});
 });

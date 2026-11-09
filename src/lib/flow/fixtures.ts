@@ -430,12 +430,12 @@ export const missingTypeErrors: ValidationError[] = [
 		node_id: 'render',
 		path: '/type',
 		message:
-			'node type "email.render" is not available on this instance; it needs the email plugin, which is not started',
+			'node type "email.render" is not available on this engine; it needs the email plugin, which is not started',
 	},
 ];
 
 /** The 422 body of a run of a blocked flow. */
-export const blockedRunError = { error: 'flow is blocked: a node type it uses is not available on this instance' };
+export const blockedRunError = { error: 'flow is blocked: a node type it uses is not available on this engine' };
 
 export const fixtureRun: FlowRun = {
 	id: 'r1',

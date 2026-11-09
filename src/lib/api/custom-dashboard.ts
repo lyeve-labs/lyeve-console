@@ -81,13 +81,13 @@ export interface WidgetKind {
  * draw.
  */
 export const WIDGET_KINDS: readonly WidgetKind[] = [
-	{ type: 'entry_counts', label: 'Entry counts', description: 'How many entries each schema has, and how many changed each day over the last two weeks.', plugin: null, fallbackTitle: 'Entries', adminData: false },
-	{ type: 'latest_entries', label: 'Latest entries', description: 'The entries changed most recently, in one schema or in all of them.', plugin: PLUGIN.content, fallbackTitle: 'Latest entries', adminData: true },
+	{ type: 'entry_counts', label: 'Entry counts', description: 'How many entries each content type has, and how many changed each day over the last two weeks.', plugin: null, fallbackTitle: 'Entries', adminData: false },
+	{ type: 'latest_entries', label: 'Latest entries', description: 'The entries changed most recently, in one content type or in all of them.', plugin: PLUGIN.content, fallbackTitle: 'Latest entries', adminData: true },
 	{ type: 'status_breakdown', label: 'Status breakdown', description: 'How many entries are published, draft and archived.', plugin: PLUGIN.content, fallbackTitle: 'Entries by status', adminData: true },
 	{ type: 'recent_activity', label: 'Recent activity', description: 'The latest entries in the audit log: who changed what.', plugin: PLUGIN.audit, fallbackTitle: 'Recent activity', adminData: true },
 	{ type: 'media_usage', label: 'Media usage', description: 'How many files the media library has, how much space they take, and of what kind.', plugin: PLUGIN.media, fallbackTitle: 'Media library', adminData: true },
 	{ type: 'api_usage', label: 'API usage', description: 'Requests, failures and latency over a window, with requests per hour.', plugin: PLUGIN.analytics, fallbackTitle: 'API usage', adminData: true },
-	{ type: 'links', label: 'Links', description: "A list of links: the team's own tools, or pages of this admin.", plugin: null, fallbackTitle: 'Links', adminData: false },
+	{ type: 'links', label: 'Links', description: "A list of links: your team's own tools, or pages of the console.", plugin: null, fallbackTitle: 'Links', adminData: false },
 	{ type: 'text', label: 'Text', description: 'A note in Markdown, plain or as a callout.', plugin: null, fallbackTitle: '', adminData: false },
 ];
 

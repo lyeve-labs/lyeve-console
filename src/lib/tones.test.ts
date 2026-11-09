@@ -1,7 +1,7 @@
 import { globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { entryTone, httpStatusTone, methodTone } from './tones';
+import { entryTone, eventTone, httpStatusTone, jobTone, methodTone } from './tones';
 
 describe('methodTone', () => {
 	it('paints a read in brand on every page that lists routes', () => {
@@ -27,6 +27,23 @@ describe('entryTone', () => {
 		expect(entryTone('published')).toBe('success');
 		expect(entryTone('draft')).toBe('warn');
 		expect(entryTone('archived')).toBe('neutral');
+	});
+});
+
+describe('jobTone', () => {
+	it('reads an export job and a replay run the same way', () => {
+		expect(jobTone('running')).toBe('warn');
+		expect(jobTone('completed')).toBe('success');
+		expect(jobTone('failed')).toBe('danger');
+		expect(jobTone('pending')).toBe('neutral');
+		expect(jobTone('canceled')).toBe('neutral');
+	});
+});
+
+describe('eventTone', () => {
+	it('tells an event after a write from one before it', () => {
+		expect(eventTone('after_create')).toBe('success');
+		expect(eventTone('before_create')).toBe('warn');
 	});
 });
 

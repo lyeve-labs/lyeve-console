@@ -28,8 +28,6 @@ engine runs. The README's "Quick start" section shows the proxy targets.
 ## The four phases
 
 Changes move through four phases.
-Knowing which phase your change touches makes it easier to predict what will
-happen after merge.
 
 | # | Phase    | When                              | What happens                                                       |
 |---|----------|-----------------------------------|--------------------------------------------------------------------|
@@ -96,12 +94,12 @@ BREAKING CHANGE: Consumers must migrate to /api/v1. See MIGRATION.md.
 
 Examples that fail:
 
-```
-Add new thing                      ← no type
-feat: Added new thing              ← subject must not start uppercase
-fix: fixed the bug.                ← subject must not end with a period
-update                             ← unhelpful, also no type
-```
+| Message | Why it fails |
+|---|---|
+| `Add new thing` | no type |
+| `feat: Added new thing` | the subject starts in upper case |
+| `fix: fixed the bug.` | the subject ends with a period |
+| `update` | no type, and it says nothing |
 
 ## Developer Certificate of Origin
 
@@ -114,7 +112,7 @@ merged until the commit is amended.
 
 ## PR rules
 
-1. Open against `dev`. Never push directly to `dev` or `main`, and never merge your own PR.
+1. Open against `dev`. Never push directly to `dev` or `main`. A PR merges once it is reviewed.
 2. Keep PRs small and focused. One logical change per PR.
 3. The PR title becomes the message of the merge commit, so it must be a
    valid Conventional Commit. The maintainer who merges checks it.
@@ -151,9 +149,11 @@ every pull request and every release tag.
 ## Code conventions
 
 - Svelte 5 runes only. No `writable()`, no `$:` reactive statements.
-- Reads and server-side mutations go through `+page.server.ts` load functions
-  and form actions. Interactive client-side actions (uploads, live toggles)
-  may `fetch` the app's own `/api/*` routes, never a backend service directly.
+- Reads go through `+page.server.ts` load functions and writes through form
+  actions. A component never calls the API, with three exceptions: the import
+  wizard and the media upload send a file from the browser straight to the
+  engine, because a file can exceed the console's own body limit, and the
+  flow editor validates a draft while it is edited.
 - `structuredClone` fails on Svelte 5 reactive proxies. Use
   `JSON.parse(JSON.stringify(x))` instead.
 - `svelte-dnd-action` items need stable `id` properties. Stamp them with

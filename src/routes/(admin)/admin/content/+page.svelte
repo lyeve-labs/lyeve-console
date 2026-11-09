@@ -24,7 +24,7 @@
 		type CollectionFilter,
 		type CollectionSort,
 	} from '$lib/api/collections';
-	import { NO_VALUE, formatCount, formatDateTime } from '$lib/format';
+	import { NO_VALUE, formatCount, formatDateTime, plural } from '$lib/format';
 	import { ICON } from '$lib/icon';
 
 	let { data }: { data: PageData } = $props();
@@ -160,7 +160,7 @@
 
 <PageShell
 	title="Content"
-	description="Open a collection to see and edit its entries."
+	description="Open a content type to see and edit its entries."
 	width="wide"
 >
 	{#snippet actions()}
@@ -189,8 +189,8 @@
 	{:else if rows.length === 0 && data.filter === 'all' && !data.query}
 		<EmptyState
 			level={2}
-			title="No schemas yet"
-			description="Create a schema to start adding content."
+			title="No content types yet"
+			description="Create a content type to start adding content."
 		>
 			{#snippet iconSnippet()}
 				<Database size={ICON.lg} />
@@ -207,10 +207,10 @@
 		     survives a reload and a page turn. A rows chip carries its count only
 		     when the rows were already read for the set. -->
 		<form method="GET">
-			<ListToolbar label="Filter collections">
+			<ListToolbar label="Filter content types">
 				{#snippet search()}
 					<div class="flex items-center gap-2">
-						<label for="collection-search" class="sr-only">Find a collection</label>
+						<label for="collection-search" class="sr-only">Find a content type</label>
 						<SearchInput
 							id="collection-search"
 							name="q"
@@ -225,8 +225,8 @@
 					</div>
 				{/snippet}
 				{#snippet filters()}
-					<nav aria-label="Narrow the collections">
-						<FilterChips label="Narrow the collections" value={data.filter} options={filterOptions} />
+					<nav aria-label="Narrow the content types">
+						<FilterChips label="Narrow the content types" value={data.filter} options={filterOptions} />
 					</nav>
 				{/snippet}
 			</ListToolbar>
@@ -234,7 +234,7 @@
 
 		<section class="flex flex-col gap-4">
 			<SectionHeading level={2}>
-				Collections
+				Content types
 				<span class="ml-2 text-sm font-normal tabular-nums text-faint">
 					{data.total ?? rows.length}
 					{#if data.filter !== 'all'}{filterLabel}{/if}
@@ -244,31 +244,31 @@
 			{#if filtered.length === 0}
 				<EmptyState
 					title={data.filter === 'all'
-						? 'No collections match this search'
-						: `No ${filterLabel} collections${data.query ? ' match this search' : ''}`}
+						? 'No content types match this search'
+						: `No ${filterLabel} content types${data.query ? ' match this search' : ''}`}
 					description={data.filter === 'all'
-						? 'Clear the search to see every collection.'
-						: 'Choose another filter, or All to see every collection.'}
+						? 'Clear the search to see every content type.'
+						: 'Choose another filter, or All to see every content type.'}
 				>
 					{#snippet iconSnippet()}
 						<Inbox size={ICON.lg} />
 					{/snippet}
 					{#snippet action()}
-						<Button variant="secondary" href="/admin/content">Show every collection</Button>
+						<Button variant="secondary" href="/admin/content">Show every content type</Button>
 					{/snippet}
 				</EmptyState>
 			{:else}
 				{#if empties > 0 && !filterCountsRows(data.filter)}
 					<p class="text-xs text-faint">
-						{empties} of {filtered.length} on this page {empties === 1 ? 'has' : 'have'} no entries.
+						{empties} of {filtered.length} on this page {plural(empties, 'has', 'have')} no entries.
 						<a href={filterHref('with-rows')} class="underline hover:text-fg">Hide them</a>.
 					</p>
 				{/if}
 
-				<Table label="Collections" hoverable cell="truncate">
+				<Table label="Content types" hoverable cell="truncate">
 					<thead>
 						<tr>
-							{@render sortHeader('name', 'Collection', 'left')}
+							{@render sortHeader('name', 'Content type', 'left')}
 							{@render sortHeader('rows', 'Rows', 'right')}
 							{@render sortHeader('fields', 'Fields', 'right')}
 							<th scope="col" class="text-right">Relations</th>

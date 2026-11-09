@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '@lyeve-labs/client';
 import {
 	blocked,
 	enforcementLabel,
@@ -9,7 +8,6 @@ import {
 	limitLabel,
 	pending,
 	uncheckedDimensions,
-	usageGate,
 	usageTone,
 	usedPct,
 	type Quota,
@@ -114,20 +112,6 @@ describe('the queues', () => {
 	it('finds the requests still waiting on somebody', () => {
 		const rows = [request(), request({ id: 'r2', status: 'approved' })];
 		expect(pending(rows).map((r) => r.id)).toEqual(['r1']);
-	});
-});
-
-describe('the gate', () => {
-	it('tells a 402, a 404 and any other failure apart', () => {
-		expect(usageGate(new ApiError(402, 'payment required')).state).toBe('locked');
-		expect(usageGate(new ApiError(404, 'not found')).state).toBe('absent');
-		expect(usageGate(new ApiError(500, 'internal error')).state).toBe('error');
-		expect(usageGate(new ApiError(503, 'unavailable')).state).toBe('unavailable');
-	});
-
-	it('never reports a failed read as nobody being over their limit', () => {
-		const gate = usageGate(new Error('network'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load usage.');
 	});
 });
 

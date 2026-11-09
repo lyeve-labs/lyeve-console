@@ -13,11 +13,10 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 
-export const AB_STATS_URL = '/api/admin/recommendations/ab-stats';
-export const REFRESH_URL = '/api/admin/recommendations/refresh';
-export const GENERATE_FEED_URL = '/api/admin/recommendations/generate-feed';
+const AB_STATS_URL = '/api/admin/recommendations/ab-stats';
+const REFRESH_URL = '/api/admin/recommendations/refresh';
+const GENERATE_FEED_URL = '/api/admin/recommendations/generate-feed';
 
 /** How the users are split between recommendations and the control arm. */
 export interface AbStats {
@@ -35,9 +34,6 @@ export interface RefreshResult {
 	duration_ms: number;
 }
 
-/** Where one entry in a person's feed came from. */
-export const FEED_SOURCES = ['similar', 'trending', 'collaborative', 'random'] as const;
-
 export interface FeedEntry {
 	id: string;
 	user_id: string;
@@ -45,15 +41,6 @@ export interface FeedEntry {
 	score: number;
 	source: string;
 	created_at: string;
-}
-
-export type RecommendationsGate = Gate;
-
-export const RECOMMENDATIONS_OK: RecommendationsGate = GATE_OK;
-
-/** What a refused recommendations read means, read the way every plugin's is. */
-export function recommendationsGate(err: unknown): RecommendationsGate {
-	return gateOf(err, 'Could not load the recommendation split.');
 }
 
 export async function readAbStats(client: HttpClient): Promise<AbStats> {
@@ -134,24 +121,6 @@ export function hasUsers(stats: AbStats | null): boolean {
 	return !!stats && stats.total_users > 0;
 }
 
-/** A percentage the engine already computed, at one decimal place. */
-export function percent(value: number | null | undefined): string {
-	if (value === null || value === undefined || !Number.isFinite(value)) return '-';
-	return `${value.toFixed(1)}%`;
-}
-
-/** How long a recompute took, in units a person reads. */
-export function took(ms: number | null | undefined): string {
-	if (ms === null || ms === undefined || !Number.isFinite(ms)) return '-';
-	if (ms >= 60_000) {
-		const minutes = Math.floor(ms / 60_000);
-		const seconds = Math.round((ms % 60_000) / 1000);
-		return `${minutes}m ${seconds}s`;
-	}
-	if (ms >= 1000) return `${(ms / 1000).toFixed(1)} s`;
-	return `${Math.round(ms)} ms`;
-}
-
 /**
  * A score at a precision the model supports.
  *
@@ -164,7 +133,7 @@ export function score(value: number | null | undefined): string {
 	return value.toFixed(3);
 }
 
-export const TRENDING_URL = '/api/v1/recommendations/trending';
+const TRENDING_URL = '/api/v1/recommendations/trending';
 
 /** One item on the trending list, as the last recompute ranked it. */
 export interface TrendingItem {

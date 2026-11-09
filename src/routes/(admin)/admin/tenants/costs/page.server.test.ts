@@ -4,8 +4,6 @@ import { ApiError } from '@lyeve-labs/client';
 const api = vi.hoisted(() => ({
 	getSummary: vi.fn(),
 	getDashboard: vi.fn(),
-	listBudgets: vi.fn(),
-	listPrices: vi.fn(),
 }));
 
 vi.mock('$lib/server/authz', () => ({
@@ -23,14 +21,12 @@ function event(running: string[] = ['multitenant'], roles = ['admin']) {
 	return { parent: async () => ({ user: { roles }, plugins: { state: 'named', running, withheld: [] } }) } as never;
 }
 
-type Loaded = { enabled: boolean; upgradeUrl: string; summary: unknown; budgets: unknown; prices: unknown };
+type Loaded = { enabled: boolean; upgradeUrl: string; summary: unknown; dashboard: unknown };
 
 beforeEach(() => {
 	vi.clearAllMocks();
 	api.getSummary.mockResolvedValue({ total: 1 });
 	api.getDashboard.mockResolvedValue({ series: [] });
-	api.listBudgets.mockResolvedValue([]);
-	api.listPrices.mockResolvedValue([]);
 });
 
 describe('tenant costs load', () => {
@@ -43,7 +39,7 @@ describe('tenant costs load', () => {
 	it('asks nothing while the multitenant plugin does not run', async () => {
 		await load(event([]));
 		expect(api.getSummary).not.toHaveBeenCalled();
-		expect(api.listBudgets).not.toHaveBeenCalled();
+		expect(api.getDashboard).not.toHaveBeenCalled();
 	});
 
 	it('renders the refusal the ledger answers rather than predicting it, with the link it names', async () => {
@@ -53,7 +49,7 @@ describe('tenant costs load', () => {
 		expect(data.enabled).toBe(false);
 		expect(data.upgradeUrl).toBe('/admin/settings/license');
 		expect(data.summary).toMatchObject({ ok: false });
-		expect(data.prices).toMatchObject({ ok: false });
+		expect(data.dashboard).toMatchObject({ ok: false });
 	});
 
 	it('keeps a read that failed for another reason apart from a refusal', async () => {
@@ -61,7 +57,7 @@ describe('tenant costs load', () => {
 		const data = (await load(event())) as Loaded;
 		expect(data.enabled).toBe(true);
 		expect(data.summary).toEqual({ ok: false, gate: { state: 'unavailable' } });
-		expect(data.budgets).toEqual({ ok: true, value: [] });
+		expect(data.dashboard).toEqual({ ok: true, value: { series: [] } });
 	});
 
 	it('refuses a role below admin', async () => {

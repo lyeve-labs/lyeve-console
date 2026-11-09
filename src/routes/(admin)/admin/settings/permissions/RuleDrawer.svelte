@@ -95,7 +95,7 @@
 
 			{#if schema === null}
 				{#if flowsFailed}
-					<Alert tone="warn">Could not load flows, so only schemas are listed. Reload the page to try again.</Alert>
+					<Alert tone="warn">Could not load flows, so only content types are listed. Reload the page to try again.</Alert>
 				{/if}
 				<!-- The combobox posts whatever text is in its box, so the write reads
 				     the chosen option instead. A typed fragment nobody picked would
@@ -104,7 +104,7 @@
 					label="Resource"
 					bind:value={editSchema}
 					options={rules.unruledSchemas(role)}
-					placeholder="Search schemas and flows"
+					placeholder="Search content types and flows"
 					required
 				/>
 				<input type="hidden" name="schema_name" value={editSchema} />

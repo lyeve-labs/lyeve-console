@@ -126,7 +126,7 @@ describe('mfa verify and disable', () => {
 
 	it('keeps the same key on a wrong code and says what the engine said', async () => {
 		const { ev } = event(
-			{ '/api/admin/mfa/totp/verify': { status: 400, body: { error: 'invalid code' } } },
+			{ '/api/admin/mfa/totp/verify': { status: 400, body: { error: 'invalid code', code: 'bad_request' } } },
 			{ code: '123456', uri: 'otpauth://x', secret: 'ABC' },
 		);
 		const r = (await actions.verify(ev)) as { data: Record<string, unknown> };

@@ -80,7 +80,7 @@ describe('readProviderForm', () => {
 
 	it('refuses allow_private from anyone but a super admin', () => {
 		const fields = { name: 'ollama', kind: 'openai_compatible', base_url: 'http://localhost:11434/v1', allow_private: 'true', modalities: 'text' };
-		expect(readProviderForm(form(fields), null, false)).toEqual({ error: 'Only a super admin may allow a private address.' });
+		expect(readProviderForm(form(fields), null, false)).toEqual({ error: 'Only a super admin can allow a private address.' });
 		expect(readProviderForm(form(fields), null, true)).toMatchObject({ input: { allow_private: true } });
 	});
 

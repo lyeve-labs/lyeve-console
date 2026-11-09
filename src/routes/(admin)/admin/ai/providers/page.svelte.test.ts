@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Page from './+page.svelte';
-import { fixtureLocalProvider, fixtureProvider, fixtureSettings } from '$lib/components/ai/fixtures';
+import { fixtureLocalProvider, fixtureProvider, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
@@ -80,8 +80,8 @@ describe('AI providers page', () => {
 	});
 
 	it.each([
-		['locked', 'Not enabled on this instance.'],
-		['forbidden', 'Your role cannot read AI providers.'],
+		['locked', 'Not enabled on this engine.'],
+		['forbidden', 'Only an admin or a super admin can open AI providers.'],
 		['off', 'AI is switched off for this tenant'],
 		['no_provider', 'No AI provider is available'],
 	])('paints the %s state and no table', (state, words) => {

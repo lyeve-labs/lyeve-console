@@ -15,13 +15,13 @@
 		Table,
 		Textarea,
 		Toggle,
-		confirm,
 	} from '@lyeve-labs/ui-kit';
 	import { Database, MessageSquare, Pencil, PlugZap, Plus, Trash2 } from '@lucide/svelte';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { flowBack } from '$lib/flow/back';
-	import { tick, untrack } from 'svelte';
+	import { untrack } from 'svelte';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { ActionData, PageData } from './$types';
 	import type { Datasource, DatasourceKind } from '$lib/api/flows';
 	import NotEnabled from '$lib/components/NotEnabled.svelte';
@@ -29,7 +29,7 @@
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import { useInstance } from '$lib/instance.svelte';
 	import InlineUpgradeLink from '$lib/components/InlineUpgradeLink.svelte';
-	import { submitter } from '$lib/forms.svelte';
+	import { confirmed, submitter } from '$lib/forms.svelte';
 	import { formatDuration } from '$lib/flow/time';
 	import { AUTH_TYPES, EMPTY_AUTH, SSL_MODES, authFieldsOf, isAuthType, isSqlKind, secretKept, sslModeFor, type AuthFields } from '$lib/flow/datasources';
 	import { relativeTime, formatDateTime } from '$lib/format';
@@ -49,7 +49,7 @@
 	const available = $derived(data.available !== false);
 	// The plugin refuses an edit and a connection test as it refuses a create
 	// while datasources are not enabled. A delete it still takes.
-	const UNAVAILABLE = 'Datasources are not enabled on this instance';
+	const UNAVAILABLE = 'Datasources are not enabled on this engine';
 	// Only a super admin may grant writes or private addresses, or change
 	// either grant. An admin sees both and the reason they are fixed.
 	const superAdmin = $derived(data.user.roles.includes('super_admin'));
@@ -218,21 +218,11 @@
 	};
 	const authChoices = AUTH_TYPES.map((t) => ({ ...t, description: AUTH_SAYS[t.value] }));
 
-	// Delete goes through the kit's confirm dialog, then a hidden form, so the
-	// row's button never posts on its own and the action stays a form action.
-	let deleteId = $state('');
-	let deleteForm = $state<HTMLFormElement>();
-
-	async function askDelete(ds: Datasource) {
-		const ok = await confirm(
-			`Delete datasource ${ds.name}?`,
-			'Flows that use it fail at that node until you create it again.',
-			{ confirmLabel: 'Delete' }
-		);
-		if (!ok) return;
-		deleteId = ds.id;
-		await tick();
-		deleteForm?.requestSubmit();
+	function deleteDatasource(name: string): SubmitFunction {
+		return confirmed(`Delete datasource ${name}?`, 'Flows that use it fail at that node until you create it again.', {
+			confirmLabel: 'Delete',
+			success: `Datasource ${name} deleted.`,
+		});
 	}
 
 	// Keyed by row so a second test does not erase the first row's answer. The
@@ -267,7 +257,7 @@
 				<NotEnabled compact title="Datasources" />
 			{/if}
 			{#if data.gate.state === 'ok'}
-				<Button variant="primary" size="sm" onclick={openCreate} disabled={!available} title={available ? undefined : 'Not enabled on this instance'}>
+				<Button variant="primary" size="sm" onclick={openCreate} disabled={!available} title={available ? undefined : 'Not enabled on this engine'}>
 					<Plus size={ICON.sm} />
 					New datasource
 				</Button>
@@ -309,7 +299,7 @@
 		{/if}
 
 		{#if pageFailure?.refused}
-			<Alert tone="warn" title="Not enabled on this instance">
+			<Alert tone="warn" title="Not enabled on this engine">
 				{#snippet children()}
 					{pageFailure.error}
 					{#if enableLink}
@@ -392,9 +382,12 @@
 									<Button variant="ghost" size="sm" onclick={() => openEdit(ds)} title={available ? 'Edit' : UNAVAILABLE} aria-label="Edit {ds.name}" disabled={!available}>
 										<Pencil size={ICON.sm} />
 									</Button>
-									<Button variant="ghost" size="sm" onclick={() => askDelete(ds)} title="Delete" aria-label="Delete {ds.name}">
-										<Trash2 size={ICON.sm} class="text-danger" />
-									</Button>
+									<form method="POST" action="?/delete" use:enhance={deleteDatasource(ds.name)}>
+										<input type="hidden" name="id" value={ds.id} />
+										<Button variant="ghost" size="sm" type="submit" title="Delete" aria-label="Delete {ds.name}">
+											<Trash2 size={ICON.sm} class="text-danger" />
+										</Button>
+									</form>
 								</div>
 							</td>
 						</tr>
@@ -594,12 +587,8 @@
 			<Button variant="primary" type="submit" form="datasource-form" loading={submit.pending}>{editing ? 'Save' : 'Create'}</Button>
 		{/snippet}
 	</Drawer>
-
-	<form method="POST" action="?/delete" use:enhance bind:this={deleteForm} class="hidden">
-		<input type="hidden" name="id" value={deleteId} />
-	</form>
 {:else}
 	<PageShell title="Flows" documentTitle="Datasources - Flows" width="wide">
-		<NotEnabled level={2} title="Flows" description="Datasources are not enabled on this instance." />
+		<NotEnabled level={2} title="Flows" description="Datasources are not enabled on this engine." />
 	</PageShell>
 {/if}

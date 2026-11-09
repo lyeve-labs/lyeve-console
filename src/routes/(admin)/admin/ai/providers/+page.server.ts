@@ -1,7 +1,8 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { AI_OK, aiActionError, aiGate, type AiGate } from '$lib/server/ai-load';
+import { aiActionError, aiGate } from '$lib/server/ai-load';
+import { GATE_OK, section } from '$lib/api/gate';
 import { readProviderForm } from '$lib/server/ai-provider-form';
 import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
 import { createProvider, getAiDashboard, listProviders, type AiDashboard, type AiProvider } from '$lib/api/ai';
@@ -13,18 +14,11 @@ export const load: PageServerLoad = async (event) => {
 	const client = authedClient(event);
 	const { limit, offset } = pageWindow(event.url, DEFAULT_LIMIT, MAX_LIMIT);
 
-	let gate: AiGate = AI_OK;
-	let providers: AiProvider[] = [];
-	let total: number | null = null;
-	let hasMore = false;
-	try {
-		const page = await listProviders(client, { limit: limit + 1, offset });
-		providers = page.rows.slice(0, limit);
-		total = page.total;
-		hasMore = total === null ? page.rows.length > limit : offset + providers.length < total;
-	} catch (err) {
-		gate = aiGate(err, event, 'providers');
-	}
+	const page = await section(listProviders(client, { limit: limit + 1, offset }), (err) => aiGate(err, event, 'providers'));
+	const gate = page.ok ? GATE_OK : page.gate;
+	const providers = page.ok ? page.value.rows.slice(0, limit) : [];
+	const total = page.ok ? page.value.total : null;
+	const hasMore = page.ok && (total === null ? page.value.rows.length > limit : offset + providers.length < total);
 
 	const back = pastEndOffset(providers.length, limit, offset, total);
 	if (back !== null) redirect(307, withOffset(event.url, back));

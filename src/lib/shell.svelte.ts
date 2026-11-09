@@ -7,7 +7,7 @@
  * a module-level `$state`, because a module is one object for every request
  * the server renders and a page's ask would leak into the next reader's
  * frame. Context is scoped to the tree the layout mounts. It is not a store,
- * which the admin does not use.
+ * which the console does not use.
  */
 import { getContext, setContext } from 'svelte';
 
@@ -16,7 +16,7 @@ export interface Shell {
 	focus: boolean;
 }
 
-export const SHELL_KEY = Symbol('lyeve-admin-shell');
+export const SHELL_KEY = Symbol('lyeve-console-shell');
 
 /** The layout calls this once. The object it gets back is what it binds the shell to. */
 export function provideShell(): Shell {

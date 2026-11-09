@@ -154,4 +154,12 @@ describe('admin tokens page', () => {
 		expect(panel.textContent).toContain('Your password');
 		expect(panel.querySelector('button[type="submit"][form="rotate-form"]')?.textContent?.trim()).toBe('Rotate');
 	});
+
+	it('shows a revoke refusal that arrives after the page drew, as a post from the confirmation banner does', async () => {
+		const view = setup({ tokens: [token({})], total: 1 });
+		expect(view.queryByText('Could not revoke the token. Try again.')).toBeNull();
+
+		await view.rerender({ form: { action: 'revoke', error: 'Could not revoke the token. Try again.', fields: {} } });
+		expect(view.getByText('Could not revoke the token. Try again.')).toBeTruthy();
+	});
 });

@@ -14,6 +14,7 @@
 	} from '$lib/api/localization';
 	import FieldInput from './FieldInput.svelte';
 	import { ICON } from '$lib/icon';
+	import { plural } from '$lib/format';
 
 	let {
 		fields,
@@ -46,11 +47,6 @@
 		if (errorLocale && targets.includes(errorLocale)) return errorLocale;
 		return targets[0] ?? '';
 	}
-	// svelte-ignore state_referenced_locally
-	let active = $state(firstTab());
-	$effect(() => {
-		if (!targets.includes(active)) active = firstTab();
-	});
 
 	/**
 	 * One field map per locale, seeded from what the plugin holds. Every
@@ -60,18 +56,20 @@
 	function seed(): Record<string, Record<string, string>> {
 		return Object.fromEntries(targets.map((l) => [l, translationValues(byLocale.get(l), textFields)]));
 	}
-	// svelte-ignore state_referenced_locally
-	let values = $state<Record<string, Record<string, string>>>(seed());
-	// svelte-ignore state_referenced_locally
-	let seededVersion = version();
 	function version(): string {
 		return translations.map((t) => `${t.locale}:${t.updated_at}:${t.translation_status}`).join('|') + '#' + targets.join(',');
 	}
+	// The open tab, the field maps and the version they were seeded from.
+	// svelte-ignore state_referenced_locally
+	const draft = $state({ active: firstTab(), values: seed(), version: version() });
 	$effect(() => {
 		const v = version();
-		if (v === seededVersion) return;
-		seededVersion = v;
-		values = seed();
+		if (v === draft.version) return;
+		draft.version = v;
+		draft.values = seed();
+	});
+	$effect(() => {
+		if (!targets.includes(draft.active)) draft.active = firstTab();
 	});
 
 	function current(locale: string): Translation | undefined {
@@ -102,7 +100,7 @@
 	);
 
 	let submitting = $state(false);
-	let serialized = $derived(JSON.stringify(values[active] ?? {}));
+	let serialized = $derived(JSON.stringify(draft.values[draft.active] ?? {}));
 
 	// Whether the schema has been marked, or the panel is still guessing from
 	// the field types. Worth saying, because the two answers can differ and an
@@ -118,10 +116,10 @@
 	 */
 	let progress = $derived(
 		Object.fromEntries(
-			targets.map((l) => [l, completenessOf(values[l] ?? {}, textFields)]),
+			targets.map((l) => [l, completenessOf(draft.values[l] ?? {}, textFields)]),
 		),
 	);
-	let activeProgress = $derived(progress[active]);
+	let activeProgress = $derived(progress[draft.active]);
 
 	/**
 	 * Which locale a reader actually gets a field from.
@@ -144,7 +142,7 @@
 			if (!l || seen.has(l)) continue;
 			seen.add(l);
 			if (l === locales.default_locale) break;
-			if ((values[l]?.[field] ?? '').trim() !== '') return l;
+			if ((draft.values[l]?.[field] ?? '').trim() !== '') return l;
 		}
 		return locales.default_locale;
 	}
@@ -168,8 +166,7 @@
 	<div class="flex flex-col gap-4" data-testid="translations-panel">
 		{#if unavailable}
 			<Alert tone="warn" title="Could not load translations">
-				The localization plugin is included in this build but is not responding. You cannot see or
-				edit translations until it responds.
+				The localization plugin is not running on this engine, so translations are not available.
 			</Alert>
 		{:else if targets.length === 0}
 			<p class="text-sm text-muted">
@@ -180,14 +177,14 @@
 				to add it here as a tab.
 			</p>
 		{:else if textFields.length === 0}
-			<p class="text-sm text-muted">This schema has no text field to translate.</p>
+			<p class="text-sm text-muted">This content type has no text field to translate.</p>
 		{:else}
 			{#if !marked}
 				<!-- The schema carries no per-field mark, so these are every
 				     text field rather than the ones somebody chose. Saying so
 				     stops the list reading as a decision nobody made. -->
 				<p class="text-xs text-faint">
-					No field on this schema is marked as translated, so every text field is shown. Mark
+					No field on this content type is marked as translated, so every text field is shown. Mark
 					the ones you translate in the
 					<a href="/admin/schema" class="text-brand underline-offset-2 hover:underline">
 						schema builder
@@ -196,12 +193,12 @@
 				</p>
 			{/if}
 
-			<Tabs items={tabs} {active} onchange={(id) => (active = id)} />
+			<Tabs items={tabs} active={draft.active} onchange={(id) => (draft.active = id)} />
 
-			{#if active && values[active]}
-				{@const t = current(active)}
-				{@const status = statusOf(active)}
-				<div class="flex flex-col gap-4" data-testid="translation-{active}" data-status={status}>
+			{#if draft.active && draft.values[draft.active]}
+				{@const t = current(draft.active)}
+				{@const status = statusOf(draft.active)}
+				<div class="flex flex-col gap-4" data-testid="translation-{draft.active}" data-status={status}>
 					<div class="flex flex-wrap items-center gap-2">
 						<Badge tone={STATUS_TONE[status]} dot>{STATUS_LABEL[status]}</Badge>
 						{#if status === 'outdated'}
@@ -209,11 +206,11 @@
 								The source changed after this was translated. Review it, then mark it translated.
 							</span>
 						{:else if status === 'missing'}
-							<span class="text-xs text-faint">Readers of {active} see the source until this is saved.</span>
+							<span class="text-xs text-faint">Readers of {draft.active} see the source until this is saved.</span>
 						{/if}
 						{#if t && status !== 'translated'}
 							<form method="POST" action="?/markTranslated" use:enhance class="ml-auto">
-								<input type="hidden" name="locale" value={active} />
+								<input type="hidden" name="locale" value={draft.active} />
 								<Button variant="secondary" size="sm" type="submit">
 									<CircleCheck size={ICON.sm} /> Mark translated
 								</Button>
@@ -225,11 +222,11 @@
 					     was last saved, so it moves while somebody types. A
 					     schema with nothing marked is complete rather than zero:
 					     there is nothing outstanding. -->
-					<div class="flex flex-col gap-1.5" data-testid="completeness-{active}">
+					<div class="flex flex-col gap-1.5" data-testid="completeness-{draft.active}">
 						<div class="flex items-baseline justify-between gap-2 text-xs">
 							<span class="text-muted">
 								{activeProgress.done} of {activeProgress.total}
-								{activeProgress.total === 1 ? 'field' : 'fields'} written
+								{plural(activeProgress.total, 'field')} written
 							</span>
 							<span class="font-mono text-faint">{activeProgress.percent}%</span>
 						</div>
@@ -243,7 +240,7 @@
 						</div>
 					</div>
 
-					{#if error && errorLocale === active}
+					{#if error && errorLocale === draft.active}
 						<Alert tone="danger">{error}</Alert>
 					{/if}
 
@@ -259,43 +256,43 @@
 						}}
 						class="flex flex-col gap-4"
 					>
-						<input type="hidden" name="locale" value={active} />
+						<input type="hidden" name="locale" value={draft.active} />
 						<input type="hidden" name="exists" value={t ? 'true' : 'false'} />
 						<input type="hidden" name="data" value={serialized} />
 
 						{#each textFields as field (field.name)}
 							<div class="flex flex-col gap-1.5" data-field-name={field.name}>
 								<Label
-									for={field.field_type === 'rich_text' ? undefined : `translation-${active}-${field.name}`}
+									for={field.field_type === 'rich_text' ? undefined : `translation-${draft.active}-${field.name}`}
 									hint={field.field_type}
 								>
 									{field.name}
 								</Label>
 								<FieldInput
 									{field}
-									id="translation-{active}-{field.name}"
-									bind:value={values[active][field.name]}
+									id="translation-{draft.active}-{field.name}"
+									bind:value={draft.values[draft.active][field.name]}
 								/>
 								<!-- What a reader actually gets for this field, right
 								     here. The chain is stated on the Locales page and
 								     nobody can work out from there whether this box
 								     being empty means French or Spanish reaches the
 								     reader. -->
-								{#if (values[active][field.name] ?? '').trim() === ''}
+								{#if (draft.values[draft.active][field.name] ?? '').trim() === ''}
 									<!-- Once the locale has a translation, the reader gets that
 									     one row, and a field it leaves out reads from the source.
 									     The plugin keeps a saved title when a save sends none, and
 									     a new translation cannot be saved without one. -->
-									{@const from = t ? locales.default_locale : resolvedFrom(field.name, active)}
+									{@const from = t ? locales.default_locale : resolvedFrom(field.name, draft.active)}
 									<p class="text-xs text-faint">
 										{#if field.name === 'title' && !t}
 											A new translation needs a title. If you leave it empty, it copies the current source title, and later changes to the source do not update it.
 										{:else if field.name === 'title'}
-											If you leave it empty, the title saved for {active} stays as it is.
+											If you leave it empty, the title saved for {draft.active} stays as it is.
 										{:else if from === locales.default_locale}
-											Readers of {active} see the source while this is empty.
+											Readers of {draft.active} see the source while this is empty.
 										{:else}
-											Readers of {active} see this field in {from} while this is empty.
+											Readers of {draft.active} see this field in {from} while this is empty.
 										{/if}
 									</p>
 								{/if}

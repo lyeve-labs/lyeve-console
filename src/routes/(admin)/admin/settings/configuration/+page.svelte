@@ -55,7 +55,7 @@
 
 <PageShell
 	title="Configuration"
-	description="See every engine setting and where its value comes from. An environment variable overrides the configuration file, and the file overrides a value saved here."
+	description="See every engine setting and where its value comes from."
 	width="wide"
 	back={{ href: '/admin/settings', label: 'Settings' }}
 >
@@ -89,8 +89,8 @@
 			{#if suppressed.length > 0}
 				<Alert tone="warn" title="Set to empty by an environment variable">
 					<p>
-						A file or this page sets these, but an empty environment variable overrides them. This is
-						usually a leftover line in a .env file.
+						A file or this page sets these, but an empty environment variable overrides them. Check for a
+						leftover line in a .env file.
 					</p>
 					<p class="mt-2 font-mono text-xs text-faint">{suppressed.join(', ')}</p>
 				</Alert>
@@ -106,8 +106,8 @@
 					empty turns the setting off, even when a file or this page sets it.
 				</p>
 				<p>
-					<span class="font-medium text-fg">A YAML file</span> comes next. The engine reads the file or
-					directory set in <code class="font-mono text-xs">LYEVE_CONFIG</code>. Without it, the engine reads
+					<span class="font-medium text-fg">A YAML file</span> comes next. The engine uses the file or
+					directory set in <code class="font-mono text-xs">LYEVE_CONFIG</code>. Without it, the engine uses
 					<code class="font-mono text-xs">lyeve.yaml</code> (or <code class="font-mono text-xs">lyeve.yml</code>) in the
 					directory it runs in, then in <code class="font-mono text-xs">/etc/lyeve</code>, then the files of
 					<code class="font-mono text-xs">/etc/lyeve/conf.d</code> in name order. A key is the variable's name in

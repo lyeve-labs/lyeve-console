@@ -16,7 +16,7 @@ interface ValidationEntry {
 	message?: unknown;
 }
 
-const CHECK_FIELDS = 'The entry was not saved. Check the highlighted fields.';
+const CHECK_FIELDS = 'Check the highlighted fields.';
 
 /**
  * The per-field messages of a 422 from the content plugin, or null for any

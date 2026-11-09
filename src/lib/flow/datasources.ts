@@ -126,12 +126,12 @@ export function authFromForm(data: FormData): AuthBody | string {
 	const auth: Record<string, unknown> = { type };
 	if (type === 'basic') {
 		auth.user = field('auth_user');
-		if (!auth.user) return 'Basic authentication needs a user.';
+		if (!auth.user) return 'Enter a user for basic authentication.';
 	}
 	if (type === 'oauth2_client_credentials') {
 		auth.token_url = field('auth_token_url');
 		auth.client_id = field('auth_client_id');
-		if (!auth.token_url || !auth.client_id) return 'OAuth2 needs a token URL and a client id.';
+		if (!auth.token_url || !auth.client_id) return 'Enter a token URL and a client id for OAuth2.';
 		const scopes = field('auth_scopes').split(/[\s,]+/).filter(Boolean);
 		if (scopes.length > 0) auth.scopes = scopes;
 		const audience = field('auth_audience');

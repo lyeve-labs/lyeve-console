@@ -245,7 +245,7 @@ describe('content listing reads', () => {
 			props: { data: data({ schemas: { ok: false, gate: { state: 'unavailable' } } }), form: null },
 		});
 
-		expect(screen.getByText(/Could not load the other collections/)).toBeTruthy();
+		expect(screen.getByText(/Could not load the other content types/)).toBeTruthy();
 	});
 });
 

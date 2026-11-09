@@ -1,44 +1,24 @@
-import type { PageServerLoad, Actions } from './$types';
+import type { PageServerLoad, Actions, RequestEvent } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { ApiError, type Schema, type HttpClient } from '@lyeve-labs/client';
+import { ApiError, type Schema, type SchemaField, type HttpClient } from '@lyeve-labs/client';
 import { getSchema } from '@lyeve-labs/client-rest';
-import { authedClient, requireUser, stripProtectedFields } from '$lib/server/authz';
+import { authedClient, exactParse, requireUser, stripProtectedFields, withExactIntegers } from '$lib/server/authz';
 import { actionError, actionFailure } from '$lib/server/action-error';
 import { readError } from '$lib/server/read-error';
-import { refusalOf, refusalText } from '$lib/api/refusal';
 import { readRelationChoices } from '$lib/server/relation-choices';
 import { setEntryRelations } from '$lib/server/content-relations';
 import { fieldRefusalOf } from '$lib/server/content-validation';
 import { PLUGIN } from '$lib/plugin-names';
 import { runs } from '$lib/plugins';
 import { listMediaChoices, type MediaChoice } from '$lib/api/media';
-import { createComment, listComments, setThreadResolved, type EntryComment } from '$lib/api/content-comments';
-import { addReleaseItem, editable, listReleases, type Release } from '$lib/api/content-releases';
-import { rowsOf } from '$lib/api/list';
-import {
-	createTranslation,
-	getLocales,
-	listTranslations,
-	translationInput,
-	updateTranslation,
-	type LocalePreferences,
-	type Translation,
-	type TranslationStatus,
-} from '$lib/api/localization';
-import {
-	createAssignment,
-	getAssignmentByEntry,
-	getStageSLA,
-	isTransitionAction,
-	listDefinitions,
-	transitionAssignment,
-	type ReviewAssignment,
-	type ReviewDefinition,
-	type StageSLA,
-} from '$lib/api/review';
-import { listPeople, type Person } from '$lib/server/people';
+import { createComment, setThreadResolved } from '$lib/api/content-comments';
+import { addReleaseItem } from '$lib/api/content-releases';
+import { createTranslation, translationInput, updateTranslation, type TranslationStatus } from '$lib/api/localization';
+import { createAssignment, isTransitionAction, transitionAssignment } from '$lib/api/review';
+import { listPeople } from '$lib/server/people';
+import { loadComments, loadLocalization, loadReleases, loadReview } from '$lib/server/entry-panels';
 
-/**
+/*
  * Entries live in the admin store (sys_content_entries) and are served by the
  * admin API. The v1 content routes read the schema engine's per-schema tables,
  * a store the admin never writes, so every load and action below targets the
@@ -66,15 +46,21 @@ type StoredEntry = {
  * like a field would otherwise replace that field's value, and the next save
  * would write it into the body.
  */
-async function getEntry(client: HttpClient, id: string) {
+async function getEntry(client: HttpClient, id: string, fields: Promise<SchemaField[]>) {
 	const e = await client.get<StoredEntry>(`/api/admin/content/${encodeURIComponent(id)}`);
+	const exact = exactParse(e) as StoredEntry | undefined;
+	const body = withExactIntegers(
+		await fields,
+		e.body && typeof e.body === 'object' ? (e.body as Record<string, unknown>) : {},
+		exact?.body,
+	);
 	return {
 		id: e.id,
 		tenant_id: e.tenant_id ?? '',
 		created_at: e.created_at,
 		updated_at: e.updated_at,
 		data: {
-			...(e.body && typeof e.body === 'object' ? e.body : {}),
+			...body,
 			...(e.title !== undefined ? { title: e.title } : {}),
 			_status: e.status ?? 'published',
 		} as Record<string, unknown>,
@@ -99,8 +85,15 @@ type EditorRevision = {
  * the panel's own summary calls Object.keys on it, which throws during
  * hydration and takes the whole page down.
  */
-function toEditorRevision(rev: Record<string, unknown>): EditorRevision {
-	const body = rev.body;
+function toEditorRevision(
+	rev: Record<string, unknown>,
+	fields: readonly SchemaField[] = [],
+	exact?: Record<string, unknown>,
+): EditorRevision {
+	const body =
+		rev.body && typeof rev.body === 'object'
+			? withExactIntegers(fields, rev.body as Record<string, unknown>, exact?.body)
+			: rev.body;
 	const meta = rev.meta;
 	return {
 		id: String(rev.id ?? ''),
@@ -146,15 +139,6 @@ const REVISIONS_FAILED: RevisionList = {
 	historyEnabled: null,
 };
 
-/**
- * Fetch the entry's revisions.
- *
- * The endpoint answers with the paginated envelope every admin list uses, so
- * the rows are under `data`. Handed straight through, the page would receive
- * the envelope where it expects the array: `revisions.length` would be
- * undefined, and the History control is rendered only when that is above
- * zero. Beside the page it says how many older revisions it left out.
- */
 /** The revisions as the endpoint answers them: the envelope, or a bare array from an older engine. */
 type RevisionBody =
 	| Record<string, unknown>[]
@@ -174,18 +158,30 @@ type RevisionBody =
  */
 const REVISION_LIMIT = 500;
 
-async function listRevisions(client: HttpClient, id: string): Promise<RevisionList> {
+/**
+ * Fetch the entry's revisions.
+ *
+ * The endpoint answers with the paginated envelope every admin list uses, so
+ * the rows are under `data`. Handed straight through, the page would receive
+ * the envelope where it expects the array: `revisions.length` would be
+ * undefined, and the History control is rendered only when that is above
+ * zero. Beside the page it says how many older revisions it left out.
+ */
+async function listRevisions(client: HttpClient, id: string, fields: Promise<SchemaField[]>): Promise<RevisionList> {
 	try {
 		const body = await client.get<RevisionBody>(
 			`/api/admin/content/${encodeURIComponent(id)}/revisions?limit=${REVISION_LIMIT}&offset=0`,
 		);
 		const rows = (Array.isArray(body) ? body : (body?.data ?? [])) as Record<string, unknown>[];
+		const exact = exactParse(body) as RevisionBody | undefined;
+		const exactRows = (Array.isArray(exact) ? exact : (exact?.data ?? [])) as Record<string, unknown>[];
+		const known = await fields;
 		const hidden = Array.isArray(body) ? 0 : Number(body?.hidden_older ?? 0);
 		const days = Array.isArray(body) ? null : body?.window_days;
 		const counted = Array.isArray(body) ? NaN : Number(body?.total_count);
 		const enabled = Array.isArray(body) ? undefined : body?.history_enabled;
 		return {
-			revisions: rows.map(toEditorRevision),
+			revisions: rows.map((row, i) => toEditorRevision(row, known, exactRows[i])),
 			total: Number.isInteger(counted) && counted > rows.length ? counted : rows.length,
 			hiddenOlder: Number.isInteger(hidden) && hidden > 0 ? hidden : 0,
 			windowDays: typeof days === 'number' && days > 0 ? days : null,
@@ -197,188 +193,6 @@ async function listRevisions(client: HttpClient, id: string): Promise<RevisionLi
 	}
 }
 
-/**
- * What the Translations panel renders, or null when it does not render.
- *
- * The panel exists only while the localization plugin runs: without it the
- * routes are refused and a panel over them would be a row of refusals. A
- * plugin that runs but is not answering is `unavailable`, which the panel
- * says in one line rather than hiding.
- */
-export type EntryLocalization = {
-	locales: LocalePreferences;
-	translations: Translation[];
-	unavailable: boolean;
-};
-
-async function loadLocalization(
-	client: HttpClient,
-	entryId: string,
-	running: boolean,
-): Promise<EntryLocalization | null> {
-	if (!running) return null;
-	try {
-		const [locales, translations] = await Promise.all([
-			getLocales(client),
-			listTranslations(client, entryId),
-		]);
-		return { locales, translations, unavailable: false };
-	} catch {
-		return {
-			locales: { default_locale: '', enabled_locales: [], fallback_chain: [] },
-			translations: [],
-			unavailable: true,
-		};
-	}
-}
-
-/**
- * What the review bar renders, or null when the review plugin does not run.
- *
- * Without it the routes are 404 and a bar over them would offer actions that
- * cannot land. The assignment read is a 404 for an entry under no review and a 403
- * for a caller the permission rules refuse, and the two are told apart: one
- * is a bar that can start a review, the other is a bar that says so.
- */
-export type EntryReview = {
-	assignment: ReviewAssignment | null;
-	stages: StageSLA[];
-	definitions: ReviewDefinition[];
-	/** Approvals the current stage needs before it moves, 1 for a single approval. */
-	approvalsNeeded: number;
-	userId: string;
-	/** The accounts a review can be handed to. Empty for a caller who may not list them. */
-	people: Person[];
-	unavailable: boolean;
-	forbidden: boolean;
-	/** The definitions read failed, so the bar cannot offer to start a review. */
-	definitionsFailed: boolean;
-};
-
-const REVIEW_NONE = (userId: string): EntryReview => ({
-	assignment: null,
-	stages: [],
-	definitions: [],
-	approvalsNeeded: 1,
-	userId,
-	people: [],
-	unavailable: false,
-	forbidden: false,
-	definitionsFailed: false,
-});
-
-async function loadReview(
-	client: HttpClient,
-	entryId: string,
-	running: boolean,
-	user: { id: string; roles: string[] },
-): Promise<EntryReview | null> {
-	if (!running) return null;
-	const base = REVIEW_NONE(user.id);
-	// Definitions are admin-only. An assignment is started from the bar, so
-	// the list is read for a caller who may start one and left empty for the
-	// rest, whose bar shows the review and its actions alone.
-	const canStart = user.roles.includes('admin') || user.roles.includes('super_admin');
-	const definitions = canStart
-		? listDefinitions(client).then(
-				(r) => ({ items: r.items, failed: false }),
-				() => ({ items: [] as ReviewDefinition[], failed: true }),
-			)
-		: Promise.resolve({ items: [] as ReviewDefinition[], failed: false });
-	try {
-		// The entry's read carries the assignees, the approvals and the quorum
-		// of the current stage, so the bar's counts come from one read.
-		const assignment = await getAssignmentByEntry(client, entryId);
-		const stages = await getStageSLA(client, assignment.id).catch((): StageSLA[] => []);
-		return {
-			...base,
-			assignment,
-			approvalsNeeded: assignment.required_approvals,
-			stages,
-			definitions: (await definitions).items,
-		};
-	} catch (err) {
-		if (err instanceof ApiError && err.status === 404) {
-			const read = await definitions;
-			return { ...base, definitions: read.items, definitionsFailed: read.failed };
-		}
-		if (err instanceof ApiError && err.status === 403) {
-			return { ...base, forbidden: true };
-		}
-		return { ...base, unavailable: true };
-	}
-}
-
-/**
- * The entry's editorial threads, or null when the build serves none. A read
- * that failed is said so, never drawn as an entry nobody has commented on.
- */
-export type EntryComments = {
-	threads: EntryComment[];
-	/** Every account the directory names, so an author reads by email. */
-	people: { id: string; email: string }[];
-	/** The accounts a comment can mention. */
-	mentionable: { id: string; email: string }[];
-	unavailable: boolean;
-};
-
-async function loadComments(
-	client: HttpClient,
-	entryId: string,
-	people: Promise<Person[]>,
-	tenant: Promise<string>,
-): Promise<EntryComments | null> {
-	// Accounts to mention. A caller who may not list them comments without
-	// mentions. The engine mails only accounts of the entry's own tenant and
-	// refuses the comment for anyone else, so only those are offered.
-	const directory = async () => {
-		const [all, own] = await Promise.all([people, tenant]);
-		return { people: all, mentionable: all.filter((p) => p.tenant_id === own) };
-	};
-	try {
-		const threads = await listComments(client, entryId, 'all');
-		return { threads, ...(await directory()), unavailable: false };
-	} catch (err) {
-		if (err instanceof ApiError && err.status === 404) return null;
-		return { threads: [], ...(await directory()), unavailable: true };
-	}
-}
-
-/**
- * The releases this entry can join, and the ones it is already in. Null
- * when the build serves no releases.
- */
-export type EntryReleases = {
-	open: Pick<Release, 'id' | 'name' | 'status'>[];
-	holding: string[];
-	/** The releases could not be read, so the card offers none. */
-	failed: boolean;
-};
-
-async function loadReleases(client: HttpClient, entryId: string): Promise<EntryReleases | null> {
-	try {
-		const res = await listReleases(client, '', 100, 0);
-		const open = rowsOf(res).filter(editable);
-		// The list carries no items, so membership is read from each open
-		// release. A release whose items could not be read is not one that
-		// leaves the entry out, so one failed read leaves the card unread.
-		const reads = await Promise.all(
-			open.map((r) =>
-				client
-					.get<Release>(`/api/admin/content/releases/${encodeURIComponent(r.id)}`)
-					.then((full) => ((full.items ?? []).some((it) => it.entry_id === entryId) ? r.id : null))
-					.catch(() => undefined),
-			),
-		);
-		if (reads.includes(undefined)) return { open: [], holding: [], failed: true };
-		const holding = reads.filter((id): id is string => typeof id === 'string');
-		return { open: open.map((r) => ({ id: r.id, name: r.name, status: r.status })), holding, failed: false };
-	} catch (err) {
-		if (err instanceof ApiError && err.status === 404) return null;
-		return { open: [], holding: [], failed: true };
-	}
-}
-
 export const load: PageServerLoad = async (event) => {
 	const { params, parent } = event;
 	const client = authedClient(event);
@@ -386,16 +200,21 @@ export const load: PageServerLoad = async (event) => {
 	// One read of the directory serves the mention list and the review picker.
 	const people = listPeople(client);
 
-	const entry = getEntry(client, params.id);
+	const schema = getSchema(params.schema, client);
+	// The entry and its revisions read integer fields exactly, which takes the
+	// schema. A schema that cannot be read is reported below, and the reads
+	// then keep their plain values.
+	const fields = schema.then((s) => s.fields ?? [], () => [] as SchemaField[]);
+	const entry = getEntry(client, params.id, fields);
 	// Caught where it starts: when the entry read fails the load throws before
 	// the comments ever read the tenant, and a rejection nobody holds by then
 	// is an unhandled one. The entry's own failure is reported below.
 	const tenant = entry.then((e) => e.tenant_id).catch(() => '');
 
 	const [schemaDef, item, revisionList, localization, review, comments, releases] = await Promise.all([
-		getSchema(params.schema, client).catch((err: unknown): Schema => readError(err, `Schema "${params.schema}" not found`)),
+		schema.catch((err: unknown): Schema => readError(err, `Content type "${params.schema}" not found`)),
 		entry.catch((err: unknown) => readError(err, 'Entry not found')),
-		listRevisions(client, params.id),
+		listRevisions(client, params.id, fields),
 		loadLocalization(client, params.id, runs(plugins, PLUGIN.localization)),
 		loadReview(client, params.id, runs(plugins, PLUGIN.review), user).then(async (r) =>
 			r ? { ...r, people: await people } : null,
@@ -410,7 +229,7 @@ export const load: PageServerLoad = async (event) => {
 	// the schema has one. A read that fails is null, so the picker says the
 	// library could not be read instead of claiming nothing is published.
 	const mediaChoices: MediaChoice[] | null = schemaDef.fields.some((f) => f.field_type === 'media')
-		? await Promise.resolve().then(() => listMediaChoices(client)).catch(() => null)
+		? await listMediaChoices(client).catch(() => null)
 		: [];
 
 	const { revisions, hiddenOlder, windowDays, total: revisionTotal, failed: revisionsFailed, historyEnabled } =
@@ -433,6 +252,19 @@ export const load: PageServerLoad = async (event) => {
 		releases,
 	};
 };
+
+/** Moves the entry to `status`, and returns `failed` when the engine refuses. */
+async function setStatus(event: RequestEvent, status: 'published' | 'draft', failed: string) {
+	await requireUser(event);
+	const { params } = event;
+	const client = authedClient(event);
+	try {
+		await client.put(`/api/admin/content/${encodeURIComponent(params.id)}`, { status });
+	} catch (err) {
+		return actionFailure(err, failed);
+	}
+	redirect(303, `/admin/content/${params.schema}/${params.id}`);
+}
 
 export const actions: Actions = {
 	// Named, not default: SvelteKit rejects a default action on a page that also
@@ -468,41 +300,21 @@ export const actions: Actions = {
 				const refused = fieldRefusalOf(err, shown);
 				if (refused) return fail(422, refused);
 			}
-			return fail(400, { error: actionError(err, 'Could not save the entry. Check the fields and try again.') });
+			return actionFailure(err, 'Could not save the entry. Try again.');
 		}
 
 		// The entry is saved by now, so a refused link is reported as such
 		// rather than as a failed save or a finished one.
 		if (links) {
 			const failed = await setEntryRelations(event, params.id, links);
-			if (failed) return fail(400, { error: `The entry was saved, but some links were not. ${failed}` });
+			if (failed) return fail(400, { error: `Entry saved. ${failed}` });
 		}
 		redirect(303, `/admin/content/${params.schema}`);
 	},
 
-	publish: async (event) => {
-		await requireUser(event);
-		const { params } = event;
-		const client = authedClient(event);
-		try {
-			await client.put(`/api/admin/content/${encodeURIComponent(params.id)}`, { status: 'published' });
-		} catch (err) {
-			return fail(400, { error: actionError(err, 'Could not publish the entry. Try again.') });
-		}
-		redirect(303, `/admin/content/${params.schema}/${params.id}`);
-	},
+	publish: (event) => setStatus(event, 'published', 'Could not publish the entry. Try again.'),
 
-	unpublish: async (event) => {
-		await requireUser(event);
-		const { params } = event;
-		const client = authedClient(event);
-		try {
-			await client.put(`/api/admin/content/${encodeURIComponent(params.id)}`, { status: 'draft' });
-		} catch (err) {
-			return fail(400, { error: actionError(err, 'Could not unpublish the entry. Try again.') });
-		}
-		redirect(303, `/admin/content/${params.schema}/${params.id}`);
-	},
+	unpublish: (event) => setStatus(event, 'draft', 'Could not unpublish the entry. Try again.'),
 
 	/**
 	 * Write one locale's translation. The panel says whether the locale
@@ -545,12 +357,8 @@ export const actions: Actions = {
 		} catch (err) {
 			// A 402 is the locale ceiling or a license refusal, which carries
 			// numbers and a link a bare relayed code would drop.
-			const refused = refusalOf(err);
-			if (refused) return fail(402, { error: refusalText(refused), refused, translationLocale: locale });
-			return fail(400, {
-				error: actionError(err, 'Could not save the translation. Try again.'),
-				translationLocale: locale,
-			});
+			const failed = actionFailure(err, 'Could not save the translation. Try again.');
+			return fail(failed.status, { ...failed.data, translationLocale: locale });
 		}
 		redirect(303, `/admin/content/${params.schema}/${params.id}`);
 	},
@@ -568,10 +376,8 @@ export const actions: Actions = {
 		try {
 			await updateTranslation(client, params.id, locale, { translation_status: 'translated' });
 		} catch (err) {
-			return fail(400, {
-				error: actionError(err, 'Could not mark the translation as translated. Try again.'),
-				translationLocale: locale,
-			});
+			const failed = actionFailure(err, 'Could not mark the translation as translated. Try again.');
+			return fail(failed.status, { ...failed.data, translationLocale: locale });
 		}
 		redirect(303, `/admin/content/${params.schema}/${params.id}`);
 	},
@@ -743,15 +549,18 @@ export const actions: Actions = {
 		if (!Number.isInteger(num) || num <= 0) {
 			return fail(400, { error: 'Choose a revision first.', revision: true });
 		}
+		const client = authedClient(event);
 		let raw: Record<string, unknown>;
 		try {
-			raw = await authedClient(event).get<Record<string, unknown>>(
+			raw = await client.get<Record<string, unknown>>(
 				`/api/admin/content/${encodeURIComponent(params.id)}/revisions/${num}`,
 			);
 		} catch (err) {
 			const failed = actionFailure(err, 'Could not open the revision. Try again.');
 			return fail(failed.status, { ...failed.data, revision: true });
 		}
-		return { openedRevision: toEditorRevision(raw) };
+		// Without the schema the revision still opens, with its plain values.
+		const fields = await getSchema(params.schema, client).then((s) => s.fields ?? [], () => []);
+		return { openedRevision: toEditorRevision(raw, fields, exactParse(raw) as Record<string, unknown> | undefined) };
 	},
 };

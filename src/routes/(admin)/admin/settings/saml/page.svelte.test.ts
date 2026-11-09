@@ -81,7 +81,7 @@ const props = (over: Record<string, unknown> = {}, form: unknown = null) => ({
 describe('the gate', () => {
 	it('shows the not-enabled state when the engine refuses the routes', () => {
 		const { container } = render(SamlPage, { props: props({ gate: { state: 'locked', upgradeUrl: '' }, providers: [] }) });
-		expect(said(container)).toContain('Not enabled on this instance');
+		expect(said(container)).toContain('Not enabled on this engine');
 		expect(said(container)).not.toContain('New provider');
 	});
 
@@ -166,7 +166,7 @@ describe('the empty state', () => {
 	it('says what a provider is for rather than that a read failed', () => {
 		const { container } = render(SamlPage, { props: props({ providers: [] }) });
 		expect(said(container)).toContain('No identity providers yet');
-		expect(said(container)).toContain('sign-in button on the login page');
+		expect(said(container)).toContain('sign-in button on the sign-in page');
 	});
 });
 
@@ -330,7 +330,7 @@ describe('the drawer', () => {
 describe('the pager', () => {
 	it('stays when nothing on this page matches the search', async () => {
 		const { container } = render(SamlPage, { props: props({ total: 60, hasMore: true }) });
-		await fireEvent.input(screen.getByPlaceholderText('Search providers'), { target: { value: 'nothing like it' } });
+		await fireEvent.input(screen.getByPlaceholderText('Name or entity ID'), { target: { value: 'nothing like it' } });
 		expect(said(container)).toContain('No providers match this search');
 		expect(container.querySelector('a[href="/admin/settings/saml?limit=25&offset=25"]')).toBeTruthy();
 	});

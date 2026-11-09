@@ -3,13 +3,10 @@ import { ApiError } from '@lyeve-labs/client';
 import {
 	hasUsers,
 	isAlreadyRunning,
-	percent,
-	recommendationsGate,
 	score,
 	sourceLabel,
 	sourceTone,
 	splitIsSkewed,
-	took,
 	type AbStats,
 } from './recommendations';
 
@@ -80,39 +77,11 @@ describe('where a feed entry came from', () => {
 });
 
 describe('the numbers as printed', () => {
-	it('shows a percentage the engine computed at one decimal place', () => {
-		expect(percent(33.333)).toBe('33.3%');
-		expect(percent(0)).toBe('0.0%');
-		expect(percent(null)).toBe('-');
-	});
-
-	// A recompute is minutes on a large corpus, and 480000 ms is unreadable.
-	it('reads a long recompute in minutes', () => {
-		expect(took(450)).toBe('450 ms');
-		expect(took(2500)).toBe('2.5 s');
-		expect(took(125_000)).toBe('2m 5s');
-		expect(took(null)).toBe('-');
-	});
-
 	// Scores are unbounded floats. Fifteen digits in a table cell implies a
 	// precision ranking does not have.
 	it('rounds a score to something a table can hold', () => {
 		expect(score(0.123456789)).toBe('0.123');
 		expect(score(12)).toBe('12.000');
 		expect(score(undefined)).toBe('-');
-	});
-});
-
-describe('the gate sorts a refusal by what it means', () => {
-	it('tells a 402, a 404 and any other failure apart', () => {
-		expect(recommendationsGate(new ApiError(402, 'payment required')).state).toBe('locked');
-		expect(recommendationsGate(new ApiError(404, 'not found')).state).toBe('absent');
-		expect(recommendationsGate(new ApiError(500, 'internal error')).state).toBe('error');
-		expect(recommendationsGate(new ApiError(503, 'database error')).state).toBe('unavailable');
-	});
-
-	it('never reports a failed read as nobody being recommended to', () => {
-		const gate = recommendationsGate(new Error('network'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load the recommendation split.');
 	});
 });

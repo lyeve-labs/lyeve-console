@@ -12,7 +12,7 @@ import FlowDatasources from './flows/datasources/+page.svelte';
 import FlowVariables from './flows/variables/+page.svelte';
 import PluginDetail from './plugins/[name]/+page.svelte';
 import AiProviderDetail from './ai/providers/[id]/+page.svelte';
-import { fixtureProvider, fixtureSettings } from '$lib/components/ai/fixtures';
+import { fixtureProvider, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
 import SettingsConfiguration from './settings/configuration/+page.svelte';
 import SettingsEmail from './settings/email/+page.svelte';
 import SettingsLicense from './settings/license/+page.svelte';

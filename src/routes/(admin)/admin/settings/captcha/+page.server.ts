@@ -4,15 +4,16 @@ import { authedClient, requireRole } from '$lib/server/authz';
 import { actionFailure } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
-import { GATE_OK, type Gate } from '$lib/api/gate';
 import {
-	captchaSettingsGate,
 	clearCaptchaSettings,
 	isCaptchaProvider,
 	readCaptchaSettings,
 	saveCaptchaSettings,
 	type CaptchaSettings,
 } from '$lib/api/captcha-settings';
+import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
+import { asked } from '$lib/server/asked';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();
@@ -22,7 +23,7 @@ export const load: PageServerLoad = async (event) => {
 	try {
 		return { gate: GATE_OK as Gate, settings: await readCaptchaSettings(authedClient(event)) };
 	} catch (err) {
-		return { gate: captchaSettingsGate(err), settings: null as CaptchaSettings | null };
+		return { gate: gateOf(err, couldNotLoad('the captcha settings')), settings: null as CaptchaSettings | null };
 	}
 };
 
@@ -75,13 +76,20 @@ export const actions: Actions = {
 
 	// Clearing puts the tenant's flows back on the install's settings, and is
 	// always allowed.
-	clear: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		try {
-			await clearCaptchaSettings(authedClient(event));
-		} catch (err) {
-			return actionFailure(err, 'Could not clear the captcha settings. Try again.');
-		}
-		return { cleared: true };
-	},
+	clear: asked(
+		{
+			question: 'Clear the tenant captcha settings?',
+			detail: "This tenant's pages and flows go back to this engine's captcha, and the stored secret is deleted.",
+			label: 'Clear',
+		},
+		async (event) => {
+			await requireRole(event, ['admin', 'super_admin']);
+			try {
+				await clearCaptchaSettings(authedClient(event));
+			} catch (err) {
+				return actionFailure(err, 'Could not clear the captcha settings. Try again.');
+			}
+			return { cleared: true };
+		},
+	),
 };

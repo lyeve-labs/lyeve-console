@@ -84,6 +84,7 @@ function write(fields: Record<string, string>, reply: Response = json({})) {
 		return reply.clone();
 	});
 	const form = new FormData();
+	form.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) form.set(k, v);
 	const url = new URL('http://admin/admin/settings/email/triggers');
 	return { calls, event: { fetch, url, request: new Request(url, { method: 'POST', body: form }) } as never };
@@ -129,7 +130,7 @@ describe('email trigger writes', () => {
 	});
 
 	it('keeps the status of a field the plugin rejected', async () => {
-		const { event } = write(TRIGGER, json({ error: 'not an email address: b@example' }, 422));
+		const { event } = write(TRIGGER, json({ error: 'not an email address: b@example', code: 'http_422' }, 422));
 		const out = (await actions.save(event)) as Failure;
 		expect(out.status).toBe(422);
 		expect(out.data).toEqual({ action: 'save', error: 'not an email address: b@example' });
@@ -163,7 +164,7 @@ describe('email trigger writes', () => {
 	});
 
 	it('relays the plugin refusal of a delete', async () => {
-		const { event } = write({ id: 't1' }, json({ error: 'email trigger not found' }, 404));
+		const { event } = write({ id: 't1' }, json({ error: 'email trigger not found', code: 'not_found' }, 404));
 		expect(((await actions.delete(event)) as Failure).data).toEqual({ action: 'delete', error: 'email trigger not found' });
 	});
 

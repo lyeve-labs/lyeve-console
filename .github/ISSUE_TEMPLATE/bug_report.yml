@@ -1,5 +1,5 @@
 name: Bug report
-description: Something is broken in the admin UI.
+description: Something is broken in the console.
 labels: ['bug', 'triage']
 body:
   - type: markdown

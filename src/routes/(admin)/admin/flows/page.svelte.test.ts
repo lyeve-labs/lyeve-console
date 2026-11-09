@@ -1,13 +1,20 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
-import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Entitlements } from '$lib/entitlements';
 import type { ValidationError } from '$lib/api/flows';
 import { blockedFlow, fixtureFlow } from '$lib/flow/fixtures';
 import { BLOCKED_TEXT } from '$lib/flow/blocked';
 
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+// enhance keeps each form's submit handler, so a case can run the one a
+// delete would run and read the question it asks.
+const forms = vi.hoisted(() => ({ submits: new Map<HTMLFormElement, (input: unknown) => unknown>() }));
+vi.mock('$app/forms', () => ({
+	enhance: (node: HTMLFormElement, submit: (input: unknown) => unknown) => {
+		forms.submits.set(node, submit);
+		return { destroy: () => forms.submits.delete(node) };
+	},
+}));
 
 // Delete asks through the kit's confirm dialog, which renders through a
 // container the layout mounts and this test does not. The call is captured.
@@ -114,13 +121,13 @@ describe('flows list page', () => {
 	});
 
 	it('asks before deleting and names the flow', async () => {
-		const { container, getByTitle } = setup({ flows: [fixtureFlow] });
-		expect(container.querySelectorAll('tbody form[action="?/delete"]')).toHaveLength(0);
-		const form = container.querySelector('form[action="?/delete"]') as HTMLFormElement;
-		const submit = vi.spyOn(form, 'requestSubmit').mockImplementation(() => {});
+		const { getByTitle } = setup({ flows: [fixtureFlow] });
+		const form = getByTitle('Delete').closest('form') as HTMLFormElement;
+		expect(form.getAttribute('action')).toBe('?/delete');
+		expect(new FormData(form).get('id')).toBe('f1');
 
-		await fireEvent.click(getByTitle('Delete'));
-		await tick();
+		const cancel = vi.fn();
+		await forms.submits.get(form)?.({ cancel });
 		// The title asks the question and names the flow. The body says what the
 		// delete takes with it.
 		expect(kit.confirm).toHaveBeenCalledWith(
@@ -128,14 +135,15 @@ describe('flows list page', () => {
 			expect.stringContaining('run history'),
 			{ confirmLabel: 'Delete' },
 		);
-		expect(submit).not.toHaveBeenCalled();
+		expect(cancel).toHaveBeenCalled();
 
 		kit.confirm.mockResolvedValue(true);
-		await fireEvent.click(getByTitle('Delete'));
-		await tick();
-		await tick();
-		expect(new FormData(form).get('id')).toBe('f1');
-		expect(submit).toHaveBeenCalled();
+		cancel.mockClear();
+		const formData = new FormData(form);
+		await forms.submits.get(form)?.({ cancel, formData });
+		expect(cancel).not.toHaveBeenCalled();
+		// The agreed post carries the answer the delete action requires.
+		expect(formData.get('confirmed')).toBe('yes');
 	});
 
 	it('renders the not-enabled state when the engine answered 402, and nothing to create', () => {

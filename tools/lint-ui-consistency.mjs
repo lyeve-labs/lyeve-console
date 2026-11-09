@@ -886,7 +886,7 @@ export const rules = [
               : `size={${size[1]}} is not a rung; $lib/icon.ts names 12, 14, 16, 20 and 40`,
           );
         }
-        const cls = /class="[^"]*\bh-(\d) w-\1\b/.exec(el.attrs);
+        const cls = /class="[^"]*\bh-(\d(?:\.\d)?) w-\1\b/.exec(el.attrs);
         if (cls) {
           found.push(`h-${cls[1]} w-${cls[1]} sizes an icon by class; pass size={...} instead`);
         }

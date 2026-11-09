@@ -53,7 +53,7 @@ describe('the spike alerts page', () => {
 			error: 'refused',
 			refused: { kind: 'feature', feature: 'example-feature', plugin: 'error-tracking', upgradeUrl: '' },
 		});
-		expect(container.querySelector('[data-testid="refusal-notice"]')?.textContent).toContain('example-feature');
+		expect(container.querySelector('[data-testid="refusal-notice"]')?.textContent).toContain('Not enabled on this engine');
 	});
 
 	it('says why there is nothing to set while the plugin does not run', () => {

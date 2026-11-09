@@ -80,7 +80,7 @@ const props = (over: Record<string, unknown> = {}, form: unknown = null) => ({
 describe('Events gate', () => {
 	it('shows the not-enabled state when the engine refuses the routes', () => {
 		const { container } = render(EventsPage, { props: props({ gate: { state: 'locked', upgradeUrl: '' } }) });
-		expect(said(container)).toContain('Not enabled on this instance');
+		expect(said(container)).toContain('Not enabled on this engine');
 		expect(said(container)).not.toContain('Published');
 	});
 

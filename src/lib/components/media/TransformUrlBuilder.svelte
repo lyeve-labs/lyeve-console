@@ -36,7 +36,7 @@
 	// Each fit changes the picture in a way its name does not say, so each
 	// carries its sentence beside it rather than inside a closed list.
 	const FITS = [
-		{ value: '', label: 'Engine default', description: 'Uses the default fit.' },
+		{ value: '', label: 'Engine default', description: 'Fills the box and crops what falls outside it, the same as Cover.' },
 		{ value: 'cover', label: 'Cover', description: 'Fills the box and crops what falls outside it.' },
 		{ value: 'contain', label: 'Contain', description: 'Fits the whole image inside the box.' },
 		{ value: 'fill', label: 'Fill', description: 'Stretches the image to the box.' },
@@ -94,6 +94,6 @@
 	</form>
 	{#if signed}
 		<CopyField id="transform-result" label="Signed URL" value={absolute} mono copyLabel="Copy URL" />
-		<p class="text-xs text-faint">{signed.expires_at ? `Stops working ${formatDateTime(signed.expires_at)}.` : 'Never expires.'}</p>
+		<p class="text-xs text-faint">{signed.expires_at ? `Expires ${formatDateTime(signed.expires_at)}.` : 'Never expires.'}</p>
 	{/if}
 </div>

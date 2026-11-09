@@ -11,13 +11,15 @@
 <PageTitle
 	title={status === 404
 		? 'Not found'
-		: status === 401 || status === 402 || status === 403
-			? 'No access'
-			: status === 429
-				? BUSY.title
-				: status === 503
-					? OUTAGE.title
-					: 'Something went wrong'}
+		: status === 401
+			? 'Not signed in'
+			: status === 402 || status === 403
+				? 'No access'
+				: status === 429
+					? BUSY.title
+					: status === 503
+						? OUTAGE.title
+						: 'Could not open this page'}
 />
 
 <!-- Outside the console's frame, so this one does own the viewport and centers

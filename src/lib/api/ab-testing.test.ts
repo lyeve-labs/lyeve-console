@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '@lyeve-labs/client';
 import {
-	abGate,
 	hasWinner,
 	isFinished,
 	movesFrom,
 	pValue,
-	ratePercent,
 	splitIsSound,
 	splitTotal,
 	statusTone,
@@ -186,31 +183,11 @@ describe('the traffic split', () => {
 });
 
 describe('the numbers as printed', () => {
-	it('shows a rate at a precision the sample supports', () => {
-		expect(ratePercent(0.1234)).toBe('12.3%');
-		expect(ratePercent(0)).toBe('0.0%');
-		expect(ratePercent(null)).toBe('-');
-	});
-
 	// A p-value of 0.0000001 reads as a measurement and is a floating point
 	// artifact of a small sample.
 	it('shows a very small p-value as a bound', () => {
 		expect(pValue(0.0000001)).toBe('p < 0.001');
 		expect(pValue(0.042)).toBe('p = 0.042');
 		expect(pValue(null)).toBe('Not calculated');
-	});
-});
-
-describe('the gate sorts a refusal by what it means', () => {
-	it('tells a 402, a 404 and any other failure apart', () => {
-		expect(abGate(new ApiError(402, 'payment required')).state).toBe('locked');
-		expect(abGate(new ApiError(404, 'not found')).state).toBe('absent');
-		expect(abGate(new ApiError(500, 'internal error')).state).toBe('error');
-		expect(abGate(new ApiError(503, 'database error')).state).toBe('unavailable');
-	});
-
-	it('never reports a failed read as an empty list', () => {
-		const gate = abGate(new Error('network'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load experiments.');
 	});
 });

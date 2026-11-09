@@ -43,7 +43,7 @@ describe('the gate', () => {
 		const { container } = render(RecommendationsPage, {
 			props: props({ gate: { state: 'locked', upgradeUrl: '' }, stats: null }),
 		});
-		expect(said(container)).toContain('Not enabled on this instance');
+		expect(said(container)).toContain('Not enabled on this engine');
 	});
 
 	it('reports a failed read as a failure, not as nobody bucketed', () => {
@@ -94,14 +94,14 @@ describe('the split', () => {
 		const { container } = render(RecommendationsPage, {
 			props: props({ stats: stats({ recommendation_pct: 99, random_pct: 1 }) }),
 		});
-		expect(said(container)).toContain('a few points of drift is normal');
+		expect(said(container)).toContain('The two arms are far apart.');
 	});
 
 	it('says nothing about drift on a healthy split', () => {
 		const { container } = render(RecommendationsPage, {
 			props: props({ stats: stats({ recommendation_pct: 52, random_pct: 48 }) }),
 		});
-		expect(said(container)).not.toContain('drift is normal');
+		expect(said(container)).not.toContain('The two arms are far apart.');
 	});
 });
 
@@ -119,7 +119,7 @@ describe('the recompute', () => {
 		const { container } = render(RecommendationsPage, {
 			props: props({}, { refreshed: true, pairs: 120, trending: 30, feeds: 400, ms: 125_000 }),
 		});
-		await vi.waitFor(() => expect(said(container)).toContain('2m 5s'));
+		await vi.waitFor(() => expect(said(container)).toContain('2m 05s'));
 		expect(said(container)).toContain('120 similarity pairs');
 	});
 
@@ -209,6 +209,27 @@ describe('what the page says recommendations do', () => {
 		const text = said(container);
 		expect(text).toContain('each reader gets');
 		expect(text).not.toContain('the plugin works out');
+	});
+});
+
+// The page opened on its explainer, so a returning reader scrolled past it
+// to the lists they came for. The explainer and the integration now come last.
+describe('section order', () => {
+	it('puts the lists first and the explainer last', () => {
+		const { container } = render(RecommendationsPage, { props: props() });
+		const headings = [...container.querySelectorAll('h2')].map((h) => h.textContent?.trim());
+		expect(headings).toEqual([
+			'Trending now',
+			'What one reader would see',
+			'The split',
+			'Wire it into your application',
+			'What recommendations do',
+		]);
+	});
+
+	it('points at the split above it', () => {
+		const { container } = render(RecommendationsPage, { props: props() });
+		expect(said(container)).toContain('so the split above shows whether');
 	});
 });
 

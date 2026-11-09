@@ -46,25 +46,25 @@
 	];
 	// The plugin stops an export at its row ceiling when the request names no
 	// limit, and lifting it risks the memory the ceiling protects.
-	const ceilingHint = `An export includes at most ${formatCount(EXPORT_ROW_CEILING)} entries. To export more, split it by schema or status.`;
+	const ceilingHint = `An export includes at most ${formatCount(EXPORT_ROW_CEILING)} entries. To export more, split it by content type or status.`;
 	// An unread list offers nothing to pick, and the hint says why rather than
 	// leaving an empty choice that reads as a tenant with no schemas.
 	const schemasHint = $derived.by(() => {
 		if (schemaNames === null) {
-			return 'Could not load the schema list. Leave this empty to export every schema.';
+			return 'Could not load the content type list. Leave this empty to export every content type.';
 		}
 		if (schemas.length === 0) {
-			return `Every schema${schemaNames.length > 0 ? `, ${schemaNames.length} in this tenant` : ''}.`;
+			return `Every content type${schemaNames.length > 0 ? `, ${schemaNames.length} in this tenant` : ''}.`;
 		}
-		return `${schemas.length} of ${schemaNames.length} schemas.`;
+		return `${schemas.length} of ${schemaNames.length} content types.`;
 	});
 </script>
 
 <div class="flex flex-col gap-4">
 	<MultiSelect
 		id="{idPrefix}-schemas"
-		label="Schemas"
-		placeholder="Every schema"
+		label="Content types"
+		placeholder="Every content type"
 		hint={schemasHint}
 		searchable
 		options={schemaOptions}
@@ -100,7 +100,7 @@
 	<input type="hidden" name="include_schemas" value={includeSchemas ? 'true' : 'false'} />
 	<Toggle
 		id="{idPrefix}-include-schemas"
-		label="Include the schema definitions"
+		label="Include the content type definitions"
 		hint={format === 'json' || format === 'yaml'
 			? 'Adds them to the document next to the entries.'
 			: 'Adds a schemas.json file next to the data, so the download becomes a zip.'}

@@ -3,12 +3,10 @@ import { authedClient } from '$lib/server/authz';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import {
-	BROKER_OK,
-	brokerGate,
 	readStatus,
-	type BrokerGate,
 	type BrokerStatus,
 } from '$lib/api/messagebroker';
+import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins, user } = await event.parent();
@@ -21,15 +19,15 @@ export const load: PageServerLoad = async (event) => {
 	if (absent || !permitted) {
 		return {
 			status: null as BrokerStatus | null,
-			gate: (absent ? { state: 'absent' } : BROKER_OK) as BrokerGate,
+			gate: (absent ? { state: 'absent' } : GATE_OK) as Gate,
 			permitted,
 		};
 	}
 
 	const client = authedClient(event);
 	try {
-		return { status: await readStatus(client), gate: BROKER_OK, permitted };
+		return { status: await readStatus(client), gate: GATE_OK, permitted };
 	} catch (err) {
-		return { status: null, gate: brokerGate(err), permitted };
+		return { status: null, gate: gateOf(err, 'Could not load the broker status.'), permitted };
 	}
 };

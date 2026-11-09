@@ -1,4 +1,6 @@
 import type { HttpClient } from '@lyeve-labs/client';
+import { checked } from '$lib/checkbox';
+import { inSentence } from './gate';
 
 /**
  * The engine's scaling primitives as it reports them under
@@ -65,7 +67,7 @@ export interface GoroutineEngineViews {
 	parallel: ParallelView | null;
 	asyncHooks: AsyncHooksView | null;
 	/**
-	 * Whether the install's license lets the three tuning writes through.
+	 * Whether the instance's license lets the three tuning writes through.
 	 * The plugin answers this as a plain flag, so the admin never has to know
 	 * which license grants it.
 	 */
@@ -126,17 +128,17 @@ const text = (data: FormData, key: string): string => String(data.get(key) ?? ''
 function integer(data: FormData, key: string, label: string, bounds: { min: number; max: number }): { n: number } | { error: string } {
 	const raw = text(data, key);
 	const n = Number(raw);
-	if (!raw || !Number.isInteger(n)) return { error: `${label} must be a whole number.` };
-	if (n < bounds.min || n > bounds.max) return { error: `${label} must be between ${bounds.min} and ${bounds.max}.` };
+	if (!raw || !Number.isInteger(n)) return { error: `Enter a whole number for ${inSentence(label)}.` };
+	if (n < bounds.min || n > bounds.max) return { error: `Enter a value from ${bounds.min} to ${bounds.max} for ${inSentence(label)}.` };
 	return { n };
 }
 
 function duration(data: FormData, key: string, label: string, max: string): { d: string } | { error: string } {
 	const raw = text(data, key);
 	const ms = durationMs(raw);
-	if (ms === null) return { error: `${label} must be a duration such as 30s or 1m.` };
-	if (ms <= 0) return { error: `${label} must be longer than zero.` };
-	if (ms > (durationMs(max) as number)) return { error: `${label} can be at most ${max}.` };
+	if (ms === null) return { error: `Enter a duration such as 30s or 1m for ${inSentence(label)}.` };
+	if (ms <= 0) return { error: `Enter a duration longer than zero for ${inSentence(label)}.` };
+	if (ms > (durationMs(max) as number)) return { error: `Enter at most ${max} for ${inSentence(label)}.` };
 	return { d: raw };
 }
 
@@ -182,12 +184,11 @@ export function parseAsyncHooksForm(data: FormData): { body: AsyncHooksBody } | 
 	if ('error' in queue) return queue;
 	const timeout = duration(data, 'timeout', 'Timeout', ASYNC_TIMEOUT_MAX);
 	if ('error' in timeout) return timeout;
-	const enabled = data.get('enabled');
-	return { body: { workers: workers.n, queue_size: queue.n, timeout: timeout.d, enabled: enabled === 'on' || enabled === 'true' } };
+	return { body: { workers: workers.n, queue_size: queue.n, timeout: timeout.d, enabled: checked(data, 'enabled') } };
 }
 
 /**
- * Whether the tuning writes are licensed on this install. Only an explicit
+ * Whether the tuning writes are licensed on this instance. Only an explicit
  * false closes the forms. A failed read, a 404 from a plugin that predates
  * the route, or a body without the flag all read as licensed, so an older
  * server keeps the forms it always had and a refused write still reports

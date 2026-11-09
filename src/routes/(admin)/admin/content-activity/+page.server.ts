@@ -7,6 +7,7 @@ import { pageNumber, pageOffset, pastEndOffset, rowsOf, statedTotal, withOffset 
 import { listActivity, readActivityFilter, type ActivityRow } from '$lib/api/content-history';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
+import { couldNotLoad } from '$lib/outage';
 
 const PAGE_SIZE = 50;
 
@@ -30,11 +31,11 @@ export const load: PageServerLoad = async (event) => {
 				rows: rowsOf<ActivityRow>(res),
 				stated: statedTotal<ActivityRow>(res),
 			})),
-			'Could not load content activity.',
+			couldNotLoad('content activity'),
 		),
 		section(
 			getSchemas(client).then((rows) => rows.map((s) => ({ name: s.name, label: s.display_name || s.name }))),
-			'Could not load the content types for the filter. Reload the page to try again.',
+			couldNotLoad('the content types for the filter', { reload: true }),
 		),
 		superAdmin && !notRunning(plugins, PLUGIN.multitenant)
 			? section(
@@ -42,7 +43,7 @@ export const load: PageServerLoad = async (event) => {
 						// Activity rows name their tenant by slug, the way the session does.
 						(Array.isArray(r?.items) ? r.items : []).map((t) => ({ slug: t.slug, label: t.name || t.slug })),
 					),
-					'Could not load the tenants for the filter. Reload the page to try again.',
+					couldNotLoad('the tenants for the filter', { reload: true }),
 				)
 			: Promise.resolve<Section<{ slug: string; label: string }[]>>({ ok: true, value: [] }),
 	]);

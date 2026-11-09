@@ -1,4 +1,5 @@
 import type { SchemaField } from '@lyeve-labs/client';
+import { text } from '$lib/api/narrow';
 
 /**
  * Which part of an entry produced the name on screen.
@@ -55,12 +56,6 @@ function readKey(entry: IdentifiableEntry, key: string): unknown {
 	const top = (entry as unknown as Record<string, unknown>)[key];
 	if (top !== undefined && top !== null && top !== '') return top;
 	return entry.data?.[key];
-}
-
-/** A trimmed string, or empty for anything that is not usable text. */
-function text(value: unknown): string {
-	if (typeof value !== 'string') return '';
-	return value.trim();
 }
 
 /**

@@ -85,7 +85,7 @@ describe('Users delete confirmation', () => {
 		const submit = deleteSubmit();
 		const cancel = vi.fn();
 
-		await submit({ cancel } as never);
+		await submit({ cancel, formData: new FormData() } as never);
 
 		expect(kit.confirm).toHaveBeenCalledTimes(1);
 	});
@@ -93,7 +93,7 @@ describe('Users delete confirmation', () => {
 	it('names the account and says what the delete takes with it', async () => {
 		const submit = deleteSubmit();
 
-		await submit({ cancel: vi.fn() } as never);
+		await submit({ cancel: vi.fn(), formData: new FormData() } as never);
 
 		const [title, message] = kit.confirm.mock.calls[0] as unknown as [string, string];
 		expect(title).toContain('user1@b.co');
@@ -106,7 +106,7 @@ describe('Users delete confirmation', () => {
 		const submit = deleteSubmit();
 		const cancel = vi.fn();
 
-		const result = await submit({ cancel } as never);
+		const result = await submit({ cancel, formData: new FormData() } as never);
 
 		expect(cancel).toHaveBeenCalledTimes(1);
 		expect(result).toBeUndefined();
@@ -117,7 +117,7 @@ describe('Users delete confirmation', () => {
 		const submit = deleteSubmit();
 		const cancel = vi.fn();
 
-		const result = await submit({ cancel } as never);
+		const result = await submit({ cancel, formData: new FormData() } as never);
 
 		expect(cancel).not.toHaveBeenCalled();
 		expect(typeof result).toBe('function');
@@ -127,17 +127,17 @@ describe('Users delete confirmation', () => {
 		kit.confirm.mockResolvedValue(true);
 		const submit = deleteSubmit();
 
-		const after = (await submit({ cancel: vi.fn() } as never)) as (arg: unknown) => Promise<void>;
+		const after = (await submit({ cancel: vi.fn(), formData: new FormData() } as never)) as (arg: unknown) => Promise<void>;
 		await after({ result: { type: 'success' }, update: async () => {} });
 
-		expect(kit.success).toHaveBeenCalledWith('Deleted user1@b.co');
+		expect(kit.success).toHaveBeenCalledWith('user1@b.co deleted.');
 	});
 
 	it('stays silent when the action failed', async () => {
 		kit.confirm.mockResolvedValue(true);
 		const submit = deleteSubmit();
 
-		const after = (await submit({ cancel: vi.fn() } as never)) as (arg: unknown) => Promise<void>;
+		const after = (await submit({ cancel: vi.fn(), formData: new FormData() } as never)) as (arg: unknown) => Promise<void>;
 		await after({ result: { type: 'failure' }, update: async () => {} });
 
 		expect(kit.success).not.toHaveBeenCalled();

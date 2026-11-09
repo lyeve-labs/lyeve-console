@@ -1,6 +1,5 @@
 <script lang="ts">
 	import {
-		Alert,
 		Badge,
 		Button,
 		Card,
@@ -14,25 +13,14 @@
 		Table,
 		toast,
 	} from '@lyeve-labs/ui-kit';
+	import RefreshButton from '$lib/components/RefreshButton.svelte';
 	import { enhance } from '$app/forms';
 	import { goto, invalidate } from '$app/navigation';
 	import { page } from '$app/state';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import {
-		Ban,
-		Download,
-		FileText,
-		Link,
-		ListChecks,
-		Pencil,
-		Plus,
-		RefreshCw,
-		Rows3,
-		Trash2,
-		Undo2,
-		Upload,
-	} from '@lucide/svelte';
+	import { Ban, Download, FileText, Link, ListChecks, Plus, Undo2, Upload } from '@lucide/svelte';
 	import ImportWizard from '$lib/components/ImportWizard.svelte';
+	import ImportTabs from '$lib/components/ImportTabs.svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import { formRefusal } from '$lib/api/refusal';
 	import { confirmed } from '$lib/forms.svelte';
@@ -46,32 +34,22 @@
 		rejectedHref,
 		rejectionRate,
 		rollbackable,
-		transformLabel,
 		type ImportJob,
-		type MappingTemplate,
 	} from '$lib/api/bulk-import';
-	import { NO_VALUE, formatCount, formatDateTime } from '$lib/format';
+	import { NO_VALUE, formatCount, formatDateTime, plural } from '$lib/format';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
 	import ImportRowsDrawer from './ImportRowsDrawer.svelte';
-	import TemplateDrawer from './TemplateDrawer.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	/** How often the history re-reads while an import is still going. */
 	const POLL_MS = 2000;
 
-	// Every form on this page reports through one result, so each failure is
-	// tagged with its action. The template drawer shows only its own, the page
-	// shows the rest, and a drawer opened after a failure starts clean.
-	let setAside = $state<unknown>(null);
-	const failure = $derived(form && form !== setAside && 'error' in form ? form : null);
-	const inDrawer = $derived(failure?.action === 'saveTemplate');
-	const formError = $derived(failure && !inDrawer ? String(failure.error ?? '') : '');
-	const refusal = $derived(failure && !inDrawer ? formRefusal(failure) : null);
-	const templateError = $derived(inDrawer ? String(failure?.error ?? '') : '');
-	const templateRefusal = $derived(inDrawer ? formRefusal(failure) : null);
+	// A failed cancel or rollback is reported above the history.
+	const formError = $derived(form && 'error' in form ? String(form.error ?? '') : '');
+	const refusal = $derived(formRefusal(form));
 	// Null while the content types are unread, so each place that offers one
 	// says why it offers none.
 	const schemaList = $derived(data.schemas.ok ? data.schemas.value : null);
@@ -85,16 +63,6 @@
 		const id = setInterval(() => void invalidate('app:imports'), POLL_MS);
 		return () => clearInterval(id);
 	});
-
-	let refreshing = $state(false);
-	async function refresh() {
-		refreshing = true;
-		try {
-			await invalidate('app:imports');
-		} finally {
-			refreshing = false;
-		}
-	}
 
 	let wizardOpen = $state(false);
 	async function started(job: ImportJob) {
@@ -128,44 +96,29 @@
 	function rollback(j: ImportJob): SubmitFunction {
 		return confirmed(
 			`Roll back the import of ${j.source_name}?`,
-			`The ${formatCount(j.inserted_rows)} ${j.inserted_rows === 1 ? 'entry it created is deleted, with any edits made to it' : 'entries it created are deleted, with any edits made to them'} since. Entries it updated keep the imported values. The history of the import stays.`,
+			`The ${formatCount(j.inserted_rows)} ${plural(j.inserted_rows, 'entry it created is deleted, with any edits made to it', 'entries it created are deleted, with any edits made to them')} since. Entries it updated keep the imported values. The history of the import stays.`,
 			{ confirmLabel: 'Roll back', success: 'Import rolled back' },
-		);
-	}
-
-	// The drawer owns its fields. The page sets the old failure aside first,
-	// so a drawer opened after a failure starts clean.
-	let templateDrawer = $state<TemplateDrawer>();
-
-	function openTemplate(t: MappingTemplate | null) {
-		setAside = form;
-		templateDrawer?.edit(t);
-	}
-
-	function removeTemplate(t: MappingTemplate): SubmitFunction {
-		return confirmed(
-			`Delete template ${t.name}`,
-			'Imports that already used it keep their history.',
-			{ confirmLabel: 'Delete', success: `Deleted ${t.name}` },
 		);
 	}
 </script>
 
 <PageShell
 	title="Imports"
-	description="Bring content in from a file or another instance, and see what each import wrote and rejected."
+	description="Bring content in from a file or another engine, and see what each import wrote and rejected."
 	width="wide"
 >
 	{#snippet actions()}
-		<Button variant="secondary" size="sm" onclick={refresh} loading={refreshing}>
-			<RefreshCw size={ICON.sm} /> Refresh
-		</Button>
+		<RefreshButton dependency="app:imports" />
 		{#if data.gate.state === 'ok'}
 			<Button variant="primary" size="sm" onclick={() => (wizardOpen = true)}>
 				<Plus size={ICON.sm} /> New import
 			</Button>
 		{/if}
 	{/snippet}
+
+	<FormErrors message={formError} refused={refusal} />
+
+	<ImportTabs active="history" />
 
 	{#if data.gate.state !== 'ok'}
 		<GateNotice
@@ -175,7 +128,6 @@
 			absent="Imports are not included in this build."
 		/>
 	{:else}
-		<FormErrors message={formError} refused={refusal} />
 
 		<div class="grid gap-4 lg:grid-cols-[3fr_2fr]">
 			<Card>
@@ -222,7 +174,7 @@
 						<li class="flex gap-3">
 							<FileText size={ICON.md} class="mt-0.5 shrink-0 text-brand" />
 							<div>
-								<div class="text-sm text-fg">Another LyEve instance</div>
+								<div class="text-sm text-fg">Another LyEve engine</div>
 								<div class="text-xs text-muted">
 									Import its data export in JSON, NDJSON, YAML or CSV as it is, from a file or the signed
 									download link. Entries keep their slug, title and status.
@@ -332,7 +284,7 @@
 									{#if rejectionRate(j) !== null && j.errored_rows > 0}
 										<div class="text-xs text-faint">
 											{rejectionRate(j)}% of the {formatCount(j.processed_rows)}
-											{j.processed_rows === 1 ? 'row' : 'rows'} read
+											{plural(j.processed_rows, 'row')} read
 										</div>
 									{/if}
 								</td>
@@ -389,83 +341,6 @@
 				/>
 			{/if}
 		</section>
-		<section class="flex flex-col gap-4" aria-label="Mapping templates">
-			<div class="flex flex-wrap items-center justify-between gap-2">
-				<SectionHeading level={2}>Mapping templates</SectionHeading>
-				{#if data.templatesRead && data.templates.length > 0}
-					<Button variant="secondary" size="sm" onclick={() => openTemplate(null)}>
-						<Plus size={ICON.sm} /> New template
-					</Button>
-				{/if}
-			</div>
-			<p class="text-sm text-muted">
-				A template saves a column mapping with its transforms, key and mode. Choose it when you import the
-				same kind of file, instead of mapping each column again.
-			</p>
-			{#if data.licensed === false}
-				<Alert tone="brand">
-					Saving templates and the date, split and lookup transforms need a license this instance does not have.
-					Saved templates still apply with their transforms, and you can always delete one.
-				</Alert>
-			{/if}
-			{#if !data.templatesRead}
-				<GateNotice
-					gate={data.templatesGate ?? { state: 'error', message: 'Could not load templates.' }}
-					title="Templates"
-					absent="Mapping templates are not included in this build."
-				/>
-			{:else if data.templates.length === 0}
-				<EmptyState title="No mapping templates yet" description="Create a template to reuse a column mapping across imports.">
-					{#snippet iconSnippet()}
-						<Rows3 size={ICON.lg} />
-					{/snippet}
-					{#snippet action()}
-						<Button variant="secondary" onclick={() => openTemplate(null)}><Plus size={ICON.sm} /> New template</Button>
-					{/snippet}
-				</EmptyState>
-			{:else}
-				<Table label="Mapping templates">
-					<thead>
-						<tr>
-							<th scope="col">Template</th>
-							<th scope="col">Content type</th>
-							<th scope="col">Columns</th>
-							<th scope="col">When an entry exists</th>
-							<th scope="col"><span class="sr-only">Actions</span></th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each data.templates as t (t.id)}
-							<tr>
-								<td class="font-medium text-fg">{t.name}</td>
-								<td data-cell="nowrap" class="font-mono text-xs">{t.content_type || NO_VALUE}</td>
-								<td class="text-xs text-muted">
-									{t.field_mappings
-										.map((m) => (m.transform ? `${m.source_field}, ${transformLabel(m).toLowerCase()}` : m.source_field))
-										.join('; ')}
-								</td>
-								<td data-cell="nowrap" class="text-xs">
-									{t.mode === 'upsert' ? `Update it, key ${t.upsert_key}` : 'Leave it alone'}
-								</td>
-								<td data-cell="nowrap">
-									<div class="flex items-center justify-end gap-1">
-										<Button variant="ghost" size="sm" aria-label="Edit {t.name}" onclick={() => openTemplate(t)}>
-											<Pencil size={ICON.sm} />
-										</Button>
-										<form method="POST" action="?/deleteTemplate" use:enhance={removeTemplate(t)}>
-											<input type="hidden" name="id" value={t.id} />
-											<Button variant="ghost" size="sm" type="submit" aria-label="Delete {t.name}">
-												<Trash2 size={ICON.sm} class="text-danger" />
-											</Button>
-										</form>
-									</div>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</Table>
-			{/if}
-		</section>
 	{/if}
 </PageShell>
 
@@ -473,16 +348,9 @@
 	bind:open={wizardOpen}
 	schemas={schemaList}
 	templates={data.templates}
+	templatesFailed={data.templatesFailed}
 	licensed={data.licensed}
 	onstarted={started}
-/>
-
-<TemplateDrawer
-	bind:this={templateDrawer}
-	schemas={schemaList}
-	licensed={data.licensed}
-	error={templateError}
-	refused={templateRefusal}
 />
 
 <ImportRowsDrawer bind:open={detailOpen} detail={data.detail} onclose={closeDetail} />

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
+	import RateLimitTabs from '$lib/components/RateLimitTabs.svelte';
 	import { formRefusal } from '$lib/api/refusal';
 	import {
 		Alert,
@@ -8,7 +9,6 @@
 		Button,
 		Card,
 		Drawer,
-		EmptyState,
 		Input,
 		PageShell,
 		SectionHeading,
@@ -18,20 +18,17 @@
 		toast,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import { confirmed, tracked } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, tracked } from '$lib/forms.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { Gauge, Plus, ShieldBan, Trash2 } from '@lucide/svelte';
+	import { Gauge, Plus, Trash2 } from '@lucide/svelte';
 	import {
-		HISTORY_WINDOWS,
 		addressLimit,
 		rateLabel,
-		refusalKindLabel,
-		refusalTotals,
 		type AddressEntry,
 		type AddressList,
 	} from '$lib/api/rate-limit';
 	import { atLimit } from '$lib/api/limits';
-	import { formatCount, formatDateTime } from '$lib/format';
+	import { formatCount, plural } from '$lib/format';
 	import { ICON } from '$lib/icon';
 	import type { ActionData, PageData } from './$types';
 
@@ -43,14 +40,11 @@
 	 * only one that came back after it opened, so a failed delete never reads
 	 * as a failure of the next form opened. The page shows the row actions'.
 	 */
-	const failure = $derived(form as { action?: string; error?: string; lockout?: string } | null);
-	let openedOver = $state.raw<unknown>(null);
-	const fresh = $derived(form !== openedOver);
-	const inDrawer = $derived(failure?.action === 'limit' || failure?.action === 'address');
-	const refusal = $derived(inDrawer ? null : formRefusal(form));
-	const formError = $derived(inDrawer ? '' : (failure?.error ?? ''));
-	const limitFailure = $derived(fresh && failure?.action === 'limit' ? failure : null);
-	const addressFailure = $derived(fresh && failure?.action === 'address' ? failure : null);
+	const failure = drawerFailure(() => form as { action?: string; error?: string; lockout?: string } | null, ['limit', 'address']);
+	const refusal = $derived(formRefusal(failure.page));
+	const formError = $derived(failure.page?.error ?? '');
+	const limitFailure = $derived(failure.drawer?.action === 'limit' ? failure.drawer : null);
+	const addressFailure = $derived(failure.drawer?.action === 'address' ? failure.drawer : null);
 	const lockout = $derived(addressFailure?.lockout ?? '');
 
 	const limitRead = $derived(data.limit.ok ? data.limit.value : null);
@@ -66,9 +60,6 @@
 	const entryLimit = $derived(addresses ? addressLimit(addresses) : null);
 	const allow = $derived(entries.filter((e) => e.list === 'allow'));
 	const deny = $derived(entries.filter((e) => e.list === 'deny'));
-	const history = $derived(data.history.ok ? data.history.value : null);
-	const totals = $derived(refusalTotals(history?.minutes ?? []));
-	const entryCidr = $derived(new Map(entries.map((e) => [e.id, e.cidr])));
 
 	let limitOpen = $state(false);
 	let rate = $state('10');
@@ -76,7 +67,7 @@
 	let limitEnabled = $state(true);
 
 	function openLimit() {
-		openedOver = form;
+		failure.opened();
 		rate = String(own?.rate ?? install?.rate ?? 10);
 		burst = String(own?.burst ?? install?.burst ?? 20);
 		limitEnabled = own?.enabled ?? true;
@@ -95,7 +86,7 @@
 	let note = $state('');
 
 	function openAddress(which: AddressList) {
-		openedOver = form;
+		failure.opened();
 		cidr = '';
 		list = which;
 		note = '';
@@ -124,14 +115,9 @@
 
 	const clearLimit = confirmed(
 		'Clear the tenant limit?',
-		'This tenant goes back to the install-wide limit alone.',
+		'This tenant goes back to the global limit alone.',
 		{ confirmLabel: 'Clear', success: 'Tenant limit cleared.' },
 	);
-
-	// The window is the address, so the server render already marks the one
-	// it read, the links work before the page hydrates, and going back shows
-	// the window that address named.
-	const windows = HISTORY_WINDOWS.map((w) => ({ value: w.value, label: w.label, href: `?hours=${w.value}` }));
 </script>
 
 {#snippet addressCard(which: AddressList, rows: AddressEntry[], title: string)}
@@ -188,10 +174,12 @@
 
 <PageShell
 	title="Tenant rate limits"
-	description="Set this tenant's own limit and address lists, and see which requests were refused."
+	description="Set this tenant's own limit and address lists."
 	width="wide"
 	back={{ href: '/admin/settings/rate-limits', label: 'Rate limits' }}
 >
+	<RateLimitTabs active="tenant" />
+
 	{#if data.gate.state !== 'ok'}
 		<GateNotice
 			level={2}
@@ -220,9 +208,9 @@
 							{/if}
 							<p class="text-muted">
 								{#if install && install.enabled}
-									The install-wide limit of {rateLabel(install.rate)} with bursts of {formatCount(install.burst)} also applies, so a tenant limit can only make it stricter.
+									The global limit of {rateLabel(install.rate)} with bursts of {formatCount(install.burst)} also applies, so a tenant limit can only make it stricter.
 								{:else}
-									No install-wide limit is set.
+									No global limit is set.
 								{/if}
 							</p>
 						</div>
@@ -246,7 +234,7 @@
 					</div>
 					{#if !limitLicensed}
 						<p id="limit-license" class="mt-3 text-xs text-faint">
-							Setting this limit needs a license this install does not have. You can always clear it.
+							Setting a tenant limit is not enabled on this engine. You can always clear it.
 						</p>
 					{/if}
 				</Card>
@@ -261,7 +249,7 @@
 						{#if entryLimit.limit !== null}
 							{formatCount(entryLimit.current)} of {formatCount(entryLimit.limit)} entries
 						{:else}
-							{formatCount(entryLimit.current)} {entryLimit.current === 1 ? 'entry' : 'entries'}
+							{formatCount(entryLimit.current)} {plural(entryLimit.current, 'entry', 'entries')}
 						{/if}
 					</Badge>
 				{/if}
@@ -280,7 +268,7 @@
 				{#if !addressesLicensed}
 					<div id="address-license">
 						<Alert tone="brand">
-							Adding an address needs a license this install does not have. Saved entries still apply, and you can always remove one.
+							Adding an address is not enabled on this engine. Saved entries still apply, and you can always remove one.
 						</Alert>
 					</div>
 				{/if}
@@ -288,52 +276,6 @@
 					{@render addressCard('allow', allow, 'Allow list')}
 					{@render addressCard('deny', deny, 'Deny list')}
 				</div>
-			{/if}
-		</section>
-
-		<section class="flex flex-col gap-4" aria-label="Refusal history">
-			<div class="flex flex-wrap items-center justify-between gap-2">
-				<SectionHeading level={2}>Refusal history</SectionHeading>
-				<SegmentedControl label="Window" labelHidden value={String(data.hours)} options={windows} />
-			</div>
-			{#if !data.history.ok}
-				<GateNotice
-					gate={data.history.gate}
-					title="Refusal history"
-					absent="Refusal history needs a newer version of the rate limit plugin."
-				/>
-			{:else if history}
-				{#if totals.length === 0}
-					<EmptyState title="No refused requests" description="No rule or list entry refused a request in this window.">
-						{#snippet iconSnippet()}
-							<ShieldBan size={ICON.lg} />
-						{/snippet}
-					</EmptyState>
-				{:else}
-					<p class="text-sm text-muted">{formatCount(history.total_refused)} requests refused.</p>
-					<Table label="Refusals by rule">
-						<thead>
-							<tr>
-								<th scope="col">Refused by</th>
-								<th scope="col">Route or address</th>
-								<th scope="col">Requests</th>
-								<th scope="col">Last</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each totals as t (`${t.rule_id}-${t.kind}-${t.endpoint}`)}
-								<tr>
-									<td data-cell="nowrap" class="text-xs">{refusalKindLabel(t.kind)}</td>
-									<td class="max-w-md truncate font-mono text-xs" title={t.endpoint}>
-										{t.kind === 'deny' ? (entryCidr.get(t.rule_id) ?? t.endpoint) : t.endpoint}
-									</td>
-									<td data-cell="nowrap" class="font-mono text-xs">{formatCount(t.refused)}</td>
-									<td data-cell="nowrap" class="text-xs text-faint">{formatDateTime(t.last)}</td>
-								</tr>
-							{/each}
-						</tbody>
-					</Table>
-				{/if}
 			{/if}
 		</section>
 	{/if}
@@ -347,7 +289,7 @@
 				id="tenant-rate"
 				name="rate"
 				label="Rate, requests per second"
-				hint={install?.enabled ? `At most ${install.rate}, the install-wide rate.` : 'Sustained requests per second.'}
+				hint={install?.enabled ? `At most ${install.rate}, the global rate.` : 'Sustained requests per second.'}
 				bind:value={rate}
 				required
 			/>
@@ -355,7 +297,7 @@
 				id="tenant-burst"
 				name="burst"
 				label="Burst"
-				hint={install?.enabled ? `At most ${install.burst}, the install-wide burst.` : 'How many requests may arrive at once.'}
+				hint={install?.enabled ? `At most ${install.burst}, the global burst.` : 'How many requests can arrive at once.'}
 				bind:value={burst}
 				required
 			/>
@@ -377,7 +319,7 @@
 				     and how to proceed, beside the entry that caused it. -->
 				<Alert tone="danger" title="That entry would lock you out">
 					<p>
-						{lockout} covers the address you are signed in from, and nothing on the allow list covers it. Saving it would lock you out of this console, and only an operator of the install could undo that.
+						{lockout} covers the address you are signed in from, and nothing on the allow list covers it. Saving it would lock you out of the console, and only someone signing in from another address could undo that.
 					</p>
 					<p class="mt-2">
 						Add your own address to the allow list first, then deny the range. An allowed address is served

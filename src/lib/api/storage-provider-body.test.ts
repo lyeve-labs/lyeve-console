@@ -39,7 +39,7 @@ describe('providerBodyFrom', () => {
 	});
 
 	it('refuses a create missing a required field and names it', () => {
-		expect(providerBodyFrom(form({ provider_type: 's3', name: 'x', bucket: 'b', region: 'r', access_key: 'AK' }), true)).toEqual({ error: 'Secret access key is required.' });
+		expect(providerBodyFrom(form({ provider_type: 's3', name: 'x', bucket: 'b', region: 'r', access_key: 'AK' }), true)).toEqual({ error: 'Enter secret access key.' });
 		expect(providerBodyFrom(form({ provider_type: 'nope', name: 'x' }), true)).toEqual({ error: 'Choose a provider type.' });
 		expect(providerBodyFrom(form({ provider_type: 'local' }), true)).toEqual({ error: 'Give the provider a name.' });
 	});

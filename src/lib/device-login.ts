@@ -4,6 +4,8 @@
  * shows for a request.
  */
 
+import { plural } from '$lib/format';
+
 /** The characters a user code is drawn from. 0, O, 1, I and L read alike and are left out. */
 const USER_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
@@ -60,12 +62,12 @@ export function expiresIn(expiresAt: string, now: Date = new Date()): string {
 	if (seconds <= 0) return 'expired';
 	if (seconds < 60) return 'in under a minute';
 	const minutes = Math.floor(seconds / 60);
-	return `in ${minutes} minute${minutes === 1 ? '' : 's'}`;
+	return `in ${minutes} ${plural(minutes, 'minute')}`;
 }
 
 /** The tenant a session acts in, as the page names it. */
 export function tenantLabel(tenantId: string | null | undefined): string {
-	return tenantId ? tenantId : 'No tenant (instance-wide account)';
+	return tenantId ? tenantId : 'No tenant (engine-wide account)';
 }
 
 /**
@@ -98,8 +100,8 @@ export function sessionLength(seconds: number | null | undefined): string {
 	if (!seconds || seconds <= 0) return '';
 	if (seconds % 3600 === 0) {
 		const h = seconds / 3600;
-		return `${h} hour${h === 1 ? '' : 's'}`;
+		return `${h} ${plural(h, 'hour')}`;
 	}
 	const m = Math.max(1, Math.round(seconds / 60));
-	return `${m} minute${m === 1 ? '' : 's'}`;
+	return `${m} ${plural(m, 'minute')}`;
 }

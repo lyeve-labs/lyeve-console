@@ -15,17 +15,16 @@
 		Table,
 		Textarea,
 		Tooltip,
-		confirm as confirmDialog,
 	} from '@lyeve-labs/ui-kit';
 	import { Database, Plus, Trash2, Upload, Variable, Workflow } from '@lucide/svelte';
 	import { enhance } from '$app/forms';
-	import { tick } from 'svelte';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { ActionData, PageData } from './$types';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
 	import NotEnabled from '$lib/components/NotEnabled.svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { submitter } from '$lib/forms.svelte';
+	import { confirmed, submitter } from '$lib/forms.svelte';
 	import { slugify, statusTone, triggerLabel } from '$lib/flow/triggers';
 	import { blockedText } from '$lib/flow/blocked';
 	import { flowGrants } from '$lib/flow/permissions';
@@ -87,21 +86,11 @@
 		showImport = true;
 	}
 
-	// Delete goes through the kit's confirm dialog, then a hidden form, so the
-	// row's button never posts on its own and the action stays a form action.
-	let deleteId = $state('');
-	let deleteForm = $state<HTMLFormElement>();
-
-	async function askDelete(id: string, name: string) {
-		const ok = await confirmDialog(
-			`Delete flow ${name}?`,
-			'Its versions and run history go with it.',
-			{ confirmLabel: 'Delete' }
-		);
-		if (!ok) return;
-		deleteId = id;
-		await tick();
-		deleteForm?.requestSubmit();
+	function deleteFlow(name: string): SubmitFunction {
+		return confirmed(`Delete flow ${name}?`, 'Its versions and run history go with it.', {
+			confirmLabel: 'Delete',
+			success: `Flow ${name} deleted.`,
+		});
 	}
 
 	/*
@@ -213,7 +202,7 @@
 		{/if}
 
 		{#if refusal}
-			<Alert tone="warn" title={refusal.limit !== null ? 'Flow limit reached' : 'Not enabled on this instance'}>
+			<Alert tone="warn" title={refusal.limit !== null ? 'Flow limit reached' : 'Not enabled on this engine'}>
 				{#snippet children()}
 					{pageFailure?.error ?? ''}
 					{#if enableLink}
@@ -349,15 +338,12 @@
 							</td>
 							<td>
 								{#if canDelete(flow)}
-									<Button
-										variant="ghost"
-										size="sm"
-										onclick={() => askDelete(flow.id, flow.name)}
-										title="Delete"
-										aria-label="Delete {flow.name}"
-									>
-										<Trash2 size={ICON.sm} class="text-danger" />
-									</Button>
+									<form method="POST" action="?/delete" use:enhance={deleteFlow(flow.name)}>
+										<input type="hidden" name="id" value={flow.id} />
+										<Button variant="ghost" size="sm" type="submit" title="Delete" aria-label="Delete {flow.name}">
+											<Trash2 size={ICON.sm} class="text-danger" />
+										</Button>
+									</form>
 								{/if}
 							</td>
 						</tr>
@@ -468,16 +454,12 @@
 			<Button variant="primary" type="submit" form="flow-import-form" loading={submit2.pending}>Import</Button>
 		{/snippet}
 	</Drawer>
-
-	<form method="POST" action="?/delete" use:enhance bind:this={deleteForm} class="hidden">
-		<input type="hidden" name="id" value={deleteId} />
-	</form>
 {:else}
 	<PageShell title="Flows" width="wide">
 		<NotEnabled
 			level={2}
 			title="Flows"
-			description="Flows are not enabled on this instance."
+			description="Flows are not enabled on this engine."
 		/>
 	</PageShell>
 {/if}

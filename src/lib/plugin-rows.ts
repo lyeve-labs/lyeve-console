@@ -18,6 +18,7 @@ import type {
 import { SERVING_PHASES } from '$lib/api/plugins-running';
 import { linkHref } from '$lib/links';
 import { CATEGORY_ORDER, categoryOf, type CategoryKey } from '$lib/plugin-categories';
+import { text } from '$lib/api/narrow';
 
 export type { PluginManifest, PluginRoute };
 
@@ -84,10 +85,6 @@ export interface PluginRow extends PluginDescription {
 	reason: string | null;
 	/** Where the plugin is turned on, on a row that is not enabled, when the engine offered a safe link. */
 	upgradeUrl: string | null;
-}
-
-function text(value: unknown): string {
-	return typeof value === 'string' ? value.trim() : '';
 }
 
 /** What a plugin says about itself. One that says nothing is labeled by its name. */

@@ -13,6 +13,7 @@
  * states how many collections there are rather than naming them.
  */
 import type { AuthRequirement, EndpointDoc, EndpointGroup, EndpointParam, HttpMethod } from './reference';
+import { plural } from '$lib/format';
 
 export interface OpenAPIParameter {
 	name: string;
@@ -204,8 +205,8 @@ export function buildReference(doc: OpenAPIDocument, catalog: EndpointGroup[]): 
 			const p = e.params?.find((x) => x.name === 'schema' && x.in === 'path');
 			if (p) {
 				p.description = count
-					? `Collection name. This instance has ${count} ${count === 1 ? 'collection' : 'collections'}. See the Schema builder.`
-					: 'Collection name, as listed by GET /api/v1/schemas.';
+					? `Content type name. This engine has ${count} ${plural(count, 'content type')}. See the Schema builder.`
+					: 'Content type name, as listed by GET /api/v1/schemas.';
 				delete p.values;
 			}
 		}

@@ -9,13 +9,13 @@ import {
 	type Tenant
 } from '@lyeve-labs/client-rest';
 import { ApiError } from '@lyeve-labs/client';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import { getProvisioning, tenantRefusal } from '$lib/api/tenants';
 import { refusalText } from '$lib/api/refusal';
 import { section, type Gate, type Section } from '$lib/api/gate';
 import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-
-export type { Tenant };
+import { couldNotLoad } from '$lib/outage';
+import { asked } from '$lib/server/asked';
 
 /** The engine's own page size when a request names none. */
 const DEFAULT_LIMIT = 50;
@@ -27,10 +27,13 @@ const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 500;
 
 /** What the page says for a list read that failed for no reason it can name. */
-const LIST_FAILED = 'Could not load the tenants.';
+const LIST_FAILED = couldNotLoad('the tenants');
 
 /** What the page says when it cannot tell whether a tenant may be created. */
 const PROVISIONING_FAILED = 'Could not check whether new tenants can be created.';
+
+/** The slug rule, as the Slug field states it when the engine refuses a slug. */
+const SLUG_RULE = 'Use lowercase letters, digits and underscores, starting with a letter, in at most 63 characters.';
 
 /** The plan the plugin stores for a tenant created with none. */
 const DEFAULT_PLAN = 'free';
@@ -44,11 +47,11 @@ const DEFAULT_PLAN = 'free';
  */
 function createFailure(err: unknown) {
 	if (err instanceof ApiError && err.status === 400 && err.message?.startsWith('invalid slug')) {
-		return fail(400, { action: 'create', error: 'Check the highlighted fields.', fields: { slug: err.message } });
+		return fail(400, { action: 'create', error: 'Check the highlighted fields.', fields: { slug: SLUG_RULE } });
 	}
 	const refused = tenantRefusal(err);
 	if (refused) return fail(402, { action: 'create', error: refusalText(refused), refused });
-	return fail(400, { action: 'create', error: actionError(err, 'Could not create the tenant. Try again.') });
+	return tagged('create', actionFailure(err, 'Could not create the tenant. Try again.'));
 }
 
 export const load: PageServerLoad = async (event) => {
@@ -114,8 +117,8 @@ export const actions: Actions = {
 		 * about, so each control carries its own message.
 		 */
 		const fields: Record<string, string> = {};
-		if (!slug) fields.slug = 'Slug is required';
-		if (!name) fields.name = 'Display name is required';
+		if (!slug) fields.slug = 'Enter a slug.';
+		if (!name) fields.name = 'Enter a display name.';
 		if (Object.keys(fields).length > 0) {
 			return fail(400, { action: 'create', error: 'Check the highlighted fields.', fields });
 		}
@@ -134,13 +137,14 @@ export const actions: Actions = {
 		const id = String(data.get('id') ?? '');
 		const name = String(data.get('name') ?? '').trim();
 		const plan = String(data.get('plan') ?? '').trim();
-		if (!name) return fail(400, { action: 'update', error: 'Check the highlighted fields.', fields: { name: 'Display name is required' } });
+		if (!name) return fail(400, { action: 'update', error: 'Check the highlighted fields.', fields: { name: 'Enter a display name.' } });
 		try {
 			// The plugin keeps the stored plan when the key is absent, so an
 			// emptied field sends the plan a create with none is given.
 			await updateTenant(id, { name, plan: plan || DEFAULT_PLAN }, client);
 		} catch (err) {
-			return fail(400, { action: 'update', error: actionError(err, 'Could not save the tenant. Try again.') });
+			const failed = actionFailure(err, 'Could not save the tenant. Try again.');
+			return fail(failed.status, { action: 'update', ...failed.data });
 		}
 	},
 
@@ -154,20 +158,29 @@ export const actions: Actions = {
 		try {
 			await updateTenant(id, { enabled: !enabled }, client);
 		} catch (err) {
-			return fail(400, { action: 'toggle', error: actionError(err, enabled ? 'Could not disable the tenant. Try again.' : 'Could not enable the tenant. Try again.') });
+			const failed = actionFailure(err, enabled ? 'Could not disable the tenant. Try again.' : 'Could not enable the tenant. Try again.');
+			return fail(failed.status, { action: 'toggle', ...failed.data });
 		}
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const { request } = event;
-		const client = authedClient(event);
-		const data = await request.formData();
-		const id = String(data.get('id') ?? '');
-		try {
-			await deleteTenant(id, client);
-		} catch (err) {
-			return fail(400, { action: 'delete', error: actionError(err, 'Could not delete the tenant. Try again.') });
-		}
-	},
+	delete: asked(
+		{
+			question: 'Delete this tenant?',
+			detail: "All of its data and users are deleted. Its stored files stay in the storage backend until that backend's own lifecycle rules remove them.",
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const { request } = event;
+			const client = authedClient(event);
+			const data = await request.formData();
+			const id = String(data.get('id') ?? '');
+			try {
+				await deleteTenant(id, client);
+			} catch (err) {
+				const failed = actionFailure(err, 'Could not delete the tenant. Try again.');
+				return fail(failed.status, { action: 'delete', ...failed.data });
+			}
+		},
+	),
 };

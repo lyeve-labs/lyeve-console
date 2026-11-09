@@ -16,14 +16,12 @@
 		SegmentedControl,
 		Select,
 		Textarea,
-		Toggle,
-		confirm as confirmDialog
+		Toggle
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { IncomingWebhook } from '@lyeve-labs/client';
-	import { tick } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { fieldErrors, submitter } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, fieldErrors, submitter } from '$lib/forms.svelte';
 	import { Plus, Pencil, Trash2, ArrowDownToLine } from '@lucide/svelte';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
@@ -33,18 +31,10 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	/*
-	 * Each failure names the action that caused it. The drawer shows only its
-	 * own writes' failures, and only one that came back after it was opened, so
-	 * a failed delete never reads as a failure of the form opened next. The
-	 * rest show above the list.
-	 */
 	type Failure = { action?: string; error?: string } | null;
-	const DRAWER_ACTIONS = ['create', 'update'];
-	const inDrawer = $derived(DRAWER_ACTIONS.includes((form as Failure)?.action ?? ''));
-	let openedOver = $state.raw<unknown>(null);
-	const drawerForm = $derived(inDrawer && form !== openedOver ? form : null);
-	const pageForm = $derived(inDrawer ? null : form);
+	const failure = drawerFailure(() => form as Failure, ['create', 'update']);
+	const drawerForm = $derived(failure.drawer);
+	const pageForm = $derived(failure.page);
 
 	const submit = submitter(() => (open = false));
 
@@ -77,7 +67,7 @@
 	);
 
 	function openCreate() {
-		openedOver = form;
+		failure.opened();
 		editing = null;
 		name = '';
 		schema = schemaNames[0] ?? '';
@@ -89,7 +79,7 @@
 	}
 
 	function openEdit(wh: IncomingWebhook) {
-		openedOver = form;
+		failure.opened();
 		editing = wh;
 		name = wh.name;
 		schema = wh.schema_name;
@@ -98,24 +88,6 @@
 		enabled = wh.enabled;
 		allowedIPs = (wh.allowed_ips ?? []).join('\n');
 		open = true;
-	}
-
-	// Delete goes through the kit's confirm dialog, then a hidden form, so the
-	// row's button never posts on its own and the action stays a form action.
-	let deleteId = $state('');
-	let deleteForm = $state<HTMLFormElement>();
-
-	async function askDelete(wh: IncomingWebhook) {
-		const ok = await confirmDialog(
-			`Delete incoming webhook ${wh.name}?`,
-			'External services can no longer send payloads to this endpoint.',
-			{ confirmLabel: 'Delete' }
-		);
-		if (!ok) return;
-		deleteId = wh.id;
-		// The hidden form posts what it holds once the value has reached the DOM.
-		await tick();
-		deleteForm?.requestSubmit();
 	}
 
 	// The endpoint takes no search, so the box narrows what is on screen.
@@ -158,7 +130,7 @@
 
 	{#if data.incomingWebhooks.ok && isSuperAdmin && held}
 		<Alert tone="warn">
-			The license on this instance does not include creating or changing incoming webhooks. You can still delete them.
+			Creating and changing incoming webhooks is not enabled on this engine. You can still delete them.
 		</Alert>
 	{/if}
 
@@ -189,7 +161,7 @@
 		<ListToolbar label="Filter incoming webhooks">
 			{#snippet search()}
 				<label for="incoming-search" class="sr-only">Narrow the list</label>
-				<SearchInput id="incoming-search" bind:value={query} placeholder="Name, schema or id" />
+				<SearchInput id="incoming-search" bind:value={query} placeholder="Name, content type or id" />
 			{/snippet}
 			{#snippet filters()}
 				<SegmentedControl label="Status" labelHidden bind:value={status} options={STATUSES} />
@@ -211,7 +183,7 @@
 								</Badge>
 							</div>
 							<div class="mt-1 flex flex-wrap items-center gap-4 text-xs text-muted">
-								<span>Schema: <span class="font-mono text-fg">{wh.schema_name}</span></span>
+								<span>Content type: <span class="font-mono text-fg">{wh.schema_name}</span></span>
 								<span>
 									POST /api/v1/webhooks/in/<span class="font-mono text-fg">{wh.id}</span>
 								</span>
@@ -238,15 +210,20 @@
 							>
 								<Pencil size={ICON.sm} />
 							</Button>
-							<Button
-								variant="ghost"
-								size="sm"
-								onclick={() => askDelete(wh)}
-								title="Delete"
-								aria-label="Delete {wh.name}"
+							<form
+								method="POST"
+								action="?/delete"
+								use:enhance={confirmed(
+									`Delete incoming webhook ${wh.name}?`,
+									'External services can no longer send payloads to this endpoint.',
+									{ confirmLabel: 'Delete' }
+								)}
 							>
-								<Trash2 size={ICON.sm} class="text-danger" />
-							</Button>
+								<input type="hidden" name="id" value={wh.id} />
+								<Button variant="ghost" size="sm" type="submit" title="Delete" aria-label="Delete {wh.name}">
+									<Trash2 size={ICON.sm} class="text-danger" />
+								</Button>
+							</form>
 						</div>
 						{/if}
 					</div>
@@ -282,12 +259,12 @@
 		{#if editing}<input type="hidden" name="id" value={editing.id} />{/if}
 		<Input id="incoming-name" name="name" label="Name" required bind:value={name} placeholder="Stripe events" />
 		{#if !data.schemas.ok}
-			<p class="text-xs text-muted">Could not load schemas. Only the one this endpoint already uses is listed.</p>
+			<p class="text-xs text-muted">Could not load content types. Only the one this endpoint already uses is listed.</p>
 		{/if}
 		<Select
 			id="incoming-schema"
 			name="schema_name"
-			label="Target schema"
+			label="Target content type"
 			required
 			searchable
 			options={schemaOptions}
@@ -298,7 +275,7 @@
 			id="incoming-secret"
 			name="secret"
 			label={editing ? 'New signing secret' : 'Signing secret'}
-			hint={editing ? 'Leave blank to keep the current secret.' : 'Leave blank to disable signature verification'}
+			hint={editing ? 'Leave empty to keep the current secret.' : 'Leave empty to skip signature verification.'}
 			bind:value={secret}
 		/>
 		<Textarea
@@ -306,7 +283,7 @@
 			name="field_map"
 			label="Field map"
 			required
-			hint="A JSON map of external keys to schema fields. Add at least one mapping."
+			hint="A JSON map of external keys to content type fields. Add at least one mapping."
 			rows={4}
 			bind:value={fieldMap}
 			mono
@@ -330,7 +307,3 @@
 		<Button variant="primary" type="submit" form="incoming-form" loading={submit.pending}>{editing ? 'Save' : 'Create'}</Button>
 	{/snippet}
 </Drawer>
-
-<form method="POST" action="?/delete" use:enhance bind:this={deleteForm} class="hidden">
-	<input type="hidden" name="id" value={deleteId} />
-</form>

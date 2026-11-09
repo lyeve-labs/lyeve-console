@@ -233,6 +233,33 @@ describe('content listing clamps the page size to the server maximum', () => {
 	});
 });
 
+describe('content listing, an integer past 2^53', () => {
+	it('shows the stored digits of an integer field, and a json number as a number', async () => {
+		rest.getSchema.mockResolvedValueOnce({
+			name: 'posts',
+			display_name: 'Posts',
+			fields: [
+				{ name: 'views', field_type: 'integer' },
+				{ name: 'stats', field_type: 'json' },
+			],
+		} as never);
+		const raw =
+			'{"data":[{"id":"e1","title":"One","status":"published","created_at":"","updated_at":"",' +
+			'"body":{"views":9007199254740993,"stats":{"big":1790000000000000000}}}],"total_count":1}';
+		const fetch = vi.fn(async () => new Response(raw, { status: 200, headers: { 'content-type': 'application/json' } }));
+		const result = (await load({
+			fetch,
+			cookies: mockCookies({ '__Host-sys_session': 'tok' }),
+			params: { schema: 'posts' },
+			url: new URL('http://localhost/admin/content/posts'),
+		} as never)) as unknown as Loaded;
+
+		if (!result.items.ok) throw new Error('the listing failed');
+		expect(result.items.value[0].data.views).toBe('9007199254740993');
+		expect(result.items.value[0].data.stats).toEqual({ big: 1790000000000000000 });
+	});
+});
+
 // A link to an author is stored as the author's id. The table shows the
 // author's title instead, read once for the linked content type.
 describe('content listing names linked entries', () => {
@@ -336,12 +363,13 @@ describe('deleting an entry', () => {
 			return answer();
 		}) as unknown as typeof globalThis.fetch;
 		const fd = new FormData();
+		fd.set('confirmed', 'yes');
 		fd.set('id', id);
 		const event = {
 			fetch,
 			cookies: mockCookies({ '__Host-sys_session': 'tok', '__Host-csrf': 'csrf' }),
 			params: { schema: 'posts' },
-			request: { formData: async () => fd },
+			request: { formData: async () => fd, clone: () => ({ formData: async () => fd }) },
 		} as never;
 		return { event, calls };
 	}
@@ -354,14 +382,14 @@ describe('deleting an entry', () => {
 	});
 
 	it('relays the reason the plugin refused', async () => {
-		const { event } = deleteEvent(async () => json({ error: 'entry is referenced by another entry' }, 409));
+		const { event } = deleteEvent(async () => json({ error: 'entry is referenced by another entry', code: 'conflict' }, 409));
 		const out = (await actions.delete(event)) as { status: number; data: { error: string } };
 		expect(out.status).toBe(400);
 		expect(out.data.error).toBe('entry is referenced by another entry');
 	});
 
 	it('relays the role refusal the engine sends', async () => {
-		const { event } = deleteEvent(async () => json({ error: 'insufficient permissions' }, 403));
+		const { event } = deleteEvent(async () => json({ error: 'insufficient permissions', code: 'forbidden' }, 403));
 		const out = (await actions.delete(event)) as { status: number; data: { error: string } };
 		expect(out.data.error).toBe('insufficient permissions');
 	});

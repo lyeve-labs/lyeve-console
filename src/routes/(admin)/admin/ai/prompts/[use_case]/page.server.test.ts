@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { actions, load } from './+page.server';
-import { fixturePrompt, fixtureSettings } from '$lib/components/ai/fixtures';
-import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '$lib/components/ai/test-events';
+import { fixturePrompt, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
+import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '$lib/components/ai/test-support/events';
 
 const path = '/admin/ai/prompts/summarize';
 const params = { use_case: 'summarize' };
@@ -16,7 +16,7 @@ describe('admin/ai/prompts/[use_case] load', () => {
 
 	it('tells an unknown use case from the tenant switch', async () => {
 		const routes = { '/api/admin/ai/prompts/summarize': () => refused(404, 'unknown prompt use case') };
-		await expect(load(loadEvent(routes, { path, params }).event)).rejects.toMatchObject({ status: 404 });
+		await expect(load(loadEvent(routes, { path, params }).event)).rejects.toMatchObject({ status: 404, body: { message: 'This use case no longer exists.' } });
 		const off = loadEvent(routes, { path, params, settings: { ...fixtureSettings, enabled: false } });
 		expect(((await load(off.event)) as Loaded).gate).toEqual({ state: 'off' });
 	});
@@ -44,7 +44,7 @@ describe('admin/ai/prompts/[use_case] actions', () => {
 
 	it('refuses an empty body before the engine is asked', async () => {
 		const { event, calls } = actionEvent({}, formOf({ body: '   ' }), { path, params });
-		expect(await actions.save(event)).toMatchObject({ status: 400, data: { error: 'The prompt cannot be empty.' } });
+		expect(await actions.save(event)).toMatchObject({ status: 400, data: { error: 'Enter a prompt.' } });
 		expect(calls.some((c) => c.url.includes('/ai/prompts'))).toBe(false);
 	});
 

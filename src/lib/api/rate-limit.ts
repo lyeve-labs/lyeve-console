@@ -3,7 +3,7 @@
  *
  * Three kinds of limit live here. The global limit is one rate and burst over
  * every request. The protections are the built-in sign-in and reset limits,
- * enforced on every install. Custom rules are a rule per endpoint pattern,
+ * enforced on every instance. Custom rules are a rule per endpoint pattern,
  * tenant or role, counted by address or account. Whether this instance may
  * change the protections and enforce custom rules is the plugin's answer, in
  * the overview it serves. A stored custom rule on an instance that may not
@@ -21,15 +21,14 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 import type { ListEnvelope } from './list';
 import { limitOf, type Limit } from './limits';
 
-export const RULES_URL = '/api/admin/rate-limits';
-export const STATUS_URL = '/api/admin/rate-limits/status';
-export const OVERVIEW_URL = '/api/admin/rate-limits/overview';
-export const GLOBAL_URL = '/api/admin/rate-limits/global';
-export const PROTECTIONS_URL = '/api/admin/rate-limits/protections';
+const RULES_URL = '/api/admin/rate-limits';
+const STATUS_URL = '/api/admin/rate-limits/status';
+const OVERVIEW_URL = '/api/admin/rate-limits/overview';
+const GLOBAL_URL = '/api/admin/rate-limits/global';
+const PROTECTIONS_URL = '/api/admin/rate-limits/protections';
 
 export type RuleKind = 'global' | 'protection' | 'custom';
 export type KeyBy = 'ip' | 'user';
@@ -92,15 +91,6 @@ export interface LimiterState {
 	burst: number;
 	remaining: number;
 	reset_at: string;
-}
-
-export type RateLimitGate = Gate;
-
-export const RATE_LIMIT_OK: RateLimitGate = GATE_OK;
-
-/** What a refused rate limit read means, read the way every plugin's is. */
-export function rateLimitGate(err: unknown): RateLimitGate {
-	return gateOf(err, 'Could not load the rate limit rules.');
 }
 
 export async function listRules(
@@ -292,11 +282,11 @@ export function windowLabel(requests: number, windowSeconds: number): string {
 	return `${requests} per ${windowSeconds} seconds`;
 }
 
-export const TENANT_GLOBAL_URL = '/api/admin/rate-limits/tenant-global';
-export const IP_RULES_URL = '/api/admin/rate-limits/ip-rules';
-export const HISTORY_URL = '/api/admin/rate-limits/history';
+const TENANT_GLOBAL_URL = '/api/admin/rate-limits/tenant-global';
+const IP_RULES_URL = '/api/admin/rate-limits/ip-rules';
+const HISTORY_URL = '/api/admin/rate-limits/history';
 
-/** The caller's tenant limit, the install-wide one beside it, and whether writing one is licensed. */
+/** The caller's tenant limit, the instance-wide one beside it, and whether writing one is licensed. */
 export interface TenantGlobalRead {
 	licensed: boolean;
 	tenant_global: RateRule | null;

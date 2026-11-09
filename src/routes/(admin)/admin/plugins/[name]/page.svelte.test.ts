@@ -148,7 +148,7 @@ describe('plugin detail page', () => {
 		expect(screen.getByText('Request statistics unavailable')).toBeTruthy();
 		cleanup();
 		renderPage(SEARCH, { trafficRead: true, traffic: null });
-		expect(screen.getByText('Nothing sampled yet')).toBeTruthy();
+		expect(screen.getByText('No requests sampled yet')).toBeTruthy();
 	});
 
 	it('shows no request statistics to an admin', () => {
@@ -188,7 +188,7 @@ describe('plugin detail page', () => {
 		expect(container.querySelector('h1')?.textContent).toContain('search');
 		expect(container.querySelector('dl')).toBeNull();
 		expect(
-			screen.getByText('See what this plugin does and the routes it serves on this instance.'),
+			screen.getByText('See what this plugin does and the routes it serves on this engine.'),
 		).toBeTruthy();
 	});
 });

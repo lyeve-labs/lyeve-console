@@ -69,7 +69,7 @@ const ME = { id: 'u0', email: 'root@example.com', roles: ['super_admin'] };
 const ADA = { id: 'u1', email: 'ada@example.com', roles: ['editor'], tenant_id: 'other', disabled: false };
 
 describe('admin/tenants/[id] load', () => {
-	it('offers what the instance serves and marks what is withheld', async () => {
+	it('offers what the engine serves and marks what is withheld', async () => {
 		const { event: ev } = event({
 			'GET /api/admin/tenants/t1': TENANT,
 			'GET /api/admin/tenant-features/acme': { tenant: 'acme', withheld: ['search'], known: ['ai', 'flow', 'search'] },
@@ -216,7 +216,7 @@ describe('admin/tenants/[id] grant action', () => {
 			data: {
 				action: 'grant',
 				memberError:
-					"Every admin seat is taken. You're using 7 of 7, the most this instance allows. A license that allows more lifts the limit. Removing the admin role from an account also frees a seat. Editors and viewers take no seat.",
+					"Every admin seat is taken. You're using 7 of 7, the most this engine allows. A license that allows more lifts the limit. Removing the admin role from an account also frees a seat. Editors and viewers take no seat.",
 				refused: { kind: 'cap', cap: 'admin.seats', limit: 7, current: 7, upgradeUrl: 'https://shop.example.com/pricing?utm_campaign=admin.seats' },
 			},
 		});
@@ -326,7 +326,14 @@ describe('admin/tenants/[id] members paging', () => {
 describe('admin/tenants/[id] revoke, archive and restore', () => {
 	function revokeForm(): FormData {
 		const form = new FormData();
+		form.set('confirmed', 'yes');
 		form.append('user_id', 'u2');
+		return form;
+	}
+
+	function archiveForm(): FormData {
+		const form = new FormData();
+		form.set('confirmed', 'yes');
 		return form;
 	}
 
@@ -346,7 +353,7 @@ describe('admin/tenants/[id] revoke, archive and restore', () => {
 			{
 				'GET /api/admin/auth/me': ME,
 				'GET /api/admin/tenants/t1': TENANT,
-				'DELETE /api/admin/users/u2/memberships/acme': json({ error: 'the home tenant has no membership to revoke' }, 409),
+				'DELETE /api/admin/users/u2/memberships/acme': json({ error: 'the home tenant has no membership to revoke', code: 'conflict' }, 409),
 			},
 			revokeForm(),
 		);
@@ -368,21 +375,28 @@ describe('admin/tenants/[id] revoke, archive and restore', () => {
 		expect(await actions.revoke(ev)).toMatchObject({ data: { memberError: 'Could not remove the membership. Try again.' } });
 	});
 
+	it('archives nothing on a post that skipped the question', async () => {
+		const unasked = event({ 'GET /api/admin/auth/me': ME }, new FormData());
+		expect(await actions.archive(unasked.event)).toMatchObject({ unconfirmed: { question: 'Archive this tenant?', label: 'Archive', fields: [] } });
+		expect(unasked.calls).toEqual([]);
+	});
+
 	it('archives and restores a tenant the engine accepts', async () => {
-		const archive = event({ 'GET /api/admin/auth/me': ME, 'POST /api/admin/tenants/t1/archive': { ...TENANT, archived: true } });
+
+		const archive = event({ 'GET /api/admin/auth/me': ME, 'POST /api/admin/tenants/t1/archive': { ...TENANT, archived: true } }, archiveForm());
 		expect(await actions.archive(archive.event)).toEqual({ archived: true });
 		const restore = event({ 'GET /api/admin/auth/me': ME, 'POST /api/admin/tenants/t1/restore': TENANT });
 		expect(await actions.restore(restore.event)).toEqual({ restored: true });
 	});
 
 	it('relays a refused archive and restore, and hides an outage behind a sentence', async () => {
-		const refused = event({ 'GET /api/admin/auth/me': ME, 'POST /api/admin/tenants/t1/archive': json({ error: 'tenant is already archived' }, 409) });
+		const refused = event({ 'GET /api/admin/auth/me': ME, 'POST /api/admin/tenants/t1/archive': json({ error: 'tenant is already archived', code: 'conflict' }, 409) }, archiveForm());
 		expect(await actions.archive(refused.event)).toEqual({ status: 400, data: { stateError: 'tenant is already archived' } });
 		const down = event({ 'GET /api/admin/auth/me': ME, 'POST /api/admin/tenants/t1/restore': json({ error: 'pq: timeout' }, 503) });
 		expect(await actions.restore(down.event)).toEqual({ status: 400, data: { stateError: 'Could not restore the tenant. Try again.' } });
-		const downArchive = event({ 'GET /api/admin/auth/me': ME, 'POST /api/admin/tenants/t1/archive': json({ error: 'pq: timeout' }, 503) });
+		const downArchive = event({ 'GET /api/admin/auth/me': ME, 'POST /api/admin/tenants/t1/archive': json({ error: 'pq: timeout' }, 503) }, archiveForm());
 		expect(await actions.archive(downArchive.event)).toEqual({ status: 400, data: { stateError: 'Could not archive the tenant. Try again.' } });
-		const refusedRestore = event({ 'GET /api/admin/auth/me': ME, 'POST /api/admin/tenants/t1/restore': json({ error: 'tenant is not archived' }, 409) });
+		const refusedRestore = event({ 'GET /api/admin/auth/me': ME, 'POST /api/admin/tenants/t1/restore': json({ error: 'tenant is not archived', code: 'conflict' }, 409) });
 		expect(await actions.restore(refusedRestore.event)).toEqual({ status: 400, data: { stateError: 'tenant is not archived' } });
 	});
 

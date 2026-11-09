@@ -27,6 +27,7 @@ function engine(fields: Record<string, string>, opts: { roles?: string[]; reply?
 		return opts.reply?.clone() ?? json({});
 	});
 	const form = new FormData();
+	form.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) form.set(k, v);
 	const url = new URL('http://localhost/admin/settings/storage');
 	return {
@@ -80,7 +81,7 @@ describe('testing a provider', () => {
 	});
 
 	it('relays a refusal and hides an outage', async () => {
-		const refused = engine({ id: 'p1' }, { reply: json({ error: 'provider not found' }, 404) });
+		const refused = engine({ id: 'p1' }, { reply: json({ error: 'provider not found', code: 'not_found' }, 404) });
 		expect(((await actions.test(refused.event)) as Failure).data.error).toBe('provider not found');
 		const down = engine({ id: 'p1' }, { reply: OUTAGE });
 		expect(((await actions.test(down.event)) as Failure).data.error).toBe('Could not test the provider. Try again.');
@@ -115,12 +116,12 @@ describe('creating a provider', () => {
 	it('asks for a missing credential before it sends anything', async () => {
 		const { event, calls } = engine({ ...S3, secret_key: '' });
 		const out = (await actions.create(event)) as Failure;
-		expect(out.data.providerError).toBe('Secret access key is required.');
+		expect(out.data.providerError).toBe('Enter secret access key.');
 		expect(calls).toEqual([]);
 	});
 
 	it('relays a refusal in the drawer and hides an outage', async () => {
-		const refused = engine(S3, { reply: json({ error: 'region must be 1 to 32 lower-case letters, digits and hyphens for s3 providers' }, 422) });
+		const refused = engine(S3, { reply: json({ error: 'region must be 1 to 32 lower-case letters, digits and hyphens for s3 providers', code: 'http_422' }, 422) });
 		expect(((await actions.create(refused.event)) as Failure).data).toEqual({
 			action: 'create',
 			providerError: 'region must be 1 to 32 lower-case letters, digits and hyphens for s3 providers',
@@ -148,7 +149,7 @@ describe('saving a provider', () => {
 	});
 
 	it('relays a refusal in the drawer and hides an outage', async () => {
-		const refused = engine({ id: 'p1', ...S3 }, { reply: json({ error: 'invalid provider ID' }, 400) });
+		const refused = engine({ id: 'p1', ...S3 }, { reply: json({ error: 'invalid provider ID', code: 'bad_request' }, 400) });
 		expect(((await actions.update(refused.event)) as Failure).data).toEqual({ action: 'update', providerError: 'invalid provider ID' });
 		const down = engine({ id: 'p1', ...S3 }, { reply: OUTAGE });
 		expect(((await actions.update(down.event)) as Failure).data).toEqual({ action: 'update', providerError: 'Could not save the provider. Try again.' });
@@ -163,7 +164,7 @@ describe('removing a provider', () => {
 	});
 
 	it('relays a refusal and hides an outage', async () => {
-		const refused = engine({ id: 'p1' }, { reply: json({ error: 'failed to delete provider' }, 404) });
+		const refused = engine({ id: 'p1' }, { reply: json({ error: 'failed to delete provider', code: 'not_found' }, 404) });
 		expect(((await actions.delete(refused.event)) as Failure).data).toEqual({ error: 'failed to delete provider' });
 		const down = engine({ id: 'p1' }, { reply: OUTAGE });
 		expect(((await actions.delete(down.event)) as Failure).data).toEqual({ error: 'Could not delete the provider. Try again.' });

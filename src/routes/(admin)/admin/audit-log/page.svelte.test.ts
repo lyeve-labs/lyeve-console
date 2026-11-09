@@ -349,8 +349,8 @@ describe('Audit log empty page under a count', () => {
 			props: { data: data({ entries: [], total: 120, offset: 100 }) as never, form: null as never },
 		});
 		expect(container.textContent).not.toContain('No audit entries yet');
-		expect(container.textContent).toContain('Nothing on this page');
-		expect(container.textContent).toContain('The audit log has 120 entries');
+		expect(container.textContent).toContain('No entries on this page');
+		expect(container.textContent).toContain('The audit log has 120 entries, but none are on this page. Go to the first page.');
 		const first = [...container.querySelectorAll('a')].find((a) => a.textContent?.includes('Go to the first page'));
 		expect(first?.getAttribute('href')).toBe('/admin/audit-log');
 	});

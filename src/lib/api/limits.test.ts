@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '@lyeve-labs/client';
-import { atLimit, errorCodeOf, limitOf } from './limits';
+import { atLimit, bodyString, errorCodeOf, limitOf } from './limits';
 
 describe('errorCodeOf', () => {
 	it('reads the code a refusal carries beside its sentence', () => {
@@ -16,6 +16,23 @@ describe('errorCodeOf', () => {
 		expect(errorCodeOf(new ApiError(500, 'boom'))).toBe('');
 		expect(errorCodeOf(new ApiError(400, 'x', { code: 7 }))).toBe('');
 		expect(errorCodeOf(new Error('x'))).toBe('');
+	});
+});
+
+describe('bodyString', () => {
+	it('reads the field a refused value names', () => {
+		const err = new ApiError(422, 'Writes must be between 1 and 120 a minute.', {
+			error: 'Writes must be between 1 and 120 a minute.',
+			code: 'settings_invalid',
+			field: 'writes_per_minute',
+		});
+		expect(bodyString(err, 'field')).toBe('writes_per_minute');
+	});
+
+	it('answers empty for a key the body lacks or holds as another type', () => {
+		expect(bodyString(new ApiError(422, 'x', { code: 'settings_invalid' }), 'field')).toBe('');
+		expect(bodyString(new ApiError(422, 'x', { field: 3 }), 'field')).toBe('');
+		expect(bodyString(new Error('x'), 'field')).toBe('');
 	});
 });
 

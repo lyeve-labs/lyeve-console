@@ -46,7 +46,7 @@ describe('Root error page', () => {
 
 	it('keeps the server face for 500', () => {
 		const { getByText } = renderAt(500);
-		expect(getByText('Something went wrong')).toBeTruthy();
+		expect(getByText('Could not complete the request')).toBeTruthy();
 	});
 
 	// The shell's own session check fails here, above the admin frame, when the

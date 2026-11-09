@@ -2,43 +2,38 @@
 	import { Badge, Button, Drawer, EmptyState, Pagination, Table, confirm } from '@lyeve-labs/ui-kit';
 	import type { DeadLetter } from '@lyeve-labs/client';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { tick, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
+	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { RotateCcw, Skull, Trash2, XCircle } from '@lucide/svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
+	import GateNotice from '$lib/components/GateNotice.svelte';
+	import type { Section } from '$lib/api/gate';
 	import { formRefusal, refusalText, type Refusal } from '$lib/api/refusal';
 	import { pageNumber } from '$lib/api/list';
 	import { formatDateTime } from '$lib/format';
 	import { ICON } from '$lib/icon';
-	import { eventTone } from './event-tone';
+	import { eventTone } from '$lib/tones';
 
 	interface Props {
-		/** The page's one action result, which carries the queue and each replay or dismissal. */
+		/** The page's one action result, which carries each replay or dismissal. */
 		form: Record<string, unknown> | null | undefined;
+		/** The page of the queue the address opens, as the load read it. */
+		deadLetters: { offset: number; limit: number; read: Section<{ rows: DeadLetter[]; total: number | null }> } | null;
 		/** The license refusal a paid write met, which holds replay and dismissal. */
 		held?: Refusal | null;
 	}
 
-	let { form, held = null }: Props = $props();
+	let { form, deadLetters, held = null }: Props = $props();
 
 	/** The queue's own writes, whose failures this drawer draws. */
-	const OWN_ACTIONS = ['dead-letters-page', 'dead-letter-replay', 'dead-letter-dismiss', 'dead-letter-delete'];
+	const OWN_ACTIONS = ['dead-letter-replay', 'dead-letter-dismiss', 'dead-letter-delete'];
 
-	let showDeadLetters = $state(false);
-	let deadLetterItems = $state<DeadLetter[]>([]);
-	let deadLetterTotal = $state<number | null>(null);
-	let deadLetterOffset = $state(0);
-	let deadLetterLimit = $state(50);
-
-	$effect(() => {
-		if (form && 'deadLetters' in form && form.deadLetters) {
-			deadLetterItems = form.deadLetters as DeadLetter[];
-			deadLetterTotal = (form.deadLetterTotal as number | null | undefined) ?? null;
-			deadLetterOffset = (form.deadLetterOffset as number | undefined) ?? 0;
-			deadLetterLimit = (form.deadLetterLimit as number | undefined) ?? 50;
-			showDeadLetters = true;
-		}
-	});
+	// A delete takes its row out at once, and the next load reads the queue again.
+	let deadLetterItems = $derived(deadLetters?.read.ok ? deadLetters.read.value.rows : []);
+	const deadLetterTotal = $derived(deadLetters?.read.ok ? deadLetters.read.value.total : null);
 
 	const failure = $derived(
 		form && OWN_ACTIONS.includes(String(form.action ?? '')) ? (form as { error?: string }) : null,
@@ -74,7 +69,7 @@
 
 	/** Deleting drops the delivery for good, so it asks first and names it. */
 	function deletePermanently(dl: DeadLetter): SubmitFunction {
-		return async ({ cancel }) => {
+		return async ({ cancel, formData }) => {
 			const ok = await confirm(
 				`Delete the dead letter from ${dl.webhook_name}?`,
 				`The ${dl.event_type} delivery that died at ${formatDateTime(dl.dead_at)} is deleted permanently. It cannot be replayed.`,
@@ -84,6 +79,7 @@
 				cancel();
 				return;
 			}
+			formData.set(CONFIRM_FIELD, CONFIRMED);
 			return async ({ result, update }) => {
 				if (result.type === 'success') {
 					deadLetterItems = deadLetterItems.filter((x) => x.id !== dl.id);
@@ -93,21 +89,33 @@
 		};
 	}
 
-	// A page of the queue is another read of the same action, posted from the
-	// hidden form below with the offset it names.
-	let pageForm = $state<HTMLFormElement>();
-	let askedOffset = $state(0);
-	async function turnTo(page: number) {
-		askedOffset = (page - 1) * deadLetterLimit;
-		await tick();
-		pageForm?.requestSubmit();
+	/** The address of a page of the queue. */
+	function pageHref(offset: number): string {
+		const next = new URL(page.url);
+		next.searchParams.set('dead', '1');
+		if (offset > 0) next.searchParams.set('dead_offset', String(offset));
+		else next.searchParams.delete('dead_offset');
+		return `${next.pathname}${next.search}`;
+	}
+
+	// Closing takes the queue out of the address, or the next load would open
+	// it again.
+	function close() {
+		const next = new URL(page.url);
+		next.searchParams.delete('dead');
+		next.searchParams.delete('dead_offset');
+		void goto(`${next.pathname}${next.search}`, { noScroll: true, keepFocus: true });
 	}
 </script>
 
-<Drawer bind:open={showDeadLetters} title="Dead letter queue" size="xl">
+{#if deadLetters}
+	{@const { offset, limit } = deadLetters}
+	<Drawer open title="Dead letter queue" size="xl" onclose={close}>
 	{#snippet children()}
 			<FormErrors message={failure?.error || undefined} refused={formRefusal(failure)} />
-			{#if deadLetterItems.length === 0}
+			{#if !deadLetters.read.ok}
+				<GateNotice gate={deadLetters.read.gate} title="Dead letter queue" absent="The dead letter queue is not included in this build." />
+			{:else if deadLetterItems.length === 0}
 				<EmptyState
 					title="No dead letters"
 					description="Deliveries that fail after every retry appear here."
@@ -117,7 +125,7 @@
 			{:else}
 				{#if held}
 					<p class="mb-2 text-xs text-muted" data-testid="replay-held">
-						{refusalText(held)} Replaying and dismissing need it. You can still delete entries.
+						{refusalText(held)} You can still delete entries.
 					</p>
 				{/if}
 				<Table label="Dead letters">
@@ -125,7 +133,7 @@
 						<tr>
 							<th scope="col">Webhook</th>
 							<th scope="col">Event</th>
-							<th scope="col">Schema</th>
+							<th scope="col">Content type</th>
 							<th scope="col">Attempts</th>
 							<th scope="col">Last error</th>
 							<th scope="col">Status</th>
@@ -172,7 +180,7 @@
 													disabled={held !== null}
 													aria-label="Replay the dead letter from {dl.webhook_name}"
 												>
-													<RotateCcw class="h-3.5 w-3.5" />
+													<RotateCcw size={ICON.sm} />
 												</Button>
 											</form>
 											<form method="POST" action="?/dead-letter-dismiss" use:enhance>
@@ -185,7 +193,7 @@
 													disabled={held !== null}
 													aria-label="Dismiss the dead letter from {dl.webhook_name}"
 												>
-													<XCircle class="h-3.5 w-3.5" />
+													<XCircle size={ICON.sm} />
 												</Button>
 											</form>
 											<form method="POST" action="?/dead-letter-delete" use:enhance={deletePermanently(dl)}>
@@ -197,7 +205,7 @@
 													title="Delete permanently"
 													aria-label="Delete the dead letter from {dl.webhook_name} permanently"
 												>
-													<Trash2 class="h-3.5 w-3.5 text-danger" />
+													<Trash2 size={ICON.sm} class="text-danger" />
 												</Button>
 											</form>
 										</div>
@@ -208,23 +216,20 @@
 					</tbody>
 				</Table>
 				<Pagination
-					page={pageNumber(deadLetterOffset, deadLetterLimit)}
-					perPage={deadLetterLimit}
+					page={pageNumber(offset, limit)}
+					perPage={limit}
 					count={deadLetterItems.length}
 					total={deadLetterTotal ?? undefined}
-					hasNext={deadLetterTotal === null && deadLetterItems.length === deadLetterLimit}
+					hasNext={deadLetterTotal === null && deadLetterItems.length === limit}
 					noun="entries"
-					onchange={turnTo}
+					href={(p) => pageHref((p - 1) * limit)}
 				/>
 			{/if}
-			<form method="POST" action="?/dead-letters" use:enhance bind:this={pageForm} class="hidden">
-				<input type="hidden" name="turn" value="page" />
-				<input type="hidden" name="offset" value={askedOffset} />
-			</form>
 		{/snippet}
 		{#snippet footer()}
-			<Button variant="secondary" type="button" onclick={() => (showDeadLetters = false)}>
+			<Button variant="secondary" type="button" onclick={close}>
 				Close
 			</Button>
 		{/snippet}
-</Drawer>
+	</Drawer>
+{/if}

@@ -5,8 +5,10 @@ import { ApiError } from '@lyeve-labs/client';
 import { getPluginSchema } from '@lyeve-labs/client-rest';
 import { pluginSettings } from '$lib/config-forms';
 import { sessionToken } from '$lib/server/session-cookie';
+import { SESSION_ENDED } from '$lib/session';
 import { actionError } from '$lib/server/action-error';
 import { section, type Section } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 
 export interface ConfigSetting {
 	key: string;
@@ -51,7 +53,7 @@ export const load: PageServerLoad = async (event) => {
 	const client = authedClient(event);
 	const read = await section(
 		client.get<ConfigProvenance>('/api/admin/config'),
-		'Could not load the configuration.'
+		couldNotLoad('the configuration')
 	);
 
 	// Opened for one plugin, the page shows that plugin's settings: the ones
@@ -81,7 +83,7 @@ export const actions: Actions = {
 	// engine is told to unset one.
 	save: async (event) => {
 		const { request } = event;
-		if (!sessionToken(event)) return fail(401, { error: 'Your session has ended. Sign in again.' });
+		if (!sessionToken(event)) return fail(401, { error: SESSION_ENDED });
 
 		const data = await request.formData();
 		const key = data.get('key')?.toString()?.trim();

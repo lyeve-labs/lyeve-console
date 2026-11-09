@@ -6,19 +6,18 @@ import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import { channelsFrom } from '$lib/api/alert-channels';
 import {
-	ERROR_OK,
-	errorGate,
 	getAlertSettings,
 	listEvents,
 	putAlertSettings,
 	SETTINGS_CHANNEL_PREFIX,
 	type AlertSettings,
-	type ErrorGate,
 } from '$lib/api/error-tracking';
+import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();
-	let gate: ErrorGate = notRunning(plugins, PLUGIN.errorTracking) ? { state: 'absent' } : ERROR_OK;
+	let gate: Gate = notRunning(plugins, PLUGIN.errorTracking) ? { state: 'absent' } : GATE_OK;
 	let settings: AlertSettings | null = null;
 	let windowDays: number | null = null;
 	if (gate.state === 'ok') {
@@ -32,7 +31,7 @@ export const load: PageServerLoad = async (event) => {
 		try {
 			settings = await getAlertSettings(client);
 		} catch (err) {
-			gate = errorGate(err);
+			gate = gateOf(err, couldNotLoad('errors'));
 		}
 		windowDays = await window;
 	}

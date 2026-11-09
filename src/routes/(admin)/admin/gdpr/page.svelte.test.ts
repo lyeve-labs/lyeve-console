@@ -45,8 +45,8 @@ describe('Privacy request erasure outcome', () => {
 		const text = said(container);
 		expect(text).toContain('Erasure incomplete');
 		expect(text).not.toContain('Erasure complete');
-		expect(text).toContain('some data could not be erased and is still stored');
-		expect(text).toContain('The engine log shows which part failed.');
+		expect(text).toContain('but some data is still stored.');
+		expect(text).toContain('Check the engine log for the part that failed, fix the cause, then run the erasure again.');
 		const items = [...container.querySelectorAll('li')].map((li) => li.textContent?.trim());
 		expect(items).toEqual([ERASERS_FAILED]);
 	});
@@ -114,8 +114,7 @@ describe('Privacy request erasure outcome', () => {
 		});
 		const text = said(container);
 		expect(text).toContain('Erasure incomplete');
-		expect(text).toContain('The engine log shows which part failed.');
-		expect(text).toContain('Run the erasure again once the cause is fixed.');
+		expect(text).toContain('Check the engine log for the part that failed, fix the cause, then run the erasure again.');
 		expect(text).not.toContain('Erasure kept some records');
 	});
 

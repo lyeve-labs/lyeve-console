@@ -17,7 +17,7 @@ vi.mock('@lyeve-labs/client-rest', () => ({
 }));
 
 import { actions, load } from './+page.server';
-import type { EntryReview } from './+page.server';
+import type { EntryReview } from '$lib/server/entry-panels';
 
 const A = '11111111-1111-1111-1111-111111111111';
 const B = '22222222-2222-2222-2222-222222222222';

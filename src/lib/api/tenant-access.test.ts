@@ -3,7 +3,7 @@ import type { HttpClient } from '@lyeve-labs/client';
 import { featureChoices, withheldFrom, findUserByEmail } from './tenant-access';
 
 describe('featureChoices', () => {
-	it('offers what the instance serves and what is already withheld', () => {
+	it('offers what the engine serves and what is already withheld', () => {
 		const known = ['ai', 'flow', 'reports', 'search', 'saml'];
 		const licensed = ['flow', 'search', 'reports'];
 		expect(featureChoices(known, licensed, ['ai', 'search'])).toEqual([

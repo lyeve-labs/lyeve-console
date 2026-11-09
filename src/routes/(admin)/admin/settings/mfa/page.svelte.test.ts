@@ -22,7 +22,7 @@ describe('an account with a passkey', () => {
 	it('says passkeys keep two-factor on and offers both app controls', () => {
 		const { container, getByRole } = setup(true, null, true);
 		expect(container.textContent).toContain('This account has a passkey');
-		expect(container.textContent).not.toContain('takes a TOTP code');
+		expect(container.textContent).not.toContain('takes a code from the authenticator app');
 		expect(getByRole('button', { name: /Set up with this code/ })).toBeTruthy();
 		expect(container.querySelector('form[action="?/setup"]')).not.toBeNull();
 		expect(container.querySelector('form[action="?/disable"]')).not.toBeNull();
@@ -222,10 +222,10 @@ describe('two-factor authentication page', () => {
 
 		await fireEvent.click(getByRole('button', { name: 'Copy all codes' }));
 		await vi.advanceTimersByTimeAsync(0);
-		expect(getByText('Copy failed')).toBeTruthy();
+		expect(getByText('Could not copy. Try again.')).toBeTruthy();
 
 		await vi.advanceTimersByTimeAsync(1500);
-		expect(queryByText('Copy failed')).toBeNull();
+		expect(queryByText('Could not copy. Try again.')).toBeNull();
 		expect(getByText(/If the copy fails, write them down before you leave this page\./)).toBeTruthy();
 	});
 });

@@ -9,14 +9,7 @@
 import { tick } from 'svelte';
 import { useShell } from '$lib/shell.svelte';
 import { readFocus, writeFocus } from './prefs';
-
-function storage(): Storage | null {
-	try {
-		return typeof localStorage === 'undefined' ? null : localStorage;
-	} catch {
-		return null;
-	}
-}
+import { safeStorage } from '$lib/aside';
 
 /**
  * The editor's focus toggle. Call it while the component initializes, since
@@ -37,10 +30,10 @@ export function focusMode(refit: () => void): { on: boolean } {
 		const value = on;
 		if (!restored) {
 			restored = true;
-			on = readFocus(storage());
+			on = readFocus(safeStorage());
 			return;
 		}
-		writeFocus(storage(), value);
+		writeFocus(safeStorage(), value);
 	});
 
 	$effect(() => {

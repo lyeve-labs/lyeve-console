@@ -8,7 +8,7 @@
  */
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
 
-export const EXPORT_STEP_UP_URL = '/api/admin/analytics/gdpr/export-step-up';
+const EXPORT_STEP_UP_URL = '/api/admin/analytics/gdpr/export-step-up';
 
 /** Every factor, in the order the engine names them. */
 export const STEP_UP_FACTORS = ['password', 'code', 'email'] as const;
@@ -31,7 +31,7 @@ export async function saveStepUp(client: HttpClient, factors: StepUpFactor[]): P
 }
 
 /**
- * Whether a save was refused because the install cannot send mail, so an
+ * Whether a save was refused because the instance cannot send mail, so an
  * emailed code cannot be required. The engine answers 422 for that alone,
  * so the status decides and a renamed code cannot break the check.
  */

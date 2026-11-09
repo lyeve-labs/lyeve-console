@@ -76,7 +76,7 @@
 				level={2}
 				title={data.status ? 'No releases with this status' : 'No releases yet'}
 				description={data.status
-					? 'Pick another status to see the rest.'
+					? 'Choose another status to see the rest.'
 					: 'Create a release to publish several entries together.'}
 			>
 				{#snippet iconSnippet()}<CalendarClock size={ICON.lg} />{/snippet}

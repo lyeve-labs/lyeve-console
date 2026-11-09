@@ -17,12 +17,12 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
-import type { ListEnvelope } from './list';
+import { readAll, type ListEnvelope } from './list';
+import { plural } from '$lib/format';
 
-export const POLICIES_URL = '/api/admin/retention-policies';
-export const HOLDS_URL = '/api/admin/legal-holds';
-export const ENFORCE_URL = '/api/admin/retention/enforce';
+const POLICIES_URL = '/api/admin/retention-policies';
+const HOLDS_URL = '/api/admin/legal-holds';
+const ENFORCE_URL = '/api/admin/retention/enforce';
 
 export interface RetentionPolicy {
 	id: string;
@@ -57,15 +57,6 @@ export interface LegalHold {
 	deleted_at?: string | null;
 }
 
-export type RetentionGate = Gate;
-
-export const RETENTION_OK: RetentionGate = GATE_OK;
-
-/** What a refused retention read means, read the way every plugin's is. */
-export function retentionGate(err: unknown): RetentionGate {
-	return gateOf(err, 'Could not load the retention rules.');
-}
-
 /** The largest page the plugin serves. */
 const PAGE = 500;
 
@@ -74,25 +65,21 @@ const PAGE = 500;
  * judges whether deletion is blocked from the whole set, so a partial read
  * would answer wrong.
  */
-async function readAll<T>(client: HttpClient, url: string): Promise<ListEnvelope<T>> {
-	const rows: T[] = [];
-	for (let offset = 0; ; offset += PAGE) {
-		const page = await client.get<ListEnvelope<T>>(`${url}?limit=${PAGE}&offset=${offset}`);
-		const got = page.data ?? [];
-		rows.push(...got);
-		const total = page.total_count ?? page.total;
-		if (got.length < PAGE || (typeof total === 'number' && rows.length >= total)) {
-			return { data: rows, total_count: total ?? rows.length };
-		}
-	}
+async function readEvery<T>(client: HttpClient, url: string): Promise<ListEnvelope<T>> {
+	const { rows, total } = await readAll(async (limit, offset) => {
+		const page = await client.get<ListEnvelope<T>>(`${url}?limit=${limit}&offset=${offset}`);
+		const stated = page.total_count ?? page.total;
+		return { rows: page.data ?? [], total: typeof stated === 'number' ? stated : null };
+	}, PAGE);
+	return { data: rows, total_count: total ?? rows.length };
 }
 
 export async function listPolicies(client: HttpClient): Promise<ListEnvelope<RetentionPolicy>> {
-	return readAll<RetentionPolicy>(client, POLICIES_URL);
+	return readEvery<RetentionPolicy>(client, POLICIES_URL);
 }
 
 export async function listHolds(client: HttpClient): Promise<ListEnvelope<LegalHold>> {
-	return readAll<LegalHold>(client, HOLDS_URL);
+	return readEvery<LegalHold>(client, HOLDS_URL);
 }
 
 export interface SavePolicy {
@@ -240,13 +227,13 @@ export function retentionLabel(days: number): string {
 	if (days === 0) return 'Delete at the next run';
 	if (days % 365 === 0) {
 		const years = days / 365;
-		return `${years} ${years === 1 ? 'year' : 'years'}`;
+		return `${years} ${plural(years, 'year')}`;
 	}
 	if (days % 30 === 0) {
 		const months = days / 30;
-		return `${months} ${months === 1 ? 'month' : 'months'}`;
+		return `${months} ${plural(months, 'month')}`;
 	}
-	return `${days} ${days === 1 ? 'day' : 'days'}`;
+	return `${days} ${plural(days, 'day')}`;
 }
 
 /**

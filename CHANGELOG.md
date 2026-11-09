@@ -4,6 +4,34 @@ All notable changes to this project are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Versions are listed newest first.
 
+## [0.27.0] - 2026-11-11
+
+### Added
+
+- The schema builder offers integer and decimal field types. A decimal asks for its precision and scale within the bounds a decimal allows, and the save lists a change to either before it runs.
+- Integer and decimal values are edited as text, so every digit shows and saves as typed and a decimal keeps its trailing zeros. A whole number past about nine quadrillion was rounded on every page and written back rounded. The entry editor, its history and the content list now keep every digit.
+
+### Changed
+
+- Crowded pages are split into tabs, one feature per tab with an address of its own: customization, request capture, reviews, search, rate limits, the profiler, the cache, tenant costs, PII masking, telemetry, API labs, GraphQL, imports and the goroutine engine and log tail. The sidebar marks the page while any of its tabs is open.
+- The console moves to ui-kit 0.53.0. A failed copy says what to do next, and the buttons that step a number up or down name the field they change.
+- One concept has one name on every screen. What a tenant defines with fields is a content type, a control that opens a choice says Choose, the settings groups once called Workspace and Instance are Tenant and Engine, and the server the console works against is the engine.
+- A read that fails says what could not be loaded and offers Try again, such as "Could not load webhooks." An outage reads "The engine is unavailable, so this page did not load. You're still signed in, and nothing was changed."
+- The console's sentences talk to the reader, with one wording for each situation. A delete confirms with what went, such as "clip.webm deleted.", and a refusal names the roles it admits.
+- A message from the engine reaches the reader only when it is a refusal with an error code. A failure from a proxy in front of the engine, or any server error, gets the console's own sentence.
+- The rich text editor asks for a link address in the console's own dialog instead of the browser's prompt. An empty address still removes the link.
+- The Trusted devices page calls what it trusts a device on every line and puts Trust this device on the row of the device name field. Its hint says each browser counts as its own device. The Sign-in page sizes its days field for a number.
+
+### Fixed
+
+- A delete or any other write that asks first now asks when it is posted before the page has loaded or with scripts turned off. It ran at once with no question. The question shows above the page, with a button that sends the form again once you agree.
+- The console explains both wordings of the engine's renamed refusals: a flow that uses a node type the engine does not have, and a license key exchange that is not set up. It recognized only the wording of engines released before the rename.
+- A reader locked out of sign-in with no authenticator app, or where password reset or magic link sign-in is off, is told to ask a super admin. Only a super admin can restore their access.
+- Removing a key and value row from a JSON field no longer moves the values typed in the rows below it.
+- A measured time picks its unit after rounding, so 999.6 ms reads 1.00 s instead of 1000 ms.
+- Pages the sidebar does not list, such as two-factor authentication, trusted devices and account settings, showed only Settings in the top bar. The top bar now names each by its own title under the section that holds it, and a tenant page missing from its menu reads Pages instead of the product name.
+- The settings entry for trusted devices said a trusted browser skips the second sign-in step, which never happens. It now says trusting a device lowers its sign-in risk score.
+
 ## [0.26.0] - 2026-11-09
 
 ### Added

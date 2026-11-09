@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { couldNotLoad } from '$lib/outage';
 	import {
 		Alert,
 		Autocomplete,
@@ -121,10 +122,12 @@
 			const title = entryTitle(item, userFields);
 			const named =
 				title.source === 'none' ? `the untitled entry ${shortId(item.id)}` : title.label;
+			const done =
+				title.source === 'none' ? `Untitled entry ${shortId(item.id)} deleted.` : `${title.label} deleted.`;
 			return confirmed(`Delete ${named}?`, 'Its revisions and translations are deleted too.', {
 				confirmLabel: 'Delete',
 				detail: item.id,
-				success: `Deleted ${named}`
+				success: done
 			})(input);
 		};
 	}
@@ -169,8 +172,8 @@
 			<Autocomplete
 				id="collection-picker"
 				name="q"
-				label="Collection"
-				placeholder="Search collections"
+				label="Content type"
+				placeholder="Search content types"
 				value={data.activeSchema}
 				options={schemaOptions}
 				allowClear={false}
@@ -178,7 +181,7 @@
 			/>
 		</form>
 	{:else if !data.schemas.ok}
-		<p class="text-sm text-muted">Could not load the other collections. Reload the page to try again.</p>
+		<p class="text-sm text-muted">{couldNotLoad('the other content types', { reload: true })}</p>
 	{/if}
 
 	{#if form?.error}
@@ -216,7 +219,7 @@
 		{:else if entries.length === 0 && data.status}
 			<EmptyState
 				title="No {STATUS_LABELS[data.status].toLowerCase()} entries"
-				description="Pick another status, or All to see every entry."
+				description="Choose another status, or All to see every entry."
 			>
 				{#snippet iconSnippet()}
 					<Inbox size={ICON.lg} />
@@ -226,7 +229,7 @@
 				{/snippet}
 			</EmptyState>
 		{:else if entries.length === 0}
-			<EmptyState title="No entries yet" description="Add the first entry to this collection.">
+			<EmptyState title="No entries yet" description="Add the first entry to this content type.">
 				{#snippet iconSnippet()}
 					<Inbox size={ICON.lg} />
 				{/snippet}
@@ -241,7 +244,7 @@
 				<thead>
 					<tr>
 						<th scope="col">Entry</th>
-						{#each columnFields as field}
+						{#each columnFields as field (field.name)}
 							<th scope="col">{humanizeFieldName(field.name)}</th>
 						{/each}
 						{#if data.schemaDef.with_draft_publish}
@@ -283,7 +286,7 @@
 									{/if}
 								</span>
 							</td>
-							{#each columnFields as field}
+							{#each columnFields as field (field.name)}
 								<td class="max-w-50 truncate">
 									<FieldCell {field} value={item.data[field.name]} />
 								</td>

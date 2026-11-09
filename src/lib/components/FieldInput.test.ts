@@ -33,6 +33,29 @@ describe('FieldInput', () => {
 		expect(input.value).toBe('abc');
 	});
 
+	it('renders a numeric text input for an integer field that shows every digit', async () => {
+		const { getByRole } = render(FieldInput, {
+			props: { field: field('integer'), value: '9007199254740993' },
+		});
+		const input = getByRole('textbox') as HTMLInputElement;
+		expect(input.getAttribute('type')).toBe('text');
+		expect(input.getAttribute('inputmode')).toBe('numeric');
+		expect(input.value).toBe('9007199254740993');
+		await fireEvent.input(input, { target: { value: '9223372036854775807' } });
+		expect(input.value).toBe('9223372036854775807');
+	});
+
+	it('renders a decimal text input that keeps the trailing zeros', () => {
+		const { getByRole } = render(FieldInput, {
+			props: { field: field('decimal', { precision: 10, scale: 2 }), value: '19.90' },
+		});
+		const input = getByRole('textbox') as HTMLInputElement;
+		expect(input.getAttribute('type')).toBe('text');
+		expect(input.getAttribute('inputmode')).toBe('decimal');
+		expect(input.value).toBe('19.90');
+		expect(input.getAttribute('placeholder')).toBe('0.00');
+	});
+
 	it('renders a number input for a number field', () => {
 		const { getByRole } = render(FieldInput, {
 			props: { field: field('number'), value: 7 },

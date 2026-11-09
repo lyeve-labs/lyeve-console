@@ -17,6 +17,7 @@
 	import { isExternalHref } from '$lib/links';
 	import { linkOf, NO_LICENSING, REL, type LicenseLink } from '$lib/api/license';
 	import { licenseStateLabel, licenseTone, unlicensed } from '$lib/license-state';
+	import { couldNotLoad } from '$lib/outage';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -88,8 +89,8 @@
 <PageShell
 	title="License"
 	description={licensing.renew
-		? "See this instance's license and activate a new key."
-		: "See this instance's license."}
+		? "See this engine's license and activate a new key."
+		: "See this engine's license."}
 	width="wide"
 	back={{ href: '/admin/settings', label: 'Settings' }}
 >
@@ -130,7 +131,7 @@
 						<DescriptionList items={facts} />
 					</div>
 				{:else}
-					<Alert tone="danger">Could not load the license. Reload the page to try again.</Alert>
+					<Alert tone="danger">{couldNotLoad('the license', { reload: true })}</Alert>
 				{/if}
 
 				{#if links.length > 0}
@@ -207,7 +208,7 @@
 						{/if}
 					</form>
 				{:else}
-					<p class="text-sm text-muted">Only a super admin can change the license of this instance.</p>
+					<p class="text-sm text-muted">Only a super admin can change the license of this engine.</p>
 				{/if}
 			</Card>
 		</section>

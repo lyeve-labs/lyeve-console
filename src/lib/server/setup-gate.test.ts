@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isGatedPath, readEngineSetup, resetSetupGateCache, safeNext, setupGateRedirect } from './setup-gate';
+
+type SetupGate = typeof import('./setup-gate');
+let isGatedPath: SetupGate['isGatedPath'];
+let readEngineSetup: SetupGate['readEngineSetup'];
+let safeNext: SetupGate['safeNext'];
+let setupGateRedirect: SetupGate['setupGateRedirect'];
+
+/** The gate caches a ready engine in the module, so a case that needs it cold loads the module again. */
+async function freshGate(): Promise<void> {
+	vi.resetModules();
+	({ isGatedPath, readEngineSetup, safeNext, setupGateRedirect } = await import('./setup-gate'));
+}
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -13,7 +24,7 @@ const down = vi.fn(async () => {
 	throw new Error('ECONNREFUSED');
 }) as unknown as typeof fetch;
 
-beforeEach(() => resetSetupGateCache());
+beforeEach(freshGate);
 
 describe('readEngineSetup', () => {
 	it.each([
@@ -101,7 +112,7 @@ describe('setupGateRedirect', () => {
 		await setupGateRedirect(new URL('http://a/admin'), ready, 1_000 + 16_000);
 		expect(ready).toHaveBeenCalledTimes(2);
 
-		resetSetupGateCache();
+		await freshGate();
 		const setup = engine({ setup_required: true, mode: 'setup' });
 		await setupGateRedirect(new URL('http://a/admin'), setup, 1_000);
 		await setupGateRedirect(new URL('http://a/admin'), setup, 1_001);

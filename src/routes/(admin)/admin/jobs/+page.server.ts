@@ -2,10 +2,13 @@ import type { PageServerLoad, Actions } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { HttpClient } from '@lyeve-labs/client';
 import { authedClient, loadUser, requireRole } from '$lib/server/authz';
-import { actionError, actionFailure } from '$lib/server/action-error';
+import { actionFailure } from '$lib/server/action-error';
+import { checked } from '$lib/checkbox';
 import { alertsFrom, type AlertConfig } from '$lib/api/cron-alerts';
 import { section, type Gate, type Section } from '$lib/api/gate';
 import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
+import { couldNotLoad } from '$lib/outage';
+import { asked } from '$lib/server/asked';
 
 export interface Job {
 	id: string;
@@ -36,7 +39,7 @@ const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 199;
 
 /** What the page says for a list read that failed for no reason it can name. */
-const LIST_FAILED = 'Could not load jobs.';
+const LIST_FAILED = couldNotLoad('jobs');
 
 async function listJobs(
 	client: HttpClient,
@@ -97,7 +100,7 @@ async function readJob(client: HttpClient, id: string): Promise<Section<Job>> {
 	// GET /api/admin/jobs/{id} returns the job itself. Reading a `job`
 	// wrapper that is not there yields undefined, and the edit form would
 	// render every field blank for a job that exists.
-	const read = await section(client.get<Job | { job: Job }>(`/api/admin/jobs/${encodeURIComponent(id)}`), 'Could not load the linked job.');
+	const read = await section(client.get<Job | { job: Job }>(`/api/admin/jobs/${encodeURIComponent(id)}`), couldNotLoad('the linked job'));
 	if (!read.ok) return read;
 	const job = 'job' in read.value ? read.value.job : read.value;
 	return job?.id ? { ok: true, value: job } : { ok: false, gate: { state: 'absent' } };
@@ -119,7 +122,7 @@ function jobBody(form: FormData): { body: Record<string, unknown> } | { error: s
 		description: String(form.get('description') ?? '').trim(),
 		schedule: String(form.get('schedule') ?? '').trim(),
 		endpoint: String(form.get('endpoint') ?? '').trim(),
-		enabled: form.get('enabled') === 'on',
+		enabled: checked(form, 'enabled'),
 		payload: null,
 	};
 	const payloadRaw = String(form.get('payload') ?? '').trim();
@@ -188,18 +191,26 @@ export const actions: Actions = {
 		redirect(303, '/admin/jobs');
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const { request } = event;
-		const client = authedClient(event);
-		const form = await request.formData();
-		const id = form.get('id') as string;
-		if (!id) return fail(400, { error: 'This form is missing its job. Reload the page and try again.', action: 'delete' as const });
-		try {
-			await client.delete(`/api/admin/jobs/${encodeURIComponent(id)}`);
-		} catch (err) {
-			return fail(400, { error: actionError(err, 'Could not delete the job. Try again.'), action: 'delete' as const });
-		}
-		redirect(303, '/admin/jobs');
-	},
+	delete: asked(
+		{
+			question: 'Delete this job?',
+			detail: 'Its schedule stops and its run history is deleted. This cannot be undone.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const { request } = event;
+			const client = authedClient(event);
+			const form = await request.formData();
+			const id = form.get('id') as string;
+			if (!id) return fail(400, { error: 'This form is missing its job. Reload the page and try again.', action: 'delete' as const });
+			try {
+				await client.delete(`/api/admin/jobs/${encodeURIComponent(id)}`);
+			} catch (err) {
+				const failed = actionFailure(err, 'Could not delete the job. Try again.');
+				return fail(failed.status, { ...failed.data, action: 'delete' as const });
+			}
+			redirect(303, '/admin/jobs');
+		},
+	),
 };

@@ -162,7 +162,7 @@ describe('setup actions.create', () => {
 
 	it('returns error when passwords do not match', async () => {
 		const result = await actions.create(actionEvent({ ...valid, confirm: 'other-password' }, vi.fn()));
-		expect(result).toEqual({ error: 'Passwords do not match.' });
+		expect(result).toEqual({ error: 'The passwords do not match.' });
 	});
 
 	// The engine's hasher fails a password over 72 bytes with a 500 that names

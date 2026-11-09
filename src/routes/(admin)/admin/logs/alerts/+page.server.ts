@@ -20,6 +20,8 @@ import {
 	type LogAlertRule,
 	type LogAlertRuleAnswer,
 } from '$lib/api/log-alerts';
+import { couldNotLoad } from '$lib/outage';
+import { asked } from '$lib/server/asked';
 
 /** What the rule drawer posts its channel fields under. */
 const CHANNEL_PREFIX = 'channel_';
@@ -35,7 +37,7 @@ export const load: PageServerLoad = async (event) => {
 		try {
 			config = await getLogAlerts(authedClient(event));
 		} catch (err) {
-			gate = gateOf(err, 'Could not load volume alert rules.');
+			gate = gateOf(err, couldNotLoad('volume alert rules'));
 		}
 	}
 	return { gate, config, superAdmin };
@@ -93,20 +95,27 @@ export const actions: Actions = {
 		return { saved: true, signingSecret: saved.rule.webhook_signing_secret ?? '' };
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const key = String((await event.request.formData()).get('key') ?? '');
-		if (!key) return fail(400, { error: 'This form is missing its rule. Reload the page and try again.' });
-		try {
-			// Deleting a rule needs no license: the plugin asks for one only to
-			// add or change a paid channel.
-			await deleteLogAlertRule(authedClient(event), key);
-		} catch (err) {
-			if (errorCodeOf(err) === LOG_RULE_NOT_FOUND) return fail(404, { error: RULE_GONE });
-			return actionFailure(err, 'Could not delete the rule. Try again.');
-		}
-		return { deleted: key };
-	},
+	delete: asked(
+		{
+			question: 'Delete this rule?',
+			detail: 'The rule stops firing and its channels are deleted. This cannot be undone.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const key = String((await event.request.formData()).get('key') ?? '');
+			if (!key) return fail(400, { error: 'This form is missing its rule. Reload the page and try again.' });
+			try {
+				// Deleting a rule needs no license: the plugin asks for one only to
+				// add or change a paid channel.
+				await deleteLogAlertRule(authedClient(event), key);
+			} catch (err) {
+				if (errorCodeOf(err) === LOG_RULE_NOT_FOUND) return fail(404, { error: RULE_GONE });
+				return actionFailure(err, 'Could not delete the rule. Try again.');
+			}
+			return { deleted: key };
+		},
+	),
 
 	cooldown: async (event) => {
 		await requireRole(event, ['super_admin']);

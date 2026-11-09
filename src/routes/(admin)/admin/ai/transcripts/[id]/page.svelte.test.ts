@@ -2,7 +2,7 @@
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Page from './+page.svelte';
-import { fixtureSettings, fixtureTranscript } from '$lib/components/ai/fixtures';
+import { fixtureSettings, fixtureTranscript } from '$lib/components/ai/test-support/fixtures';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));

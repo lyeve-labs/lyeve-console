@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { clampWidth, readAside, writeAside, type AsideBounds } from './aside';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { clampWidth, readAside, safeStorage, writeAside, type AsideBounds } from './aside';
 
 const PALETTE: AsideBounds = { width: 240, min: 180, max: 480 };
 const INSPECTOR: AsideBounds = { width: 320, min: 240, max: 640 };
@@ -48,5 +48,27 @@ describe('aside width and lock', () => {
 		expect(readAside(s, KEY, PALETTE)).toEqual({ width: PALETTE.max, locked: true });
 		expect(readAside(s, 'another-key', INSPECTOR).width).toBe(INSPECTOR.width);
 		expect(() => writeAside(refusing, KEY, PALETTE, { width: 300, locked: false })).not.toThrow();
+	});
+});
+
+describe('safeStorage', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
+	});
+
+	it('hands back the browser storage when it can be reached', () => {
+		const stored = memory();
+		vi.stubGlobal('localStorage', stored);
+		expect(safeStorage()).toBe(stored);
+	});
+
+	it('answers null where there is no storage or reaching it throws', () => {
+		vi.stubGlobal('localStorage', undefined);
+		expect(safeStorage()).toBeNull();
+		vi.spyOn(globalThis, 'localStorage', 'get').mockImplementation(() => {
+			throw new DOMException('blocked', 'SecurityError');
+		});
+		expect(safeStorage()).toBeNull();
 	});
 });

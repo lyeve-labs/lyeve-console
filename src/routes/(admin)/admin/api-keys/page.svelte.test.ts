@@ -112,7 +112,7 @@ describe('API keys page', () => {
 	it('starts a new key able to read every schema, with the catalog folded and off', async () => {
 		const { getAllByRole, getByRole } = setup([key({})]);
 		await fireEvent.click(getAllByRole('button', { name: /New key/ })[0]);
-		expect(getByRole('button', { name: /Schema catalog/ }).getAttribute('aria-expanded')).toBe('false');
+		expect(getByRole('button', { name: /Content type catalog/ }).getAttribute('aria-expanded')).toBe('false');
 		expect(sent('scopes')).toEqual(['content:read']);
 		expect(sent('schemas')).toEqual([]);
 	});
@@ -120,7 +120,7 @@ describe('API keys page', () => {
 	it('grants the schema catalog once the reader ticks it', async () => {
 		const { getAllByRole, getByRole, getByLabelText } = setup([key({})]);
 		await fireEvent.click(getAllByRole('button', { name: /New key/ })[0]);
-		await fireEvent.click(getByRole('button', { name: /Schema catalog/ }));
+		await fireEvent.click(getByRole('button', { name: /Content type catalog/ }));
 		await fireEvent.click(getByLabelText(/Discover content types/));
 		expect(sent('scopes')).toEqual(['content:read', 'schemas:read']);
 	});
@@ -137,7 +137,7 @@ describe('API keys page', () => {
 	it('asks for a writing role on the Roles field when a write is ticked', async () => {
 		const { getAllByRole, getByRole } = setup([key({})]);
 		await fireEvent.click(getAllByRole('button', { name: /New key/ })[0]);
-		const every = getByRole('group', { name: 'Actions on every schema' });
+		const every = getByRole('group', { name: 'Actions on every content type' });
 		await fireEvent.click(within(every).getByRole('checkbox', { name: 'Create' }));
 		const roles = getByRole('group', { name: 'Roles' });
 		expect(roles.textContent).toContain('needs the editor role');
@@ -147,7 +147,7 @@ describe('API keys page', () => {
 	it('holds a key to the schemas and actions ticked for each', async () => {
 		const { getAllByRole, getByRole, getByLabelText } = setup([key({})]);
 		await fireEvent.click(getAllByRole('button', { name: /New key/ })[0]);
-		await fireEvent.click(getByRole('radio', { name: 'Chosen schemas' }));
+		await fireEvent.click(getByRole('radio', { name: 'Chosen content types' }));
 		await fireEvent.click(getByLabelText('Read posts'));
 		await fireEvent.click(getByLabelText('Create posts'));
 		expect(sent('scopes')).toEqual(['content.posts:read', 'content.posts:create']);
@@ -165,10 +165,10 @@ describe('API keys page', () => {
 	it('warns that GraphQL reads every schema when the key is held to some', async () => {
 		const { getAllByRole, getByRole } = setup([key({})]);
 		await fireEvent.click(getAllByRole('button', { name: /New key/ })[0]);
-		const warning = 'GraphQL reads every schema, whatever you chose above.';
+		const warning = 'GraphQL reads every content type, whatever you chose above.';
 		await fireEvent.click(getByRole('button', { name: /GraphQL/ }));
 		expect(document.body.textContent).not.toContain(warning);
-		await fireEvent.click(getByRole('radio', { name: 'Chosen schemas' }));
+		await fireEvent.click(getByRole('radio', { name: 'Chosen content types' }));
 		expect(document.body.textContent).toContain(warning);
 	});
 
@@ -197,7 +197,7 @@ describe('API keys page', () => {
 
 	it('keeps the pager when nothing on this page matches the search', async () => {
 		const { container, getByPlaceholderText } = setup([key({})], { total: 120, offset: 0, limit: 50 });
-		await fireEvent.input(getByPlaceholderText('Name, role or schema on this page'), { target: { value: 'nothing like it' } });
+		await fireEvent.input(getByPlaceholderText('Name, role or content type on this page'), { target: { value: 'nothing like it' } });
 		expect(container.textContent).toContain('No keys on this page match these filters');
 		expect(container.querySelector('a[href="/admin/api-keys?limit=50&offset=50"]')).toBeTruthy();
 	});
@@ -210,9 +210,9 @@ describe('API keys page', () => {
 	it('says in the drawer that the schemas could not be read', async () => {
 		const { getAllByRole, getByRole } = setup([key({})], { schemaNames: [], schemasFailed: true });
 		await fireEvent.click(getAllByRole('button', { name: /New key/ })[0]);
-		await fireEvent.click(getByRole('radio', { name: 'Chosen schemas' }));
-		expect(document.body.textContent).toContain('Could not load the schemas');
-		expect(document.body.textContent).not.toContain('No schemas yet.');
+		await fireEvent.click(getByRole('radio', { name: 'Chosen content types' }));
+		expect(document.body.textContent).toContain('Could not load the content types');
+		expect(document.body.textContent).not.toContain('No content types yet.');
 	});
 
 	it('names the key in the delete confirmation', async () => {
@@ -255,10 +255,10 @@ describe('API keys page', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Copy key' }));
 		await vi.advanceTimersByTimeAsync(0);
-		expect(screen.getByText('Copy failed')).toBeTruthy();
+		expect(screen.getByText('Could not copy. Select the value and copy it yourself.')).toBeTruthy();
 
 		await vi.advanceTimersByTimeAsync(1500);
-		expect(screen.queryByText('Copy failed')).toBeNull();
+		expect(screen.queryByText('Could not copy. Select the value and copy it yourself.')).toBeNull();
 		expect(screen.getByText(hint)).toBeTruthy();
 	});
 });
@@ -300,7 +300,7 @@ describe('the action checkboxes of a new key under a finger', () => {
 	it('spaces the actions on every schema and on a route group so their hit areas do not overlap', async () => {
 		const { getAllByRole, getByRole } = setup([key({})]);
 		await fireEvent.click(getAllByRole('button', { name: /New key/ })[0]);
-		expect(spaced(getByRole('group', { name: 'Actions on every schema' }))).toBe(true);
+		expect(spaced(getByRole('group', { name: 'Actions on every content type' }))).toBe(true);
 		await fireEvent.click(getByRole('button', { name: /Flows/ }));
 		expect(spaced(getByRole('group', { name: 'Actions on Flows' }))).toBe(true);
 	});

@@ -28,6 +28,8 @@ import {
 	type FeatureChoice,
 	type TenantMember,
 } from '$lib/api/tenant-access';
+import { couldNotLoad } from '$lib/outage';
+import { asked } from '$lib/server/asked';
 
 export const load: PageServerLoad = async (event) => {
 	const user = await loadUser(event);
@@ -50,11 +52,11 @@ export const load: PageServerLoad = async (event) => {
 	// with nothing in it, and an empty list here would offer only what is
 	// already withheld.
 	const [features, license, members] = await Promise.all([
-		section(getTenantFeatures(client, tenant.slug), "Could not load this tenant's features."),
-		section(getEntitlements(client), 'Could not load the license.'),
+		section(getTenantFeatures(client, tenant.slug), couldNotLoad("this tenant's features")),
+		section(getEntitlements(client), couldNotLoad('the license')),
 		section(
 			listTenantMembers(client, tenant.slug, limit, offset),
-			"Could not load this tenant's members.",
+			couldNotLoad("this tenant's members"),
 		),
 	]);
 
@@ -118,8 +120,8 @@ export const actions: Actions = {
 		const email = String(form.get('email') ?? '').trim();
 		const userId = String(form.get('user_id') ?? '').trim();
 		const roles = form.getAll('roles').map(String).filter(Boolean);
-		if (!userId && !email) return fail(400, { action: 'grant', memberError: 'Enter the account email.', fields: { email: 'Required' } });
-		if (roles.length === 0) return fail(400, { action: 'grant', memberError: 'Choose at least one role.', fields: { roles: 'Required' } });
+		if (!userId && !email) return fail(400, { action: 'grant', memberError: 'Enter the account email.', fields: { email: 'Enter the account email.' } });
+		if (roles.length === 0) return fail(400, { action: 'grant', memberError: 'Choose at least one role.', fields: { roles: 'Choose at least one role.' } });
 		const client = authedClient(event);
 		try {
 			const slug = await tenantSlug(event);
@@ -151,27 +153,41 @@ export const actions: Actions = {
 		}
 	},
 
-	revoke: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const form = await event.request.formData();
-		const userId = String(form.get('user_id') ?? '');
-		try {
-			await revokeMembership(authedClient(event), userId, await tenantSlug(event));
-			return { memberRevoked: true };
-		} catch (err) {
-			return fail(400, { action: 'revoke', memberError: actionError(err, 'Could not remove the membership. Try again.') });
-		}
-	},
+	revoke: asked(
+		{
+			question: 'Remove this account from this tenant?',
+			detail: 'The account keeps its home tenant and every other membership. Its open sessions here end at their next refresh.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const form = await event.request.formData();
+			const userId = String(form.get('user_id') ?? '');
+			try {
+				await revokeMembership(authedClient(event), userId, await tenantSlug(event));
+				return { memberRevoked: true };
+			} catch (err) {
+				return fail(400, { action: 'revoke', memberError: actionError(err, 'Could not remove the membership. Try again.') });
+			}
+		},
+	),
 
-	archive: async (event) => {
-		await requireRole(event, ['super_admin']);
-		try {
-			await archiveTenant(event.params.id ?? '', authedClient(event));
-			return { archived: true };
-		} catch (err) {
-			return fail(400, { stateError: actionError(err, 'Could not archive the tenant. Try again.') });
-		}
-	},
+	archive: asked(
+		{
+			question: 'Archive this tenant?',
+			detail: 'The tenant stays readable, but every change is refused until you restore it.',
+			label: 'Archive',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			try {
+				await archiveTenant(event.params.id ?? '', authedClient(event));
+				return { archived: true };
+			} catch (err) {
+				return fail(400, { stateError: actionError(err, 'Could not archive the tenant. Try again.') });
+			}
+		},
+	),
 
 	restore: async (event) => {
 		await requireRole(event, ['super_admin']);

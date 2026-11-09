@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '@lyeve-labs/client';
 import {
 	deprovisionAction,
 	deprovisionLabel,
 	deprovisionTone,
-	scimGate,
 	type ScimProvider,
 } from './scim';
 
@@ -54,19 +52,5 @@ describe('the action the form may send', () => {
 		expect(deprovisionAction('delete')).toBe('delete');
 		expect(deprovisionAction('')).toBeNull();
 		expect(deprovisionAction('archive')).toBeNull();
-	});
-});
-
-describe('the gate sorts a refusal by what it means', () => {
-	it('tells a 402, a 404 and any other failure apart', () => {
-		expect(scimGate(new ApiError(402, 'payment required')).state).toBe('locked');
-		expect(scimGate(new ApiError(404, 'not found')).state).toBe('absent');
-		expect(scimGate(new ApiError(500, 'internal error')).state).toBe('error');
-		expect(scimGate(new ApiError(503, 'database error')).state).toBe('unavailable');
-	});
-
-	it('never reports a failed read as an empty list', () => {
-		const gate = scimGate(new Error('network'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load SCIM connections.');
 	});
 });

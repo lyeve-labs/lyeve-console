@@ -9,17 +9,17 @@
  * narrows what is captured, it does not add to it.
  *
  * A replay set is a named list of captures replayed together, each answering
- * its own diff against the original. Whether this install may create a rule
+ * its own diff against the original. Whether this instance may create a rule
  * or a set is the plugin's answer, `licensed` on its reads. Replaying a set
  * that exists is not gated by it.
  */
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 import type { ListEnvelope } from './list';
+import { plural } from '$lib/format';
 
-export const CAPTURES_URL = '/api/admin/request-captures';
-export const CAPTURE_RULES_URL = `${CAPTURES_URL}/rules`;
-export const REPLAY_SETS_URL = `${CAPTURES_URL}/sets`;
+const CAPTURES_URL = '/api/admin/request-captures';
+const CAPTURE_RULES_URL = `${CAPTURES_URL}/rules`;
+const REPLAY_SETS_URL = `${CAPTURES_URL}/sets`;
 
 export interface Capture {
 	id: string;
@@ -114,13 +114,6 @@ export const RETENTION_CHOICES: readonly { seconds: number; label: string }[] = 
 	{ seconds: 30 * 86400, label: '30 days' },
 ];
 
-export type CaptureGate = Gate;
-export const CAPTURE_OK: CaptureGate = GATE_OK;
-
-export function captureGate(err: unknown): CaptureGate {
-	return gateOf(err, 'Could not load captures.');
-}
-
 export async function listCaptures(client: HttpClient, limit: number, offset: number): Promise<CapturesRead> {
 	return client.get<CapturesRead>(`${CAPTURES_URL}?limit=${limit}&offset=${offset}`);
 }
@@ -207,11 +200,11 @@ export function sampleLabel(rate: number): string {
 export function retentionLabel(seconds: number): string {
 	if (seconds % 86400 === 0) {
 		const d = seconds / 86400;
-		return `${d} ${d === 1 ? 'day' : 'days'}`;
+		return `${d} ${plural(d, 'day')}`;
 	}
 	if (seconds % 3600 === 0) {
 		const h = seconds / 3600;
-		return `${h} ${h === 1 ? 'hour' : 'hours'}`;
+		return `${h} ${plural(h, 'hour')}`;
 	}
 	return `${Math.round(seconds / 60)} minutes`;
 }

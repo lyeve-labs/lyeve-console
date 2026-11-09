@@ -34,10 +34,10 @@ describe('Reset password page', () => {
 
 	it('says how many passkeys the reset removed, and nothing when it removed none', async () => {
 		const removed = render(ResetPage, { props: props('t1', { done: true, passkeysRemoved: 2 }) });
-		expect(await removed.findByText('Your password has been changed. 2 passkeys were removed. Sign in with the new one.')).toBeTruthy();
+		expect(await removed.findByText('Password changed. 2 passkeys were removed. Sign in with the new one.')).toBeTruthy();
 		cleanup();
 		const none = render(ResetPage, { props: props('t1', { done: true, passkeysRemoved: 0 }) });
-		expect(await none.findByText('Your password has been changed. Sign in with the new one.')).toBeTruthy();
+		expect(await none.findByText('Password changed. Sign in with the new one.')).toBeTruthy();
 		expect(none.queryByText(/passkeys were removed\./)).toBeNull();
 	});
 
@@ -51,9 +51,9 @@ describe('Reset password page', () => {
 	it('reads out that the password changed', async () => {
 		const { findByText } = render(ResetPage, { props: props('t1', { done: true }) });
 
-		const region = (await findByText('Your password has been changed. Sign in with the new one.')).closest('[aria-live="polite"]');
+		const region = (await findByText('Password changed. Sign in with the new one.')).closest('[aria-live="polite"]');
 		expect(region?.getAttribute('aria-atomic')).toBe('true');
-		expect(region?.textContent).toContain('Your password has been changed.');
+		expect(region?.textContent).toContain('Password changed.');
 	});
 
 	it('offers a new link for an expired one instead of the form', () => {

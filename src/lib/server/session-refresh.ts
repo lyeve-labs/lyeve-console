@@ -49,7 +49,7 @@ const KEPT_MAX = 10_000;
 const REFRESH_PATH = '/api/admin/auth/refresh';
 
 /** Where the sign-in page says the session ended. */
-export const SESSION_ENDED = '/login?ended=1';
+export const SESSION_ENDED_PATH = '/login?ended=1';
 
 export type Trade =
 	| { kind: 'renewed'; token: string; refreshToken: string }
@@ -112,13 +112,6 @@ function countRefusal(address: string, now = Date.now()): { count: number } {
 }
 
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
-
-/** Forgets every trade, for a test that needs a fresh process. */
-export function resetSessionRefresh(): void {
-	running.clear();
-	kept.clear();
-	refusals.clear();
-}
 
 /**
  * The token's claims, read without checking its signature. The engine checks
@@ -221,7 +214,7 @@ export function sessionEndedTarget(url: URL, method: string): string {
 	// after sign-in would show the page, not repeat the write, so only the
 	// path goes along.
 	const back = method === 'GET' ? url.pathname + url.search : url.pathname;
-	return `${SESSION_ENDED}&next=${encodeURIComponent(back)}`;
+	return `${SESSION_ENDED_PATH}&next=${encodeURIComponent(back)}`;
 }
 
 /**

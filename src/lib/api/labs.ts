@@ -34,7 +34,7 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { EndpointDoc, EndpointGroup, HttpMethod } from './reference';
-import { httpStatusTone } from '../tones';
+import { SESSION_ENDED } from '../session';
 
 /** Methods that change something. Named so a page can say so before sending. */
 const MUTATING: ReadonlySet<string> = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -61,8 +61,8 @@ export function riskOf(method: string): Risk {
 
 export const RISK_LABELS: Readonly<Record<Risk, string>> = {
 	read: 'Reads, changes nothing',
-	write: 'Writes to this instance',
-	destructive: 'Deletes from this instance',
+	write: 'Writes to this engine',
+	destructive: 'Deletes from this engine',
 };
 
 export function riskTone(risk: Risk): StatusTone {
@@ -255,10 +255,6 @@ export function formatBody(raw: string, contentType: string | null): { body: str
 	return { body: raw, json: false };
 }
 
-/** How a status reads, for the badge beside it. */
-export function statusTone(status: number): StatusTone {
-	return httpStatusTone(status);
-}
 
 /**
  * What a status means here, where the usual suspects have one cause.
@@ -267,14 +263,14 @@ export function statusTone(status: number): StatusTone {
  * is not enabled, and no amount of retrying or re-authenticating changes it.
  */
 export const STATUS_HINTS: Readonly<Record<number, string>> = {
-	401: 'Your session expired. Sign in again.',
-	402: 'The plugin behind this route is not enabled on this instance. Changing the request does not help.',
+	401: SESSION_ENDED,
+	402: 'The plugin behind this route is not enabled on this engine. Changing the request does not help.',
 	403: 'You are signed in, but your role cannot call this route.',
 	404: 'The route or the record does not exist. A path parameter that matches nothing returns this.',
 	409: 'The change is not allowed from the current state.',
 	422: 'The body failed validation. The response says which field.',
 	429: 'A rate limit was reached. The Retry-After header says when to try again.',
-	503: 'The database or a replica is unavailable. The request itself is not wrong.',
+	503: 'The database or a replica is unavailable. Send the request again later.',
 };
 
 export function statusHint(status: number): string {

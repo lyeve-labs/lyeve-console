@@ -1,6 +1,6 @@
 {
 	"name": "@lyeve/console",
-	"version": "0.26.0",
+	"version": "0.27.0",
 	"private": true,
 	"license": "MIT",
 	"type": "module",
@@ -46,9 +46,9 @@
 	},
 	"dependencies": {
 		"@lucide/svelte": "^1.47.0",
-		"@lyeve-labs/client": "^0.5.0",
+		"@lyeve-labs/client": "^0.7.0",
 		"@lyeve-labs/client-rest": "^0.3.0",
-		"@lyeve-labs/ui-kit": "^0.52.0",
+		"@lyeve-labs/ui-kit": "^0.53.0",
 		"@tiptap/core": "^3.31.3",
 		"@tiptap/extension-link": "^3.31.3",
 		"@tiptap/extension-underline": "^3.31.3",

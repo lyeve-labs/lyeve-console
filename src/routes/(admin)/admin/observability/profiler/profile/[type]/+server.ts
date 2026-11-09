@@ -3,6 +3,8 @@ import type { RequestHandler } from './$types';
 import { PROFILER_ROOT, clampSeconds, isProfileType } from '$lib/api/profiler';
 import { engineFetch } from '$lib/server/engine';
 import { sessionToken } from '$lib/server/session-cookie';
+import { OUTAGE } from '$lib/outage';
+import { SESSION_ENDED } from '$lib/session';
 
 /**
  * Proxies a pprof export to the profiler plugin and hands the bytes back as
@@ -21,7 +23,7 @@ import { sessionToken } from '$lib/server/session-cookie';
 export const POST: RequestHandler = async (event) => {
 	const { cookies, params, request, url } = event;
 	const token = sessionToken(event);
-	if (!token) error(401, 'Not authenticated');
+	if (!token) error(401, SESSION_ENDED);
 	if (!isProfileType(params.type)) error(404, 'Unknown profile type');
 
 	// The page submits a plain form so the browser treats the answer as a
@@ -41,7 +43,7 @@ export const POST: RequestHandler = async (event) => {
 			signal: AbortSignal.timeout((seconds + 15) * 1000),
 		});
 	} catch {
-		error(502, 'Engine unreachable');
+		error(502, OUTAGE.title);
 	}
 
 	const headers = new Headers();

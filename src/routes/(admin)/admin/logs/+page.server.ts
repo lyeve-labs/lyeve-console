@@ -5,6 +5,7 @@ import { section } from '$lib/api/gate';
 import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
 import { LOG_DEFAULT_LIMIT, LOG_MAX_LIMIT, searchLogEntries } from '$lib/api/logs';
 import { authedClient, loadUser } from '$lib/server/authz';
+import { couldNotLoad } from '$lib/outage';
 
 export const load: PageServerLoad = async (event) => {
 	const { url } = event;
@@ -19,11 +20,11 @@ export const load: PageServerLoad = async (event) => {
 	const [search, levels, config, volume] = await Promise.all([
 		section(
 			searchLogEntries(client, { q, level, limit, offset }),
-			'Could not load log entries.'
+			couldNotLoad('log entries')
 		),
-		section(getLoggingLevels(client), 'Could not load log levels.'),
-		section(getLoggingConfig(client), 'Could not load log sinks.'),
-		section(getLogVolume(client, '24h'), 'Could not load log volume.')
+		section(getLoggingLevels(client), couldNotLoad('log levels')),
+		section(getLoggingConfig(client), couldNotLoad('log sinks')),
+		section(getLogVolume(client, '24h'), couldNotLoad('log volume'))
 	]);
 
 	// The stated count is trusted as it is. Raising it to offset plus rows read,

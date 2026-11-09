@@ -380,7 +380,7 @@ describe('signing in', () => {
 		}) as never) as { status: number; data: { error: string } };
 
 		expect(result.status).toBe(503);
-		expect(result.data.error).toBe('Sign-in is unavailable right now. Try again in a moment.');
+		expect(result.data.error).toBe('The engine is unavailable, so you cannot sign in yet. Try again in a moment.');
 	});
 
 	// The engine rate-limits login at 5 attempts. Reporting that as a bad
@@ -543,7 +543,7 @@ describe('signing in', () => {
 		);
 		expect(result.status).toBe(401);
 		expect(result.data).toEqual({
-			error: 'This account has no authenticator app set up. Ask an administrator to restore your access.',
+			error: 'This account has no authenticator app set up. Ask a super admin to restore your access.',
 		});
 	});
 
@@ -573,7 +573,7 @@ describe('signing in', () => {
 		const result = await verify(answer);
 		expect(result.status).toBe(503);
 		expect(result.data).toEqual({
-			error: 'Could not check the code. Try again in a moment.',
+			error: 'The engine is unavailable, so your code was not checked. Try again in a moment.',
 			mfa_required: true,
 			challenge_token: 'ch-tok',
 		});
@@ -732,7 +732,7 @@ describe('naming the organization at sign-in', () => {
 		};
 
 		expect(result.status).toBe(400);
-		expect(result.data.error).toMatch(/short name your admin gave you/);
+		expect(result.data.error).toMatch(/short name your administrator gave you/);
 		expect(result.data.tenant).toBe('acme corp');
 		expect(fetch).not.toHaveBeenCalled();
 	});

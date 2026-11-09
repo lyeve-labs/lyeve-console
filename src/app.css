@@ -2,7 +2,7 @@
  * lyeve-console root stylesheet
  *
  * Theme tokens come from @lyeve-labs/ui-kit, one palette across every app
- * built on the kit. App-specific tweaks (admin-only utilities, page-level
+ * built on the kit. App-specific tweaks (console-only utilities, page-level
  * overrides) live below the import.
  *
  * To bend the palette for a specific deployment, override individual tokens

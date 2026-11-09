@@ -39,7 +39,7 @@ describe('OAuth providers page', () => {
 
 	it('narrows the list by name or issuer', async () => {
 		const { container, getByPlaceholderText } = setup([provider('google'), provider('github')]);
-		await fireEvent.input(getByPlaceholderText('Search providers'), { target: { value: 'git' } });
+		await fireEvent.input(getByPlaceholderText('Name, issuer or client ID'), { target: { value: 'git' } });
 		expect(container.querySelectorAll('tbody tr')).toHaveLength(1);
 	});
 
@@ -80,8 +80,8 @@ describe('OAuth providers page', () => {
 		const { container, getByRole, rerender } = setup([provider('google')]);
 		await fireEvent.click(getByRole('button', { name: 'New provider' }));
 		await rerender({ data: { providers: { ok: true, value: [provider('google')] } }, form: { action: 'create', error: 'Not enabled.', refused } } as never);
-		expect(drawerText()).toContain('OAuth sign-in');
-		expect(container.textContent?.split('This needs OAuth sign-in').length).toBe(2);
+		expect(drawerText()).toContain('Not enabled on this engine');
+		expect(container.textContent?.split('This is not enabled on this engine.').length).toBe(2);
 	});
 
 });

@@ -13,7 +13,7 @@
 	import { useInstance } from '$lib/instance.svelte';
 	import { isExternalHref } from '$lib/links';
 	import UpgradeLink from '$lib/components/UpgradeLink.svelte';
-	import { upgradeWords } from '$lib/api/refusal';
+	import { NOT_ENABLED as STATE, upgradeWords } from '$lib/api/refusal';
 
 	let {
 		title,
@@ -39,7 +39,6 @@
 		class?: string;
 	} = $props();
 
-	const STATE = 'Not enabled on this instance';
 
 	const instance = useInstance();
 	const target = $derived(instance.upgradeLink(url));

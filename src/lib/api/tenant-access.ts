@@ -11,6 +11,7 @@
  * every tenant it holds a membership in, with the roles that membership names.
  */
 import type { HttpClient, User } from '@lyeve-labs/client';
+import { readAll } from './list';
 
 export interface TenantFeatures {
 	tenant: string;
@@ -34,14 +35,13 @@ export interface FeatureChoice {
 	available: boolean;
 }
 
-const enc = encodeURIComponent;
 
 export function getTenantFeatures(client: HttpClient, tenant: string): Promise<TenantFeatures> {
-	return client.get<TenantFeatures>(`/api/admin/tenant-features/${enc(tenant)}`);
+	return client.get<TenantFeatures>(`/api/admin/tenant-features/${encodeURIComponent(tenant)}`);
 }
 
 export function setTenantFeatures(client: HttpClient, tenant: string, withheld: string[]): Promise<TenantFeatures> {
-	return client.put<TenantFeatures>(`/api/admin/tenant-features/${enc(tenant)}`, { withheld });
+	return client.put<TenantFeatures>(`/api/admin/tenant-features/${encodeURIComponent(tenant)}`, { withheld });
 }
 
 export function listTenantMembers(
@@ -50,15 +50,15 @@ export function listTenantMembers(
 	limit = 50,
 	offset = 0,
 ): Promise<{ members: TenantMember[]; total: number }> {
-	return client.get(`/api/admin/tenant-members/${enc(tenant)}?limit=${limit}&offset=${offset}`);
+	return client.get(`/api/admin/tenant-members/${encodeURIComponent(tenant)}?limit=${limit}&offset=${offset}`);
 }
 
 export function grantMembership(client: HttpClient, userId: string, tenant: string, roles: string[]): Promise<unknown> {
-	return client.put(`/api/admin/users/${enc(userId)}/memberships`, { tenant_id: tenant, roles });
+	return client.put(`/api/admin/users/${encodeURIComponent(userId)}/memberships`, { tenant_id: tenant, roles });
 }
 
 export function revokeMembership(client: HttpClient, userId: string, tenant: string): Promise<unknown> {
-	return client.delete(`/api/admin/users/${enc(userId)}/memberships/${enc(tenant)}`);
+	return client.delete(`/api/admin/users/${encodeURIComponent(userId)}/memberships/${encodeURIComponent(tenant)}`);
 }
 
 /**
@@ -114,15 +114,14 @@ export async function superAdminsAmong(client: HttpClient, ids: string[], maxPag
 /** Walks the users pages until `count` accounts match or the list ends. */
 async function walkUsers(client: HttpClient, match: (u: User) => boolean, count: number, maxPages: number): Promise<User[]> {
 	const size = 200;
-	const found: User[] = [];
-	for (let page = 0; page < maxPages; page++) {
-		const rows = await client.get<User[]>(`/api/admin/users?limit=${size}&offset=${page * size}`);
-		const list = Array.isArray(rows) ? rows : [];
-		for (const u of list) {
-			if (match(u)) found.push(u);
-			if (found.length >= count) return found;
-		}
-		if (list.length < size) return found;
-	}
-	return found;
+	const { rows } = await readAll(
+		async (limit, offset) => {
+			const users = await client.get<User[]>(`/api/admin/users?limit=${limit}&offset=${offset}`);
+			return { rows: Array.isArray(users) ? users : [], total: null };
+		},
+		size,
+		maxPages * size,
+		(read) => read.filter(match).length >= count
+	);
+	return rows.filter(match).slice(0, count);
 }

@@ -44,16 +44,17 @@
 
 		<section class="flex flex-col gap-4" aria-label="Without the identity provider">
 			<SectionHeading level={2}>Without the identity provider</SectionHeading>
-			<p class="text-sm text-muted">
+			<p class="max-w-prose text-sm text-muted">
 				An account your identity provider created can also sign in with a password, reset its password or ask for an
 				email link. It can do this only within this many days of its last sign-in through the provider. When you remove
 				someone in your provider, these options close once the window passes. With SCIM provisioning, they close
 				immediately.
 			</p>
 			<Card pad="md">
-				<form method="POST" action="?/save" use:enhance={save.enhance} class="flex flex-col gap-4">
+				<form method="POST" action="?/save" use:enhance={save.enhance} class="flex flex-col items-start gap-4">
 					<NumberInput
 						id="provider-window-days"
+						class="w-full sm:w-72"
 						name="days"
 						label="Days since the last provider sign-in"
 						hint={`0 allows sign-in through the provider only. The default is ${PROVIDER_WINDOW_DEFAULT_DAYS} days, and the most is ${PROVIDER_WINDOW_MAX_DAYS}.`}
@@ -63,9 +64,7 @@
 						required
 						bind:value={days}
 					/>
-					<div class="flex flex-wrap items-center gap-2">
-						<Button variant="primary" type="submit" loading={save.pending}>Save</Button>
-					</div>
+					<Button variant="primary" type="submit" loading={save.pending}>Save</Button>
 				</form>
 			</Card>
 		</section>

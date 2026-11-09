@@ -21,28 +21,24 @@
 		superAdmin: boolean;
 	} = $props();
 
-	// svelte-ignore state_referenced_locally
-	let kind = $state<ProviderKind>(provider?.kind ?? 'openai');
 	let preset = $state('');
 	// svelte-ignore state_referenced_locally
-	let baseUrl = $state(provider?.base_url ?? '');
-	// svelte-ignore state_referenced_locally
-	let keyHeader = $state(provider?.key_header ?? '');
-	// svelte-ignore state_referenced_locally
-	let queryString = $state(provider?.query_string ?? '');
-	// svelte-ignore state_referenced_locally
-	let allowPrivate = $state(provider?.allow_private ?? false);
-	// svelte-ignore state_referenced_locally
-	let enabled = $state(provider?.enabled ?? true);
-	// svelte-ignore state_referenced_locally
-	let modalities = $state<Record<Modality, boolean>>({
-		text: provider ? provider.modalities.includes('text') : true,
-		embed: provider ? provider.modalities.includes('embed') : true,
-		image: provider ? provider.modalities.includes('image') : true,
+	const form = $state({
+		kind: (provider?.kind ?? 'openai') as ProviderKind,
+		baseUrl: provider?.base_url ?? '',
+		keyHeader: provider?.key_header ?? '',
+		queryString: provider?.query_string ?? '',
+		allowPrivate: provider?.allow_private ?? false,
+		enabled: provider?.enabled ?? true,
+		modalities: {
+			text: provider ? provider.modalities.includes('text') : true,
+			embed: provider ? provider.modalities.includes('embed') : true,
+			image: provider ? provider.modalities.includes('image') : true,
+		} as Record<Modality, boolean>,
 	});
 
-	const compatible = $derived(isCompatibleKind(kind));
-	const anthropicShaped = $derived(kind === 'anthropic_compatible');
+	const compatible = $derived(isCompatibleKind(form.kind));
+	const anthropicShaped = $derived(form.kind === 'anthropic_compatible');
 	const kindOptions = PROVIDER_KINDS.map((k) => ({ value: k, label: providerKindLabel(k), description: providerKindDescription(k) }));
 	const presetOptions = [{ value: '', label: 'None' }, ...PRESETS.map((p) => ({ value: p.id, label: p.label }))];
 
@@ -51,9 +47,9 @@
 		preset = next;
 		const p = PRESETS.find((x) => x.id === next);
 		if (!p) return;
-		if (!baseUrl) baseUrl = p.base_url;
-		if (!keyHeader) keyHeader = p.key_header;
-		if (!queryString) queryString = p.query_string;
+		if (!form.baseUrl) form.baseUrl = p.base_url;
+		if (!form.keyHeader) form.keyHeader = p.key_header;
+		if (!form.queryString) form.queryString = p.query_string;
 	}
 
 	const keyHint = $derived(
@@ -67,15 +63,15 @@
 	);
 </script>
 
-<input type="hidden" name="enabled" value={enabled ? 'true' : 'false'} />
-<input type="hidden" name="allow_private" value={allowPrivate ? 'true' : 'false'} />
+<input type="hidden" name="enabled" value={form.enabled ? 'true' : 'false'} />
+<input type="hidden" name="allow_private" value={form.allowPrivate ? 'true' : 'false'} />
 
 <div class="grid gap-4 md:grid-cols-2">
 	<Input id="{id}-name" name="name" label="Name" required value={provider?.name ?? ''} placeholder="openai-primary" />
 	<!-- Two of the four labels are long, so a strip of segments overflows a
 	     phone. A list with a sentence on each stays inside it. -->
 	<div class="md:col-span-2">
-		<RadioGroup name="kind" label="Kind" options={kindOptions} bind:value={kind} />
+		<RadioGroup name="kind" label="Kind" options={kindOptions} bind:value={form.kind} />
 	</div>
 
 	{#if compatible && !anthropicShaped}
@@ -96,7 +92,7 @@
 			name="base_url"
 			label="Base URL"
 			required
-			bind:value={baseUrl}
+			bind:value={form.baseUrl}
 			placeholder={anthropicShaped ? 'https://gateway.example.com/anthropic/v1' : 'http://localhost:11434/v1'}
 			hint={anthropicShaped
 				? 'The root URL of the Anthropic Messages API, without /messages.'
@@ -106,7 +102,7 @@
 			id="{id}-key-header"
 			name="key_header"
 			label="Key header"
-			bind:value={keyHeader}
+			bind:value={form.keyHeader}
 			placeholder={anthropicShaped ? 'x-api-key' : 'Authorization'}
 			hint={anthropicShaped
 				? 'Leave blank to send x-api-key, as Anthropic expects. Some gateways expect Authorization.'
@@ -116,7 +112,7 @@
 			id="{id}-query-string"
 			name="query_string"
 			label="Query string"
-			bind:value={queryString}
+			bind:value={form.queryString}
 			placeholder="api-version=2024-10-21"
 			hint="Added to every request. Azure expects api-version."
 		/>
@@ -158,8 +154,8 @@
 		label="Modalities"
 		orientation="horizontal"
 		options={MODALITIES.map((m) => ({ value: m, label: m }))}
-		value={MODALITIES.filter((m) => modalities[m])}
-		onchange={(v) => (modalities = { text: v.includes('text'), embed: v.includes('embed'), image: v.includes('image') })}
+		value={MODALITIES.filter((m) => form.modalities[m])}
+		onchange={(v) => (form.modalities = { text: v.includes('text'), embed: v.includes('embed'), image: v.includes('image') })}
 		hint="What this provider may be used for. A request also needs a model that supports it."
 	/>
 
@@ -182,7 +178,7 @@
 	/>
 
 	<div class="md:col-span-2">
-		<Toggle id="{id}-enabled" label="Enabled" hint="When on, requests can be sent to this provider. Turning it off keeps its settings." bind:checked={enabled} />
+		<Toggle id="{id}-enabled" label="Enabled" hint="When on, requests can be sent to this provider. Turning it off keeps its settings." bind:checked={form.enabled} />
 	</div>
 
 	{#if compatible && superAdmin}
@@ -191,9 +187,9 @@
 				id="{id}-allow-private"
 				label="Allow a private address"
 				hint="When on, the base URL may resolve to a private, loopback or link-local address."
-				bind:checked={allowPrivate}
+				bind:checked={form.allowPrivate}
 			/>
-			{#if allowPrivate}
+			{#if form.allowPrivate}
 				<p class="text-xs text-warn" role="note">
 					Requests to this provider skip the private-address check, so you can reach a local Ollama or vLLM.
 					The provider can then point at anything on your network the engine can reach, except the engine's own

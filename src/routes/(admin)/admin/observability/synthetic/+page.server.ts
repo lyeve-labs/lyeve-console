@@ -1,12 +1,11 @@
 import type { PageServerLoad, Actions } from './$types';
-import { fail, isRedirect, redirect } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
 import { actionFailure } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import {
 	SECRET_MASK,
-	SYNTHETIC_OK,
 	acknowledgeAlert,
 	createProbe,
 	deleteProbe,
@@ -22,17 +21,15 @@ import {
 	runOutcome,
 	runOutlastedTheWait,
 	runProbeNow,
-	syntheticGate,
 	updateProbe,
 	type Probe,
 	type ProbeAlert,
 	type ProbeChannels,
 	type ProbeConfig,
 	type ProbeLimits,
-	type SyntheticGate,
 } from '$lib/api/synthetic';
+import { type Gate, GATE_OK, section, type Section } from '$lib/api/gate';
 import { channelsFrom, hasChannels } from '$lib/api/alert-channels';
-import { gateOf, section, type Gate, type Section } from '$lib/api/gate';
 
 /** What the notice channels drawer posts its fields under. */
 const CHANNEL_PREFIX = 'channel_';
@@ -43,6 +40,8 @@ const CHANNEL_PREFIX = 'channel_';
  */
 type ChannelsFor = { probe: Probe; read: ProbeChannels | null; gate: Gate } | null;
 import { pageOf, pageWindow, pastEndOffset, rowsOf, withOffset } from '$lib/api/list';
+import { couldNotLoad } from '$lib/outage';
+import { asked } from '$lib/server/asked';
 
 const NO_ALERTS: Section<ProbeAlert[]> = { ok: true, value: [] };
 
@@ -129,86 +128,75 @@ export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();
 	const { limit, offset } = pageWindow(event.url, DEFAULT_LIMIT, MAX_LIMIT);
 
+	const unread = {
+		probes: [] as Probe[],
+		alerts: NO_ALERTS,
+		total: null as number | null,
+		limit,
+		offset,
+		hasMore: false,
+		channelsFor: null as ChannelsFor,
+		limits: null as ProbeLimits | null,
+		counts: null as ProbeCounts | null,
+	};
 	// The shell says why the page is unavailable while its plugin does not run.
-	if (notRunning(plugins, PLUGIN.syntheticMonitoring)) {
-		return {
-			probes: [] as Probe[],
-			alerts: NO_ALERTS,
-			total: null as number | null,
-			limit,
-			offset,
-			hasMore: false,
-			gate: { state: 'absent' } as SyntheticGate,
-			channelsFor: null as ChannelsFor,
-			limits: null as ProbeLimits | null,
-			counts: null as ProbeCounts | null,
-		};
-	}
+	if (notRunning(plugins, PLUGIN.syntheticMonitoring)) return { ...unread, gate: { state: 'absent' } as Gate };
 
 	const client = authedClient(event);
-	let probes: Probe[] = [];
-	let every: Probe[] = [];
-	let counts: ProbeCounts | null = null;
-	let total: number | null = null;
-	let hasMore = false;
-	let gate: SyntheticGate = SYNTHETIC_OK;
-	try {
-		const read = await listProbes(client, limit + 1, offset);
-		if (Array.isArray(read)) {
-			// The plugin answers every probe as a bare array and ignores the
-			// window it was asked for, so the page is cut here, and every count
-			// covers every probe rather than the rows on this page.
-			every = read;
-			total = read.length;
-			probes = read.slice(offset, offset + limit);
-			hasMore = offset + probes.length < total;
-			counts = {
-				failing: read.filter((p) => probeHealth(p) === 'failing').length,
-				paused: read.filter((p) => probeHealth(p) === 'paused').length,
-			};
-		} else {
-			const page = pageOf(read, limit, offset);
-			every = page.rows;
-			probes = page.rows;
-			total = page.total;
-			hasMore = page.hasMore;
-		}
-		const back = pastEndOffset(probes.length, limit, offset, total);
-		if (back !== null) redirect(307, withOffset(event.url, back));
-	} catch (err) {
-		if (isRedirect(err)) throw err;
-		gate = syntheticGate(err);
-	}
+	const read = await section(listProbes(client, limit + 1, offset), couldNotLoad('probes'));
+	if (!read.ok) return { ...unread, gate: read.gate };
 
-	// Alerts are a band above the list. Losing them must not lose the probes,
-	// and an unread alert list is never rendered as "nothing is wrong": the
-	// band says the read failed.
-	const alerts =
-		gate.state === 'ok'
-			? await section(
-					listOpenAlerts(client).then((p) => rowsOf(p)),
-					'Could not load open alerts.'
-				)
-			: NO_ALERTS;
+	let probes: Probe[];
+	let every: Probe[];
+	let counts: ProbeCounts | null = null;
+	let total: number | null;
+	let hasMore: boolean;
+	if (Array.isArray(read.value)) {
+		// The plugin answers every probe as a bare array and ignores the
+		// window it was asked for, so the page is cut here, and every count
+		// covers every probe rather than the rows on this page.
+		every = read.value;
+		total = read.value.length;
+		probes = read.value.slice(offset, offset + limit);
+		hasMore = offset + probes.length < total;
+		counts = {
+			failing: read.value.filter((p) => probeHealth(p) === 'failing').length,
+			paused: read.value.filter((p) => probeHealth(p) === 'paused').length,
+		};
+	} else {
+		const page = pageOf(read.value, limit, offset);
+		every = page.rows;
+		probes = page.rows;
+		total = page.total;
+		hasMore = page.hasMore;
+	}
+	const back = pastEndOffset(probes.length, limit, offset, total);
+	if (back !== null) redirect(307, withOffset(event.url, back));
 
 	// `?channels=<id>` opens the notice channels drawer on that probe. The
 	// channels are a read of their own, so they are asked for only then.
-	let channelsFor: ChannelsFor = null;
 	const channelsId = event.url.searchParams.get('channels');
 	const probe = channelsId ? every.find((p) => p.id === channelsId) : undefined;
-	if (gate.state === 'ok' && probe) {
-		try {
-			channelsFor = { probe, read: await getProbeChannels(client, probe.id), gate: { state: 'ok' } };
-		} catch (err) {
-			channelsFor = { probe, read: null, gate: gateOf(err, 'Could not load notice channels.') };
-		}
-	}
 
-	// What a write will accept. Unread, the form says less rather than a
-	// floor that may not be this install's.
-	const limits = gate.state === 'ok' ? await readProbeLimits(client).catch(() => null) : null;
+	const [alerts, channelsFor, limits] = await Promise.all([
+		// Alerts are a band above the list. Losing them must not lose the probes,
+		// and an unread alert list is never rendered as "nothing is wrong": the
+		// band says the read failed.
+		section(
+			listOpenAlerts(client).then((p) => rowsOf(p)),
+			couldNotLoad('open alerts')
+		),
+		probe
+			? section(getProbeChannels(client, probe.id), couldNotLoad('notice channels')).then(
+					(r): ChannelsFor => (r.ok ? { probe, read: r.value, gate: GATE_OK } : { probe, read: null, gate: r.gate })
+				)
+			: null,
+		// What a write will accept. Unread, the form says less rather than a
+		// floor that may not be this instance's.
+		readProbeLimits(client).catch(() => null),
+	]);
 
-	return { probes, alerts, total, limit, offset, hasMore, gate, channelsFor, limits, counts };
+	return { probes, alerts, total, limit, offset, hasMore, gate: GATE_OK, channelsFor, limits, counts };
 };
 
 async function save(event: Parameters<Actions[string]>[0], id: string | null) {
@@ -277,19 +265,26 @@ export const actions: Actions = {
 		return save(event, id);
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const client = authedClient(event);
-		const form = await event.request.formData();
-		const id = String(form.get('id') ?? '');
-		if (!id) return fail(400, { error: 'This form is missing its probe. Reload the page and try again.' });
-		try {
-			await deleteProbe(client, id);
-		} catch (err) {
-			return actionFailure(err, 'Could not delete the probe. Try again.');
-		}
-		return { removed: id };
-	},
+	delete: asked(
+		{
+			question: 'Delete this probe?',
+			detail: 'Its results and alert history are deleted. This cannot be undone.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['admin', 'super_admin']);
+			const client = authedClient(event);
+			const form = await event.request.formData();
+			const id = String(form.get('id') ?? '');
+			if (!id) return fail(400, { error: 'This form is missing its probe. Reload the page and try again.' });
+			try {
+				await deleteProbe(client, id);
+			} catch (err) {
+				return actionFailure(err, 'Could not delete the probe. Try again.');
+			}
+			return { removed: id };
+		},
+	),
 
 	run: async (event) => {
 		await requireRole(event, ['admin', 'super_admin']);

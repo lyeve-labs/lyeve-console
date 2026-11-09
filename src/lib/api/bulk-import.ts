@@ -13,11 +13,11 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 import type { ListEnvelope } from './list';
 import { csrfHeaders } from './csrf';
+import { outageFor } from '../outage';
 
-export const IMPORTS_URL = '/api/admin/imports';
+const IMPORTS_URL = '/api/admin/imports';
 
 export interface ImportJob {
 	id: string;
@@ -41,15 +41,6 @@ export interface ImportJob {
 	mode?: ImportMode;
 	/** upload or url. */
 	source_kind?: 'upload' | 'url';
-}
-
-export type ImportGate = Gate;
-
-export const IMPORT_OK: ImportGate = GATE_OK;
-
-/** What a refused imports read means, read the way every plugin's is. */
-export function importGate(err: unknown): ImportGate {
-	return gateOf(err, 'Could not load imports.');
 }
 
 /** The plugin names its rows `jobs`, not `data`. */
@@ -199,7 +190,7 @@ export interface FieldMapping {
 
 /**
  * What a mapping does to a cell before it is stored. The three text
- * transforms work on every install. Parsing a date, splitting a cell into a list and
+ * transforms work on every instance. Parsing a date, splitting a cell into a list and
  * looking a value up need a license, which the plugin checks when a request
  * names one: a template saved with one keeps applying.
  */
@@ -340,7 +331,7 @@ export interface SaveMappingTemplate {
 	field_mappings: FieldMapping[];
 }
 
-export const TEMPLATES_URL = `${IMPORTS_URL}/templates`;
+const TEMPLATES_URL = `${IMPORTS_URL}/templates`;
 
 export async function listTemplates(
 	client: HttpClient,
@@ -422,7 +413,7 @@ function importFailure(status: number, starts: boolean, engineSaid: boolean): st
 		return 'Could not confirm whether the import started. Check the entries before you try again.';
 	}
 	if (status === 502 || status === 503 || status === 504) {
-		return 'The engine is unavailable. Nothing was imported. Try again in a moment.';
+		return outageFor('nothing was imported');
 	}
 	if (status >= 500) return 'Could not complete the request. Nothing was imported. Try again.';
 	return 'The request was refused.';
@@ -464,10 +455,12 @@ export function dataTypeFor(fieldType: string | undefined): string {
 		case 'integer':
 		case 'int':
 		case 'bigint':
+			return 'integer';
+		case 'decimal':
+			return 'decimal';
 		case 'number':
 			return 'number';
 		case 'float':
-		case 'decimal':
 		case 'double':
 			return 'float';
 		case 'boolean':

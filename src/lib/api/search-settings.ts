@@ -4,6 +4,7 @@
  * others, and what people have been searching for.
  */
 import type { HttpClient } from '@lyeve-labs/client';
+import { rowsOf } from './list';
 import type { RankWeightBoost, SearchResult, SynonymGroup } from '@lyeve-labs/client-rest';
 
 export interface SearchAnalytics {
@@ -82,7 +83,7 @@ export async function listSynonymGroups(client: HttpClient): Promise<SynonymList
 	const res = await client.get<{ data?: SynonymGroup[] | null; total_count?: number } | SynonymGroup[]>(
 		`/api/admin/search/synonyms?limit=${SYNONYM_LIMIT}&offset=0`,
 	);
-	const groups = Array.isArray(res) ? res : (res.data ?? []);
+	const groups = rowsOf(res);
 	const counted = Array.isArray(res) ? groups.length : res.total_count;
 	return { groups, total: typeof counted === 'number' ? Math.max(counted, groups.length) : groups.length };
 }

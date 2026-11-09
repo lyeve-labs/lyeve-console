@@ -1,5 +1,6 @@
 import type { SubmitFunction } from '@sveltejs/kit';
 import { confirm, toast, type ConfirmOptions } from '@lyeve-labs/ui-kit';
+import { CONFIRM_FIELD, CONFIRMED } from './confirmation';
 
 /**
  * The submit handler for a panel that closes itself, and whether it is running.
@@ -31,26 +32,10 @@ import { confirm, toast, type ConfirmOptions } from '@lyeve-labs/ui-kit';
  * longer say what the answer was built from.
  */
 export function submitter(close?: () => void, { reset = true }: { reset?: boolean } = {}) {
-	let pending = $state(false);
-	const enhance: SubmitFunction = () => {
-		pending = true;
-		return async ({ result, update }) => {
-			try {
-				if (result.type !== 'failure' && result.type !== 'error') close?.();
-				await update({ reset });
-			} finally {
-				// Cleared after the patch, as `tracked` does: a primary that goes
-				// live again mid-update invites the second click.
-				pending = false;
-			}
-		};
-	};
-	return {
-		get pending() {
-			return pending;
-		},
-		enhance,
-	};
+	return tracked(() => async ({ result, update }) => {
+		if (result.type !== 'failure' && result.type !== 'error') close?.();
+		await update({ reset });
+	});
 }
 
 /**
@@ -74,6 +59,40 @@ export function fieldErrors(form: unknown): Record<string, string> {
 }
 
 /**
+ * Which of a page's action failures its drawer shows and which show above
+ * the list. Each failure names the action behind it. The drawer shows only
+ * its own writes' failures, and only one that came back after it opened, so
+ * a failed delete never reads as a failure of the form opened next. The
+ * page calls `opened()` as it opens the drawer.
+ *
+ * `form` is read through a function because a page's props are reactive
+ * only when read where they are used.
+ */
+export function drawerFailure<F>(form: () => F, actions: readonly string[]) {
+	let openedOver = $state.raw<unknown>(null);
+	const ownAction = (f: F) => {
+		const action = f && typeof f === 'object' ? (f as { action?: unknown }).action : undefined;
+		return typeof action === 'string' && actions.includes(action);
+	};
+	return {
+		/** The failure the drawer shows, or null. */
+		get drawer(): F | null {
+			const f = form();
+			return ownAction(f) && f !== openedOver ? f : null;
+		},
+		/** The failure the page shows above the list, or null. */
+		get page(): F | null {
+			const f = form();
+			return ownAction(f) ? null : f;
+		},
+		/** Marks the failure on screen as older than the drawer opening now. */
+		opened() {
+			openedOver = form();
+		},
+	};
+}
+
+/**
  * Whether a page's own submit handler is running, without changing what it
  * does.
  *
@@ -92,7 +111,7 @@ export function fieldErrors(form: unknown): Record<string, string> {
  */
 export function tracked(fn: SubmitFunction) {
 	let pending = $state(false);
-	const enhance: SubmitFunction = (input) => {
+	const enhance: SubmitFunction = async (input) => {
 		pending = true;
 		let canceled = false;
 		let after;
@@ -100,8 +119,10 @@ export function tracked(fn: SubmitFunction) {
 			// A confirm-then-submit handler cancels when the question is
 			// declined, and enhance then never calls the callback below. Without
 			// this the primary spins until the reader navigates away, and that is
-			// the commonest handler shape in this application.
-			after = fn({
+			// the commonest handler shape in this application. enhance reads the
+			// cancel once the handler settles, so the wrapped handler is awaited
+			// here: returning before its question is answered sends the request.
+			after = await fn({
 				...input,
 				cancel: () => {
 					canceled = true;
@@ -113,12 +134,10 @@ export function tracked(fn: SubmitFunction) {
 			pending = false;
 			throw err;
 		}
-		if (canceled) return async () => {};
+		if (canceled) return;
 		return async (opts) => {
 			try {
-				// A handler may hand back the callback or a promise of one.
-				const then = await after;
-				if (then) await then(opts);
+				if (after) await after(opts);
 				else await opts.update();
 			} finally {
 				pending = false;
@@ -140,7 +159,10 @@ type Success = string | ((data: Record<string, unknown> | undefined) => string);
  * The submit handler for a write that asks first.
  *
  * enhance awaits the handler before it sends anything, so a declined question
- * cancels the request rather than undoing it. Once the write goes through,
+ * cancels the request rather than undoing it. An agreed one adds the
+ * confirmation the action's `asked()` wrapper requires, so a post that
+ * skipped the question, made before the page hydrated, runs nothing and the
+ * page asks instead. Once the write goes through,
  * the result is applied and, when the caller names one, a toast says what
  * happened. A row's delete leaves nothing on screen to say it worked, so the
  * toast is that word. A failure raises no toast: the action's answer lands in
@@ -148,7 +170,7 @@ type Success = string | ((data: Record<string, unknown> | undefined) => string);
  *
  *     <form use:enhance={confirmed(`Delete ${name}?`, 'Its history goes with it.', {
  *         confirmLabel: 'Delete',
- *         success: `Deleted ${name}`,
+ *         success: `${name} deleted.`,
  *     })}>
  *
  * Every other option goes to the kit's confirm unchanged.
@@ -158,11 +180,12 @@ export function confirmed(
 	detail: string,
 	{ success, ...options }: ConfirmOptions & { success?: Success } = {},
 ): SubmitFunction {
-	return async ({ cancel }) => {
+	return async ({ cancel, formData }) => {
 		if (!(await confirm(question, detail, options))) {
 			cancel();
 			return;
 		}
+		formData.set(CONFIRM_FIELD, CONFIRMED);
 		return async ({ result, update }) => {
 			await update();
 			if (success && result.type === 'success') {

@@ -1,15 +1,16 @@
 import type { HttpClient } from '@lyeve-labs/client';
 import type { Block, EntryRow, ResolvedBlock } from '$lib/api/customization';
+import { rowsOf, type ListEnvelope } from '$lib/api/list';
+import { UNTITLED } from '$lib/utils/new-entry';
 
 async function contentRows(client: HttpClient, b: Block): Promise<EntryRow[] | null> {
 	const params = new URLSearchParams({ schema: b.schema ?? '', limit: String(b.limit ?? 5), offset: '0' });
 	if (b.status) params.set('status', b.status);
 	try {
-		const res = await client.get<{ data?: Partial<EntryRow>[] } | Partial<EntryRow>[]>(`/api/admin/content?${params}`);
-		const rows = Array.isArray(res) ? res : (res.data ?? []);
+		const rows = rowsOf(await client.get<ListEnvelope<Partial<EntryRow>> | Partial<EntryRow>[]>(`/api/admin/content?${params}`));
 		return rows.map((r) => ({
 			id: String(r.id ?? ''),
-			title: r.title || '(untitled)',
+			title: r.title || UNTITLED,
 			status: r.status ?? '',
 			updated_at: r.updated_at ?? '',
 		}));

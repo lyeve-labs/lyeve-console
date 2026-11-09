@@ -8,6 +8,8 @@
 	import { buildEmpty, validate, serialize, extractM2MRelations } from '$lib/utils/content-form';
 	import ContentForm from '$lib/components/ContentForm.svelte';
 	import { ICON } from '$lib/icon';
+	import { couldNotLoad } from '$lib/outage';
+	import { tracked } from '$lib/forms.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -19,7 +21,7 @@
 	let formValues = $state<Record<string, unknown>>(buildEmpty(data.schemaDef?.fields ?? []));
 	let validationErrors = $state<Record<string, string>>({});
 	let errorKeys = $state<Record<string, string>>({});
-	let submitting = $state(false);
+	const create = tracked(() => {});
 
 	// Locale. Default to first locale's code or 'en'. A schema that is not
 	// localized, or an instance without the localization plugin, has none.
@@ -66,7 +68,7 @@
 
 <PageShell
 	title="New entry"
-	description={`Creating a new ${schemaLabel} entry`}
+	description={`Add an entry to ${schemaLabel}.`}
 	width="wide"
 	{back}
 >
@@ -96,19 +98,13 @@
 
 	{#if data.locales && !data.locales.ok}
 		<Alert tone="warn">
-			Could not load the locales. If you save now, the entry has no locale. Reload the page to try again.
+			{couldNotLoad('the locales')} If you save now, the entry has no locale. Reload the page to try again.
 		</Alert>
 	{/if}
 
 	<form
 		method="POST"
-		use:enhance={() => {
-			submitting = true;
-			return async ({ result, update }) => {
-				submitting = false;
-				await update();
-			};
-		}}
+		use:enhance={create.enhance}
 		onsubmit={handleSubmit}
 	>
 		<!-- Serialized data hidden field. Reactive, always current -->
@@ -131,7 +127,7 @@
 			{#if created}
 				<Button href={`/admin/content/${schemaName}/${encodeURIComponent(created)}`}>Open the entry</Button>
 			{:else}
-				<Button type="submit" loading={submitting}>Create</Button>
+				<Button type="submit" loading={create.pending}>Create</Button>
 			{/if}
 		</div>
 	</form>

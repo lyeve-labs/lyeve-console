@@ -71,7 +71,7 @@ export function parentLabel(resource: string): string {
 }
 
 export function schemaLabel(schema: string): string {
-	if (schema === WILDCARD) return 'every schema';
+	if (schema === WILDCARD) return 'every content type';
 	return isFlowResource(schema) ? flowResourceLabel(schema) : schema;
 }
 
@@ -199,7 +199,7 @@ export class RuleMatrix {
 	 */
 	summaryText(role: string, action: Action): string {
 		const names = this.roleSchemas[role] ?? [];
-		const clause = (kind: 'schema' | 'flow', state: TriState) => {
+		const clause = (kind: 'content type' | 'flow', state: TriState) => {
 			if (state === 'none') return `${role} grants ${action} on no ${kind}.`;
 			if (state === 'all') return `${role} grants ${action} on every ${kind}.`;
 			return `${role} grants ${action} on some ${kind}s.`;
@@ -208,7 +208,7 @@ export class RuleMatrix {
 		const flowClause = clause('flow', rollUp(flows, (name) => this.granted(role, name, action)));
 		if (action === 'activate') return flowClause;
 		const schemas = names.filter((name) => !isFlowResource(name));
-		return `${clause('schema', rollUp(schemas, (name) => this.granted(role, name, action)))} ${flowClause}`;
+		return `${clause('content type', rollUp(schemas, (name) => this.granted(role, name, action)))} ${flowClause}`;
 	}
 
 	markFor(role: string, schema: string, action: Action): Mark {

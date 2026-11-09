@@ -1,24 +1,23 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import {
-	RESIDENCY_OK,
 	createRegion,
 	deleteRegion,
 	listRegions,
 	readReport,
-	residencyGate,
 	slugIsSound,
 	updateRegion,
 	type Region,
-	type ResidencyGate,
 	type ResidencyReport,
 } from '$lib/api/residency';
+import { type Gate, GATE_OK, gateOf, section } from '$lib/api/gate';
 import { rowsOf } from '$lib/api/list';
-import { GATE_OK, section, type Gate } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
+import { asked } from '$lib/server/asked';
 
 /** The most regions the page lists. An instance runs in a handful. */
 const REGION_CAP = 100;
@@ -37,14 +36,14 @@ export const load: PageServerLoad = async (event) => {
 			more: false,
 			report: null as ResidencyReport | null,
 			reportGate: GATE_OK as Gate,
-			gate: (absent ? { state: 'absent' } : RESIDENCY_OK) as ResidencyGate,
+			gate: (absent ? { state: 'absent' } : GATE_OK) as Gate,
 			permitted,
 		};
 	}
 
 	const client = authedClient(event);
 	let regions: Region[] = [];
-	let gate: ResidencyGate = RESIDENCY_OK;
+	let gate: Gate = GATE_OK;
 	// One row past the cap says whether the list was cut.
 	let more = false;
 	try {
@@ -52,7 +51,7 @@ export const load: PageServerLoad = async (event) => {
 		more = rows.length > REGION_CAP;
 		regions = rows.slice(0, REGION_CAP);
 	} catch (err) {
-		gate = residencyGate(err);
+		gate = gateOf(err, couldNotLoad('regions'));
 	}
 
 	// The report is the evidence half of this page. An unread report is never
@@ -118,7 +117,7 @@ export const actions: Actions = {
 				is_default: form.get('is_default') === 'true',
 			});
 		} catch (err) {
-			return fail(400, { action: 'create', error: actionError(err, 'Could not create the region. Try again.') });
+			return tagged('create', actionFailure(err, 'Could not create the region. Try again.'));
 		}
 		if (form.get('enabled') !== 'true') {
 			try {
@@ -156,22 +155,29 @@ export const actions: Actions = {
 				is_default: form.get('is_default') === 'true',
 			});
 		} catch (err) {
-			return fail(400, { action: 'update', error: actionError(err, 'Could not save the region. Try again.') });
+			return tagged('update', actionFailure(err, 'Could not save the region. Try again.'));
 		}
 		return { saved: displayName };
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const client = authedClient(event);
-		const form = await event.request.formData();
-		const id = String(form.get('id') ?? '');
-		if (!id) return fail(400, { action: 'delete', error: 'This form is missing its region. Reload the page and try again.' });
-		try {
-			await deleteRegion(client, id);
-		} catch (err) {
-			return fail(400, { action: 'delete', error: actionError(err, 'Could not delete the region. Try again.') });
-		}
-		return { removed: id };
-	},
+	delete: asked(
+		{
+			question: 'Delete this region?',
+			detail: 'Tenants in this region are not moved. Move them first, or the report can no longer show where their data is.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const client = authedClient(event);
+			const form = await event.request.formData();
+			const id = String(form.get('id') ?? '');
+			if (!id) return fail(400, { action: 'delete', error: 'This form is missing its region. Reload the page and try again.' });
+			try {
+				await deleteRegion(client, id);
+			} catch (err) {
+				return tagged('delete', actionFailure(err, 'Could not delete the region. Try again.'));
+			}
+			return { removed: id };
+		},
+	),
 };

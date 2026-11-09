@@ -64,6 +64,7 @@ function write(fields: Record<string, string>, reply: Response = json({})) {
 		return reply.clone();
 	});
 	const form = new FormData();
+	form.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) form.set(k, v);
 	const url = new URL('http://admin/admin/settings/saml');
 	return { calls, event: { fetch, url, request: new Request(url, { method: 'POST', body: form }) } as never };
@@ -160,7 +161,7 @@ describe('SAML writes', () => {
 	});
 
 	it('relays the plugin refusal of a rollover with nothing prepared', async () => {
-		const { event } = write({ id: 'p1' }, json({ error: 'no next certificate configured' }, 400));
+		const { event } = write({ id: 'p1' }, json({ error: 'no next certificate configured', code: 'bad_request' }, 400));
 		const out = (await actions.rollover(event)) as Failure;
 		expect(out.data).toEqual({ action: 'rollover', error: 'no next certificate configured' });
 	});

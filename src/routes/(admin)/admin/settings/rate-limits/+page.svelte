@@ -11,21 +11,20 @@
 		Pagination,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import { confirmed } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure } from '$lib/forms.svelte';
+	import { plural } from '$lib/format';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { Copy, Gauge, Pencil, Plus, RotateCcw, ShieldBan, Trash2 } from '@lucide/svelte';
+	import { Copy, Gauge, Pencil, Plus, RotateCcw, Trash2 } from '@lucide/svelte';
 	import NotEnabled from '$lib/components/NotEnabled.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
+	import RateLimitTabs from '$lib/components/RateLimitTabs.svelte';
 	import {
 		audienceLabel,
 		blocksEverything,
-		exhausted,
 		rateLabel,
-		resetsIn,
 		scopeLabel,
 		scopeTone,
 		windowLabel,
-		type LimiterState,
 		type Protection,
 		type RateRule,
 	} from '$lib/api/rate-limit';
@@ -44,41 +43,15 @@
 	 * only one that came back after it opened, so a failed delete never reads
 	 * as a failure of the next form opened. The page shows the row actions'.
 	 */
-	const failure = $derived(form as { action?: string; error?: string } | null);
-	let openedOver = $state.raw<unknown>(null);
-	const fresh = $derived(form !== openedOver);
-	const failureOf = (action: string) => (fresh && failure?.action === action ? (failure.error ?? '') : '');
+	const failure = drawerFailure(() => form as { action?: string; error?: string } | null, ['rule', 'global', 'protection']);
+	const failureOf = (action: string) => (failure.drawer?.action === action ? (failure.drawer.error ?? '') : '');
 	const ruleError = $derived(failureOf('rule'));
 	const globalError = $derived(failureOf('global'));
 	const protectionError = $derived(failureOf('protection'));
 	const formError = $derived(
-		failure?.action === 'delete' || failure?.action === 'resetProtection' ? (failure.error ?? '') : '',
+		failure.page?.action === 'delete' || failure.page?.action === 'resetProtection' ? (failure.page.error ?? '') : '',
 	);
 	const blocking = $derived(data.rules.filter(blocksEverything));
-	const live = $derived(data.status.ok ? data.status.value : []);
-	const spent = $derived(exhausted(live));
-	/*
-	 * A bucket is one rule, tenant, caller and endpoint, so the row key names
-	 * all four. The engine masks the end of each address, so two callers on one
-	 * network can still share all four. A repeat then takes a counter, which
-	 * keeps both rows on the page.
-	 */
-	const liveRows = $derived.by(() => {
-		const seen = new Map<string, number>();
-		return live.map((s) => {
-			const key = [s.rule_id, s.tenant_id ?? '', s.client_ip, s.endpoint].join('\u001f');
-			const n = seen.get(key) ?? 0;
-			seen.set(key, n + 1);
-			return { s, key: n === 0 ? key : `${key}\u001f${n}` };
-		});
-	});
-	/*
-	 * A bucket with no tenant means one of two things. The global limit counts
-	 * one address across every tenant. Any other rule without a tenant counts
-	 * only the requests that resolved none.
-	 */
-	const countedBy = (s: LimiterState & { kind?: string }) =>
-		s.tenant_id ? `Tenant ${s.tenant_id}` : s.kind === 'global' ? 'Whole instance' : 'No tenant';
 	const overview = $derived(data.overview);
 	// Unknown is its own state: a failed read is neither locked nor unlocked.
 	const customEnabled = $derived(overview?.custom_licensed ?? null);
@@ -105,27 +78,27 @@
 	let protectionDrawer = $state<ReturnType<typeof ProtectionDrawer>>();
 
 	function openCreate() {
-		openedOver = form;
+		failure.opened();
 		ruleDrawer?.openCreate();
 	}
 
 	function openEdit(r: RateRule) {
-		openedOver = form;
+		failure.opened();
 		ruleDrawer?.openEdit(r);
 	}
 
 	function openDuplicate(r: RateRule) {
-		openedOver = form;
+		failure.opened();
 		ruleDrawer?.openDuplicate(r, data.rules.map((x) => x.endpoint));
 	}
 
 	function openGlobal() {
-		openedOver = form;
+		failure.opened();
 		globalDrawer?.openGlobal(overview?.global);
 	}
 
 	function openProtection(p: Protection) {
-		openedOver = form;
+		failure.opened();
 		protectionDrawer?.openProtection(p);
 	}
 
@@ -150,25 +123,19 @@
 
 <PageShell
 	title="Rate limits"
-	description="See each rate limit and who is close to reaching one."
+	description="See and change each rate limit on this engine."
 	width="wide"
 	back={{ href: '/admin/settings', label: 'Settings' }}
 >
 	{#snippet actions()}
-		{#if data.gate.state === 'ok'}
-			<!-- The tenant's own limit, its address lists and its refusal
-			     history live on a page of their own, because a tenant admin
-			     reaches them without the instance controls here. -->
-			<Button variant="secondary" size="sm" href="/admin/settings/rate-limits/tenant">
-				<ShieldBan size={ICON.sm} /> Tenant controls
-			</Button>
-		{/if}
 		{#if data.gate.state === 'ok' && customEnabled === true}
 			<Button variant="primary" size="sm" onclick={openCreate}>
 				<Plus size={ICON.sm} /> New rule
 			</Button>
 		{/if}
 	{/snippet}
+
+	<RateLimitTabs active="limits" />
 
 	{#if data.gate.state !== 'ok'}
 		<GateNotice
@@ -187,7 +154,7 @@
 			</Alert>
 		{/if}
 
-		<div class="grid gap-4 sm:grid-cols-3">
+		<div class="grid gap-4 sm:grid-cols-2">
 			<Stat size="sm" mono label="Custom rules" value={stored} />
 			<Stat
 				size="sm"
@@ -195,13 +162,6 @@
 				label="Enforced"
 				value={data.rules.filter((r) => r.enforced).length}
 				tone={unenforced.length > 0 ? 'warn' : 'neutral'}
-			/>
-			<Stat
-				size="sm"
-				mono
-				label="Callers at their limit"
-				value={data.status.ok ? spent.length : '?'}
-				tone={spent.length > 0 ? 'warn' : 'neutral'}
 			/>
 		</div>
 
@@ -264,9 +224,9 @@
 			<section class="flex flex-col gap-4">
 				<SectionHeading level={2}>Sign-in and reset protections</SectionHeading>
 				<p class="text-xs text-muted">
-					These are built in and enforced on every install.
+					These are built in and enforced on every engine.
 					{#if customEnabled === false}
-						Changing them needs a license this instance does not have.
+						Changing them is not enabled on this engine.
 					{/if}
 				</p>
 				<Table label="Protections">
@@ -342,7 +302,7 @@
 					     live. -->
 					<Alert tone="warn">
 						{stored}
-						{stored === 1 ? 'saved rule is' : 'saved rules are'} not enforced on this instance. They apply again when your license includes custom rules. You can still delete them.
+						{plural(stored, 'saved rule is', 'saved rules are')} not enforced, because custom rules are not enabled on this engine. They apply again once custom rules are enabled. You can still delete them.
 					</Alert>
 				{/if}
 			{/if}
@@ -352,7 +312,7 @@
 				     the rate says. -->
 				<Alert tone="danger">
 					{blocking.length}
-					{blocking.length === 1 ? 'rule blocks' : 'rules block'} every request, not only the excess. A burst or rate of zero refuses even the first request.
+					{plural(blocking.length, 'rule blocks', 'rules block')} every request, not only the excess. A burst or rate of zero refuses even the first request.
 				</Alert>
 			{/if}
 
@@ -501,53 +461,6 @@
 				</Table>
 			</section>
 		{/if}
-
-		<section class="flex flex-col gap-4">
-			<SectionHeading level={2}>Right now</SectionHeading>
-			{#if !data.status.ok}
-				<GateNotice gate={data.status.gate} title="Live counters" absent="Rate limiting is not included in this build." />
-			{:else if live.length === 0}
-				<EmptyState
-					title="Nobody is near a limit"
-					description="A caller appears here once they use enough of a window to be tracked."
-				>
-					{#snippet iconSnippet()}
-						<Gauge size={ICON.lg} />
-					{/snippet}
-				</EmptyState>
-			{:else}
-				<Table label="Right now">
-					<thead>
-						<tr>
-							<th scope="col">Caller</th>
-							<th scope="col">Endpoint</th>
-							<th scope="col">Left</th>
-							<th scope="col">Resets in</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each liveRows as { s, key } (key)}
-							<tr>
-								<td data-cell="nowrap" class="text-xs">
-									<span class="block font-mono">{s.client_ip}</span>
-									<span class="block text-faint">{countedBy(s)}</span>
-								</td>
-								<td data-cell="nowrap" class="font-mono text-xs text-faint">{s.endpoint}</td>
-								<td data-cell="nowrap">
-									<Badge tone={s.remaining <= 0 ? 'danger' : 'neutral'}>
-										{s.remaining} of {s.burst}
-									</Badge>
-								</td>
-								<td data-cell="nowrap" class="text-xs text-faint">{resetsIn(s.reset_at)}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</Table>
-				<p class="text-xs text-muted">
-					This is a snapshot from one engine process. With more than one node, each node counts on its own unless the distributed store is configured.
-				</p>
-			{/if}
-		</section>
 	{/if}
 </PageShell>
 

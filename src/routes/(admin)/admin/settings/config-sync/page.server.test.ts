@@ -46,7 +46,7 @@ beforeEach(() => vi.clearAllMocks());
 
 describe('config sync load', () => {
 	it('refuses anyone but a super admin', async () => {
-		await expect(load(loadEvent(['admin']))).rejects.toMatchObject({ status: 403 });
+		await expect(load(loadEvent(['admin']))).rejects.toMatchObject({ status: 403, body: { message: 'Only a super admin can open this page.' } });
 	});
 
 	it('offers the page to a super admin and leaves the license to the engine', async () => {
@@ -97,7 +97,7 @@ describe('config sync diff and apply', () => {
 	});
 
 	it('relays a wrong passphrase as the engine said it', async () => {
-		engine.post.mockRejectedValue(new ApiError(422, 'the passphrase does not open this bundle', { error: 'the passphrase does not open this bundle' }));
+		engine.post.mockRejectedValue(new ApiError(422, 'the passphrase does not open this bundle', { error: 'the passphrase does not open this bundle', code: 'http_422' }));
 		const out = (await actions.diff(event(sync))) as { status: number; data: Record<string, unknown> };
 		expect(out.status).toBe(422);
 		expect(out.data.error).toBe('the passphrase does not open this bundle');

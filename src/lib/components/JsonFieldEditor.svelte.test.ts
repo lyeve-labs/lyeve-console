@@ -88,6 +88,14 @@ describe('JsonFieldEditor', () => {
 		await fireEvent.input(area, { target: { value: '{"a":' } });
 		expect(container.textContent).toContain('Not valid JSON');
 	});
+
+	it('keeps the rows below a removed one on the inputs they were typed into', async () => {
+		const { container } = render(JsonFieldEditor, { props: { value: '{"a":"x","b":"y"}' } });
+		const second = within(container).getAllByLabelText('Key')[1] as HTMLInputElement;
+		await fireEvent.click(within(container).getByRole('button', { name: 'Remove a' }));
+		expect(second.isConnected).toBe(true);
+		expect(second.value).toBe('b');
+	});
 });
 
 describe('the note on a value that stays JSON', () => {

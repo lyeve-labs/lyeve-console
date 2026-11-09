@@ -64,7 +64,7 @@ describe('accessScopes', () => {
 		});
 		expect(accessScopes(a)).toEqual(['content.pages:read', 'content.posts:read', 'content.posts:create']);
 		expect(accessSchemas(a)).toEqual(['pages', 'posts']);
-		expect(contentSummary(a)).toBe('2 schemas');
+		expect(contentSummary(a)).toBe('2 content types');
 	});
 
 	it('names each endpoint a resource is held to, or the whole resource', () => {

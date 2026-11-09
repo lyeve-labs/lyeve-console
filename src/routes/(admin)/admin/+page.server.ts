@@ -22,7 +22,8 @@ import {
 import { applyMigrations, pendingMigrations } from '$lib/api/migrate';
 import { section, type Gate, type Section } from '$lib/api/gate';
 import { rowsOf, statedTotal, type ListEnvelope } from '$lib/api/list';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure } from '$lib/server/action-error';
+import { couldNotLoad } from '$lib/outage';
 import { localPath } from '$lib/server/local-path';
 import { authedClient, requireRole } from '$lib/server/authz';
 import { WINDOWS, windowOf } from '$lib/dashboard';
@@ -76,7 +77,7 @@ export const load: PageServerLoad = async (event) => {
 	 * that may answer on a second try says so, so its readers can tell the
 	 * stock dashboard standing in from the one the tenant chose.
 	 */
-	const layoutRead = customization?.entitled ? await section(getDashboardLayout(client), 'Could not load the dashboard layout.') : null;
+	const layoutRead = customization?.entitled ? await section(getDashboardLayout(client), couldNotLoad('the dashboard layout')) : null;
 	const layout = layoutRead?.ok ? layoutRead.value : null;
 	const layoutUnread = layoutRead !== null && !layoutRead.ok && RETRYABLE.has(layoutRead.gate.state);
 	const stock = !layout?.custom;
@@ -136,7 +137,7 @@ export const load: PageServerLoad = async (event) => {
 	] = await Promise.all([
 		// Any signed-in reader may list the schemas.
 		offers.schema
-			? section(getSchemas(client), 'Could not load the schemas.')
+			? section(getSchemas(client), couldNotLoad('the content types'))
 			: Promise.resolve(null),
 		ifAdmin(offers.content, () =>
 			client.get<ListEnvelope<RecentEntry>>(`/api/admin/content?limit=${RECENT}&offset=0`),
@@ -191,7 +192,7 @@ export const load: PageServerLoad = async (event) => {
 	// it that failed is kept, so the dashboard says the page is missing and why.
 	const homeSlug = customization?.entitled ? customization.settings.home_page : '';
 	const homeRead = homeSlug
-		? await section(getCustomPage(client, homeSlug), 'Could not load the home page.')
+		? await section(getCustomPage(client, homeSlug), couldNotLoad('the home page'))
 		: null;
 	const homePage = homeRead?.ok ? homeRead.value : null;
 	const homeBlocks = homePage ? await resolveBlocks(client, homePage.blocks) : [];
@@ -303,7 +304,7 @@ export const actions: Actions = {
 		} catch (err) {
 			// A migration that fails names the statement that failed, and that
 			// sentence is the whole value of the message.
-			return fail(400, { error: actionError(err, 'Could not apply the migrations. Try again.') });
+			return actionFailure(err, 'Could not apply the migrations. Try again.');
 		}
 
 		// Back where the reader was, with the shell's count read again on arrival.

@@ -39,10 +39,10 @@ describe('AiSection', () => {
 	});
 
 	it('shows the not-enabled state when locked', () => {
-		const { queryByTestId, getByText } = setup({ state: 'locked' });
+		const { queryByTestId, getByText } = setup({ state: 'locked', upgradeUrl: '' });
 		expect(queryByTestId('body')).toBeNull();
 		expect(queryByTestId('not-enabled')).toBeTruthy();
-		expect(getByText('Not enabled on this instance.')).toBeTruthy();
+		expect(getByText('Not enabled on this engine.')).toBeTruthy();
 	});
 
 	it('heads its blocked state at the level the page asks for', () => {
@@ -54,7 +54,7 @@ describe('AiSection', () => {
 
 	it('names the role and the resource when forbidden', () => {
 		const { getByText, queryByTestId } = setup({ state: 'forbidden' });
-		expect(getByText('Your role cannot read AI providers.')).toBeTruthy();
+		expect(getByText('Only an admin or a super admin can open AI providers.')).toBeTruthy();
 		expect(queryByTestId('body')).toBeNull();
 	});
 
@@ -92,9 +92,19 @@ describe('AiSection', () => {
 		expect(getByRole('link', { name: 'Open providers' }).getAttribute('href')).toBe('/admin/ai/providers');
 	});
 
-	it('shows the banner on an engine error without the engine text', () => {
-		const { getByText } = setup({ state: 'error', message: 'Providers could not be read from the engine. This is not a report that there are none.' });
-		expect(getByText(/could not be read from the engine/)).toBeTruthy();
+	it('says a failed read once, with a way to try again', () => {
+		const { getAllByText, getByText } = setup({ state: 'error', message: 'Could not load providers.' });
+		expect(getAllByText('Could not load providers.')).toHaveLength(1);
+		expect(getByText('Try again')).toBeTruthy();
+	});
+
+	it('says a refused rate and an outage in the words every other page uses', () => {
+		const busy = setup({ state: 'busy' });
+		expect(busy.getByText('Too many requests')).toBeTruthy();
+		busy.unmount();
+		const down = setup({ state: 'unavailable' });
+		expect(down.getByText('Temporarily unavailable')).toBeTruthy();
+		expect(down.getByText(/AI providers did not load/)).toBeTruthy();
 	});
 
 	it('lets the layout say the plugin is absent over a page that read nothing', () => {

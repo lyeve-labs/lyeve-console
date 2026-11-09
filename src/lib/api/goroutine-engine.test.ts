@@ -104,14 +104,14 @@ describe('the tunable forms', () => {
 			const parsed = parsePoolForm(form({ size }));
 			expect('error' in parsed, size).toBe(true);
 		}
-		expect(parsePoolForm(form({ size: '5000' }))).toEqual({ error: 'Pool size must be between 1 and 4096.' });
+		expect(parsePoolForm(form({ size: '5000' }))).toEqual({ error: 'Enter a value from 1 to 4096 for pool size.' });
 	});
 
 	it('sends the parallel ceiling and timeout, and refuses a timeout over an hour', () => {
 		expect(parseParallelForm(form({ max_concurrent: '16', timeout: '45s' }))).toEqual({ body: { max_concurrent: 16, timeout: '45s' } });
-		expect(parseParallelForm(form({ max_concurrent: '16', timeout: '61m' }))).toEqual({ error: 'Timeout can be at most 1h.' });
-		expect(parseParallelForm(form({ max_concurrent: '16', timeout: '0s' }))).toEqual({ error: 'Timeout must be longer than zero.' });
-		expect(parseParallelForm(form({ max_concurrent: '2000', timeout: '1s' }))).toEqual({ error: 'Max concurrent must be between 1 and 1024.' });
+		expect(parseParallelForm(form({ max_concurrent: '16', timeout: '61m' }))).toEqual({ error: 'Enter at most 1h for timeout.' });
+		expect(parseParallelForm(form({ max_concurrent: '16', timeout: '0s' }))).toEqual({ error: 'Enter a duration longer than zero for timeout.' });
+		expect(parseParallelForm(form({ max_concurrent: '2000', timeout: '1s' }))).toEqual({ error: 'Enter a value from 1 to 1024 for max concurrent.' });
 	});
 
 	it('sends the async hook queue with the switch read from the checkbox', () => {
@@ -122,7 +122,7 @@ describe('the tunable forms', () => {
 		expect(parseAsyncHooksForm(form({ workers: '8', queue_size: '2048', timeout: '5s' }))).toEqual({
 			body: { workers: 8, queue_size: 2048, timeout: '5s', enabled: false },
 		});
-		expect(parseAsyncHooksForm(form({ workers: '8', queue_size: '70000', timeout: '5s' }))).toEqual({ error: 'Queue size must be between 1 and 65536.' });
-		expect(parseAsyncHooksForm(form({ workers: '8', queue_size: '64', timeout: '11m' }))).toEqual({ error: 'Timeout can be at most 10m.' });
+		expect(parseAsyncHooksForm(form({ workers: '8', queue_size: '70000', timeout: '5s' }))).toEqual({ error: 'Enter a value from 1 to 65536 for queue size.' });
+		expect(parseAsyncHooksForm(form({ workers: '8', queue_size: '64', timeout: '11m' }))).toEqual({ error: 'Enter at most 10m for timeout.' });
 	});
 });

@@ -30,7 +30,7 @@
 
 	const OPTIONS = [
 		...EXPIRY_PRESETS.map((d) => ({ value: String(d), label: `${d} days` })),
-		{ value: CUSTOM_EXPIRY, label: 'Pick a day' },
+		{ value: CUSTOM_EXPIRY, label: 'Choose a day' },
 	];
 
 	let choice = $state('30');

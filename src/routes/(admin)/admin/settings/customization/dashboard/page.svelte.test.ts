@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+
 import EditorPage from './+page.svelte';
+import { outlineSkips } from '$lib/test-outline';
 
 afterEach(cleanup);
 
@@ -14,6 +18,10 @@ function mount(widgets: unknown[] = [], custom = false, running: string[] = ['co
 				schemasGate: { state: 'ok' },
 				plugins: { state: 'named', running, withheld: [] },
 				user: { roles: ['admin'] },
+				gate: { state: 'ok' },
+				entitled: true,
+				pages: [],
+				homePage: '',
 			},
 			form: null,
 		} as never,
@@ -77,9 +85,13 @@ describe('dashboard widget controls', () => {
 				data: {
 					layout: { entitled: true, custom: true, widgets, updated_at: null },
 					schemas,
-					schemasGate: schemasRead === 'forbidden' ? { state: 'forbidden' } : schemasRead ? { state: 'ok' } : { state: 'error', message: 'Could not load schemas. Widgets keep the schemas they already use.' },
+					schemasGate: schemasRead === 'forbidden' ? { state: 'forbidden' } : schemasRead ? { state: 'ok' } : { state: 'error', message: 'Could not load content types. Widgets keep the content types they already use.' },
 					plugins: { state: 'named', running: ['content', 'media', 'audit'], withheld: [] },
 					user: { roles: ['admin'] },
+					gate: { state: 'ok' },
+					entitled: true,
+					pages: [],
+					homePage: '',
 				},
 				form: null,
 			} as never,
@@ -100,13 +112,83 @@ describe('dashboard widget controls', () => {
 
 	it('names the schema list in lower case inside the role refusal', () => {
 		const { container } = mountWith([], 'forbidden', []);
-		expect(container.textContent).toContain('Your role cannot open the schema list.');
+		expect(container.textContent).toContain('Your role cannot open the content type list.');
 	});
 
 	it('keeps the schemas a widget names on screen when the schema list was not read', () => {
 		const { container } = mountWith([{ id: 'b', type: 'entry_counts', schemas: ['orders'] }], false, []);
-		expect(container.textContent).toContain('Could not load schemas');
-		expect(container.textContent).not.toContain('No schemas to count yet');
+		expect(container.textContent).toContain('Could not load content types');
+		expect(container.textContent).not.toContain('No content types to count yet');
 		expect(container.querySelector('#widget-b-schemas')?.closest('div')?.parentElement?.textContent).toContain('orders');
+	});
+});
+
+const welcome = { slug: 'welcome', title: 'Welcome', roles: [], position: 0 };
+
+function tab(over: Record<string, unknown> = {}, form: unknown = null) {
+	return {
+		data: {
+			layout: { entitled: true, custom: false, widgets: [], updated_at: null },
+			schemas: ['posts'],
+			schemasGate: { state: 'ok' },
+			plugins: { state: 'named', running: ['content', 'media', 'audit'], withheld: [] },
+			user: { roles: ['admin'] },
+			gate: { state: 'ok' },
+			entitled: true,
+			pages: [welcome],
+			homePage: '',
+			...over,
+		},
+		form,
+	} as never;
+}
+
+// The page above the dashboard moved here from the customization page, so
+// the dashboard and what leads it are chosen in one place.
+describe('the page above the dashboard', () => {
+	it('offers the tenant pages above the widgets', () => {
+		const { container } = render(EditorPage, { props: tab() });
+		const select = container.querySelector('#home-page');
+		expect(select).toBeTruthy();
+		const widgets = screen.getByRole('heading', { name: 'Widgets' });
+		expect(select!.compareDocumentPosition(widgets) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	});
+
+	it('points at the Pages tab while there is no page to choose', () => {
+		const { container } = render(EditorPage, { props: tab({ pages: [] }) });
+		expect(container.querySelector('#home-page')).toBeNull();
+		expect(container.textContent).toContain('Create one under Pages first.');
+	});
+
+	it('shows a failed save beside its own form, not over the widgets', () => {
+		const { container } = render(EditorPage, { props: tab({}, { pagesError: 'Could not save the dashboard page. Try again.' }) });
+		const alert = screen.getByText('Could not save the dashboard page. Try again.');
+		const following = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+		expect(following(screen.getByRole('tablist'), alert)).toBe(true);
+		expect(following(alert, container.querySelector('#home-page')!)).toBe(true);
+	});
+
+	// Saving the page above the dashboard reruns the load, which used to copy
+	// the stored layout over the widgets being edited.
+	it('keeps unsaved widgets when the page above the dashboard is saved', async () => {
+		const { rerender } = render(EditorPage, { props: tab() });
+		await fireEvent.click(screen.getByRole('button', { name: 'Add text' }));
+		expect(screen.getByText('1. Text')).toBeTruthy();
+		await rerender(tab({ homePage: 'welcome' }, { homeSaved: true }));
+		expect(screen.getByText('1. Text')).toBeTruthy();
+	});
+});
+
+describe('the dashboard tab when customization is closed', () => {
+	it('says the engine did not answer rather than that customization is not enabled', () => {
+		const { container } = render(EditorPage, { props: tab({ gate: { state: 'unavailable' }, entitled: false }) });
+		expect(container.textContent).toContain('so customization did not load');
+		expect(screen.queryByRole('heading', { name: 'Widgets' })).toBeNull();
+	});
+
+	it('steps its headings down one level at a time while the feature is not enabled', () => {
+		const { container } = render(EditorPage, { props: tab({ entitled: false }) });
+		expect(container.querySelector('[data-testid="not-enabled"]')).toBeTruthy();
+		expect(outlineSkips(container)).toEqual([]);
 	});
 });

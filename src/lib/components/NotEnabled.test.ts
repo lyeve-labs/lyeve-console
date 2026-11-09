@@ -13,10 +13,10 @@ const licensing = licensingOf({
 });
 
 describe('NotEnabled', () => {
-	it('names the feature in a heading and says it is not enabled on this instance', () => {
+	it('names the feature in a heading and says it is not enabled on this engine', () => {
 		const { getByRole, getByTestId, getByText } = render(NotEnabled, { props: { title: 'Audit log' } });
 		expect(getByRole('heading', { name: 'Audit log' })).toBeTruthy();
-		expect(getByText('Not enabled on this instance.')).toBeTruthy();
+		expect(getByText('Not enabled on this engine.')).toBeTruthy();
 		expect(getByTestId('not-enabled')).toBeTruthy();
 	});
 
@@ -88,7 +88,7 @@ describe('NotEnabled', () => {
 		expect(queryByRole('link', { name: 'Turn it on' })).toBeNull();
 	});
 
-	it('follows the instance: no link on an engine that serves no license module', () => {
+	it('follows the engine: no link on an engine that serves no license module', () => {
 		const { queryByRole, getByTestId } = render(Host, { props: { licensing: NO_LICENSING } });
 		expect(getByTestId('not-enabled')).toBeTruthy();
 		expect(queryByRole('link')).toBeNull();
@@ -104,7 +104,7 @@ describe('NotEnabled', () => {
 			},
 		});
 		const marker = getByTestId('not-enabled');
-		expect(marker.textContent?.trim()).toBe('Not enabled on this instance');
+		expect(marker.textContent?.trim()).toBe('Not enabled on this engine');
 		expect(marker.getAttribute('title')).toBe('Creating a datasource is not enabled.');
 		expect(getByRole('link').getAttribute('href')).toBe('/admin/settings/license');
 	});
@@ -121,7 +121,7 @@ describe('NotEnabled', () => {
 
 	it('draws the compact form as plain text when no link is known', () => {
 		const { getByTestId, queryByRole } = render(Host, { props: { licensing: NO_LICENSING, compact: true } });
-		expect(getByTestId('not-enabled').textContent?.trim()).toBe('Not enabled on this instance');
+		expect(getByTestId('not-enabled').textContent?.trim()).toBe('Not enabled on this engine');
 		expect(queryByRole('link')).toBeNull();
 	});
 
@@ -130,7 +130,7 @@ describe('NotEnabled', () => {
 			props: { title: 'Audit log', description: 'Every change.', url: '/admin/settings/license' },
 		});
 		expect(container.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-			'Audit log Not enabled on this instance. Every change. How to enable it',
+			'Audit log Not enabled on this engine. Every change. How to enable it',
 		);
 	});
 });

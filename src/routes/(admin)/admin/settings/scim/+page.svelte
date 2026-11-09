@@ -20,7 +20,7 @@
 		CopyField,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import { confirmed, tracked } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, tracked } from '$lib/forms.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { KeyRound, Plus, RefreshCw, Trash2 } from '@lucide/svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
@@ -41,19 +41,11 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	/*
-	 * Each failure names the action that caused it. A drawer shows only its own
-	 * actions' failures, and only one that came back after it was opened, so a
-	 * failed delete never reads as a failure of the form opened next. The rest
-	 * show above the list.
-	 */
-	const failure = $derived(form as { error?: string; action?: string } | null);
-	let openedOver = $state.raw<unknown>(null);
-	function failedIn(actions: string[]): string | undefined {
-		if (!failure?.error || form === openedOver) return undefined;
-		return actions.includes(failure.action ?? '') ? failure.error : undefined;
-	}
-	const rowError = $derived(failure?.error && failure.action !== 'create' && failure.action !== 'rotate' ? failure.error : '');
+	// The create and rotate drawers each show their own failure, and the rest
+	// show above the list.
+	type Failure = { error?: string; action?: string } | null;
+	const failure = drawerFailure(() => form as Failure, ['create', 'rotate']);
+	const failedIn = (action: string) => (failure.drawer?.action === action ? failure.drawer.error : undefined);
 
 	// An admin may read the connections. Every write is the super admin's, so an
 	// admin is shown the list and no control that would only be refused.
@@ -97,12 +89,12 @@
 		token = '';
 		action = 'disable';
 		samlProvider = '';
-		openedOver = form;
+		failure.opened();
 		creating = true;
 	}
 
 	function openRotate(p: ScimProvider) {
-		openedOver = form;
+		failure.opened();
 		rotating = p;
 		newToken = '';
 	}
@@ -134,7 +126,7 @@
 		return confirmed(
 			`Delete SCIM connection ${p.name}?`,
 			'The identity provider stops being able to create or remove accounts here. Accounts it already created are left as they are.',
-			{ confirmLabel: 'Delete', success: `Deleted ${p.name}` },
+			{ confirmLabel: 'Delete', success: `${p.name} deleted.` },
 		);
 	}
 
@@ -163,8 +155,8 @@
 			absent="SCIM provisioning is not included in this build."
 		/>
 	{:else}
-		{#if rowError}
-			<Alert tone="danger">{rowError}</Alert>
+		{#if failure.page?.error}
+			<Alert tone="danger">{failure.page.error}</Alert>
 		{/if}
 		{#if !canWrite}
 			<Alert tone="brand">Only a super admin can add or remove a connection, or rotate its token.</Alert>
@@ -178,7 +170,7 @@
 			<SectionHeading level={2}>Where the directory sends its requests</SectionHeading>
 			<CopyField label="Base path" labelHidden value={SCIM_BASE_PATH} copyLabel="Copy base path" />
 			<p class="text-xs text-muted">
-				Give the directory this path, added to this instance's URL, and the bearer token from a connection below. The token is the only authentication these endpoints use.
+				Give the directory this path, added to this engine's URL, and the bearer token from a connection below. The token is the only authentication these endpoints use.
 			</p>
 		</section>
 
@@ -290,7 +282,7 @@
 		<div class="flex flex-col gap-4">
 			<!-- A refused save keeps the drawer open, so the reason has to be in
 			     it and not behind the panel on the page. -->
-			<FormErrors message={failedIn(['create'])} />
+			<FormErrors message={failedIn('create')} />
 			<Input
 				id="scim-name"
 				name="name"
@@ -354,7 +346,7 @@
 	<form id="scim-rotate-form" method="POST" action="?/rotate" use:enhance={saveTokenSubmit.enhance}>
 		<input type="hidden" name="id" value={rotating?.id ?? ''} />
 		<div class="flex flex-col gap-4">
-			<FormErrors message={failedIn(['rotate'])} />
+			<FormErrors message={failedIn('rotate')} />
 			<Alert tone="warn">
 				The old token stops working as soon as the new one is saved. Provisioning fails until you update the directory with the new token.
 			</Alert>

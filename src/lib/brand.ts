@@ -6,7 +6,7 @@
  * layout reads with the session. A signed-out page has no session, so the
  * root layout reads the public copy instead. The engine answers that for the
  * tenant it resolves without a session: the one the host it was reached on
- * maps to, or the only one there is. An install with several tenants that
+ * maps to, or the only one there is. An instance with several tenants that
  * reaches the engine under an internal name resolves none, and the page
  * keeps the product's own brand. Both copies arrive as `brand` in the page
  * data, and the nearest layout's wins.

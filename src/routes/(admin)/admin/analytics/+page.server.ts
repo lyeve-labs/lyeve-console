@@ -8,15 +8,16 @@ import {
 	getAnomalies
 } from '@lyeve-labs/client-rest';
 import { section } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 import { authedClient, loadUser } from '$lib/server/authz';
 
 /** What each part of the page says when its read failed for a reason it cannot name. */
 const FAILED = {
-	summary: 'Could not load the request summary.',
-	endpoints: 'Could not load the endpoint breakdown.',
-	methods: 'Could not load the method breakdown.',
-	agents: 'Could not load the user agent breakdown.',
-	anomalies: 'Could not load anomalies.',
+	summary: couldNotLoad('the request summary'),
+	endpoints: couldNotLoad('the endpoint breakdown'),
+	methods: couldNotLoad('the method breakdown'),
+	agents: couldNotLoad('the user agent breakdown'),
+	anomalies: couldNotLoad('anomalies'),
 } as const;
 
 export const load: PageServerLoad = async (event) => {

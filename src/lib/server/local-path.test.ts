@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { adminReturnPath, localPath } from './local-path';
 
 describe('localPath', () => {
-	it('keeps a path on this instance, query and all', () => {
+	it('keeps a path on this engine, query and all', () => {
 		expect(localPath('/admin/media?limit=25&offset=50', '/admin')).toBe(
 			'/admin/media?limit=25&offset=50'
 		);
@@ -13,7 +13,7 @@ describe('localPath', () => {
 	 * follows every one of these off the instance, which turns a control in the
 	 * admin header into an open redirect.
 	 */
-	it('refuses a target that leaves the instance', () => {
+	it('refuses a target that leaves the engine', () => {
 		expect(localPath('https://evil.example/admin', '/admin')).toBe('/admin');
 		expect(localPath('//evil.example/admin', '/admin')).toBe('/admin');
 		expect(localPath('/\\evil.example/admin', '/admin')).toBe('/admin');

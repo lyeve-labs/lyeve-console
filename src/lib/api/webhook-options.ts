@@ -7,6 +7,7 @@
  * read and an edit of the name keeps the options.
  */
 import type { HttpClient, Webhook } from '@lyeve-labs/client';
+import { checked } from '$lib/checkbox';
 
 /** A webhook as the engine answers it, options included. */
 export interface WebhookRecord extends Webhook {
@@ -73,13 +74,12 @@ function whole(raw: FormDataEntryValue | null): number | undefined {
  * blank box means keep it, and an empty value would remove the signature.
  */
 export function webhookBodyFrom(form: FormData): { body: WebhookBody } | { error: string; field?: string } {
-	const enabledRaw = form.get('enabled');
 	const body: WebhookBody = {
 		name: String(form.get('name') ?? ''),
 		url: String(form.get('url') ?? ''),
 		events: form.getAll('events').map(String),
 		schemas: form.getAll('schemas').map(String),
-		enabled: enabledRaw === 'true' || enabledRaw === 'on',
+		enabled: checked(form, 'enabled'),
 	};
 	const secret = String(form.get('secret') ?? '');
 	if (secret.trim()) body.secret = secret;

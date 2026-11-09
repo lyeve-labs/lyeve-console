@@ -1,7 +1,8 @@
 import type { LayoutServerLoad } from './$types';
 import { authedClient, loadUser } from '$lib/server/authz';
-import { AI_OK, aiSettingsGate, type AiGate } from '$lib/server/ai-load';
-import { getAiSettings, type AiSettings } from '$lib/api/ai';
+import { aiSettingsGate } from '$lib/server/ai-load';
+import { GATE_OK, section } from '$lib/api/gate';
+import { getAiSettings, type AiGate } from '$lib/api/ai';
 
 /**
  * The tenant switch, read once for every tab. It is the one route the switch
@@ -11,12 +12,7 @@ import { getAiSettings, type AiSettings } from '$lib/api/ai';
 export const load: LayoutServerLoad = async (event) => {
 	const user = await loadUser(event);
 	const client = authedClient(event);
-	let aiSettings: AiSettings | null = null;
-	let aiLayoutGate: AiGate = AI_OK;
-	try {
-		aiSettings = await getAiSettings(client);
-	} catch (err) {
-		aiLayoutGate = aiSettingsGate(err, event);
-	}
-	return { aiSettings, aiLayoutGate, isSuperAdmin: user.roles.includes('super_admin') };
+	const settings = await section(getAiSettings(client), (err) => aiSettingsGate(err, event));
+	const aiLayoutGate: AiGate = settings.ok ? GATE_OK : settings.gate;
+	return { aiSettings: settings.ok ? settings.value : null, aiLayoutGate, isSuperAdmin: user.roles.includes('super_admin') };
 };

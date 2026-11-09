@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
-import { flushSync } from 'svelte';
+import { flushSync, tick } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Schema } from '@lyeve-labs/client';
 import type { Problem } from '$lib/schema/editor';
@@ -193,6 +193,112 @@ describe('SchemaEditor', () => {
 		expect(props.schema.fields[1].localized).not.toBe(true);
 		expect(props.localizedCleared['f-title']).toBeTruthy();
 		expect(screen.getByText(/No longer translated per locale\./)).toBeTruthy();
+	});
+
+	it('gives a decimal a precision and a scale inside the engine bounds, and drops both on another type', async () => {
+		const { props } = setup();
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Type, title' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'decimal' }));
+		const precision = screen.getByLabelText('Precision') as HTMLInputElement;
+		const scale = screen.getByLabelText('Scale') as HTMLInputElement;
+		expect(precision.value).toBe('18');
+		expect(scale.value).toBe('2');
+		expect(precision.min).toBe('1');
+		expect(precision.max).toBe('38');
+
+		await fireEvent.input(precision, { target: { value: '50' } });
+		expect(props.schema.fields[1].precision).toBe(38);
+		await fireEvent.input(scale, { target: { value: '40' } });
+		expect(props.schema.fields[1].scale).toBe(30);
+		await fireEvent.input(scale, { target: { value: '4' } });
+		await fireEvent.input(precision, { target: { value: '4' } });
+		expect(props.schema.fields[1].precision).toBe(4);
+		expect(props.schema.fields[1].scale).toBe(4);
+
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Type, title' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'text' }));
+		expect('precision' in props.schema.fields[1]).toBe(false);
+		expect('scale' in props.schema.fields[1]).toBe(false);
+		expect(screen.queryByLabelText('Precision')).toBeNull();
+	});
+
+	it('leaves the scale alone while a precision is typed one digit at a time', async () => {
+		const schema = posts();
+		schema.fields[1] = { ...schema.fields[1], field_type: 'decimal', precision: 10, scale: 4, localized: undefined };
+		const { props } = setup({ schema });
+		const precision = screen.getByLabelText('Precision') as HTMLInputElement;
+		await fireEvent.input(precision, { target: { value: '2' } });
+		await fireEvent.input(precision, { target: { value: '20' } });
+		expect(props.schema.fields[1].precision).toBe(20);
+		expect(props.schema.fields[1].scale).toBe(4);
+	});
+
+	it('shows the value it stored after bringing a typed one inside the bounds', async () => {
+		const schema = posts();
+		schema.fields[1] = { ...schema.fields[1], field_type: 'decimal', precision: 38, scale: 30, localized: undefined };
+		const { props } = setup({ schema });
+		const precision = screen.getByLabelText('Precision') as HTMLInputElement;
+		const scale = screen.getByLabelText('Scale') as HTMLInputElement;
+		precision.value = '50';
+		await fireEvent.input(precision);
+		scale.value = '45';
+		await fireEvent.input(scale);
+		await tick();
+		expect(props.schema.fields[1].precision).toBe(38);
+		expect(precision.value).toBe('38');
+		expect(props.schema.fields[1].scale).toBe(30);
+		expect(scale.value).toBe('30');
+	});
+
+	it('steps from the stored value after bringing a typed one inside the bounds', async () => {
+		const schema = posts();
+		schema.fields[1] = { ...schema.fields[1], field_type: 'decimal', precision: 38, scale: 2, localized: undefined };
+		const { props } = setup({ schema });
+		const precision = screen.getByLabelText('Precision') as HTMLInputElement;
+		precision.value = '50';
+		await fireEvent.input(precision);
+		await tick();
+		const box = precision.closest('[data-field]') as HTMLElement;
+		await fireEvent.click(within(box).getByRole('button', { name: 'Decrease precision' }));
+		expect(props.schema.fields[1].precision).toBe(37);
+		expect(precision.value).toBe('37');
+	});
+
+	it('shows an omitted scale as the precision when the precision is below 2', () => {
+		const schema = posts();
+		schema.fields[1] = { ...schema.fields[1], field_type: 'decimal', precision: 1, localized: undefined };
+		setup({ schema });
+		expect((screen.getByLabelText('Scale') as HTMLInputElement).value).toBe('1');
+	});
+
+	it('says what precision and scale mean in their hints', () => {
+		const schema = posts();
+		schema.fields[1] = { ...schema.fields[1], field_type: 'decimal', precision: 10, scale: 2, localized: undefined };
+		setup({ schema });
+		expect(screen.getByText('The most digits a value can have, from 1 to 38.')).toBeTruthy();
+		expect(screen.getByText('How many of those digits come after the decimal point, from 0 to 10.')).toBeTruthy();
+	});
+
+	it('shows the scale problem on the scale box', () => {
+		const schema = posts();
+		schema.fields[1] = { ...schema.fields[1], field_type: 'decimal', precision: 2, scale: 4, localized: undefined };
+		setup({
+			schema,
+			problems: [{ fieldId: 'f-title', target: 'decimal-scale-f-title', where: 'Field title', message: 'Enter a scale of at most 2.' }],
+		});
+		const scale = screen.getByLabelText('Scale') as HTMLInputElement;
+		expect(scale.getAttribute('aria-invalid')).toBe('true');
+		expect(screen.getByText('Enter a scale of at most 2.')).toBeTruthy();
+	});
+
+	it('finds the integer row, not number, when the type search reads int', async () => {
+		setup();
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Type, title' }));
+		const search = screen.getByPlaceholderText('Search');
+		await fireEvent.input(search, { target: { value: 'int' } });
+		const names = screen.getAllByRole('option').map((o) => o.textContent?.trim());
+		expect(names).toContain('integer');
+		expect(names).not.toContain('number');
 	});
 
 	it('locks every control for a role that cannot write', () => {

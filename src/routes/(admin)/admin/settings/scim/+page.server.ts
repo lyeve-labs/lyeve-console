@@ -1,23 +1,22 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import {
 	MIN_TOKEN_LENGTH,
-	SCIM_OK,
 	createProvider,
 	deleteProvider,
 	deprovisionAction,
 	listProviders,
 	rotateToken,
-	scimGate,
-	type ScimGate,
 	type ScimProvider,
 } from '$lib/api/scim';
+import { type Gate, GATE_OK, gateOf, section } from '$lib/api/gate';
 import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { listProviders as listSamlProviders, samlGate } from '$lib/api/saml';
+import { listProviders as listSamlProviders } from '$lib/api/saml';
+import { asked } from '$lib/server/asked';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -40,7 +39,7 @@ async function samlLink(event: Parameters<PageServerLoad>[0], plugins: Parameter
 		const page = await listSamlProviders(authedClient(event), MAX_LIMIT, 0);
 		return { state: 'ok', providers: (page.data ?? []).map((p) => ({ id: p.id, name: p.name })) };
 	} catch (err) {
-		return SAML_OFF_STATES.has(samlGate(err).state) ? { state: 'off' } : { state: 'failed' };
+		return SAML_OFF_STATES.has(gateOf(err, 'Could not load identity providers.').state) ? { state: 'off' } : { state: 'failed' };
 	}
 }
 
@@ -56,31 +55,31 @@ export const load: PageServerLoad = async (event) => {
 			limit,
 			offset,
 			hasMore: false,
-			gate: { state: 'absent' } as ScimGate,
+			gate: { state: 'absent' } as Gate,
 			saml: { state: 'off' } as SamlLink,
 		};
 	}
 
 	const client = authedClient(event);
-	let providers: ScimProvider[] = [];
-	let total: number | null = null;
-	let hasMore = false;
-	let gate: ScimGate = SCIM_OK;
-	try {
-		const page = pageOf(await listProviders(client, limit + 1, offset), limit, offset);
-		providers = page.rows;
-		total = page.total;
-		hasMore = page.hasMore;
-	} catch (err) {
-		gate = scimGate(err);
-	}
-	if (gate.state === 'ok') {
-		const back = pastEndOffset(providers.length, limit, offset, total);
+	const read = await section(
+		listProviders(client, limit + 1, offset).then((res) => pageOf(res, limit, offset)),
+		'Could not load SCIM connections.',
+	);
+	if (read.ok) {
+		const back = pastEndOffset(read.value.rows.length, limit, offset, read.value.total);
 		if (back !== null) redirect(307, withOffset(event.url, back));
 	}
 
-	const saml = gate.state === 'ok' ? await samlLink(event, plugins) : ({ state: 'off' } as SamlLink);
-	return { providers, total, limit, offset, hasMore, gate, saml };
+	const saml = read.ok ? await samlLink(event, plugins) : ({ state: 'off' } as SamlLink);
+	return {
+		providers: read.ok ? read.value.rows : [],
+		total: read.ok ? read.value.total : null,
+		limit,
+		offset,
+		hasMore: read.ok && read.value.hasMore,
+		gate: read.ok ? GATE_OK : read.gate,
+		saml,
+	};
 };
 
 export const actions: Actions = {
@@ -112,7 +111,7 @@ export const actions: Actions = {
 				...(samlProvider ? { saml_provider_id: samlProvider } : {}),
 			});
 		} catch (err) {
-			return fail(400, { action: 'create', error: actionError(err, 'Could not create the connection. Try again.') });
+			return tagged('create', actionFailure(err, 'Could not create the connection. Try again.'));
 		}
 		return { saved: name };
 	},
@@ -133,22 +132,29 @@ export const actions: Actions = {
 		try {
 			await rotateToken(client, id, token);
 		} catch (err) {
-			return fail(400, { action: 'rotate', error: actionError(err, 'Could not rotate the token. Try again.') });
+			return tagged('rotate', actionFailure(err, 'Could not rotate the token. Try again.'));
 		}
 		return { rotated: id };
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const client = authedClient(event);
-		const form = await event.request.formData();
-		const id = String(form.get('id') ?? '');
-		if (!id) return fail(400, { action: 'delete', error: 'This form is missing its connection. Reload the page and try again.' });
-		try {
-			await deleteProvider(client, id);
-		} catch (err) {
-			return fail(400, { action: 'delete', error: actionError(err, 'Could not delete the connection. Try again.') });
-		}
-		return { removed: id };
-	},
+	delete: asked(
+		{
+			question: 'Delete this SCIM connection?',
+			detail: 'The identity provider stops being able to create or remove accounts here. Accounts it already created are left as they are.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const client = authedClient(event);
+			const form = await event.request.formData();
+			const id = String(form.get('id') ?? '');
+			if (!id) return fail(400, { action: 'delete', error: 'This form is missing its connection. Reload the page and try again.' });
+			try {
+				await deleteProvider(client, id);
+			} catch (err) {
+				return tagged('delete', actionFailure(err, 'Could not delete the connection. Try again.'));
+			}
+			return { removed: id };
+		},
+	),
 };

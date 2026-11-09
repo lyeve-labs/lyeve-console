@@ -23,6 +23,23 @@ export function methodTone(method: string): StatusTone {
 	}
 }
 
+/**
+ * The tone a background job's or a run's status badge carries: finished,
+ * failed, still going, or waiting. A data export job and an event replay run
+ * report the same words, so both read through this one map.
+ */
+export function jobTone(status: string): StatusTone {
+	if (status === 'completed') return 'success';
+	if (status === 'failed') return 'danger';
+	if (status === 'running') return 'warn';
+	return 'neutral';
+}
+
+/** Tells the events that fire after a write from the ones that fire before it. */
+export function eventTone(event: string): StatusTone {
+	return event.startsWith('after_') ? 'success' : 'warn';
+}
+
 /** The tone a content entry's status badge carries: live, waiting, or anything else. */
 export function entryTone(status: string): StatusTone {
 	if (status === 'published') return 'success';

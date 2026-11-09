@@ -1,61 +1,16 @@
 // @vitest-environment jsdom
-import { render, cleanup, fireEvent } from '@testing-library/svelte';
-import { tick } from 'svelte';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, cleanup } from '@testing-library/svelte';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({
 	goto: vi.fn(async () => {}),
 	invalidateAll: vi.fn(async () => {}),
 }));
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 
 import ObservabilityPage from './+page.svelte';
 
-/**
- * The live tail opens an EventSource as soon as the page mounts and jsdom has
- * none. The stub records its listeners so a log entry can be pushed through the
- * same path the engine's stream uses.
- */
-class StubEventSource {
-	static CONNECTING = 0;
-	static OPEN = 1;
-	static CLOSED = 2;
-	static last: StubEventSource | null = null;
-	static all: StubEventSource[] = [];
-	listeners = new Map<string, ((e: MessageEvent) => void)[]>();
-	closed = false;
-	readyState = StubEventSource.CONNECTING;
-
-	constructor(public url: string) {
-		StubEventSource.last = this;
-		StubEventSource.all.push(this);
-	}
-
-	addEventListener(type: string, fn: (e: MessageEvent) => void) {
-		this.listeners.set(type, [...(this.listeners.get(type) ?? []), fn]);
-	}
-
-	emit(type: string, data: unknown) {
-		for (const fn of this.listeners.get(type) ?? []) {
-			fn({ data: JSON.stringify(data) } as MessageEvent);
-		}
-	}
-
-	close() {
-		this.closed = true;
-		this.readyState = StubEventSource.CLOSED;
-	}
-}
-
-beforeEach(() => {
-	StubEventSource.last = null;
-	StubEventSource.all = [];
-	vi.stubGlobal('EventSource', StubEventSource);
-});
-
 afterEach(() => {
 	cleanup();
-	vi.unstubAllGlobals();
 });
 
 // The engine's pool health snapshot as it serializes it: one flat object,
@@ -84,47 +39,12 @@ function data(overrides: Record<string, unknown> = {}) {
 		latency: ok({ slowest: [], total: 0 }),
 		top: 20,
 		goroutines: 42,
-		goroutineEngine: engine(),
-		logTail: true,
 		...overrides,
 	};
 }
 
-const POOL_VIEW = { size: 64, active: 3, waiting: 1, completed: 900, failed: 2, dropped: 0, avg_latency: '1.2ms', task_timeout: '30s' };
-const PARALLEL_VIEW = { max_concurrent: 8, timeout: '30s' };
-const ASYNC_VIEW = { enabled: true, workers: 4, queue_size: 1024, timeout: '5s', queued: 0, running: 1, overflow: 0, dropped: 0 };
-const SNAPSHOT = {
-	total: 12,
-	runtime_total: 42,
-	max_goroutines: 10000,
-	leak_threshold: '5m0s',
-	by_owner: {
-		engine: { total: 4, oldest: '1m2s' },
-		'cron': { total: 7, oldest: '3m10s' },
-		'email': { total: 1, oldest: '2s' },
-	},
-};
-
-function engine(over: Record<string, unknown> = {}) {
-	return {
-		snapshot: SNAPSHOT,
-		pool: POOL_VIEW,
-		parallel: PARALLEL_VIEW,
-		asyncHooks: ASYNC_VIEW,
-		byOwner: [
-			{ owner: 'cron', total: 7, oldest: '3m10s' },
-			{ owner: 'engine', total: 4, oldest: '1m2s' },
-			{ owner: 'email', total: 1, oldest: '2s' },
-		],
-		superAdmin: true,
-		licensed: true,
-		...over,
-	};
-}
-
-const props = (over: Record<string, unknown> = {}, form: Record<string, unknown> | null = null) => ({
+const props = (over: Record<string, unknown> = {}) => ({
 	data: data(over) as never,
-	form: form as never,
 });
 
 const health = (over: Record<string, unknown>) => ({
@@ -149,7 +69,7 @@ describe('Pool health badge', () => {
 		expect(text).toContain('Open 8');
 		expect(text).toContain('In use 3');
 		expect(text).toContain('Idle 5');
-		expect(text).toContain('1.2ms');
+		expect(text).toContain('1.2 ms');
 	});
 
 	it('still reads Unhealthy when the engine says so, metrics or not', () => {
@@ -168,243 +88,6 @@ describe('Pool health badge', () => {
 		expect(container.textContent).toContain('Unhealthy');
 		expect(container.textContent).toContain('ping took 900ms');
 		expect(container.textContent).toContain('Wait count');
-	});
-});
-
-/*
- * The stream carries slog's severity integer, not the label, so the badge reads
- * the level in either shape.
- */
-describe('Live log tail', () => {
-	// The tail keys its rows on the sequence, which the engine makes unique.
-	let sequence = 0;
-	function push(level: number, message = 'a message') {
-		StubEventSource.last?.emit('log', {
-			timestamp: '2026-01-01T00:00:00Z',
-			level,
-			message,
-			sequence: ++sequence,
-		});
-	}
-
-	it('renders an entry whose level arrives as an integer', async () => {
-		const { container, component } = render(ObservabilityPage, { props: props() });
-		void component;
-
-		push(8, 'the database went away');
-		await Promise.resolve();
-
-		expect(container.textContent).toContain('the database went away');
-	});
-
-	it('names the severity rather than printing the raw integer', async () => {
-		const { container } = render(ObservabilityPage, { props: props() });
-
-		push(4, 'slow query');
-		await Promise.resolve();
-
-		expect(container.textContent).toContain('WARN');
-		expect(container.textContent).not.toContain('>4<');
-	});
-
-	it('survives every level the engine emits', async () => {
-		const { container } = render(ObservabilityPage, { props: props() });
-
-		for (const level of [-4, 0, 4, 8]) push(level, `entry ${level}`);
-		await Promise.resolve();
-
-		for (const label of ['DEBUG', 'INFO', 'WARN', 'ERROR']) {
-			expect(container.textContent).toContain(label);
-		}
-	});
-});
-
-/*
- * A filter change is a close followed by a reopen with the new filter in the
- * URL, the keyword waits for the typing to pause, and only unmount stops the
- * reopening. A cleanup that ends the tail for good on a filter change would
- * leave the badge reading Connected over a closed stream.
- */
-describe('Live log tail filters', () => {
-	const badge = (container: HTMLElement) =>
-		[...container.querySelectorAll('span')].find((el) => /^(Connected|Connecting|Refused)$/.test(el.textContent?.trim() ?? ''))?.textContent?.trim();
-
-	function connect() {
-		StubEventSource.last?.emit('open', null);
-	}
-
-	beforeEach(() => {
-		vi.useFakeTimers();
-	});
-
-	afterEach(() => {
-		vi.useRealTimers();
-	});
-
-	it('opens one stream on mount and reads Connected once it opens', async () => {
-		const { container } = render(ObservabilityPage, { props: props() });
-		expect(StubEventSource.all).toHaveLength(1);
-		expect(StubEventSource.last?.url).toBe('/api/admin/logs/stream?min_level=info');
-		expect(badge(container)).toBe('Connecting');
-
-		connect();
-		await tick();
-		expect(badge(container)).toBe('Connected');
-	});
-
-	it('reopens the stream with the keyword after the typing pauses, not per keystroke', async () => {
-		const { container } = render(ObservabilityPage, { props: props() });
-		connect();
-		await tick();
-		const first = StubEventSource.last as StubEventSource;
-		const input = container.querySelector('#tail-keyword') as HTMLInputElement;
-
-		for (const typed of ['e', 'er', 'err']) {
-			await fireEvent.input(input, { target: { value: typed } });
-			vi.advanceTimersByTime(100);
-			await tick();
-		}
-		expect(StubEventSource.all).toHaveLength(1);
-		expect(first.closed).toBe(false);
-
-		vi.advanceTimersByTime(300);
-		await tick();
-
-		expect(first.closed).toBe(true);
-		expect(StubEventSource.all).toHaveLength(2);
-		expect(StubEventSource.last?.url).toContain('keyword=err');
-		expect(StubEventSource.last?.url).toContain('min_level=info');
-		expect(badge(container)).toBe('Connecting');
-
-		connect();
-		await tick();
-		expect(badge(container)).toBe('Connected');
-	});
-
-	it('applies the keyword at once on Enter', async () => {
-		const { container } = render(ObservabilityPage, { props: props() });
-		const first = StubEventSource.last as StubEventSource;
-		const input = container.querySelector('#tail-keyword') as HTMLInputElement;
-
-		await fireEvent.input(input, { target: { value: 'timeout' } });
-		await fireEvent.keyDown(input, { key: 'Enter' });
-		await tick();
-
-		expect(first.closed).toBe(true);
-		expect(StubEventSource.all).toHaveLength(2);
-		expect(StubEventSource.last?.url).toContain('keyword=timeout');
-
-		// The debounce timer that was pending sets the same value, so it must
-		// not open a third stream.
-		vi.advanceTimersByTime(300);
-		await tick();
-		expect(StubEventSource.all).toHaveLength(2);
-	});
-
-	it('reopens the stream with the new minimum level on a level pick', async () => {
-		const { container } = render(ObservabilityPage, { props: props() });
-		connect();
-		await tick();
-		const first = StubEventSource.last as StubEventSource;
-
-		const option = [...container.querySelectorAll('#tail-level [role="radio"]')].find((el) => el.textContent?.includes('ERROR'));
-		expect(option).toBeTruthy();
-		await fireEvent.click(option as HTMLElement);
-		await tick();
-
-		expect(first.closed).toBe(true);
-		expect(StubEventSource.all).toHaveLength(2);
-		expect(StubEventSource.last?.url).toBe('/api/admin/logs/stream?min_level=error');
-		expect(badge(container)).toBe('Connecting');
-
-		// Lines keep arriving on the new stream.
-		connect();
-		StubEventSource.last?.emit('log', { timestamp: '2026-01-01T00:00:00Z', level: 8, message: 'after the pick', sequence: 1 });
-		await tick();
-		expect(badge(container)).toBe('Connected');
-		expect(container.textContent).toContain('after the pick');
-	});
-
-	// A refresh, a latency depth and a saved tunable each hand the page new
-	// data. The tail must not close, empty and reopen on any of them.
-	it('keeps one stream and its entries when the page data changes', async () => {
-		const { container, rerender } = render(ObservabilityPage, { props: props() });
-		connect();
-		StubEventSource.last?.emit('log', { timestamp: '2026-01-01T00:00:00Z', level: 0, message: 'kept across a refresh', sequence: 1 });
-		await tick();
-		const first = StubEventSource.last as StubEventSource;
-
-		await rerender(props({ top: 50, goroutines: 43 }));
-		await tick();
-
-		expect(StubEventSource.all).toHaveLength(1);
-		expect(first.closed).toBe(false);
-		expect(container.textContent).toContain('kept across a refresh');
-		expect(badge(container)).toBe('Connected');
-	});
-
-	it('closes the stream on unmount and does not reopen it', async () => {
-		const { unmount } = render(ObservabilityPage, { props: props() });
-		connect();
-		await tick();
-		const first = StubEventSource.last as StubEventSource;
-
-		unmount();
-		await tick();
-		vi.advanceTimersByTime(5000);
-		await tick();
-
-		expect(first.closed).toBe(true);
-		expect(StubEventSource.all).toHaveLength(1);
-	});
-
-	// The browser retries a stream that dropped after it opened. Opening a
-	// second one beside it would hold two tails open.
-	it('leaves a dropped stream to the browser to reopen', async () => {
-		const { container } = render(ObservabilityPage, { props: props() });
-		const first = StubEventSource.last as StubEventSource;
-		connect();
-		await tick();
-
-		first.readyState = StubEventSource.CONNECTING;
-		first.emit('error', null);
-		await tick();
-		vi.advanceTimersByTime(5000);
-		await tick();
-
-		expect(first.closed).toBe(false);
-		expect(StubEventSource.all).toHaveLength(1);
-		expect(badge(container)).toBe('Connecting');
-	});
-
-	// A refused stream is closed for good. Retrying it on a timer repeated the
-	// refusal every three seconds and read as a connection about to come back.
-	it('says a refused stream was refused and waits for the reader to try again', async () => {
-		const { container, getByRole } = render(ObservabilityPage, { props: props() });
-		const first = StubEventSource.last as StubEventSource;
-
-		first.readyState = StubEventSource.CLOSED;
-		first.emit('error', null);
-		await tick();
-		vi.advanceTimersByTime(10_000);
-		await tick();
-
-		expect(StubEventSource.all).toHaveLength(1);
-		expect(badge(container)).toBe('Refused');
-		expect(container.textContent).toContain('Could not connect to the live log tail');
-
-		await fireEvent.click(getByRole('button', { name: /try again/i }));
-		await tick();
-		expect(StubEventSource.all).toHaveLength(2);
-		expect(StubEventSource.last?.url).toBe('/api/admin/logs/stream?min_level=info');
-	});
-
-	it('opens no stream while the logging plugin does not run', async () => {
-		const { container } = render(ObservabilityPage, { props: props({ logTail: false }) });
-		await tick();
-
-		expect(StubEventSource.all).toHaveLength(0);
-		expect(container.textContent).toContain('The logging plugin is not running on this instance, so the live log tail is not available.');
 	});
 });
 
@@ -446,173 +129,6 @@ describe('Page shape', () => {
 });
 
 /*
- * The engine's scaling primitives are one section: the four views as tiles,
- * the tracked goroutines by owner, and the three tunables as forms. The views
- * are readable on every install. The forms need super_admin and nothing else,
- * and say so instead of failing.
- */
-describe('Goroutine engine', () => {
-	const section = (container: HTMLElement) => container.querySelector('[data-testid="goroutine-engine"]') as HTMLElement;
-	const fieldsets = (container: HTMLElement) => [...section(container).querySelectorAll('fieldset')] as HTMLFieldSetElement[];
-
-	it('wears the Beta badge and renders the four views as tiles', () => {
-		const { container } = render(ObservabilityPage, { props: props() });
-		const el = section(container);
-		expect(el.querySelector('h2')?.textContent).toContain('Goroutine engine');
-		expect([...el.querySelectorAll('span')].some((s) => s.textContent?.trim() === 'Beta')).toBe(true);
-
-		const views = el.querySelector('[data-testid="goroutine-views"]') as HTMLElement;
-		for (const label of ['Tracked', 'Runtime', 'Ceiling', 'Leak threshold', 'Size', 'Active', 'Waiting', 'Completed', 'Failed', 'Dropped', 'Avg latency', 'Task timeout', 'Max concurrent', 'Enabled', 'Workers', 'Queue size', 'Queued', 'Running', 'Overflow']) {
-			expect(views.textContent, label).toContain(label);
-		}
-		for (const value of ['10000', '5m', '64', '900', '1.2 ms', '1024', 'On']) {
-			expect(views.textContent, value).toContain(value);
-		}
-	});
-
-	it('lists the owners with the largest first', () => {
-		const { container } = render(ObservabilityPage, { props: props() });
-		const rows = [...section(container).querySelectorAll('[data-testid="goroutine-owners"] tbody tr')];
-		expect(rows.map((r) => r.querySelector('td')?.textContent?.trim())).toEqual(['cron', 'engine', 'email']);
-		expect(rows[0].textContent).toContain('7');
-		expect(rows[0].textContent).toContain('3m10s');
-	});
-
-	it('says when nothing is tracked instead of an empty table', () => {
-		const { container } = render(ObservabilityPage, {
-			props: props({ goroutineEngine: engine({ snapshot: { total: 3, runtime_total: 3 }, byOwner: [] }) }),
-		});
-		expect(section(container).querySelector('[data-testid="goroutine-owners"]')).toBeNull();
-		expect(section(container).textContent).toContain('No goroutines with an owner yet');
-	});
-
-	it('opens the forms on the live values and enables them for a super admin', () => {
-		const { container } = render(ObservabilityPage, { props: props() });
-		expect(fieldsets(container)).toHaveLength(3);
-		for (const fs of fieldsets(container)) expect(fs.disabled).toBe(false);
-		expect((container.querySelector('input[name="size"]') as HTMLInputElement).value).toBe('64');
-		expect((container.querySelector('input[name="max_concurrent"]') as HTMLInputElement).value).toBe('8');
-		expect((container.querySelector('input[name="timeout"]') as HTMLInputElement).value).toBe('30s');
-		expect((container.querySelector('input[name="workers"]') as HTMLInputElement).value).toBe('4');
-		expect((container.querySelector('input[name="queue_size"]') as HTMLInputElement).value).toBe('1024');
-		expect((container.querySelector('input[name="enabled"]') as HTMLInputElement).checked).toBe(true);
-		expect(section(container).querySelector('[data-testid="not-enabled"]')).toBeNull();
-		expect(section(container).querySelector('[data-testid="goroutine-license-note"]')).toBeNull();
-	});
-
-	// The role and the plugin's tuning flag disable a form. Neither draws the
-	// generic not-enabled notice.
-	it('draws no not-enabled notice in this section for either role', () => {
-		for (const superAdmin of [true, false]) {
-			const { container } = render(ObservabilityPage, {
-				props: props({ goroutineEngine: engine({ superAdmin }) }),
-			});
-			expect(section(container).querySelector('[data-testid="not-enabled"]')).toBeNull();
-		}
-	});
-
-	it('disables the forms for an admin who is not super admin, with the reason', () => {
-		const { container } = render(ObservabilityPage, {
-			props: props({ goroutineEngine: engine({ superAdmin: false }) }),
-		});
-		for (const fs of fieldsets(container)) expect(fs.disabled).toBe(true);
-		expect(section(container).querySelector('[data-testid="goroutine-role-note"]')?.textContent).toContain('super admin');
-		// The views stay: the reads are not gated.
-		expect(section(container).querySelector('[data-testid="goroutine-views"]')?.textContent).toContain('Tracked');
-	});
-
-	it('disables the forms for a super admin when tuning is not licensed, with the reason', () => {
-		const { container } = render(ObservabilityPage, {
-			props: props({ goroutineEngine: engine({ licensed: false }) }),
-		});
-		expect(fieldsets(container)).toHaveLength(3);
-		for (const fs of fieldsets(container)) expect(fs.disabled).toBe(true);
-		const note = section(container).querySelector('[data-testid="goroutine-license-note"]') as HTMLElement;
-		expect(note.textContent).toContain('Changing these settings on a running server needs a license that includes tuning.');
-		expect(note.querySelector('a')?.getAttribute('href')).toBe('/admin/settings/license');
-		expect(section(container).querySelector('[data-testid="goroutine-role-note"]')).toBeNull();
-		// Every reading stays: only the writes are licensed.
-		const views = section(container).querySelector('[data-testid="goroutine-views"]') as HTMLElement;
-		for (const label of ['Tracked', 'Size', 'Max concurrent', 'Workers']) expect(views.textContent, label).toContain(label);
-		expect((container.querySelector('input[name="size"]') as HTMLInputElement).value).toBe('64');
-	});
-
-	it('states both reasons when the session is not super admin and tuning is not licensed', () => {
-		const { container } = render(ObservabilityPage, {
-			props: props({ goroutineEngine: engine({ superAdmin: false, licensed: false }) }),
-		});
-		for (const fs of fieldsets(container)) expect(fs.disabled).toBe(true);
-		expect(section(container).querySelector('[data-testid="goroutine-role-note"]')).not.toBeNull();
-		expect(section(container).querySelector('[data-testid="goroutine-license-note"]')).not.toBeNull();
-	});
-
-	it('renders a 402 as the license refusal on the form that asked, not as an error', () => {
-		const { container } = render(ObservabilityPage, {
-			props: props({}, { form: 'pool', refused: { kind: 'feature', feature: 'example-feature', plugin: 'example', upgradeUrl: '' } }),
-		});
-		const forms = [...section(container).querySelectorAll('form')];
-		const notice = forms[0].querySelector('[data-testid="refusal-notice"]') as HTMLElement;
-		expect(notice.textContent).toContain('This needs example-feature');
-		expect(notice.textContent).toContain('Nothing was changed.');
-		expect(forms[0].querySelector('[role="alert"]')?.textContent ?? '').not.toContain('Failed to');
-		expect(forms[1].querySelector('[data-testid="refusal-notice"]')).toBeNull();
-		expect(forms[2].querySelector('[data-testid="refusal-notice"]')).toBeNull();
-	});
-
-	it('renders a refusal inline on the form that asked, and nowhere else', () => {
-		const { container } = render(ObservabilityPage, {
-			props: props({}, { form: 'parallel', error: 'Could not save the parallel engine settings. Try again.' }),
-		});
-		const forms = [...section(container).querySelectorAll('form')];
-		expect(forms).toHaveLength(3);
-		expect(forms[1].textContent).toContain('Could not save the parallel engine settings');
-		// The failure arrives in a region mounted before it, which a screen
-		// reader announces reliably.
-		expect(forms[1].querySelector('.contents[aria-live="assertive"]')?.textContent).toContain('Could not save the parallel engine settings');
-		expect(forms[0].textContent).not.toContain('Failed to');
-		expect(forms[2].textContent).not.toContain('Failed to');
-	});
-
-	it('renders a 422 inline with the plugin bounds message', () => {
-		const { container } = render(ObservabilityPage, {
-			props: props({}, { form: 'pool', error: 'pool size must be between 1 and 4096' }),
-		});
-		const forms = [...section(container).querySelectorAll('form')];
-		expect(forms[0].querySelector('[role="alert"]')?.textContent).toContain('between 1 and 4096');
-	});
-
-	it('reports a save on the form that made it', async () => {
-		const { container } = render(ObservabilityPage, {
-			props: props({}, { form: 'asyncHooks', saved: true, view: ASYNC_VIEW }),
-		});
-		const forms = [...section(container).querySelectorAll('form')];
-		await vi.waitFor(() => expect(forms[2].textContent).toContain('Applied'));
-		expect(forms[0].textContent).not.toContain('Applied');
-	});
-
-	// The confirmation clears itself, so the caveat it carried would clear with
-	// it. The caveat is a standing fact and stays outside the alert.
-	it('keeps the restart caveat outside the confirmation that clears itself', async () => {
-		const { container } = render(ObservabilityPage, {
-			props: props({}, { form: 'pool', saved: true, view: POOL_VIEW }),
-		});
-		const form = [...section(container).querySelectorAll('form')][0];
-		const alert = () => [...form.querySelectorAll('[aria-live="polite"], [role="alert"]')].map((el) => el.textContent ?? '').join(' ');
-		await vi.waitFor(() => expect(alert()).toContain('Applied'));
-		expect(alert()).not.toContain('lasts until the engine restarts');
-		expect(form.textContent).toContain('The change lasts until the engine restarts.');
-	});
-
-	it('says the engine did not answer instead of drawing empty tiles', () => {
-		const { container } = render(ObservabilityPage, {
-			props: props({ goroutineEngine: engine({ snapshot: null, pool: null, parallel: null, asyncHooks: null, byOwner: [] }) }),
-		});
-		expect(section(container).textContent).toContain('Goroutine engine unavailable');
-		expect(section(container).querySelector('form')).toBeNull();
-	});
-});
-
-/*
  * A read that failed is said to have failed. Drawn as its empty answer, it
  * read as an engine that had timed nothing and as a pool with no pooler.
  */
@@ -633,8 +149,14 @@ describe('reads that failed', () => {
 			props: props({ poolHealth: { ok: false, gate: { state: 'unavailable' } } }),
 		});
 		expect(container.textContent).toContain('is unavailable');
-		expect(container.textContent).not.toContain('may not have a connection pooler configured');
+		expect(container.textContent).not.toContain('No pool statistics');
 		expect(container.textContent).not.toContain('No check time reported');
+	});
+
+	it('says the pool reported no statistics when the read answered without them', () => {
+		const { container } = render(ObservabilityPage, { props: props({ poolHealth: ok({}) }) });
+		expect(container.textContent).toContain('No pool statistics');
+		expect(container.textContent).not.toContain('is unavailable');
 	});
 });
 
@@ -650,5 +172,13 @@ describe('latency depth', () => {
 		]);
 		expect(links.find((a) => a.getAttribute('aria-current') === 'page')?.textContent).toContain('Top 20');
 		expect(container.querySelector('#latency-top')?.hasAttribute('data-sveltekit-noscroll')).toBe(true);
+	});
+});
+
+describe('the area strip', () => {
+	it('carries the observability tabs with Overview marked', () => {
+		const { getByRole } = render(ObservabilityPage, { props: props() });
+		expect(getByRole('tab', { name: 'Overview' }).getAttribute('aria-selected')).toBe('true');
+		expect(getByRole('tab', { name: 'Goroutine engine' }).getAttribute('aria-selected')).toBe('false');
 	});
 });

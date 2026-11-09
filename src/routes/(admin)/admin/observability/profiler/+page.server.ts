@@ -1,26 +1,23 @@
 import type { Actions, PageServerLoad } from './$types';
 import { ApiError } from '@lyeve-labs/client';
-import { error, fail } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import {
-	captureFlamegraph,
-	clampSeconds,
 	listEndpoints,
 	listPlugins,
 	listSlowest,
 	readEndpoint,
-	readMemoryTrend,
-	resetProfiler,
 	type EndpointDetail,
 	type EndpointStats,
-	type MemoryTrend,
 	type PluginBreakdown,
 } from '$lib/api/profiler';
 import { section, type Section } from '$lib/api/gate';
-import { actionError } from '$lib/server/action-error';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
+import { authedClient, loadUser } from '$lib/server/authz';
+import { couldNotLoad } from '$lib/outage';
+import { RESET_QUESTION, reset } from './reset.server';
+import { asked } from '$lib/server/asked';
 
 /**
- * What the page renders. Every view is the profiler plugin's, under
+ * What the timings tab renders. Every view is the profiler plugin's, under
  * /api/admin/debug/profiler, super_admin only: the ring describes every
  * tenant's traffic. A view the plugin did not answer keeps the reason on its
  * own, so the page says so in place rather than rendering a measurement of
@@ -30,7 +27,6 @@ export interface ProfilerPage {
 	endpoints: Section<EndpointStats[]>;
 	slowest: Section<EndpointStats[]>;
 	plugins: Section<PluginBreakdown[]>;
-	memory: Section<MemoryTrend | null>;
 	/**
 	 * The endpoint the URL selected, and its detail. Null when none is
 	 * selected. The value is null when the ring holds no sample of it.
@@ -41,10 +37,9 @@ export interface ProfilerPage {
 
 /** What each view says when its read failed for a reason it cannot name. */
 const FAILED = {
-	endpoints: 'Could not load endpoint statistics.',
-	plugins: 'Could not load per-plugin statistics.',
-	memory: 'Could not load memory snapshots.',
-	detail: 'Could not load this endpoint.',
+	endpoints: couldNotLoad('endpoint statistics'),
+	plugins: couldNotLoad('per-plugin statistics'),
+	detail: couldNotLoad('this endpoint'),
 } as const;
 
 /**
@@ -74,43 +69,17 @@ export const load: PageServerLoad = async (event) => {
 	const asked = url.searchParams.get('endpoint')?.trim() ?? '';
 	const selected = asked ? '/' + asked.replace(/^\/+/, '') : null;
 
-	const [endpoints, slowest, plugins, memory, detail] = await Promise.all([
+	const [endpoints, slowest, plugins, detail] = await Promise.all([
 		section(listEndpoints(client), FAILED.endpoints),
 		section(listSlowest(client), FAILED.endpoints),
 		section(listPlugins(client), FAILED.plugins),
-		section(readMemoryTrend(client), FAILED.memory),
 		selected ? section(sampled(readEndpoint(client, selected)), FAILED.detail) : Promise.resolve(null),
 	]);
 
-	const page: ProfilerPage = { endpoints, slowest, plugins, memory, selected, detail };
+	const page: ProfilerPage = { endpoints, slowest, plugins, selected, detail };
 	return page;
 };
 
 export const actions: Actions = {
-	reset: async (event) => {
-		await requireRole(event, ['super_admin']);
-		try {
-			await resetProfiler(authedClient(event));
-			return { form: 'reset' as const, reset: true };
-		} catch (err) {
-			return fail(400, { form: 'reset' as const, error: actionError(err, 'Could not reset the profiler. Try again.') });
-		}
-	},
-
-	flamegraph: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const data = await event.request.formData();
-		const endpoint = String(data.get('endpoint') ?? '').trim();
-		const seconds = clampSeconds(data.get('duration_sec'));
-		if (!endpoint) return fail(422, { form: 'flamegraph' as const, error: 'Enter an endpoint to label the flamegraph.' });
-		try {
-			const graph = await captureFlamegraph(authedClient(event), endpoint, seconds);
-			return { form: 'flamegraph' as const, graph };
-		} catch (err) {
-			if (err instanceof ApiError && err.status === 403) {
-				return fail(403, { form: 'flamegraph' as const, error: 'Only a super admin can capture a profile.' });
-			}
-			return fail(400, { form: 'flamegraph' as const, error: actionError(err, 'Could not capture the flamegraph. Try again.') });
-		}
-	},
+	reset: asked(RESET_QUESTION, reset),
 };

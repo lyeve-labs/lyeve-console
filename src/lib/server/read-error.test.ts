@@ -56,7 +56,7 @@ describe('readError', () => {
 	});
 
 	it('sends a lapsed session to sign in rather than reporting a failure', () => {
-		expect(thrown(new ApiError(401, 'authentication required'))).toEqual({ status: 401, message: 'Session invalid or expired' });
+		expect(thrown(new ApiError(401, 'authentication required'))).toEqual({ status: 401, message: 'Your session ended. Sign in again.' });
 	});
 
 	it('keeps engine and driver text out of every other answer', () => {

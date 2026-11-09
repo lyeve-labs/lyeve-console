@@ -68,6 +68,17 @@ describe('problemsOf', () => {
 		expect(p.message).toMatch(/^Use only letters, digits and underscores in the field name/);
 	});
 
+	it('holds the save while a decimal scale is larger than its precision allows', () => {
+		const decimal = (over: Partial<SchemaField>) => schema('posts', [field('a', 'price', { field_type: 'decimal', ...over })]);
+		expect(problemsOf(decimal({ precision: 2, scale: 4 }), [], false)).toEqual([
+			{ fieldId: 'a', target: 'decimal-scale-a', where: 'Field price', message: 'Enter a scale of at most 2.' },
+		]);
+		expect(problemsOf(decimal({ precision: 38, scale: 31 }), [], false)[0].message).toBe('Enter a scale of at most 30.');
+		expect(problemsOf(decimal({ precision: 20, scale: 4 }), [], false)).toEqual([]);
+		expect(problemsOf(decimal({}), [], false)).toEqual([]);
+		expect(problemsOf(decimal({ precision: 1 }), [], false)).toEqual([]);
+	});
+
 	it('leaves the engine-owned rows alone', () => {
 		expect(problemsOf(schema('posts', [field('s', 'id', { system: true })]), [], false)).toEqual([]);
 	});
@@ -106,6 +117,22 @@ describe('changesOf', () => {
 	it('finds nothing risky in an added field or a new schema', () => {
 		expect(isRisky(changesOf(saved, schema('posts', [...saved.fields, field('d', 'x')], { with_created_at: true })))).toBe(false);
 		expect(isRisky(changesOf(null, saved))).toBe(false);
+	});
+});
+
+describe('changesOf, decimal columns', () => {
+	const price = (over: Partial<SchemaField>) => schema('posts', [field('a', 'price', { field_type: 'decimal', ...over })]);
+
+	it('lists a new precision or scale as a column change', () => {
+		const c = changesOf(price({ precision: 10, scale: 2 }), price({ precision: 12, scale: 4 }));
+		expect(c.retypes).toEqual([{ name: 'price', from: 'decimal(10,2)', to: 'decimal(12,4)' }]);
+		expect(isRisky(c)).toBe(true);
+	});
+
+	it('reads an absent precision and scale as the defaults', () => {
+		expect(changesOf(price({}), price({ precision: 18, scale: 2 })).retypes).toEqual([]);
+		expect(changesOf(price({}), price({ scale: 0 })).retypes).toEqual([{ name: 'price', from: 'decimal(18,2)', to: 'decimal(18,0)' }]);
+		expect(changesOf(price({ precision: 1 }), price({ precision: 1, scale: 1 })).retypes).toEqual([]);
 	});
 });
 

@@ -13,6 +13,7 @@ import { actions, load } from './+page.server';
 
 function event(form: Record<string, string>) {
 	const data = new FormData();
+	data.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(form)) data.set(k, v);
 	const request = { formData: async () => data, clone: () => request };
 	return { request } as never;
@@ -107,7 +108,7 @@ describe('experiment moves', () => {
 	});
 
 	it('relays the reason the plugin refuses a move with', async () => {
-		engine.post.mockRejectedValue(new ApiError(409, 'cannot start an experiment that is stopped'));
+		engine.post.mockRejectedValue(new ApiError(409, 'cannot start an experiment that is stopped', { error: 'cannot start an experiment that is stopped', code: 'conflict' }));
 		const out = (await actions.move(event({ id: 'e1', move: 'start' }))) as { status: number; data: { action: string; error: string } };
 		expect(out.status).toBe(400);
 		expect(out.data).toEqual({ action: 'move', error: 'cannot start an experiment that is stopped' });

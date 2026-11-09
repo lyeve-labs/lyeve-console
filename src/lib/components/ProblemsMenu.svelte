@@ -20,6 +20,7 @@
 	import { Button, motion } from '@lyeve-labs/ui-kit';
 	import { CircleAlert, CornerDownRight } from '@lucide/svelte';
 	import { ICON } from '$lib/icon';
+	import { plural } from '$lib/format';
 
 	interface Props {
 		problems: ProblemItem[];
@@ -38,7 +39,7 @@
 
 	let root = $state<HTMLDivElement>();
 
-	const count = $derived(`${problems.length} ${problems.length === 1 ? 'problem' : 'problems'}`);
+	const count = $derived(`${problems.length} ${plural(problems.length, 'problem')}`);
 
 	// The list closes with its last problem: left open, it would be an empty
 	// box under the toolbar.

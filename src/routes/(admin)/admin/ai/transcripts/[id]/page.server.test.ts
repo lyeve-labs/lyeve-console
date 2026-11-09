@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { actions, load } from './+page.server';
-import { fixtureSettings, fixtureTranscript } from '$lib/components/ai/fixtures';
-import { actionEvent, json, loadEvent, refused } from '$lib/components/ai/test-events';
+import { fixtureSettings, fixtureTranscript } from '$lib/components/ai/test-support/fixtures';
+import { actionEvent, json, loadEvent, refused } from '$lib/components/ai/test-support/events';
 
 const id = fixtureTranscript.id;
 const path = `/admin/ai/transcripts/${id}`;
@@ -17,7 +17,7 @@ describe('admin/ai/transcripts/[id] load', () => {
 
 	it('tells a missing transcript from the tenant switch', async () => {
 		const routes = { [`/api/admin/ai/transcripts/${id}`]: () => refused(404, 'ai transcript not found') };
-		await expect(load(loadEvent(routes, { path, params }).event)).rejects.toMatchObject({ status: 404 });
+		await expect(load(loadEvent(routes, { path, params }).event)).rejects.toMatchObject({ status: 404, body: { message: 'This transcript no longer exists.' } });
 		const off = loadEvent(routes, { path, params, settings: { ...fixtureSettings, enabled: false } });
 		expect(((await load(off.event)) as Loaded).gate).toEqual({ state: 'off' });
 	});

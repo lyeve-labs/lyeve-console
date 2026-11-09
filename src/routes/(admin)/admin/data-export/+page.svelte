@@ -17,10 +17,11 @@
 		Table,
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
+	import RefreshButton from '$lib/components/RefreshButton.svelte';
 	import { enhance } from '$app/forms';
 	import { invalidate } from '$app/navigation';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { CalendarClock, Download, Pause, Play, Plus, RefreshCw, Search, Trash2, X } from '@lucide/svelte';
+	import { CalendarClock, Download, Pause, Play, Plus, Search, Trash2, X } from '@lucide/svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
@@ -34,11 +35,11 @@
 		cronLabel,
 		downloadable,
 		jobProgress,
-		jobTone,
 		scheduleState,
 		stageText,
 		type ExportSchedule,
 	} from '$lib/api/data-export';
+	import { jobTone } from '$lib/tones';
 	import { NO_VALUE, formatBytes, formatCount, formatDateTime } from '$lib/format';
 	import { confirmed, submitter } from '$lib/forms.svelte';
 	import type { ActionData, PageData } from './$types';
@@ -49,16 +50,6 @@
 
 	/** How often the list re-reads while an export is still going. */
 	const POLL_MS = 2000;
-
-	let refreshing = $state(false);
-	async function refresh() {
-		refreshing = true;
-		try {
-			await invalidate('app:data-export');
-		} finally {
-			refreshing = false;
-		}
-	}
 
 	const running = $derived(data.jobs.filter(active));
 	const failed = $derived(data.jobs.filter((j) => j.status === 'failed').length);
@@ -100,7 +91,7 @@
 	}
 
 	function scopeText(schemas: string[] | null | undefined): string {
-		if (!schemas || schemas.length === 0) return 'Every schema';
+		if (!schemas || schemas.length === 0) return 'Every content type';
 		if (schemas.length <= 3) return schemas.join(', ');
 		return `${schemas.slice(0, 2).join(', ')} and ${schemas.length - 2} more`;
 	}
@@ -184,9 +175,7 @@
 	width="wide"
 >
 	{#snippet actions()}
-		<Button variant="secondary" size="sm" onclick={refresh} loading={refreshing}>
-			<RefreshCw size={ICON.sm} /> Refresh
-		</Button>
+		<RefreshButton dependency="app:data-export" />
 		{#if data.gate.state === 'ok'}
 			<Button variant="primary" size="sm" onclick={openStart}>
 				<Plus size={ICON.sm} /> New export
@@ -264,7 +253,7 @@
 				</ListToolbar>
 
 				{#if visible.length === 0}
-					<EmptyState title="No exports match this search" description="Clear the search to see the rest.">
+					<EmptyState title="No exports match this search" description="Clear the search, or go to another page.">
 						{#snippet iconSnippet()}
 							<Search size={ICON.lg} />
 						{/snippet}
@@ -322,7 +311,7 @@
 										{#if job.rows_total > 0}<span class="text-faint"> of {formatCount(job.rows_total)}</span>{/if}
 										{#if atCeiling(job)}
 											<div class="text-warn">
-												Reached the {formatCount(EXPORT_ROW_CEILING)} entry limit. Entries past it are not in the file.
+												This export reached the {formatCount(EXPORT_ROW_CEILING)} entry limit, so entries past it are not in the file.
 											</div>
 										{/if}
 									</td>

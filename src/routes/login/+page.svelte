@@ -11,6 +11,7 @@
 	import { ICON } from '$lib/icon';
 	import OrganizationField from '$lib/components/OrganizationField.svelte';
 	import { withOrganization } from '$lib/organization';
+	import { SESSION_ENDED } from '$lib/session';
 
 	let { form, data }: { form: ActionData; data: PageData } = $props();
 
@@ -62,7 +63,7 @@
 			{#if form?.error}
 				<Alert tone="danger">{form.error}</Alert>
 			{:else if data.ended}
-				<Alert tone="warn">Your session ended. Sign in again to continue.</Alert>
+				<Alert tone="warn">{SESSION_ENDED}</Alert>
 			{/if}
 
 			<Input

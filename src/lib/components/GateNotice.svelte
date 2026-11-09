@@ -9,7 +9,7 @@
 	import { page } from '$app/state';
 	import NotEnabled from '$lib/components/NotEnabled.svelte';
 	import { ICON } from '$lib/icon';
-	import { BUSY, OUTAGE } from '$lib/outage';
+	import { BUSY, OUTAGE, outageFor } from '$lib/outage';
 	import { forbiddenText, fullText, inSentence, type Gate } from '$lib/api/gate';
 
 	let {
@@ -66,7 +66,7 @@
 	<!-- The page around this notice rendered, so unlike the full-page outage it
 	     names only the part that could not be read. -->
 	<Alert tone="warn" title={OUTAGE.title}>
-		<p>The engine is unavailable, so {subject} did not load. Try again in a moment.</p>
+		<p>{outageFor(`${subject} did not load`)}</p>
 		{@render retry()}
 	</Alert>
 {:else if gate.state === 'error'}

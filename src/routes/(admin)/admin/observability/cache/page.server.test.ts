@@ -31,6 +31,7 @@ vi.mock('$lib/server/authz', () => ({
 	requireRole: authz.requireRole,
 }));
 
+
 import { load, actions } from './+page.server';
 
 type Loaded = Exclude<Awaited<ReturnType<typeof load>>, void>;
@@ -43,12 +44,12 @@ function sessionCookies(tenant: string) {
 	return { get: (name: string) => (name === 'sys_session' ? token : undefined) };
 }
 
-function loadEvent(roles: string[], tenant = '') {
+function loadEvent(roles: string[], tenant = '', plugins?: unknown) {
 	return {
 		url: new URL('http://admin/admin/observability/cache'),
 		fetch: vi.fn(),
 		cookies: sessionCookies(tenant),
-		parent: async () => ({ user: { roles } }),
+		parent: async () => ({ user: { roles }, plugins }),
 	} as never;
 }
 
@@ -61,16 +62,6 @@ function formEvent(fields: Record<string, string>) {
 		fetch: vi.fn(),
 	} as never;
 }
-
-const rule = {
-	id: '7d3c6f0e-1d1b-4a8e-9f55-0a4f2b1c9e11',
-	pattern: '/api/v1/content/posts/**',
-	ttl_seconds: 300,
-	tags: ['posts'],
-	enabled: true,
-	created_at: '2026-10-01T00:00:00Z',
-	updated_at: '2026-10-01T00:00:00Z',
-};
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -86,41 +77,17 @@ beforeEach(() => {
 		licensed: false,
 		inactive: [{ name: 'redis-1', kind: 'redis', priority: 1, reason: 'provider_limit' }],
 	});
-	api.listEntries.mockResolvedValue({ data: [], total_count: 0 });
-	api.listRules.mockResolvedValue({
-		data: [rule],
-		total_count: 1,
-		licensed: false,
-		limits: { rules: { limit: 10, current: 1 } },
-	});
 });
 
-describe('cache load', () => {
-	it('keeps a failed read of the stored entries as a gate rather than an empty cache', async () => {
-		api.listEntries.mockRejectedValue(new ApiError(503, 'down', {}));
-		const result = (await load(loadEvent(['super_admin']))) as Loaded;
-		expect(result.entriesGate).toEqual({ state: 'unavailable' });
-		expect(result.entries).toEqual([]);
-	});
-
-	it('sends an offset past the stored entries back to the first page', async () => {
-		api.listEntries.mockResolvedValue({ data: [], total_count: 0 });
-		const event = loadEvent(['super_admin']) as unknown as { url: URL };
-		event.url = new URL('http://admin/admin/observability/cache?offset=100');
-		await expect(load(event as never)).rejects.toMatchObject({ status: 307 });
-	});
-
-	// The counters and stored keys describe every tenant, so a tenant admin's
-	// page never asks for them, and their absence is not an error.
-	it('reads the rules and providers for a tenant admin and never the instance counters', async () => {
+describe('cache overview load', () => {
+	// The counters describe every tenant, so a tenant admin's page never asks
+	// for them, and their absence is not an error.
+	it('reads the providers for a tenant admin and never the engine counters', async () => {
 		const result = (await load(loadEvent(['admin']))) as Loaded;
 		expect(api.readStats).not.toHaveBeenCalled();
-		expect(api.listEntries).not.toHaveBeenCalled();
 		expect(result.gate).toEqual({ state: 'ok' });
 		expect(result.superAdmin).toBe(false);
-		expect(result.rules.rows).toEqual([rule]);
-		expect(result.rules.limit).toEqual({ limit: 10, current: 1 });
-		expect(result.rules.licensed).toBe(false);
+		expect(result.providers).toHaveLength(1);
 	});
 
 	it('carries the provider tier and the providers left out with their reasons', async () => {
@@ -130,45 +97,11 @@ describe('cache load', () => {
 		expect(result.inactive).toEqual([{ name: 'redis-1', kind: 'redis', priority: 1, reason: 'provider_limit' }]);
 	});
 
-	it('says a failed rules read failed and keeps the rest of the page', async () => {
-		api.listRules.mockRejectedValue(new Error('down'));
-		const result = (await load(loadEvent(['admin']))) as Loaded;
-		expect(result.gate).toEqual({ state: 'ok' });
-		expect(result.rules.gate.state).toBe('error');
-		expect(result.providers).toHaveLength(1);
-	});
-
-	// The in-memory provider lists its keys. A networked one answers an empty
-	// page and a note, which is not an empty cache.
-	it('marks a provider that cannot list its entries', async () => {
-		api.listEntries.mockResolvedValue({
-			data: [],
-			total_count: 0,
-			limit: 51,
-			offset: 0,
-			note: 'entry listing is only available with the in-memory provider',
-		});
-		const result = (await load(loadEvent(['super_admin']))) as Loaded;
-		expect(result.unlisted).toBe(true);
-		expect(result.entries).toEqual([]);
-	});
-
-	it('reads an empty page with no note as an empty cache', async () => {
-		const result = (await load(loadEvent(['super_admin']))) as Loaded;
-		expect(result.unlisted).toBe(false);
-	});
-
 	it('keeps a refused providers read as its gate', async () => {
 		api.listProviders.mockRejectedValue(new ApiError(503, 'down', {}));
 		const result = (await load(loadEvent(['admin']))) as Loaded;
 		expect(result.providersRead).toBe(false);
 		expect(result.providersGate).toEqual({ state: 'unavailable' });
-	});
-
-	it("scopes the flush to the session's tenant whenever the session names one", async () => {
-		expect(((await load(loadEvent(['admin']))) as Loaded).flushScoped).toBe(true);
-		expect(((await load(loadEvent(['super_admin'], 'acme'))) as Loaded).flushScoped).toBe(true);
-		expect(((await load(loadEvent(['super_admin']))) as Loaded).flushScoped).toBe(false);
 	});
 
 	it('reads a provider list with no tier as unknown rather than as one that needs no license', async () => {
@@ -177,140 +110,13 @@ describe('cache load', () => {
 		expect(result.providersLicensed).toBeNull();
 		expect(result.inactive).toEqual([]);
 	});
-});
 
-describe('cache rule actions', () => {
-	it('creates a rule with its tags split and its switch read', async () => {
-		api.createRule.mockResolvedValue(rule);
-		const out = await actions.createRule(
-			formEvent({ pattern: '/api/v1/content/posts/**', ttl_seconds: '300', tags: 'posts, news posts', enabled: 'true' }),
-		);
-		expect(api.createRule).toHaveBeenCalledWith(expect.anything(), {
-			pattern: '/api/v1/content/posts/**',
-			ttl_seconds: 300,
-			tags: ['posts', 'news'],
-			enabled: true,
-		});
-		expect(out).toEqual({ savedRule: '/api/v1/content/posts/**' });
-	});
-
-	it('refuses a pattern outside the content API before the round trip', async () => {
-		const out = (await actions.createRule(formEvent({ pattern: '/admin/x', ttl_seconds: '60' }))) as {
-			status: number;
-		};
-		expect(out.status).toBe(400);
-		expect(api.createRule).not.toHaveBeenCalled();
-	});
-
-	// The ceiling is the plugin's. The page renders its numbers from the
-	// refusal, never from a constant of its own.
-	it('returns the ceiling refusal with the numbers the plugin sent', async () => {
-		api.createRule.mockRejectedValue(
-			new ApiError(402, 'cap_exceeded', { error: 'cap_exceeded', cap: 'example.rules', limit: 10, current: 10 }),
-		);
-		const out = (await actions.createRule(formEvent({ pattern: '/api/v1/content/x', ttl_seconds: '60' }))) as {
-			status: number;
-			data: { refused: { kind: string; limit: number; current: number } };
-		};
-		expect(out.status).toBe(402);
-		expect(out.data.refused).toMatchObject({ kind: 'cap', limit: 10, current: 10 });
-	});
-
-	it('purges one rule, a tag or everything', async () => {
-		api.purgeRule.mockResolvedValue(3);
-		api.purgeResponses.mockResolvedValue(5);
-		expect(await actions.purge(formEvent({ rule: rule.id }))).toEqual({ purged: 3, purgedWhat: 'rule' });
-		expect(api.purgeRule).toHaveBeenCalledWith(expect.anything(), rule.id);
-		expect(await actions.purge(formEvent({ tag: 'posts' }))).toEqual({ purged: 5, purgedWhat: 'tag posts' });
-		expect(api.purgeResponses).toHaveBeenLastCalledWith(expect.anything(), 'posts');
-		expect(await actions.purge(formEvent({}))).toEqual({ purged: 5, purgedWhat: 'all' });
-		expect(api.purgeResponses).toHaveBeenLastCalledWith(expect.anything(), '');
-	});
-
-});
-
-describe('cache flush', () => {
-	// The plugin admits a tenant admin and scopes the flush to the tenant.
-	it('flushes for a tenant admin', async () => {
-		api.flushAll.mockResolvedValue(undefined);
-		expect(await actions.flush(formEvent({}))).toEqual({ flushed: 'everything' });
-		expect(api.flushAll).toHaveBeenCalled();
-	});
-
-	it('flushes one tag for a super admin', async () => {
-		authz.roles = ['super_admin'];
-		api.flushTag.mockResolvedValue(undefined);
-		expect(await actions.flush(formEvent({ tag: 'posts' }))).toEqual({ flushed: 'posts' });
-		expect(api.flushTag).toHaveBeenCalledWith(expect.anything(), 'posts');
-	});
-
-	// A tag other than a tenant tag is flushed from every tenant's entries.
-	it('refuses a tag flush from a tenant admin', async () => {
-		await expect(actions.flush(formEvent({ tag: 'posts' }))).rejects.toThrow('403');
-		expect(api.flushTag).not.toHaveBeenCalled();
-	});
-
-	it('refuses a role the plugin does not admit', async () => {
-		authz.roles = ['editor'];
-		await expect(actions.flush(formEvent({}))).rejects.toThrow('403');
-		expect(api.flushAll).not.toHaveBeenCalled();
-	});
-
-	it("relays the plugin's refusal", async () => {
-		authz.roles = ['super_admin'];
-		api.flushTag.mockRejectedValue(new ApiError(403, "cannot flush another tenant's cache entries", {}));
-		const out = (await actions.flush(formEvent({ tag: 'tenant:other' }))) as { status: number; data: { error: string } };
-		expect(out.status).toBe(400);
-		expect(out.data.error).toBe("cannot flush another tenant's cache entries");
-	});
-
-	it('says an outage failed the flush', async () => {
-		api.flushAll.mockRejectedValue(new ApiError(503, 'down', {}));
-		const out = (await actions.flush(formEvent({}))) as { status: number; data: { error: string } };
-		expect(out.status).toBe(400);
-		expect(out.data.error).toBe('Could not flush the cache. Try again.');
-	});
-});
-
-describe('cache rule update', () => {
-	const fields = { id: rule.id, pattern: '/api/v1/content/posts/**', ttl_seconds: '600', tags: 'posts', enabled: 'false' };
-
-	it('saves the rule it names', async () => {
-		api.updateRule.mockResolvedValue(rule);
-		expect(await actions.updateRule(formEvent(fields))).toEqual({ savedRule: '/api/v1/content/posts/**' });
-		expect(api.updateRule).toHaveBeenCalledWith(expect.anything(), rule.id, {
-			pattern: '/api/v1/content/posts/**',
-			ttl_seconds: 600,
-			tags: ['posts'],
-			enabled: false,
-		});
-	});
-
-	it('refuses a save that names no rule', async () => {
-		const out = (await actions.updateRule(formEvent({ ...fields, id: '' }))) as { status: number };
-		expect(out.status).toBe(400);
-		expect(api.updateRule).not.toHaveBeenCalled();
-	});
-
-	it('refuses a role the plugin does not admit', async () => {
-		authz.roles = ['editor'];
-		await expect(actions.updateRule(formEvent(fields))).rejects.toThrow('403');
-	});
-
-	it("relays the plugin's refusal into the rule drawer", async () => {
-		api.updateRule.mockRejectedValue(new ApiError(422, 'pattern overlaps another rule', {}));
-		const out = (await actions.updateRule(formEvent(fields))) as { status: number; data: Record<string, unknown> };
-		expect(out.status).toBe(400);
-		expect(out.data.error).toBe('pattern overlaps another rule');
-		expect(out.data.drawer).toBe('rule');
-	});
-
-	it('says an outage failed the save', async () => {
-		api.updateRule.mockRejectedValue(new ApiError(503, 'down', {}));
-		const out = (await actions.updateRule(formEvent(fields))) as { status: number; data: Record<string, unknown> };
-		expect(out.status).toBe(400);
-		expect(out.data.error).toBe('Could not save the rule. Try again.');
-		expect(out.data.drawer).toBe('rule');
+	// The shell says why while the plugin does not run, so the page reads nothing.
+	it('reads nothing while the plugin does not run', async () => {
+		const plugins = { state: 'named', running: [], withheld: [] };
+		const result = (await load(loadEvent(['super_admin'], '', plugins))) as Loaded;
+		expect(result.gate).toEqual({ state: 'absent' });
+		expect(api.listProviders).not.toHaveBeenCalled();
 	});
 });
 
@@ -342,20 +148,5 @@ describe('cache circuit reset', () => {
 		const out = (await actions.resetCircuit(formEvent({ name: 'redis-1' }))) as { status: number; data: { error: string } };
 		expect(out.status).toBe(400);
 		expect(out.data.error).toBe('Could not reset the circuit. Try again.');
-	});
-});
-
-describe('which surface a failure belongs to', () => {
-	it('tags a failed rule save for the rule drawer', async () => {
-		api.createRule.mockRejectedValue(new ApiError(503, 'down', {}));
-		const out = (await actions.createRule(formEvent({ pattern: '/api/v1/content/x', ttl_seconds: '60' }))) as { data: Record<string, unknown> };
-		expect(out.data.drawer).toBe('rule');
-	});
-
-	it('leaves a failed delete untagged, for the page', async () => {
-		authz.roles = ['admin'];
-		api.deleteRule.mockRejectedValue(new ApiError(503, 'down', {}));
-		const out = (await actions.deleteRule(formEvent({ id: rule.id }))) as { data: Record<string, unknown> };
-		expect(out.data.drawer).toBeUndefined();
 	});
 });

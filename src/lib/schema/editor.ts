@@ -149,6 +149,13 @@ export function problemsOf(schema: Schema, others: Schema[], isNew: boolean): Pr
 		} else if ((seen.get(f.name.toLowerCase()) ?? 0) > 1) {
 			out.push({ fieldId: id, target, where, message: `${f.name} is used by more than one field.` });
 		}
+		if (f.field_type === 'decimal') {
+			// The engine's defaults when the definition names neither.
+			const most = Math.min(f.precision ?? 18, 30);
+			if (decimalScale(f) > most) {
+				out.push({ fieldId: id, target: `decimal-scale-${id}`, where, message: `Enter a scale of at most ${most}.` });
+			}
+		}
 		if (f.field_type === 'relation') {
 			if (!f.relation_to) {
 				out.push({ fieldId: id, target: `relation-target-${id}`, where, message: 'Pick the schema this relation points at.' });
@@ -202,12 +209,28 @@ export function changesOf(saved: Schema | null, next: Schema): Change {
 		}
 		if (now.field_type !== old.field_type) {
 			change.retypes.push({ name: now.name || old.name, from: old.field_type, to: now.field_type });
+		} else if (now.field_type === 'decimal' && decimalType(now) !== decimalType(old)) {
+			// A new precision or scale rewrites the column the way a new type does.
+			change.retypes.push({ name: now.name || old.name, from: decimalType(old), to: decimalType(now) });
 		}
 	}
 	for (const [flag, column] of SYSTEM_FLAGS) {
 		if (saved[flag] && !next[flag]) change.systemDrops.push(column);
 	}
 	return change;
+}
+
+/**
+ * A decimal field's scale. One left out is 2, or the precision when that is
+ * smaller, as the engine reads it.
+ */
+export function decimalScale(f: SchemaField): number {
+	return f.scale ?? Math.min(2, f.precision ?? 18);
+}
+
+/** A decimal field's column type, with the engine's defaults where the definition names none. */
+function decimalType(f: SchemaField): string {
+	return `decimal(${f.precision ?? 18},${decimalScale(f)})`;
 }
 
 /** Whether a change touches data that already exists. */

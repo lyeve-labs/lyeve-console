@@ -12,6 +12,7 @@
  * refused with 403 "csrf token required" rather than failing visibly.
  */
 import type { HttpClient } from '@lyeve-labs/client';
+import { count } from './narrow';
 
 /**
  * The name the shell's load reads the count under. A write that queues or runs
@@ -41,17 +42,6 @@ export interface PendingMigrations {
 /** What POST /api/admin/migrate/apply answers with. */
 interface AppliedResponse {
 	applied?: number | null;
-}
-
-/**
- * A count off one of those answers, or null when the field was not a number.
- *
- * An absent or unparseable count is not zero. Zero paints the header chip green
- * and states that the database matches the schemas, which is a claim about a
- * server that did not answer the question.
- */
-function count(value: unknown): number | null {
-	return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function isStatement(value: unknown): value is PendingStatement {

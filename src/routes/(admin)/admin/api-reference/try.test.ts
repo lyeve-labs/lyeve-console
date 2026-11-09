@@ -67,7 +67,7 @@ describe('trying an endpoint', () => {
 		}) as unknown as typeof globalThis.fetch;
 		const out = (await actions.try(tryEvent({ method: 'GET', path: '/api/admin/tenants' }, fetch))) as Failure;
 		expect(out.status).toBe(502);
-		expect(out.data.tryError).toBe('Could not send the request. Try again in a moment.');
+		expect(out.data.tryError).toBe('Could not send the request. Try again.');
 	});
 
 	// The runtime's words for a failed connection can name an internal address.

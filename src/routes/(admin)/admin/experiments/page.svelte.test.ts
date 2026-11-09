@@ -48,7 +48,7 @@ describe('the gate', () => {
 		const { container } = render(ExperimentsPage, {
 			props: props({ gate: { state: 'locked', upgradeUrl: '' }, experiments: [] }),
 		});
-		expect(said(container)).toContain('Not enabled on this instance');
+		expect(said(container)).toContain('Not enabled on this engine');
 		expect(said(container)).not.toContain('No experiments yet');
 	});
 

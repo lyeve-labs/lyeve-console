@@ -20,6 +20,8 @@
  */
 import { isHttpError, isRedirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
+import { count, str } from './narrow';
+import { rolesInWords } from '$lib/roles';
 
 export type Gate =
 	| { state: 'ok' }
@@ -44,14 +46,6 @@ interface Refusal {
 	limit?: unknown;
 	current?: unknown;
 	upgrade_url?: unknown;
-}
-
-function count(value: unknown): number | null {
-	return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-function text(value: unknown): string {
-	return typeof value === 'string' ? value : '';
 }
 
 /**
@@ -87,7 +81,7 @@ export function gateOf(err: unknown, failed: string): Gate {
 		if (err.status === 404) return { state: 'absent' };
 		if (err.status === 402) {
 			const body = (err.body ?? {}) as Refusal;
-			const upgradeUrl = text(body.upgrade_url);
+			const upgradeUrl = str(body.upgrade_url);
 			if (body.error === 'cap_exceeded') {
 				return { state: 'full', limit: count(body.limit), current: count(body.current), upgradeUrl };
 			}
@@ -105,28 +99,32 @@ export function gateOf(err: unknown, failed: string): Gate {
  * there is none. A failure never becomes an empty value, so a page cannot draw
  * its first-run state for a read that did not answer.
  */
-export type Section<T> = { ok: true; value: T } | { ok: false; gate: Gate };
+export type Section<T, G = Gate> = { ok: true; value: T } | { ok: false; gate: G };
 
 /**
  * Await a read and keep its failure as a gate. A redirect or an HTTP error
- * thrown on purpose is not a failed read, so it still ends the load.
+ * thrown on purpose is not a failed read, so it still ends the load. A page
+ * whose refusals mean more than `gateOf` knows passes its own mapper in
+ * place of the sentence.
  */
-export async function section<T>(read: Promise<T>, failed: string): Promise<Section<T>> {
+export async function section<T>(read: Promise<T>, failed: string): Promise<Section<T>>;
+export async function section<T, G>(read: Promise<T>, toGate: (err: unknown) => G): Promise<Section<T, G>>;
+export async function section<T, G>(read: Promise<T>, failed: string | ((err: unknown) => G)): Promise<Section<T, G | Gate>> {
 	try {
 		return { ok: true, value: await read };
 	} catch (err) {
 		if (isRedirect(err) || isHttpError(err)) throw err;
-		return { ok: false, gate: gateOf(err, failed) };
+		return { ok: false, gate: typeof failed === 'string' ? gateOf(err, failed) : failed(err) };
 	}
 }
 
 /** The sentence a page shows for a gate at a ceiling. */
 export function fullText(gate: Extract<Gate, { state: 'full' }>): string {
 	if (gate.limit !== null && gate.current !== null) {
-		return `You're using ${gate.current} of ${gate.limit}, the most this instance allows.`;
+		return `You're using ${gate.current} of ${gate.limit}, the most this engine allows.`;
 	}
-	if (gate.limit !== null) return `This instance allows at most ${gate.limit}.`;
-	return 'This instance is at its limit.';
+	if (gate.limit !== null) return `This engine allows at most ${gate.limit}.`;
+	return 'This engine is at its limit.';
 }
 
 /**
@@ -140,7 +138,13 @@ export function inSentence(title: string): string {
 	return title[0].toLowerCase() + title.slice(1);
 }
 
-/** The sentence for a read the reader's role may not make. `what` names what was refused. */
-export function forbiddenText(what: string): string {
+/**
+ * The sentence for a read the reader's role may not make. `what` names what
+ * was refused, and `roles` the roles the check admits when the console made
+ * the check. An engine refusal names no role, so it gets the sentence
+ * without one.
+ */
+export function forbiddenText(what: string, roles?: readonly string[]): string {
+	if (roles?.length) return `Only ${rolesInWords(roles)} can open ${what}.`;
 	return `Your role cannot open ${what}. Ask a super admin if you need it.`;
 }

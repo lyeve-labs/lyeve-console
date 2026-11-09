@@ -3,14 +3,16 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import type { Schema } from '@lyeve-labs/client';
 import { getSchema } from '@lyeve-labs/client-rest';
 import { authedClient, requireUser, stripProtectedFields } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure } from '$lib/server/action-error';
 import { readError } from '$lib/server/read-error';
 import { setEntryRelations } from '$lib/server/content-relations';
 import { fieldRefusalOf } from '$lib/server/content-validation';
 import { entryIdentity } from '$lib/utils/new-entry';
 import { listMediaChoices, type MediaChoice } from '$lib/api/media';
 import { getLocales } from '$lib/api/localization';
-import { forbiddenText, section, type Section } from '$lib/api/gate';
+import { section, type Section } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
+import { rolesInWords } from '$lib/roles';
 import { PLUGIN } from '$lib/plugin-names';
 import { runs } from '$lib/plugins';
 import { readRelationChoices } from '$lib/server/relation-choices';
@@ -18,7 +20,10 @@ import { readRelationChoices } from '$lib/server/relation-choices';
 /** One locale the new entry can be written in. */
 type LocaleChoice = { code: string; name: string; is_default: boolean };
 
-const LOCALES_FAILED = 'Could not load the locales.';
+const LOCALES_FAILED = couldNotLoad('the locales');
+
+/** The roles the create route admits. */
+const CREATORS = ['admin', 'super_admin'];
 
 export const load: PageServerLoad = async (event) => {
 	const { params, parent } = event;
@@ -27,15 +32,15 @@ export const load: PageServerLoad = async (event) => {
 	// The create route admits an admin and a super admin only. The schema read
 	// admits any signed-in reader, so without this an editor would get a whole
 	// form whose Create the engine then refuses.
-	if (!user.roles.some((role) => role === 'admin' || role === 'super_admin')) {
-		error(403, forbiddenText('the new entry form'));
+	if (!user.roles.some((role) => CREATORS.includes(role))) {
+		error(403, `Only ${rolesInWords(CREATORS)} can open this page.`);
 	}
 
 	let schemaDef: Schema;
 	try {
 		schemaDef = await getSchema(params.schema, client);
 	} catch (err) {
-		readError(err, `Schema "${params.schema}" not found`);
+		readError(err, `Content type "${params.schema}" not found`);
 	}
 
 	// The locale routes belong to the localization plugin. Without it there is
@@ -64,7 +69,7 @@ export const load: PageServerLoad = async (event) => {
 	// the schema has one. A read that fails is null, so the picker says the
 	// library could not be read instead of claiming nothing is published.
 	const mediaChoices: MediaChoice[] | null = schemaDef.fields.some((f) => f.field_type === 'media')
-		? await Promise.resolve().then(() => listMediaChoices(client)).catch(() => null)
+		? await listMediaChoices(client).catch(() => null)
 		: [];
 
 	return { schemaDef, relations, locales, mediaChoices };
@@ -120,7 +125,7 @@ export const actions: Actions = {
 			const shown = (schemaDef?.fields ?? []).filter((f) => !f.system).map((f) => f.name);
 			const refused = fieldRefusalOf(err, shown);
 			if (refused) return fail(422, refused);
-			return fail(400, { error: actionError(err, 'Could not create the entry. Check the fields and try again.') });
+			return actionFailure(err, 'Could not create the entry. Try again.');
 		}
 
 		// The entry exists once the create answered, so a refused link is
@@ -129,7 +134,7 @@ export const actions: Actions = {
 		if (links && created) {
 			const failed = await setEntryRelations(event, created, links);
 			if (failed) {
-				return fail(400, { error: `The entry was created, but some links were not saved. ${failed}`, created });
+				return fail(400, { error: `Entry created. ${failed}`, created });
 			}
 		}
 		redirect(303, `/admin/content/${params.schema}`);

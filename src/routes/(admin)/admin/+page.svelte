@@ -17,7 +17,8 @@
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import TrafficBars from '$lib/components/TrafficBars.svelte';
-	import { NO_VALUE, formatCount, formatDateTime, formatPercent, logLevelTone } from '$lib/format';
+	import { NO_VALUE, formatCount, formatDateTime, formatPercent, logLevelTone, plural } from '$lib/format';
+	import { couldNotLoad } from '$lib/outage';
 	import { entryTone } from '$lib/tones';
 	import { WINDOWS, WINDOW_LABEL, trafficTone, type Window } from '$lib/dashboard';
 	import { ICON } from '$lib/icon';
@@ -40,7 +41,7 @@
 
 	/** What the collections carry, from the list already in hand. */
 	const collectionsSub = $derived.by(() => {
-		if (!schemas) return 'schemas unavailable';
+		if (!schemas) return 'content types unavailable';
 		const staged = schemas.filter((s) => s.with_draft_publish).length;
 		return staged > 0
 			? `${formatCount(staged)} with draft and publish`
@@ -68,7 +69,7 @@
 
 <PageShell
 	title="Dashboard"
-	description="Check this instance's content, traffic and health."
+	description="See what changed and what needs attention."
 	width="wide"
 >
 	{#snippet actions()}
@@ -102,7 +103,7 @@
 	{#if data.layoutUnread}
 		<p class="flex flex-wrap items-center gap-2 text-sm text-muted">
 			<TriangleAlert size={ICON.md} class="shrink-0 text-warn" aria-hidden="true" />
-			Could not load this tenant's own dashboard. Showing the standard one.
+			{couldNotLoad("this tenant's own dashboard")} Showing the standard one.
 			<a class="relative hit-area underline hover:text-fg" href="{page.url.pathname}{page.url.search}" data-sveltekit-reload>Try again</a>
 		</p>
 	{/if}
@@ -133,16 +134,16 @@
 		{/if}
 	{:else if schemas && schemas.length === 0}
 		{#if data.isAdmin}
-			<EmptyState level={2} title="No schemas yet" description="Create a schema to start adding content.">
+			<EmptyState level={2} title="No content types yet" description="Create a content type to start adding content.">
 				{#snippet action()}
 					<Button variant="secondary" href="/admin/schema">
-						<Plus size={ICON.sm} /> New schema
+						<Plus size={ICON.sm} /> New content type
 					</Button>
 				{/snippet}
 			</EmptyState>
 		{:else}
 			<!-- The engine admits a new schema only from an admin. -->
-			<EmptyState level={2} title="No schemas yet" description="Ask an admin to create one." />
+			<EmptyState level={2} title="No content types yet" description="Ask an administrator to create one." />
 		{/if}
 	{:else}
 		{#if data.isAdmin}
@@ -154,7 +155,7 @@
 					{#if data.attention.length === 0 && unread}
 						<p class="flex items-center gap-2 px-card py-card-sm text-sm text-muted">
 							<TriangleAlert size={ICON.md} class="shrink-0 text-warn" aria-hidden="true" />
-							Nothing needs attention in what loaded. Tiles marked unknown did not load.
+							No problems in the tiles that loaded. Tiles marked unknown did not load.
 						</p>
 					{:else if data.attention.length === 0}
 						<p class="flex items-center gap-2 px-card py-card-sm text-sm text-muted">
@@ -196,7 +197,7 @@
 					<a href="/admin/content" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-brand">
 						<Stat
 							class="h-full"
-							label="Collections"
+							label="Content types"
 							accent="neutral"
 							value={schemas ? formatCount(schemas.length) : 'unknown'}
 							sub={collectionsSub}
@@ -211,7 +212,7 @@
 							label="Entries"
 							accent="neutral"
 							value={data.entryTotal === null ? 'unknown' : formatCount(data.entryTotal)}
-							sub={data.entryTotal === null ? 'entries unavailable' : (entriesSub ?? 'across every collection')}
+							sub={data.entryTotal === null ? 'entries unavailable' : (entriesSub ?? 'across every content type')}
 						/>
 					</a>
 				{/if}
@@ -297,7 +298,7 @@
 							{#if data.traffic}
 								<TrafficBars hours={data.traffic} />
 							{:else}
-								<p class="text-sm text-faint">Could not load the trend. Reload the page to try again.</p>
+								<p class="text-sm text-faint">{couldNotLoad('the trend', { reload: true })}</p>
 							{/if}
 						</div>
 					</Card>
@@ -305,7 +306,7 @@
 					<Card>
 						<SectionHeading level={3}>Busiest endpoints</SectionHeading>
 						{#if !data.endpoints}
-							<p class="mt-3 text-sm text-faint">Could not load the busiest endpoints. Reload the page to try again.</p>
+							<p class="mt-3 text-sm text-faint">{couldNotLoad('the busiest endpoints', { reload: true })}</p>
 						{:else if data.endpoints.length === 0}
 							<p class="mt-3 text-sm text-muted">No requests in this window.</p>
 						{:else}
@@ -336,11 +337,11 @@
 							<SectionHeading level={3}>
 								Recent entries
 								{#snippet actions()}
-									<a href="/admin/content" class="relative -my-1 py-1 hit-area text-xs text-muted hover:text-brand">All collections</a>
+									<a href="/admin/content" class="relative -my-1 py-1 hit-area text-xs text-muted hover:text-brand">All content types</a>
 								{/snippet}
 							</SectionHeading>
 							{#if !data.entries}
-								<p class="mt-3 text-sm text-faint">Could not load recent entries. Reload the page to try again.</p>
+								<p class="mt-3 text-sm text-faint">{couldNotLoad('recent entries', { reload: true })}</p>
 							{:else if data.entries.length === 0}
 								<p class="mt-3 text-sm text-muted">No entries yet.</p>
 							{:else}
@@ -376,7 +377,7 @@
 								{/snippet}
 							</SectionHeading>
 							{#if !data.audit}
-								<p class="mt-3 text-sm text-faint">Could not load the audit log. Reload the page to try again.</p>
+								<p class="mt-3 text-sm text-faint">{couldNotLoad('the audit log', { reload: true })}</p>
 							{:else if data.audit.length === 0}
 								<p class="mt-3 text-sm text-muted">No audit entries yet.</p>
 							{:else}
@@ -406,7 +407,7 @@
 								{/snippet}
 							</SectionHeading>
 							{#if !data.deadLetters}
-								<p class="mt-3 text-sm text-faint">Could not load the dead letter queue. Reload the page to try again.</p>
+								<p class="mt-3 text-sm text-faint">{couldNotLoad('the dead letter queue', { reload: true })}</p>
 							{:else if data.deadLetters.length === 0}
 								<p class="mt-3 text-sm text-muted">No deliveries are waiting in the dead letter queue.</p>
 							{:else}
@@ -422,7 +423,7 @@
 											</div>
 											<span class="shrink-0 text-xs text-faint">
 												{letter.total_attempts}
-												{letter.total_attempts === 1 ? 'attempt' : 'attempts'}
+												{plural(letter.total_attempts, 'attempt')}
 											</span>
 										</li>
 									{/each}
@@ -440,7 +441,7 @@
 								{/snippet}
 							</SectionHeading>
 							{#if !data.errors}
-								<p class="mt-3 text-sm text-faint">Could not load the log. Reload the page to try again.</p>
+								<p class="mt-3 text-sm text-faint">{couldNotLoad('the log', { reload: true })}</p>
 							{:else if data.errors.length === 0}
 								<p class="mt-3 text-sm text-muted">No errors logged in the last {WINDOW_LABEL[data.window]}.</p>
 							{:else}

@@ -9,9 +9,8 @@
  * for its admin or a super admin, and records every change in the audit log.
  */
 import type { HttpClient } from '@lyeve-labs/client';
-import { gateOf, type Gate } from './gate';
 
-export const PROVIDER_WINDOW_URL = '/api/admin/auth/provider-window';
+const PROVIDER_WINDOW_URL = '/api/admin/auth/provider-window';
 
 /** The window when a tenant has never set one. */
 export const PROVIDER_WINDOW_DEFAULT_DAYS = 30;
@@ -21,10 +20,6 @@ export const PROVIDER_WINDOW_MAX_DAYS = 365;
 export interface ProviderWindow {
 	/** Whole days. 0 allows sign-in through the provider only. */
 	days: number;
-}
-
-export function providerWindowGate(err: unknown): Gate {
-	return gateOf(err, 'Could not load the sign-in window.');
 }
 
 export function readProviderWindow(client: HttpClient): Promise<ProviderWindow> {

@@ -5,7 +5,7 @@ import { tick } from 'svelte';
 import FlowImportDrawer, { type ImportFailure } from './FlowImportDrawer.svelte';
 
 type After = (o: { result: { type: string }; update: (o?: unknown) => Promise<void> }) => Promise<void>;
-type Submit = () => After;
+type Submit = () => Promise<After>;
 
 const forms = vi.hoisted(() => ({ submit: null as Submit | null }));
 vi.mock('$app/forms', () => ({
@@ -54,10 +54,10 @@ describe('FlowImportDrawer', () => {
 	it('closes on success and stays open on a failure', async () => {
 		setup();
 		const update = vi.fn(async () => {});
-		await (forms.submit as Submit)()({ result: { type: 'failure' }, update });
+		await (await (forms.submit as Submit)())({ result: { type: 'failure' }, update });
 		await tick();
 		expect(importForm()).toBeTruthy();
-		await (forms.submit as Submit)()({ result: { type: 'success' }, update });
+		await (await (forms.submit as Submit)())({ result: { type: 'success' }, update });
 		await tick();
 		await vi.waitFor(() => expect(document.body.querySelector('#flow-import-form')).toBeNull());
 	});

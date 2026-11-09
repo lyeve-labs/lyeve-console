@@ -49,6 +49,7 @@
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
 	import { hasLicenseModule } from '$lib/entitlements';
 	import { ICON } from '$lib/icon';
+	import { plural } from '$lib/format';
 	import { isExternalHref } from '$lib/links';
 
 	let { data }: { data: PageData } = $props();
@@ -64,8 +65,7 @@
 	const summary = $derived.by(() => {
 		if (data.gate.state !== 'ok') return 'See the plugins in this build and whether each one is running.';
 		if (counts.compiled === 0) return 'This build has no plugins.';
-		const noun = counts.compiled === 1 ? 'plugin' : 'plugins';
-		return `${counts.running} of ${counts.compiled} ${noun} running`;
+		return `${counts.running} of ${counts.compiled} ${plural(counts.compiled, 'plugin')} running`;
 	});
 
 	// Only the groups a plugin is filed under, so no choice empties the list.

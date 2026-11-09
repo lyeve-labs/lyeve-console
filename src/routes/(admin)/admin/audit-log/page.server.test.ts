@@ -68,7 +68,7 @@ describe('audit-log prune posts to a prefix the engine mounts', () => {
 
 	it('relays the reason the plugin gives for a refused prune', async () => {
 		const fetch = vi.fn(async () =>
-			new Response(JSON.stringify({ error: 'older_than must not be later than now' }), {
+			new Response(JSON.stringify({ error: 'older_than must not be later than now', code: 'bad_request' }), {
 				status: 400,
 				headers: { 'content-type': 'application/json' },
 			}),

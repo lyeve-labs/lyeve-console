@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { Minus } from '@lucide/svelte';
+	import { Minus, ShieldCheck } from '@lucide/svelte';
 	import { ICON } from '$lib/icon';
-	import ExemptMark from './ExemptMark.svelte';
 	import { applies, schemaLabel, type Action, type RuleMatrix } from './rules.svelte';
 
 	/**
@@ -25,7 +24,7 @@
 {#if applies(action, schema)}
 	{@const mark = rules.markFor(role, schema, action)}
 	{#if mark === 'exempt'}
-		<ExemptMark />
+		<ShieldCheck size={ICON.sm} class="inline-block align-middle text-violet" aria-hidden="true" data-mark="exempt" />
 	{:else if mark === 'none'}
 		<Minus size={ICON.sm} class="inline-block align-middle text-muted" aria-hidden="true" data-mark="none" />
 	{:else}

@@ -25,7 +25,7 @@
 	import { Plus, Trash2, Pencil, Clock, CheckCircle, XCircle, Inbox } from '@lucide/svelte';
 	import type { Job } from './+page.server';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { confirmed, submitter } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, submitter } from '$lib/forms.svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import { formRefusal } from '$lib/api/refusal';
@@ -69,10 +69,8 @@
 	// when it came back after that drawer opened. A failed delete belongs to
 	// the page. Read by the wrong drawer, a failure greets the next job as that
 	// job's own.
-	let openedOver = $state.raw<unknown>(null);
-	const drawerFailed = $derived(
-		form !== openedOver && !!form && 'action' in form && form.action === (editing ? 'update' : 'create'),
-	);
+	const failure = drawerFailure(() => form, ['create', 'update']);
+	const drawerFailed = $derived(failure.drawer !== null);
 
 	// The address effect below calls both openers. Reading `form` untracked
 	// keeps every answer from reopening the drawer.
@@ -81,7 +79,7 @@
 		enabled = true;
 		payload = '';
 		threshold = 1;
-		openedOver = untrack(() => form);
+		untrack(() => failure.opened());
 		open = true;
 	}
 
@@ -90,7 +88,7 @@
 		enabled = job.enabled;
 		payload = job.payload ? JSON.stringify(job.payload, null, 2) : '';
 		threshold = job.alerts?.failure_threshold ?? 1;
-		openedOver = untrack(() => form);
+		untrack(() => failure.opened());
 		open = true;
 	}
 
@@ -151,9 +149,7 @@
 		{/if}
 	{/snippet}
 
-	{#if !(form && 'action' in form && (form.action === 'create' || form.action === 'update'))}
-		<FormErrors message={formError} {refused} />
-	{/if}
+	<FormErrors message={failure.page ? formError : undefined} refused={failure.page ? refused : null} />
 
 	{#if data.openGate}
 		<!-- The address named a job the drawer could not open on. -->
@@ -357,7 +353,7 @@
 		<fieldset class="flex flex-col gap-4 border-t border-line pt-4">
 			<legend class="text-sm font-medium text-fg">Failure alerts</legend>
 			<p class="text-xs text-muted">
-				Choose where to send an alert when a job starts failing and when it recovers. Leave every channel empty to send no alerts. Email alerts work on every install.
+				Choose where to send an alert when a job starts failing and when it recovers. Leave every channel empty to send no alerts. Email alerts are always available.
 			</p>
 			<input type="hidden" name="alerts_stored" value={hasChannels(editing?.alerts) ? 'true' : 'false'} />
 			<AlertChannelFields prefix={ALERT_PREFIX} idPrefix="job-alert" value={editing?.alerts ?? null} />

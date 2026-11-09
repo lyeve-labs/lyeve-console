@@ -5,9 +5,9 @@ import {
 	type EmailProviderBody,
 	type EmailTransport,
 } from '$lib/api/email';
+import { checked } from '$lib/checkbox';
 
 const text = (data: FormData, key: string): string => String(data.get(key) ?? '').trim();
-const on = (v: FormDataEntryValue | null): boolean => v === 'true' || v === 'on';
 
 function isTransport(v: string): v is EmailTransport {
 	return (TRANSPORTS as string[]).includes(v);
@@ -58,7 +58,7 @@ export function parseProvider(
 		const port = Number(text(data, 'port'));
 		if (port) body.port = port;
 		body.username = text(data, 'username');
-		body.use_tls = on(data.get('use_tls'));
+		body.use_tls = checked(data, 'use_tls');
 		const password = text(data, 'password');
 		if (password) body.password = password;
 		return { body };

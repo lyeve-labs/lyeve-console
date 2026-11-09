@@ -30,7 +30,7 @@ describe('TokenExpiryField', () => {
 
 	it('asks for a day once a reader chooses to pick one, and posts no end until one is picked', async () => {
 		const { sent } = setup();
-		await fireEvent.click(screen.getByRole('radio', { name: 'Pick a day' }));
+		await fireEvent.click(screen.getByRole('radio', { name: 'Choose a day' }));
 		const out = sent();
 		expect(out.get('expiry')).toBe('custom');
 		expect(out.get('expires_at')).toBe('');

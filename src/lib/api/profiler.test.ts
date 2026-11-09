@@ -4,7 +4,6 @@ import {
 	PROFILER_ROOT,
 	captureFlamegraph,
 	clampSeconds,
-	formatSignedBinaryBytes,
 	formatNs,
 	isProfileType,
 	latencyTone,
@@ -106,16 +105,12 @@ describe('the bounds and the formats', () => {
 		expect(isProfileType('')).toBe(false);
 	});
 
-	it('formats nanoseconds and bytes at the unit that reads', () => {
-		expect(formatNs(2_500_000_000)).toBe('2.50s');
-		expect(formatNs(1_500_000)).toBe('1.5ms');
-		expect(formatNs(1_500)).toBe('2µs');
-		expect(formatNs(400)).toBe('400ns');
+	it('formats nanoseconds at the unit that reads', () => {
+		expect(formatNs(2_500_000_000)).toBe('2.50 s');
+		expect(formatNs(1_500_000)).toBe('1.5 ms');
+		expect(formatNs(1_500)).toBe('2 µs');
+		expect(formatNs(400)).toBe('400 ns');
 		expect(formatNs(Number.NaN)).toBe('');
-		expect(formatSignedBinaryBytes(3 * 1024 ** 3)).toBe('3.00 GiB');
-		expect(formatSignedBinaryBytes(1.5 * 1024 ** 2)).toBe('1.5 MiB');
-		expect(formatSignedBinaryBytes(2048)).toBe('2 KiB');
-		expect(formatSignedBinaryBytes(-512)).toBe('-512 B');
 	});
 
 	it('tones a p95 by the second, the tenth and the hundredth', () => {

@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import MediaTable from './MediaTable.svelte';
-import { IMAGE, ONE_OF_EACH, PDF } from './fixtures';
+import { IMAGE, ONE_OF_EACH, PDF } from './test-support/fixtures';
 
 afterEach(cleanup);
 

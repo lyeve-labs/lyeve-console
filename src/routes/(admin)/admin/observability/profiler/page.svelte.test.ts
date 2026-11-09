@@ -21,13 +21,6 @@ const STATS = {
 	last_seen: '2026-09-21T10:00:00Z',
 };
 
-const MEMORY = {
-	snapshots: [{ timestamp: '2026-09-21T10:00:00Z', heap_alloc: 3 * 1024 * 1024, heap_objects: 10, total_alloc: 4096, num_gc: 2, num_goroutine: 30 }],
-	slope_bytes_per_sec: 2048,
-	leak_likely: true,
-	leak_reason: 'heap grew for 10 snapshots',
-};
-
 const ok = <T,>(value: T) => ({ ok: true as const, value });
 const down = { ok: false as const, gate: { state: 'unavailable' } };
 
@@ -36,7 +29,6 @@ function page(over: Record<string, unknown> = {}) {
 		endpoints: ok([STATS]),
 		slowest: ok([STATS]),
 		plugins: ok([{ plugin: 'core', count: 4, avg_duration_ns: 1_000_000, max_duration_ns: 2_000_000, total_alloc_bytes: 4096 }]),
-		memory: ok(MEMORY),
 		selected: null,
 		detail: null,
 		...over,
@@ -50,13 +42,10 @@ function props(data: Record<string, unknown>, form: Record<string, unknown> | nu
 afterEach(cleanup);
 
 describe('the profiler page', () => {
-	it('renders the memory trend with the leak verdict, the slowest table and the plugin breakdown', () => {
-		const { container, getByTestId } = render(ProfilerPage, props(page()));
-		expect(container.textContent).toContain('Leak likely');
-		expect(container.textContent).toContain('heap grew for 10 snapshots');
-		expect(getByTestId('memory-stats').textContent).toContain('3.0 MiB');
+	it('renders the slowest table and the plugin breakdown', () => {
+		const { getByTestId } = render(ProfilerPage, props(page()));
 		expect(getByTestId('profiler-slowest').textContent).toContain('/api/v1/content');
-		expect(getByTestId('profiler-slowest').textContent).toContain('2.50s');
+		expect(getByTestId('profiler-slowest').textContent).toContain('2.50 s');
 		expect(getByTestId('profiler-plugins').textContent).toContain('core');
 	});
 
@@ -95,40 +84,10 @@ describe('the profiler page', () => {
 	});
 
 	it('says which view the engine did not answer instead of rendering zeros', () => {
-		const { container, getByTestId } = render(ProfilerPage, props(page({ memory: down, slowest: down, plugins: down, endpoints: down })));
-		expect(getByTestId('profiler-memory').textContent).toContain('is unavailable');
+		const { container, getByTestId } = render(ProfilerPage, props(page({ slowest: down, plugins: down, endpoints: down })));
 		expect(getByTestId('profiler-slowest').textContent).toContain('is unavailable');
 		expect(getByTestId('profiler-plugins').textContent).toContain('is unavailable');
 		expect(container.textContent).not.toContain('0 endpoints sampled');
-	});
-
-	// The exports post to the admin's own proxy, which forwards the session
-	// to the engine's debug route and hands the pprof bytes back as a file. A
-	// proxy in front of both sends every /api/ path to the engine, so the
-	// console's route has to live outside it.
-	it('offers the four pprof exports as downloads through the console, never an engine path', () => {
-		const { getByTestId } = render(ProfilerPage, props(page()));
-		const forms = [...getByTestId('profiler-exports').querySelectorAll('form')].map((f) => f.getAttribute('action'));
-		expect(forms).toEqual([
-			'/admin/observability/profiler/profile/cpu',
-			'/admin/observability/profiler/profile/goroutine',
-			'/admin/observability/profiler/profile/heap',
-			'/admin/observability/profiler/profile/allocs',
-		]);
-		for (const action of forms) expect(action?.startsWith('/api/')).toBe(false);
-	});
-
-	it('draws a captured flamegraph as an image from its SVG', () => {
-		const graph = { endpoint: '/api/v1/content', duration_sec: 5, svg: '<svg xmlns="http://www.w3.org/2000/svg"></svg>', profile_type: 'cpu', captured_at: '2026-09-21T10:00:00Z' };
-		const { getByTestId } = render(ProfilerPage, props(page(), { form: 'flamegraph', graph }));
-		const img = getByTestId('flamegraph').querySelector('img');
-		expect(img?.getAttribute('src')).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
-		expect(img?.getAttribute('alt')).toContain('/api/v1/content');
-	});
-
-	it('relays a refused capture on the flamegraph form', () => {
-		const { container } = render(ProfilerPage, props(page(), { form: 'flamegraph', error: 'flamegraph generation failed' }));
-		expect(container.textContent).toContain('flamegraph generation failed');
 	});
 });
 
@@ -148,5 +107,18 @@ describe('the profiler links under a finger', () => {
 	it('gives Clear selection a touch hit area', () => {
 		const { getByRole } = render(ProfilerPage, props(page({ selected: '/nothing', detail: ok(null) })));
 		expect(hasHitArea(getByRole('link', { name: 'Clear selection' }))).toBe(true);
+	});
+});
+
+describe('the timings page', () => {
+	it('carries the profiler tabs with Timings marked', () => {
+		const { getByRole } = render(ProfilerPage, props(page()));
+		expect(getByRole('tab', { name: 'Timings' }).getAttribute('aria-selected')).toBe('true');
+	});
+
+	it('leaves the memory trend and the capture forms to their own tabs', () => {
+		const { queryByTestId } = render(ProfilerPage, props(page()));
+		expect(queryByTestId('profiler-memory')).toBeNull();
+		expect(queryByTestId('profiler-exports')).toBeNull();
 	});
 });

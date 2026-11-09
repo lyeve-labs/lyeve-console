@@ -72,8 +72,8 @@
 			description: 'Check the code shown on the device. It is eight letters and digits, like WDJB-MJHT.',
 		},
 		forbidden: {
-			title: 'Only an admin can approve a device',
-			description: 'Approving a device sign-in needs the admin or super admin role.',
+			title: 'You cannot approve this sign-in',
+			description: 'Only an admin or a super admin can approve a device sign-in.',
 		},
 	};
 
@@ -85,7 +85,7 @@
 	title="Approve a device sign-in"
 	documentTitle="Approve a device"
 	description="Signed in as {data.email}. A device you approve gets a short session as you."
-	back={{ href: '/admin', label: 'Admin' }}
+	back={{ href: '/admin', label: 'Dashboard' }}
 >
 	<div class="space-y-6">
 		{#if view === 'pending' && data.request}

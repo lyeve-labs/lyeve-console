@@ -55,7 +55,7 @@ function actionEvent(routes: Record<string, Route>, form: FormData) {
 		event: {
 			fetch,
 			cookies: mockCookies(),
-			request: { formData: async () => form },
+			request: { formData: async () => form, clone: () => ({ formData: async () => form }) },
 			url: new URL('http://localhost/admin/flows'),
 			params: {},
 		} as never,
@@ -280,6 +280,7 @@ describe('admin/flows create action', () => {
 describe('admin/flows delete action', () => {
 	it('deletes by id', async () => {
 		const form = new FormData();
+		form.set('confirmed', 'yes');
 		form.set('id', 'f9');
 		const { event, calls } = actionEvent({ '/api/admin/flows/f9': () => new Response(null, { status: 204 }) }, form);
 		await actions.delete(event);
@@ -289,8 +290,9 @@ describe('admin/flows delete action', () => {
 
 	it('relays the engine message on refusal', async () => {
 		const form = new FormData();
+		form.set('confirmed', 'yes');
 		form.set('id', 'f9');
-		const { event } = actionEvent({ '/api/admin/flows/f9': () => json({ error: 'super_admin required' }, 403) }, form);
+		const { event } = actionEvent({ '/api/admin/flows/f9': () => json({ error: 'super_admin required', code: 'forbidden' }, 403) }, form);
 		const result = (await actions.delete(event)) as { status: number; data: { error: string; forbidden: boolean; action: string } };
 		expect(result.status).toBe(403);
 		expect(result.data.forbidden).toBe(true);
@@ -366,6 +368,22 @@ describe('admin/flows import action', () => {
 		const result = (await actions.import(event)) as { status: number; data: { errors: unknown[] } };
 		expect(result.status).toBe(422);
 		expect(result.data.errors).toEqual([{ node_id: '', path: '/trigger', message: 'unknown type' }]);
+	});
+
+	it("relays the engine's own refusal and keeps a proxy's page off the screen", async () => {
+		const form = new FormData();
+		form.set('text', '{}');
+		const coded = actionEvent(
+			{ '/api/admin/flows/import': () => json({ error: 'a flow with this slug already exists', code: 'conflict' }, 409) },
+			form
+		);
+		expect(((await actions.import(coded.event)) as { data: { error: string } }).data.error).toBe('a flow with this slug already exists');
+
+		const proxy = actionEvent(
+			{ '/api/admin/flows/import': () => new Response('<html><body>413 Request Entity Too Large</body></html>', { status: 413 }) },
+			form
+		);
+		expect(((await actions.import(proxy.event)) as { data: { error: string } }).data.error).toBe('Could not import the flow. Try again.');
 	});
 
 	it('refuses an empty import and a replace with no slug before calling the engine', async () => {

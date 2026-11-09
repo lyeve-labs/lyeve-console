@@ -6,7 +6,22 @@ import type { Entitlements } from '$lib/entitlements';
 import type { Variable } from '$lib/api/flows';
 
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/flows/variables') } }));
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+// enhance keeps each form's submit handler, so a case can run the one a
+// delete would run and read the question it asks.
+const forms = vi.hoisted(() => ({
+	submits: new Map<HTMLFormElement, (input: unknown) => unknown>(),
+	confirm: vi.fn(async () => false),
+}));
+vi.mock('$app/forms', () => ({
+	enhance: (node: HTMLFormElement, submit: (input: unknown) => unknown) => {
+		forms.submits.set(node, submit);
+		return { destroy: () => forms.submits.delete(node) };
+	},
+}));
+vi.mock('@lyeve-labs/ui-kit', async (original) => ({
+	...(await original<typeof import('@lyeve-labs/ui-kit')>()),
+	confirm: forms.confirm,
+}));
 
 afterEach(cleanup);
 
@@ -100,11 +115,15 @@ describe('variables page', () => {
 		expect(container.querySelector('[role="dialog"]')).toBeNull();
 	});
 
-	it('never posts a delete straight from the row', () => {
-		const { container, getByLabelText } = setup();
-		expect(getByLabelText('Delete region')).toBeTruthy();
-		const form = container.querySelector('form[action="?/delete"]') as HTMLFormElement;
-		expect((form.querySelector('[name="key"]') as HTMLInputElement).value).toBe('');
+	it('asks before a row posts its delete', async () => {
+		const { getByLabelText } = setup();
+		const form = getByLabelText('Delete region').closest('form') as HTMLFormElement;
+		expect(form.getAttribute('action')).toBe('?/delete');
+		expect(new FormData(form).get('key')).toBe('region');
+		const cancel = vi.fn();
+		await forms.submits.get(form)?.({ cancel });
+		expect(forms.confirm).toHaveBeenCalledWith('Delete variable vars.region?', expect.any(String), { confirmLabel: 'Delete' });
+		expect(cancel).toHaveBeenCalled();
 	});
 
 	it('shows a failed delete on the page', () => {

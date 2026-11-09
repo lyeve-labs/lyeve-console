@@ -68,8 +68,8 @@ describe('content index chips', () => {
 		});
 
 		const text = container.textContent ?? '';
-		expect(text).toContain('No localized collection');
-		expect(container.querySelector('a[href="/admin/content"]')?.textContent).toContain('Show every collection');
+		expect(text).toContain('No localized content type');
+		expect(container.querySelector('a[href="/admin/content"]')?.textContent).toContain('Show every content type');
 	});
 
 	it('offers to hide the empty collections it counted on the page', () => {
@@ -94,7 +94,7 @@ describe('content index read', () => {
 
 		const text = container.textContent ?? '';
 		expect(text).toContain('The collections could not be read.');
-		expect(text).not.toContain('No schemas yet');
+		expect(text).not.toContain('No content types yet');
 		expect(container.querySelector('table')).toBeNull();
 	});
 
@@ -104,7 +104,7 @@ describe('content index read', () => {
 		});
 
 		expect(container.textContent).toContain('so content did not load');
-		expect(container.textContent).not.toContain('No schemas yet');
+		expect(container.textContent).not.toContain('No content types yet');
 	});
 
 	it('tells a refused role so and offers neither entries nor releases', () => {
@@ -113,7 +113,7 @@ describe('content index read', () => {
 		});
 
 		expect(container.textContent).toContain('Your role cannot open');
-		expect(container.textContent).not.toContain('No schemas yet');
+		expect(container.textContent).not.toContain('No content types yet');
 		expect(container.querySelector('a[href="/admin/releases"]')).toBeNull();
 		expect(container.querySelector('a[aria-label^="New entry"]')).toBeNull();
 	});

@@ -3,6 +3,7 @@ import { error, fail } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
 import { actionFailure } from '$lib/server/action-error';
 import { forbiddenText, isOutage } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 import { PLUGIN, type PluginName } from '$lib/plugin-names';
 import { notRunning, whyNotRunning } from '$lib/plugins';
 import {
@@ -28,7 +29,7 @@ const EDITORS = ['admin', 'super_admin'];
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins, pluginStatus, user } = await event.parent();
-	if (!user.roles.some((r) => EDITORS.includes(r))) error(403, forbiddenText('the privacy settings'));
+	if (!user.roles.some((r) => EDITORS.includes(r))) error(403, forbiddenText('this page', EDITORS));
 	const client = authedClient(event);
 	// A setting whose plugin the engine says is stopped is not read, and its
 	// card says why, the way the shell does for a stopped plugin's page. A
@@ -42,17 +43,17 @@ export const load: PageServerLoad = async (event) => {
 		read<FormErasure>(
 			PLUGIN.schema,
 			() => readFormErasure(client),
-			'Could not load what an erasure does with form submissions.',
+			couldNotLoad('what an erasure does with form submissions'),
 		),
 		read<ExportSections>(
 			PLUGIN.productAnalytics,
 			() => readExportSections(client),
-			'Could not load what a person may include in an export.',
+			couldNotLoad('what a person may include in an export'),
 		),
 		read<{ roles: string[] }>(
 			PLUGIN.productAnalytics,
 			() => readExportRoles(client),
-			'Could not load who may export their own data.',
+			couldNotLoad('who may export their own data'),
 		),
 	]);
 	// Every setting here is a tenant's. A session that names none is told so

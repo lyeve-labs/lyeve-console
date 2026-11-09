@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '@lyeve-labs/client';
 import {
 	occupancy,
 	regionState,
@@ -7,7 +6,6 @@ import {
 	replicationLabel,
 	replicationTone,
 	reportIsPartial,
-	residencyGate,
 	slugIsSound,
 	unassigned,
 	type Region,
@@ -188,19 +186,5 @@ describe('occupancy', () => {
 
 	it('returns nothing rather than throwing on no report', () => {
 		expect(occupancy(null)).toEqual([]);
-	});
-});
-
-describe('the gate sorts a refusal by what it means', () => {
-	it('tells a 402, a 404 and any other failure apart', () => {
-		expect(residencyGate(new ApiError(402, 'payment required')).state).toBe('locked');
-		expect(residencyGate(new ApiError(404, 'not found')).state).toBe('absent');
-		expect(residencyGate(new ApiError(500, 'internal error')).state).toBe('error');
-		expect(residencyGate(new ApiError(503, 'database error')).state).toBe('unavailable');
-	});
-
-	it('never reports a failed read as every tenant being placed', () => {
-		const gate = residencyGate(new Error('network'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load the residency report.');
 	});
 });

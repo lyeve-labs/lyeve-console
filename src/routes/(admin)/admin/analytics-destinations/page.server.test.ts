@@ -38,8 +38,9 @@ function loadEvent(query = '', running = ['analytics']) {
 
 function actionEvent(fields: Record<string, string>) {
 	const data = new FormData();
+	data.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) data.set(k, v);
-	return { request: { formData: async () => data } } as never;
+	return { request: { formData: async () => data, clone: () => ({ formData: async () => data }) } } as never;
 }
 
 beforeEach(() => vi.clearAllMocks());
@@ -126,7 +127,7 @@ describe('saving a destination', () => {
 	it('refuses a missing required setting on a new destination, without a request', async () => {
 		const out = (await actions.save(actionEvent({ name: 'W', type: 'webhook', max_attempts: '1' }))) as Failure;
 		expect(out.status).toBe(400);
-		expect(out.data.error).toBe('HTTPS URL is required.');
+		expect(out.data.error).toBe('Enter the HTTPS URL.');
 		expect(engine.post).not.toHaveBeenCalled();
 	});
 
@@ -184,7 +185,7 @@ describe('deleting a destination', () => {
 	});
 
 	it('relays the reason the plugin refused with', async () => {
-		engine.delete.mockRejectedValue(new ApiError(404, 'provider not found'));
+		engine.delete.mockRejectedValue(new ApiError(404, 'provider not found', { error: 'provider not found', code: 'not_found' }));
 		expect(await actions.delete(actionEvent({ id: 'p1' }))).toMatchObject({ status: 400, data: { error: 'provider not found' } });
 	});
 

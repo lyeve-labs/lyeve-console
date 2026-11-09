@@ -18,7 +18,7 @@
 		error,
 	}: {
 		fields: SchemaField[];
-		/** Reactive $state proxy from parent - mutated in-place by FieldInput */
+		/** The parent's state, which each FieldInput writes in place, so the parent never copies it back. */
 		formValues: Record<string, unknown>;
 		validationErrors?: Record<string, string>;
 		/** The key inside a json field that its error is about, by field name. */
@@ -27,7 +27,6 @@
 		relations?: Record<string, RelationChoices>;
 		/** Published library files a media field may point at. Null when the library could not be read. */
 		mediaChoices?: MediaChoice[] | null;
-		/** Server-side error message */
 		error?: string | null;
 	} = $props();
 
@@ -106,7 +105,7 @@
 <FormErrors message={error ?? undefined} fields={validationErrors} />
 
 {#if fields.length === 0}
-	<p class="text-faint text-sm py-4 text-center">This schema has no editable fields.</p>
+	<p class="text-faint text-sm py-4 text-center">This content type has no editable fields.</p>
 {:else}
 	<!-- The form states the gap between its fields. The caller's Card wraps
 	     its children, so a space-y on the Card would not reach them. -->

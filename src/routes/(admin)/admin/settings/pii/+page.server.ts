@@ -1,71 +1,30 @@
 import type { Actions, PageServerLoad } from './$types';
-import { fail, isRedirect, redirect } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
+import { checked } from '$lib/checkbox';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
-import {
-	PII_OK,
-	createRule,
-	deleteRule,
-	getRules,
-	listAccessLog,
-	piiGate,
-	testRule,
-	updateRule,
-	type AccessEntry,
-	type PiiGate,
-	type RuleCatalog,
-} from '$lib/api/pii-mask';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-
-const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 199;
+import { createRule, deleteRule, getRules, testRule, updateRule, type RuleCatalog } from '$lib/api/pii-mask';
+import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
+import { asked } from '$lib/server/asked';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();
-	const { limit, offset } = pageWindow(event.url, DEFAULT_LIMIT, MAX_LIMIT);
 
 	// The shell says why the page is unavailable while its plugin does not run.
 	if (notRunning(plugins, PLUGIN.piiMask)) {
-		return {
-			rules: null as RuleCatalog | null,
-			entries: [] as AccessEntry[],
-			total: 0,
-			limit,
-			offset,
-			gate: { state: 'absent' } as PiiGate,
-		};
+		return { rules: null as RuleCatalog | null, gate: { state: 'absent' } as Gate };
 	}
 
-	const client = authedClient(event);
 	let rules: RuleCatalog | null = null;
-	let gate: PiiGate = PII_OK;
+	let gate: Gate = GATE_OK;
 	try {
-		rules = await getRules(client);
+		rules = await getRules(authedClient(event));
 	} catch (err) {
-		gate = piiGate(err);
+		gate = gateOf(err, 'Could not load the masking settings.');
 	}
-
-	// The access log is the second read. Losing it must not hide the rules,
-	// which are the answer to "is anything being masked at all".
-	let entries: AccessEntry[] = [];
-	let total = 0;
-	let logFailed = false;
-	if (gate.state === 'ok') {
-		try {
-			const page = await listAccessLog(client, limit, offset);
-			entries = page.data ?? [];
-			const back = pastEndOffset(entries.length, limit, offset, page.total_count ?? null);
-			if (back !== null) redirect(307, withOffset(event.url, back));
-			total = Math.max(page.total_count ?? 0, offset + entries.length);
-		} catch (err) {
-			if (isRedirect(err)) throw err;
-			logFailed = true;
-		}
-	}
-
-	return { rules, entries, total, limit, offset, gate, logFailed };
+	return { rules, gate };
 };
 
 /**
@@ -87,7 +46,7 @@ function draftFrom(form: FormData) {
 		pattern: String(form.get('pattern') ?? '').trim(),
 		replacement: String(form.get('replacement') ?? '').trim(),
 		priority: priorityFrom(form.get('priority')),
-		enabled: form.get('enabled') === 'on' || form.get('enabled') === 'true',
+		enabled: checked(form, 'enabled'),
 	};
 }
 
@@ -108,7 +67,7 @@ export const actions: Actions = {
 			await createRule(authedClient(event), draft);
 			return { saved: true };
 		} catch (err) {
-			return fail(422, { action: 'create', error: actionError(err, 'Could not create the rule. Try again.') });
+			return tagged('create', actionFailure(err, 'Could not create the rule. Try again.', 422));
 		}
 	},
 
@@ -121,22 +80,29 @@ export const actions: Actions = {
 			await updateRule(authedClient(event), id, draftFrom(form));
 			return { saved: true };
 		} catch (err) {
-			return fail(422, { action: 'update', error: actionError(err, 'Could not save the rule. Try again.') });
+			return tagged('update', actionFailure(err, 'Could not save the rule. Try again.', 422));
 		}
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const form = await event.request.formData();
-		const id = String(form.get('id') ?? '');
-		if (!id) return fail(400, { action: 'delete', error: 'This form is missing its rule. Reload the page and try again.' });
-		try {
-			await deleteRule(authedClient(event), id);
-			return { deleted: true };
-		} catch (err) {
-			return fail(422, { action: 'delete', error: actionError(err, 'Could not delete the rule. Try again.') });
-		}
-	},
+	delete: asked(
+		{
+			question: 'Delete this rule?',
+			detail: 'Values it masks appear unmasked from the next request.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['admin', 'super_admin']);
+			const form = await event.request.formData();
+			const id = String(form.get('id') ?? '');
+			if (!id) return fail(400, { action: 'delete', error: 'This form is missing its rule. Reload the page and try again.' });
+			try {
+				await deleteRule(authedClient(event), id);
+				return { deleted: true };
+			} catch (err) {
+				return tagged('delete', actionFailure(err, 'Could not delete the rule. Try again.', 422));
+			}
+		},
+	),
 
 	// The dry run. It stores nothing, so it is safe to press repeatedly while
 	// a pattern is being worked out, which is the whole point of it.
@@ -152,7 +118,7 @@ export const actions: Actions = {
 			);
 			return { test: result };
 		} catch (err) {
-			return fail(422, { action: 'test', error: actionError(err, 'Could not run the pattern. Try again.') });
+			return tagged('test', actionFailure(err, 'Could not run the pattern. Try again.', 422));
 		}
 	},
 };

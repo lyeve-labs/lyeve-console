@@ -17,10 +17,10 @@ vi.mock('$lib/api/customization', async (orig) => ({
 import { requireRole } from '$lib/server/authz';
 import { actions, load } from './+page.server';
 
-function event() {
+function event(roles = ['admin']) {
 	return {
 		params: { slug: 'launch' },
-		parent: async () => ({ user: { roles: ['admin'] }, customization: { entitled: true, settings: {}, pages: [] } }),
+		parent: async () => ({ user: { roles }, customization: { entitled: true, settings: {}, pages: [] } }),
 	} as never;
 }
 
@@ -37,6 +37,14 @@ describe('custom page editor load', () => {
 		expect(data.customPage).toEqual(page);
 		expect(data.schemas).toEqual(['posts']);
 		expect(data.schemasGate).toEqual({ state: 'ok' });
+	});
+
+	it('refuses an editor in the words the customization tabs use', async () => {
+		await expect(load(event(['editor']))).rejects.toMatchObject({
+			status: 403,
+			body: { message: 'Only an admin or a super admin can open this page.' },
+		});
+		expect(api.getCustomPage).not.toHaveBeenCalled();
 	});
 
 	// A page that exists is never reported missing because the engine or its
@@ -68,6 +76,7 @@ type Failure = { status: number; data: { error: string } };
 
 function actionEvent(fields: Record<string, string> = {}) {
 	const body = new FormData();
+	body.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) body.set(k, v);
 	return {
 		params: { slug: 'launch' },
@@ -99,19 +108,19 @@ describe('custom page editor writes', () => {
 	});
 
 	it('shows the first block problem the engine names', async () => {
-		api.saveCustomPage.mockRejectedValue(new ApiError(422, 'block 2: chart needs a schema'));
+		api.saveCustomPage.mockRejectedValue(new ApiError(422, 'block 2: chart needs a schema', { error: 'block 2: chart needs a schema', code: 'http_422' }));
 		const out = (await actions.save(actionEvent({ page: JSON.stringify(page) }))) as Failure;
 		expect(out.data.error).toBe('block 2: chart needs a schema');
 	});
 
-	it('deletes the page and returns to the customization settings', async () => {
+	it('deletes the page and returns to the pages tab', async () => {
 		api.deleteCustomPage.mockResolvedValue(undefined);
-		await expect(actions.delete(actionEvent())).rejects.toMatchObject({ status: 303, location: '/admin/settings/customization' });
+		await expect(actions.delete(actionEvent())).rejects.toMatchObject({ status: 303, location: '/admin/settings/customization/pages' });
 		expect(api.deleteCustomPage).toHaveBeenCalledWith(expect.anything(), 'launch');
 	});
 
 	it('stays on the page when the engine refuses the delete', async () => {
-		api.deleteCustomPage.mockRejectedValue(new ApiError(404, 'page not found'));
+		api.deleteCustomPage.mockRejectedValue(new ApiError(404, 'page not found', { error: 'page not found', code: 'not_found' }));
 		const out = (await actions.delete(actionEvent())) as Failure;
 		expect(out.data.error).toBe('page not found');
 	});

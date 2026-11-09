@@ -77,6 +77,36 @@
 
 			<DescriptionList items={facts} />
 
+			{#if data.isSuperAdmin}
+				<section class="flex flex-col gap-4">
+					<SectionHeading level={2}>Configuration</SectionHeading>
+					<Card>
+						<form
+							id="provider-update"
+							method="POST"
+							action="?/update"
+							use:enhance={saveConfig.enhance}
+							class="flex flex-col gap-4"
+						>
+							{#key p.updated_at}
+								<ProviderForm id="edit" provider={p} superAdmin={data.isSuperAdmin} />
+							{/key}
+							{#if (form?.scope === 'config' || form?.scope === 'delete') && form.error}
+								<Alert tone="danger">{form.error}</Alert>
+							{:else if form?.scope === 'config' && 'saved' in form}
+								<Alert tone="success" autoDismiss>Saved.</Alert>
+							{/if}
+							<div class="flex justify-end gap-3">
+								<Button variant="ghost" onclick={() => askDelete(p.name)}>
+									<Trash2 size={ICON.sm} aria-hidden="true" class="text-danger" /> Delete
+								</Button>
+								<Button variant="primary" type="submit" loading={saveConfig.pending}>Save</Button>
+							</div>
+						</form>
+					</Card>
+				</section>
+			{/if}
+
 			<section class="grid gap-4 md:grid-cols-2">
 				<Card heading="Models" headingLevel={2} description="See which models this provider offers. The list is not saved.">
 					<form method="POST" action="?/models" use:enhance class="flex flex-col gap-3">
@@ -124,36 +154,6 @@
 					</form>
 				</Card>
 			</section>
-
-			{#if data.isSuperAdmin}
-				<section class="flex flex-col gap-4">
-					<SectionHeading level={2}>Configuration</SectionHeading>
-					<Card>
-						<form
-							id="provider-update"
-							method="POST"
-							action="?/update"
-							use:enhance={saveConfig.enhance}
-							class="flex flex-col gap-4"
-						>
-							{#key p.updated_at}
-								<ProviderForm id="edit" provider={p} superAdmin={data.isSuperAdmin} />
-							{/key}
-							{#if (form?.scope === 'config' || form?.scope === 'delete') && form.error}
-								<Alert tone="danger">{form.error}</Alert>
-							{:else if form?.scope === 'config' && 'saved' in form}
-								<Alert tone="success" autoDismiss>Saved.</Alert>
-							{/if}
-							<div class="flex justify-end gap-3">
-								<Button variant="ghost" onclick={() => askDelete(p.name)}>
-									<Trash2 size={ICON.sm} aria-hidden="true" class="text-danger" /> Delete
-								</Button>
-								<Button variant="primary" type="submit" loading={saveConfig.pending}>Save</Button>
-							</div>
-						</form>
-					</Card>
-				</section>
-			{/if}
 		{/if}
 	</AiSection>
 </PageShell>

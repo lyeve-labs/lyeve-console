@@ -41,6 +41,7 @@
 	import { formatDateTime, NO_VALUE } from '$lib/format';
 	import { shortId } from '$lib/utils/entry-identity';
 	import { ICON } from '$lib/icon';
+	import { couldNotLoad } from '$lib/outage';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -219,7 +220,7 @@
 			{/if}
 			{#if data.deliveries === null}
 				<GateNotice
-					gate={data.deliveriesGate ?? { state: 'error', message: 'Could not load deliveries.' }}
+					gate={data.deliveriesGate ?? { state: 'error', message: couldNotLoad('deliveries') }}
 					title="the deliveries"
 					absent="The delivery queue needs a newer version of the analytics plugin."
 				/>
@@ -344,7 +345,7 @@
 				<Checkbox
 					id="destination-rotate"
 					label="Make a new signing secret"
-					description="Events are signed with the new secret immediately. It is shown once after you save."
+					description="Events are signed with the new secret as soon as you save. It is not shown again."
 					bind:checked={rotate}
 				/>
 			{/if}

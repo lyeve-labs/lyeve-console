@@ -27,7 +27,7 @@ describe('login/magic-link action', () => {
 		const fetch = vi.fn(async () => answer()) as unknown as typeof globalThis.fetch;
 		const result = (await submit({ email: 'a@b.co' }, fetch)) as { status: number; data: { error: string } };
 		expect(result.status).toBeGreaterThanOrEqual(500);
-		expect(result.data.error).toBe('Email sign-in is unavailable right now. Try again in a moment.');
+		expect(result.data.error).toBe('The engine is unavailable, so email sign-in is not available. Try again in a moment.');
 	});
 
 	beforeEach(() => resetRateLimitStore());
@@ -56,7 +56,7 @@ describe('login/magic-link action', () => {
 		const fetch = vi.fn(async () => json({ error: 'not found' }, 404)) as unknown as typeof globalThis.fetch;
 		const result = (await submit({ email: 'a@b.co' }, fetch)) as { status: number; data: { error: string } };
 		expect(result.status).toBe(404);
-		expect(result.data.error).toMatch(/not enabled/);
+		expect(result.data.error).toMatch(/not included in this build/);
 	});
 
 	it('relays the engine rate limit', async () => {
@@ -110,7 +110,7 @@ describe('organization on the request', () => {
 			data: { error: string; email: string; tenant: string };
 		};
 		expect(result.status).toBe(400);
-		expect(result.data.error).toMatch(/short name your admin gave you/);
+		expect(result.data.error).toMatch(/short name your administrator gave you/);
 		expect(result.data.tenant).toBe('acme corp');
 		expect(fetch).not.toHaveBeenCalled();
 	});

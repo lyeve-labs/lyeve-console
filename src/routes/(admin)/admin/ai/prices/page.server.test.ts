@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { actions, load } from './+page.server';
-import { fixturePrice } from '$lib/components/ai/fixtures';
-import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '$lib/components/ai/test-events';
+import { fixturePrice } from '$lib/components/ai/test-support/fixtures';
+import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '$lib/components/ai/test-support/events';
 
 const path = '/admin/ai/prices';
 type Loaded = Exclude<Awaited<ReturnType<typeof load>>, void>;

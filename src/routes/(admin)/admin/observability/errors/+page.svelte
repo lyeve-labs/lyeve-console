@@ -24,7 +24,6 @@
 	import { BellRing, BugOff, CheckCheck, CircleCheck, EyeOff, RotateCcw, UserPlus } from '@lucide/svelte';
 	import {
 		alertStatus,
-		count,
 		firstSeenWithin,
 		severityTone,
 		sourceLabel,
@@ -37,7 +36,7 @@
 		type TriageAction,
 	} from '$lib/api/error-tracking';
 	import { formRefusal } from '$lib/api/refusal';
-	import { formatDateTime } from '$lib/format';
+	import { formatCount, formatDateTime } from '$lib/format';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
@@ -181,7 +180,7 @@
 					title={data.status ? `No ${STATUS_LABEL[data.status as AlertStatus].toLowerCase()} failures` : 'No failures yet'}
 					description={data.status
 						? 'No failures have this status. Choose All to see the rest.'
-						: 'Failures appear here once the instance receives traffic.'}
+						: 'Failures appear here once the engine receives traffic.'}
 				>
 					{#snippet iconSnippet()}
 						<BugOff size={ICON.lg} />
@@ -234,7 +233,7 @@
 										{bySeverity.get(a.error_code_id)?.severity ?? 'Unknown'}
 									</Badge>
 								</td>
-								<td data-cell="nowrap" class="font-mono text-xs">{count(a.error_count)}</td>
+								<td data-cell="nowrap" class="font-mono text-xs">{formatCount(a.error_count)}</td>
 								<td data-cell="nowrap" class="text-xs text-faint">
 									{formatDateTime(a.last_seen)}
 								</td>

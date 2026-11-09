@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { HttpClient } from '@lyeve-labs/client';
 import { getCapabilities, listProviders, listTranscripts, providerKindLabel, savePromptVersion, transcriptExportPath, transcriptTotals } from './ai';
-import { fixtureProvider, fixtureTranscript } from '$lib/components/ai/fixtures';
+import { fixtureProvider, fixtureTranscript } from '$lib/components/ai/test-support/fixtures';
 
 function client(answer: unknown) {
 	const get = vi.fn(async () => answer);

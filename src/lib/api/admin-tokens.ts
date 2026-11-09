@@ -2,6 +2,8 @@ import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
 import type { ListEnvelope } from './list';
 import { httpStatusTone } from '../tones';
+import { outageFor } from '../outage';
+import { plural } from '../format';
 
 const TOKENS_URL = '/api/admin/admin-tokens';
 
@@ -305,7 +307,7 @@ export function expiryDistance(expiresAt: string, now: Date = new Date()): strin
 	if (Number.isNaN(at)) return '';
 	const left = at - now.getTime();
 	const span = Math.abs(left);
-	const unit = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+	const unit = (n: number, word: string) => `${n} ${plural(n, word)}`;
 	let amount: string;
 	if (span < 60 * 60 * 1000) amount = unit(Math.max(1, Math.round(span / 60000)), 'minute');
 	else if (span < DAY_MS) amount = unit(Math.round(span / 3600000), 'hour');
@@ -390,6 +392,6 @@ export function describeRefusal(status: number, message: string, step: 'password
 	}
 	if (status === 409) return { error: msg || 'This token can no longer be rotated.', fields: {} };
 	if (status === 404) return { error: 'This token no longer exists. Reload the list.', fields: {} };
-	if (status === 503) return { error: 'The engine is unavailable. Nothing was changed. Try again in a moment.', fields: {} };
+	if (status === 503) return { error: outageFor('nothing was changed'), fields: {} };
 	return { error: 'Could not issue the token. Try again.', fields: {} };
 }

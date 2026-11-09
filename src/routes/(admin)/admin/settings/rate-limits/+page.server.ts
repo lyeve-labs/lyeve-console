@@ -2,30 +2,27 @@ import { readRouteOptions, routeOptions } from '$lib/api/route-options';
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import {
-	RATE_LIMIT_OK,
 	createRule,
 	deleteRule,
 	endpointIsSound,
 	listRules,
-	rateLimitGate,
 	readOverview,
-	readStatus,
 	resetProtection,
 	roleIsSound,
 	setProtection,
 	updateGlobal,
 	updateRule,
-	type LimiterState,
-	type RateLimitGate,
 	type RateLimitOverview,
 	type RateRule,
 } from '$lib/api/rate-limit';
-import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { section, type Section } from '$lib/api/gate';
+import { type Gate, GATE_OK, section, type Section } from '$lib/api/gate';
+import { pageOf, pageWindow, pastEndOffset, withOffset, type PagedList } from '$lib/api/list';
+import { couldNotLoad } from '$lib/outage';
+import { asked } from '$lib/server/asked';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -44,27 +41,20 @@ export const load: PageServerLoad = async (event) => {
 	const superAdmin = user?.roles?.includes('super_admin') ?? false;
 
 	const client = authedClient(event);
-	let rules: RateRule[] = [];
-	let total: number | null = null;
-	let hasMore = false;
 	// The shell says why the page is unavailable while its plugin does not run.
-	let gate: RateLimitGate = notRunning(plugins, PLUGIN.rateLimit) ? { state: 'absent' } : RATE_LIMIT_OK;
-	if (gate.state === 'ok') {
-		try {
-			// The global limit and the protections have sections of their own, so
-			// the list, and its total, is the custom rules alone.
-			const page = pageOf(await listRules(client, limit + 1, offset, 'custom'), limit, offset);
-			rules = page.rows;
-			total = page.total;
-			hasMore = page.hasMore;
-		} catch (err) {
-			gate = rateLimitGate(err);
-		}
-	}
+	// The global limit and the protections have sections of their own, so the
+	// list, and its total, is the custom rules alone.
+	const read: Section<PagedList<RateRule>> = notRunning(plugins, PLUGIN.rateLimit)
+		? { ok: false, gate: { state: 'absent' } }
+		: await section(
+				listRules(client, limit + 1, offset, 'custom').then((res) => pageOf(res, limit, offset)),
+				couldNotLoad('the rate limit rules'),
+			);
+	const gate: Gate = read.ok ? GATE_OK : read.gate;
+	const page = read.ok ? read.value : null;
 	// An offset past the last rule draws the empty state, which would say no
-	// rule is configured. Outside the try, so the redirect is not taken for a
-	// failed read.
-	const back = gate.state === 'ok' ? pastEndOffset(rules.length, limit, offset, total) : null;
+	// rule is configured. A failed read is never redirected.
+	const back = page ? pastEndOffset(page.rows.length, limit, offset, page.total) : null;
 	if (back !== null) redirect(307, withOffset(event.url, back));
 
 	// The overview says whether custom rules are enabled, which only the engine
@@ -75,16 +65,6 @@ export const load: PageServerLoad = async (event) => {
 		overview = await readOverview(client).catch(() => null);
 	}
 
-	// The live view is a snapshot from the process that answered, so losing it
-	// must not lose the rules, and an unread one is never drawn as quiet.
-	const status: Section<LimiterState[]> =
-		gate.state === 'ok'
-			? await section(
-					readStatus(client).then((r) => r.buckets ?? []),
-					'Could not load the live counters.',
-				)
-			: { ok: false, gate };
-
 	// The routes the instance serves, to pick a rule's endpoint from. The
 	// document is read as the caller: an admin gets the public routes, a super
 	// admin every route. Missing, the field still takes a typed pattern.
@@ -92,14 +72,13 @@ export const load: PageServerLoad = async (event) => {
 
 	return {
 		routes,
-		rules,
-		total,
+		rules: page?.rows ?? [],
+		total: page?.total ?? null,
 		limit,
 		offset,
-		hasMore,
+		hasMore: page?.hasMore ?? false,
 		overview,
 		superAdmin,
-		status,
 		gate,
 	};
 };
@@ -160,7 +139,7 @@ async function save(event: Parameters<Actions[string]>[0], id: string | null) {
 		if (id) await updateRule(client, id, body);
 		else await createRule(client, body);
 	} catch (err) {
-		return fail(400, { action: 'rule', error: actionError(err, 'Could not save the rule. Try again.') });
+		return tagged('rule', actionFailure(err, 'Could not save the rule. Try again.'));
 	}
 	return { saved: endpoint };
 }
@@ -175,19 +154,26 @@ export const actions: Actions = {
 		return save(event, id);
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const client = authedClient(event);
-		const form = await event.request.formData();
-		const id = String(form.get('id') ?? '');
-		if (!id) return fail(400, { action: 'delete', error: 'This form is missing its rule. Reload the page and try again.' });
-		try {
-			await deleteRule(client, id);
-		} catch (err) {
-			return fail(400, { action: 'delete', error: actionError(err, 'Could not delete the rule. Try again.') });
-		}
-		return { removed: id };
-	},
+	delete: asked(
+		{
+			question: 'Delete this rule?',
+			detail: 'If the rule is enforced, its endpoint stops being limited by it immediately.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['admin', 'super_admin']);
+			const client = authedClient(event);
+			const form = await event.request.formData();
+			const id = String(form.get('id') ?? '');
+			if (!id) return fail(400, { action: 'delete', error: 'This form is missing its rule. Reload the page and try again.' });
+			try {
+				await deleteRule(client, id);
+			} catch (err) {
+				return tagged('delete', actionFailure(err, 'Could not delete the rule. Try again.'));
+			}
+			return { removed: id };
+		},
+	),
 
 	global: async (event) => {
 		await requireRole(event, ['super_admin']);
@@ -204,7 +190,7 @@ export const actions: Actions = {
 		try {
 			await updateGlobal(client, { rate, burst, enabled: form.get('enabled') === 'true' });
 		} catch (err) {
-			return fail(400, { action: 'global', error: actionError(err, 'Could not save the global limit. Try again.') });
+			return tagged('global', actionFailure(err, 'Could not save the global limit. Try again.'));
 		}
 		return { savedGlobal: true };
 	},
@@ -233,22 +219,29 @@ export const actions: Actions = {
 				window_seconds: Math.max(1, Math.round(minutes * 60)),
 			});
 		} catch (err) {
-			return fail(400, { action: 'protection', error: actionError(err, 'Could not save the protection. Try again.') });
+			return tagged('protection', actionFailure(err, 'Could not save the protection. Try again.'));
 		}
 		return { savedProtection: name };
 	},
 
-	resetProtection: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const client = authedClient(event);
-		const form = await event.request.formData();
-		const name = String(form.get('name') ?? '');
-		if (!name) return fail(400, { action: 'resetProtection', error: 'This form is missing its protection. Reload the page and try again.' });
-		try {
-			await resetProtection(client, name);
-		} catch (err) {
-			return fail(400, { action: 'resetProtection', error: actionError(err, 'Could not reset the protection. Try again.') });
-		}
-		return { resetProtection: name };
-	},
+	resetProtection: asked(
+		{
+			question: 'Reset this protection?',
+			detail: 'It returns to its default limit.',
+			label: 'Reset',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const client = authedClient(event);
+			const form = await event.request.formData();
+			const name = String(form.get('name') ?? '');
+			if (!name) return fail(400, { action: 'resetProtection', error: 'This form is missing its protection. Reload the page and try again.' });
+			try {
+				await resetProtection(client, name);
+			} catch (err) {
+				return tagged('resetProtection', actionFailure(err, 'Could not reset the protection. Try again.'));
+			}
+			return { resetProtection: name };
+		},
+	),
 };

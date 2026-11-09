@@ -121,6 +121,7 @@ describe('admin/webhooks/incoming writes by role', () => {
 			return json({});
 		}) as unknown as typeof globalThis.fetch;
 		const form = new FormData();
+		form.set('confirmed', 'yes');
 		form.set('id', 'i1');
 		form.set('field_map', '{"id":"external_id"}');
 		return {
@@ -128,7 +129,7 @@ describe('admin/webhooks/incoming writes by role', () => {
 			event: {
 				fetch,
 				cookies: mockCookies(),
-				request: { formData: async () => form },
+				request: { formData: async () => form, clone: () => ({ formData: async () => form }) },
 				url: new URL('http://localhost/admin/webhooks/incoming'),
 			} as never,
 		};
@@ -160,6 +161,7 @@ function superAdminWrite(fields: Record<string, string>, reply: Response = json(
 		return reply.clone();
 	}) as unknown as typeof globalThis.fetch;
 	const form = new FormData();
+	form.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) form.set(k, v);
 	const url = new URL('http://localhost/admin/webhooks/incoming');
 	return { calls, event: { fetch, cookies: mockCookies(), url, request: new Request(url, { method: 'POST', body: form }) } as never };
@@ -203,7 +205,7 @@ describe('admin/webhooks/incoming writes', () => {
 
 	it.each(['create', 'update'] as const)('refuses a map that is not JSON on %s without a request', async (name) => {
 		const { event, calls } = superAdminWrite({ ...ENDPOINT, id: 'i1', field_map: '{id:' });
-		expect(((await actions[name](event)) as Failure).data).toEqual({ action: name, error: 'Field map must be valid JSON.' });
+		expect(((await actions[name](event)) as Failure).data).toEqual({ action: name, error: 'Enter the field map as valid JSON.' });
 		expect(calls).toEqual([]);
 	});
 
@@ -216,7 +218,7 @@ describe('admin/webhooks/incoming writes', () => {
 	});
 
 	it.each(['create', 'update', 'delete'] as const)('relays the engine refusal on %s under its action', async (name) => {
-		const { event } = superAdminWrite({ ...ENDPOINT, id: 'i1' }, json({ error: 'schema orders does not exist' }, 422));
+		const { event } = superAdminWrite({ ...ENDPOINT, id: 'i1' }, json({ error: 'schema orders does not exist', code: 'http_422' }, 422));
 		const out = (await actions[name](event)) as Failure;
 		expect(out.data).toEqual({ action: name, error: 'schema orders does not exist' });
 	});

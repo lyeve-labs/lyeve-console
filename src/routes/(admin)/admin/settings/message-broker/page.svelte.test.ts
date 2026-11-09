@@ -44,14 +44,14 @@ describe('the gate', () => {
 		const { container } = render(BrokerPage, {
 			props: props({ gate: { state: 'locked', upgradeUrl: '' }, status: null }),
 		});
-		expect(said(container)).toContain('Not enabled on this instance');
+		expect(said(container)).toContain('Not enabled on this engine');
 	});
 
 	it('explains the refusal to an admin who may not read it', () => {
 		const { container } = render(BrokerPage, {
 			props: props({ permitted: false, status: null }),
 		});
-		expect(said(container)).toContain('Only a super admin can view the broker status');
+		expect(said(container)).toContain('Only a super admin can see the broker status');
 	});
 
 	// The worst thing this page can do is report a failed read as a working
@@ -66,16 +66,15 @@ describe('the gate', () => {
 });
 
 describe('what the numbers mean', () => {
-	// Publishing is fire and forget, so nothing else in the product reported
-	// these failures. The page has to say that, or the reader assumes an alert
-	// would have fired.
-	it('says a refusal went unreported everywhere else', () => {
+	// Without an outbox a refused event is gone, and the reader needs to know
+	// the content behind it is still saved.
+	it('says a refused event is not retried and its content was saved', () => {
 		const { container } = render(BrokerPage, {
 			props: props({ status: status({ failed: 12 }) }),
 		});
 		const text = said(container);
 		expect(text).toContain('refused 12 events');
-		expect(text).toContain('No other screen reports these failures');
+		expect(text).toContain('Refused events are not retried, but the content changes behind them were all saved.');
 	});
 
 	it('separates having nowhere to send from being refused', () => {
@@ -84,7 +83,7 @@ describe('what the numbers mean', () => {
 		});
 		const text = said(container);
 		expect(text).toContain('were dropped because no broker connection');
-		expect(text).toContain('not the broker');
+		expect(text).toContain("Check this engine's broker configuration.");
 	});
 
 	it('names a disabled plugin as the cause rather than the broker', () => {
@@ -92,7 +91,7 @@ describe('what the numbers mean', () => {
 			props: props({ status: status({ degraded: true, dropped: 40, published: 0 }) }),
 		});
 		const text = said(container);
-		expect(text).toContain('The message broker plugin is not enabled on this instance, so events are dropped instead of published.');
+		expect(text).toContain('The message broker plugin is not enabled on this engine, so events are dropped instead of published.');
 	});
 
 	// A counter reset by a restart is not a quiet week, and a reader comparing
@@ -108,7 +107,7 @@ describe('what the numbers mean', () => {
  * that discards it, counts it as published and reports itself connected.
  * None of that reached a broker, so the page must not say it did.
  */
-describe('an instance with no broker', () => {
+describe('an engine with no broker', () => {
 	const none = (backend: string) =>
 		props({ status: status({ backend, target: '', stream: '', tls: false, published: 25 }) });
 
@@ -127,7 +126,7 @@ describe('an instance with no broker', () => {
 			[...container.querySelectorAll('th')].find((th) => th.textContent?.trim() === name)?.nextElementSibling?.textContent?.trim();
 		expect(row('Connected')).toBe('-');
 		expect(row('TLS')).toBe('-');
-		expect(row('Last publish')).toBe('Nothing published yet');
+		expect(row('Last publish')).toBe('No events published yet');
 	});
 
 	it('still states the delivery rate with a broker', () => {
@@ -153,7 +152,7 @@ describe('the connection', () => {
 		const { container } = render(BrokerPage, {
 			props: props({ status: status({ published: 0, last_publish_at: null }) }),
 		});
-		expect(said(container)).toContain('Nothing published yet');
+		expect(said(container)).toContain('No events published yet');
 	});
 });
 

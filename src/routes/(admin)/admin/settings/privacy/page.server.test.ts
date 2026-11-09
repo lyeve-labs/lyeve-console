@@ -55,7 +55,10 @@ describe('privacy settings load', () => {
 	});
 
 	it('answers 403 to a role that may not use the page, without asking the engine', async () => {
-		await expect(load(loadEvent(named(['schema']), ['editor']))).rejects.toMatchObject({ status: 403 });
+		await expect(load(loadEvent(named(['schema']), ['editor']))).rejects.toMatchObject({
+			status: 403,
+			body: { message: 'Only an admin or a super admin can open this page.' },
+		});
 		expect(engine.get).not.toHaveBeenCalled();
 	});
 
@@ -206,7 +209,7 @@ describe('privacy settings: export sections save', () => {
 	});
 
 	it("relays the engine's refusal of a section it does not know", async () => {
-		engine.put.mockRejectedValue(new ApiError(400, 'an excluded section is not known'));
+		engine.put.mockRejectedValue(new ApiError(400, 'an excluded section is not known', { error: 'an excluded section is not known', code: 'bad_request' }));
 		const result = (await actions.sections(formWith([['available', 'engine']]))) as { data: { action: string; error: string } };
 		expect(result.data).toMatchObject({ action: 'sections', error: 'an excluded section is not known' });
 	});

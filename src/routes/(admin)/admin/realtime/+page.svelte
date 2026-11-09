@@ -7,10 +7,9 @@
 		SectionHeading,
 		Stat,
 		Table,
-		Button,
 	} from '@lyeve-labs/ui-kit';
-	import { invalidateAll } from '$app/navigation';
-	import { Radio, RefreshCw, Satellite, Users } from '@lucide/svelte';
+	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import { Radio, Satellite, Users } from '@lucide/svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import { inUse, tenantLoad, uptimeSince, type StreamMetrics } from '$lib/api/realtime';
 	import { NO_VALUE, formatCount } from '$lib/format';
@@ -18,16 +17,6 @@
 	import { ICON } from '$lib/icon';
 
 	let { data }: { data: PageData } = $props();
-
-	let refreshing = $state(false);
-	async function refresh() {
-		refreshing = true;
-		try {
-			await invalidateAll();
-		} finally {
-			refreshing = false;
-		}
-	}
 
 	const streamUsed = $derived(inUse(data.stream));
 	const socketUsed = $derived(inUse(data.socket));
@@ -54,9 +43,7 @@
 	width="wide"
 >
 	{#snippet actions()}
-		<Button variant="secondary" size="sm" onclick={refresh} loading={refreshing}>
-			<RefreshCw size={ICON.sm} /> Refresh
-		</Button>
+		<RefreshButton />
 	{/snippet}
 
 	{#if data.gate.state !== 'ok'}
@@ -85,18 +72,18 @@
 						label="Accepted in {window_(data.stream)}"
 						value={formatCount(data.stream?.total_connections)}
 					/>
-					<Stat size="sm" mono label="Events pushed, whole instance" value={formatCount(data.stream?.events_dispatched)} />
+					<Stat size="sm" mono label="Events pushed, whole engine" value={formatCount(data.stream?.events_dispatched)} />
 					<Stat
 						size="sm"
 						mono
-						label="Rejected, whole instance"
+						label="Rejected, whole engine"
 						value={formatCount(data.stream?.connections_rejected)}
 						tone={(data.stream?.connections_rejected ?? 0) > 0 ? 'warn' : undefined}
 					/>
 				</div>
 				<p class="text-xs text-faint">
-					Open now and accepted count this tenant's connections. The other counters cover every tenant on
-					the instance.
+					Open now and Accepted count this tenant's connections. The other counters cover every tenant on
+					the engine.
 				</p>
 			{/if}
 		</section>
@@ -113,12 +100,12 @@
 			{#if !data.socketGate}
 				<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 					<Stat size="sm" mono label="Open now" value={formatCount(data.socket?.active_connections)} />
-					<Stat size="sm" mono label="Broadcasts, whole instance" value={formatCount(data.socket?.broadcasts_sent)} />
-					<Stat size="sm" mono label="Reconnections, whole instance" value={formatCount(data.socket?.reconnections)} />
+					<Stat size="sm" mono label="Broadcasts, whole engine" value={formatCount(data.socket?.broadcasts_sent)} />
+					<Stat size="sm" mono label="Reconnections, whole engine" value={formatCount(data.socket?.reconnections)} />
 				</div>
 				<p class="text-xs text-faint">
 					Open now counts this tenant's sockets. Broadcasts and reconnections cover every tenant on the
-					instance.
+					engine.
 				</p>
 			{/if}
 

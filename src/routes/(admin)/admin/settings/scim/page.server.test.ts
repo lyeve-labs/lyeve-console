@@ -71,6 +71,7 @@ function write(fields: Record<string, string>, reply: Response = json({})) {
 		return reply.clone();
 	});
 	const form = new FormData();
+	form.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) form.set(k, v);
 	const url = new URL('http://admin/admin/settings/scim');
 	return { calls, event: { fetch, url, request: new Request(url, { method: 'POST', body: form }) } as never };
@@ -146,7 +147,7 @@ describe('SCIM writes', () => {
 	});
 
 	it.each(['create', 'rotate', 'delete'] as const)('relays the engine refusal on %s under its action', async (name) => {
-		const { event } = write(CONNECTION, json({ error: 'connection name already in use' }, 409));
+		const { event } = write(CONNECTION, json({ error: 'connection name already in use', code: 'conflict' }, 409));
 		const out = (await actions[name](event)) as Failure;
 		expect(out.data).toEqual({ action: name, error: 'connection name already in use' });
 	});

@@ -33,7 +33,7 @@
 		type LegalHold,
 		type RetentionPolicy,
 	} from '$lib/api/retention';
-	import { formatDateTime } from '$lib/format';
+	import { formatDateTime, plural } from '$lib/format';
 	import type { ActionData, PageData } from './$types';
 	import { ICON } from '$lib/icon';
 
@@ -210,8 +210,8 @@
 		{/if}
 		{#if outcome?.enforced}
 			<Alert tone="success" autoDismiss>
-				Retention enforced across {outcome.policies} {outcome.policies === 1 ? 'policy' : 'policies'}.
-				{outcome.deleted} {outcome.deleted === 1 ? 'entry was' : 'entries were'} deleted.
+				Retention enforced across {outcome.policies} {plural(outcome.policies ?? 0, 'policy', 'policies')}.
+				{outcome.deleted} {plural(outcome.deleted ?? 0, 'entry was', 'entries were')} deleted.
 			</Alert>
 			{#if archiveFailed.length > 0}
 				<!-- A standing condition, not an outcome: the entries are still
@@ -440,7 +440,7 @@
 				id="ret-storage"
 				name="archival_storage"
 				label="Archive to"
-				hint="The storage backend. Required when archival is on."
+				hint="Required when archiving is on."
 				bind:value={storage}
 			/>
 			<Input

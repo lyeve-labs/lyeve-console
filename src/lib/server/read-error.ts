@@ -14,8 +14,9 @@
 import { error, isHttpError, isRedirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { forbiddenText, isOutage } from '$lib/api/gate';
-import { BUSY, OUTAGE } from '$lib/outage';
+import { BUSY, OUTAGE, couldNotLoad } from '$lib/outage';
 import { ROLES } from '$lib/roles';
+import { SESSION_ENDED } from '$lib/session';
 
 /** A role name standing as a word of its own, the way the engine writes one. */
 const NAMES_A_ROLE = new RegExp(`\\b(?:${ROLES.join('|')})\\b`);
@@ -41,9 +42,9 @@ export function readError(err: unknown, notFound: string): never {
 		if (err.status === 403) error(403, refusal(err));
 		// The shell sends a lapsed session to sign in again, and the error page
 		// offers the same for this status.
-		if (err.status === 401) error(401, 'Session invalid or expired');
+		if (err.status === 401) error(401, SESSION_ENDED);
 		if (err.status === 429) error(429, BUSY.body);
 	}
 	if (isOutage(err)) error(503, OUTAGE.title);
-	error(502, 'Could not load this record.');
+	error(502, couldNotLoad('this record'));
 }

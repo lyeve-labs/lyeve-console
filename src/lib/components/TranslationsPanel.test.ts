@@ -205,11 +205,11 @@ describe('TranslationsPanel progress and fallback', () => {
 	// as the fallback it is rather than as a decision somebody made.
 	it('says when it is guessing from the field types', () => {
 		const { container } = panel({ fields: [field('title'), field('body')] });
-		expect(container.textContent).toContain('No field on this schema is marked');
+		expect(container.textContent).toContain('No field on this content type is marked');
 	});
 
 	it('says nothing about guessing once the schema is marked', () => {
 		const { container } = panel();
-		expect(container.textContent).not.toContain('No field on this schema is marked');
+		expect(container.textContent).not.toContain('No field on this content type is marked');
 	});
 });

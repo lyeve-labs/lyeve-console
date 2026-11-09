@@ -28,13 +28,13 @@ describe('publishing an entry', () => {
 	});
 
 	it('relays the reason the plugin refused', async () => {
-		engine.put.mockRejectedValue(new ApiError(409, 'entry has a pending review'));
+		engine.put.mockRejectedValue(new ApiError(409, 'entry has a pending review', { error: 'entry has a pending review', code: 'conflict' }));
 		const out = (await actions.publish(actionEvent())) as Failure;
 		expect(out.data.error).toBe('entry has a pending review');
 	});
 
 	it('relays the role refusal the engine sends', async () => {
-		engine.put.mockRejectedValue(new ApiError(403, 'insufficient permissions'));
+		engine.put.mockRejectedValue(new ApiError(403, 'insufficient permissions', { error: 'insufficient permissions', code: 'forbidden' }));
 		const out = (await actions.publish(actionEvent())) as Failure;
 		expect(out.data.error).toBe('insufficient permissions');
 	});
@@ -62,7 +62,7 @@ describe('moving a review', () => {
 	});
 
 	it('keeps the 403 so the bar can say the refusal is a role rule', async () => {
-		engine.post.mockRejectedValue(new ApiError(403, 'not an approver for this stage'));
+		engine.post.mockRejectedValue(new ApiError(403, 'not an approver for this stage', { error: 'not an approver for this stage', code: 'forbidden' }));
 		const out = (await actions.reviewTransition(actionEvent({ assignment_id: 'a1', action: 'approve' }))) as Failure;
 		expect(out.status).toBe(403);
 		expect(out.data).toMatchObject({ review: true, reviewStatus: 403, error: 'not an approver for this stage' });

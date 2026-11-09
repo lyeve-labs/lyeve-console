@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { engineBanner, flowLoadOutcome } from './flow-load';
+import { flowLoadOutcome } from './flow-load';
 
 function cookies(): Cookies {
 	return { get: vi.fn(), set: vi.fn(), delete: vi.fn(), getAll: vi.fn(() => []), serialize: vi.fn(() => '') } as unknown as Cookies;
@@ -31,14 +31,14 @@ describe('flowLoadOutcome', () => {
 	it('names the role on a 403', () => {
 		expect(flowLoadOutcome(new ApiError(403, 'forbidden'), { cookies: cookies() }, 'datasources')).toEqual({
 			locked: false,
-			loadError: 'Your role cannot read datasources.',
+			loadError: 'Your role does not allow you to open datasources. Ask a super admin to grant it.',
 		});
 	});
 
 	it('keeps the engine banner for a 5xx, a network failure and a status it does not expect', () => {
 		for (const err of [new ApiError(503, 'pq: connection refused'), new TypeError('fetch failed'), new ApiError(418, 'teapot')]) {
 			const out = flowLoadOutcome(err, { cookies: cookies() }, 'variables');
-			expect(out).toEqual({ locked: false, loadError: engineBanner('variables') });
+			expect(out).toEqual({ locked: false, loadError: 'Could not load variables.' });
 			expect(out.loadError).not.toContain('pq:');
 		}
 	});

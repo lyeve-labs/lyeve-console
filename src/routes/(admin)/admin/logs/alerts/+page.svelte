@@ -114,7 +114,7 @@
 
 		<p class="text-sm text-muted">
 			Every rule is checked once a minute. When a rule passes its ceiling, it notifies each of its channels. On every
-			install it also adds an ALERT entry to the live tail and a warning to the log.
+			instance it also adds an ALERT entry to the live tail and a warning to the log.
 			{#if !data.superAdmin}
 				These are your tenant's rules. Only a super admin can change them.
 			{/if}

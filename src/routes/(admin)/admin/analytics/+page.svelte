@@ -12,7 +12,7 @@
 		type StatusTone,
 	} from '@lyeve-labs/ui-kit';
 	import { TrendingUp, Gauge, Globe, Server } from '@lucide/svelte';
-	import { NO_VALUE, formatBytes, formatCount, formatDateTime } from '$lib/format';
+	import { NO_VALUE, formatBytes, formatCount, formatDateTime, formatMillis, formatPercent } from '$lib/format';
 	import type { PageData } from './$types';
 	import type { BreakdownItem, Summary } from '@lyeve-labs/client-rest';
 	import { ICON } from '$lib/icon';
@@ -45,15 +45,6 @@
 	const methodTotal = $derived(
 		methods.reduce((sum: number, it: BreakdownItem) => sum + it.request_count, 0)
 	);
-
-	function fmtMs(ms: number): string {
-		if (ms >= 1000) return `${(ms / 1000).toFixed(2)}s`;
-		return `${ms.toFixed(1)}ms`;
-	}
-
-	function fmtPct(fraction: number): string {
-		return `${(fraction * 100).toFixed(2)}%`;
-	}
 
 	function errorRateVariant(rate: number): StatusTone {
 		if (rate >= 0.05) return 'danger';
@@ -148,14 +139,14 @@
 					size="sm"
 					mono
 					label="Server errors"
-					value={fmtPct(serverErrorRate(summary))}
+					value={formatPercent(serverErrorRate(summary))}
 					sub={serverErrorBand(serverErrorRate(summary))}
 					accent={serverErrorRate(summary) >= 0.001 ? 'neutral' : 'success'}
 				/>
-				<Stat size="sm" mono label="Client errors" value={fmtPct(clientErrorRate(summary))} sub="caused by callers" />
-				<Stat size="sm" mono label="P50 latency" value={fmtMs(summary.avg_latency_p50_ms)} />
-				<Stat size="sm" mono label="P95 latency" value={fmtMs(summary.avg_latency_p95_ms)} />
-				<Stat size="sm" mono label="P99 latency" value={fmtMs(summary.avg_latency_p99_ms)} />
+				<Stat size="sm" mono label="Client errors" value={formatPercent(clientErrorRate(summary))} sub="caused by callers" />
+				<Stat size="sm" mono label="P50 latency" value={formatMillis(summary.avg_latency_p50_ms)} />
+				<Stat size="sm" mono label="P95 latency" value={formatMillis(summary.avg_latency_p95_ms)} />
+				<Stat size="sm" mono label="P99 latency" value={formatMillis(summary.avg_latency_p99_ms)} />
 			</div>
 
 			<!-- 2xx, 4xx and 5xx sum to the total, so three tiles would restate a
@@ -166,7 +157,7 @@
 					<div class="flex flex-wrap items-baseline justify-between gap-2">
 						<SectionHeading level={2}>Responses</SectionHeading>
 						<span class="text-xs text-muted">
-							{formatCount(summary.unique_endpoints)} endpoints served, max P99 {fmtMs(summary.max_latency_p99_ms)}
+							{formatCount(summary.unique_endpoints)} endpoints served, max P99 {formatMillis(summary.max_latency_p99_ms)}
 						</span>
 					</div>
 					{#if summary.total_requests > 0}
@@ -216,7 +207,7 @@
 								<code class="min-w-0 truncate font-mono text-xs text-fg">{e.key}</code>
 								<span class="flex shrink-0 items-center gap-3">
 									<span class="text-xs text-muted">{formatCount(e.request_count)} requests</span>
-									<Badge tone={errorRateVariant(e.error_rate)}>{fmtPct(e.error_rate)}</Badge>
+									<Badge tone={errorRateVariant(e.error_rate)}>{formatPercent(e.error_rate)}</Badge>
 								</span>
 							</li>
 						{/each}
@@ -261,10 +252,10 @@
 								<td data-cell="nowrap" class="font-mono text-xs">{item.key}</td>
 								<td data-cell="nowrap" class="text-right font-mono text-xs">{formatCount(item.request_count)}</td>
 								<td class="text-right">
-									<Badge tone={errorRateVariant(item.error_rate)}>{fmtPct(item.error_rate)}</Badge>
+									<Badge tone={errorRateVariant(item.error_rate)}>{formatPercent(item.error_rate)}</Badge>
 								</td>
-								<td data-cell="nowrap" class="text-right font-mono text-xs">{fmtMs(item.avg_latency_p95_ms)}</td>
-								<td data-cell="nowrap" class="text-right font-mono text-xs">{fmtMs(item.max_latency_p99_ms)}</td>
+								<td data-cell="nowrap" class="text-right font-mono text-xs">{formatMillis(item.avg_latency_p95_ms)}</td>
+								<td data-cell="nowrap" class="text-right font-mono text-xs">{formatMillis(item.max_latency_p99_ms)}</td>
 								<td data-cell="nowrap" class="text-right font-mono text-xs">
 									<span class="text-faint">{formatBytes(item.request_size_avg_bytes, 'MB')}</span>
 								</td>
@@ -333,7 +324,7 @@
 									<td data-cell="nowrap" class="font-mono text-xs">{item.key || NO_VALUE}</td>
 									<td data-cell="nowrap" class="text-right font-mono text-xs">{formatCount(item.request_count)}</td>
 									<td class="text-right">
-										<Badge tone={errorRateVariant(item.error_rate)}>{fmtPct(item.error_rate)}</Badge>
+										<Badge tone={errorRateVariant(item.error_rate)}>{formatPercent(item.error_rate)}</Badge>
 									</td>
 								</tr>
 							{/each}

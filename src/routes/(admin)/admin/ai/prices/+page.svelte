@@ -112,7 +112,7 @@
 
 <PageShell
 	title="AI prices"
-	description="Set what tokens cost for each provider kind and model. Transcript cost estimates use these prices, which apply to the whole instance."
+	description="Set what tokens cost for each provider kind and model. Transcript cost estimates use these prices, which apply to the whole engine."
 	width="wide"
 >
 	{#snippet actions()}

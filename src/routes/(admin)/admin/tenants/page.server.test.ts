@@ -199,7 +199,7 @@ describe('admin/tenants/+page.server.ts actions.create', () => {
 			data: {
 				action: 'create',
 				error: 'Check the highlighted fields.',
-				fields: { slug: 'Slug is required' },
+				fields: { slug: 'Enter a slug.' },
 			},
 		});
 	});
@@ -212,7 +212,7 @@ describe('admin/tenants/+page.server.ts actions.create', () => {
 			data: {
 				action: 'create',
 				error: 'Check the highlighted fields.',
-				fields: { slug: 'Slug is required', name: 'Display name is required' },
+				fields: { slug: 'Enter a slug.', name: 'Enter a display name.' },
 			},
 		});
 	});
@@ -220,7 +220,7 @@ describe('admin/tenants/+page.server.ts actions.create', () => {
 	it('treats whitespace as absent', async () => {
 		const result = await actions.create(createEvent({ slug: '   ', name: 'ACME Corp' }));
 
-		expect(result).toMatchObject({ data: { fields: { slug: 'Slug is required' } } });
+		expect(result).toMatchObject({ data: { fields: { slug: 'Enter a slug.' } } });
 	});
 
 	/** The body the action posted to create the tenant. */
@@ -263,7 +263,7 @@ describe('admin/tenants/+page.server.ts actions.create', () => {
 			status: 402,
 			data: { refused: { kind: 'feature', feature: 'example-feature', upgradeUrl: link } },
 		});
-		expect((result as { data: { error: string } }).data.error).toContain('does not include example-feature');
+		expect((result as { data: { error: string } }).data.error).toBe('This is not enabled on this engine. Nothing was changed.');
 	});
 
 	it('returns the tenant ceiling as a limit reached with the link the plugin sent', async () => {
@@ -276,7 +276,7 @@ describe('admin/tenants/+page.server.ts actions.create', () => {
 			status: 402,
 			data: { refused: { kind: 'cap', cap: 'tenants', limit: null, current: null, upgradeUrl: link } },
 		});
-		expect((result as { data: { error: string } }).data.error).toContain('This instance is at its limit for tenants.');
+		expect((result as { data: { error: string } }).data.error).toContain('This engine is at its limit for tenants.');
 	});
 
 	it('sends the plan as typed', async () => {
@@ -371,6 +371,7 @@ function writeEvent(
 	roles = ['super_admin'],
 ) {
 	const form = new FormData();
+	form.set('confirmed', 'yes');
 	for (const [key, value] of Object.entries(fields)) form.append(key, value);
 	const fetch = vi.fn(async (url: string, init?: RequestInit) =>
 		init?.method && init.method !== 'GET'
@@ -378,7 +379,7 @@ function writeEvent(
 			: json({ id: 'u1', email: 'admin@b.co', roles })
 	) as unknown as typeof globalThis.fetch;
 	return {
-		request: { formData: async () => form },
+		request: { formData: async () => form, clone: () => ({ formData: async () => form }) },
 		fetch,
 		cookies: mockCookies(),
 		url: new URL('http://localhost/admin/tenants'),
@@ -400,7 +401,11 @@ describe('admin/tenants create refusals', () => {
 		);
 		expect(result).toEqual({
 			status: 400,
-			data: { action: 'create', error: 'Check the highlighted fields.', fields: { slug: message } },
+			data: {
+				action: 'create',
+				error: 'Check the highlighted fields.',
+				fields: { slug: 'Use lowercase letters, digits and underscores, starting with a letter, in at most 63 characters.' },
+			},
 		});
 	});
 
@@ -440,7 +445,7 @@ describe('admin/tenants update, toggle and delete', () => {
 	});
 
 	it('names the action that failed, for each write', async () => {
-		const refuse = () => json({ error: 'tenant not found' }, 404);
+		const refuse = () => json({ error: 'tenant not found', code: 'not_found' }, 404);
 		expect(await actions.update(writeEvent({ id: 't1', name: 'ACME' }, refuse))).toEqual({
 			status: 400,
 			data: { action: 'update', error: 'tenant not found' },

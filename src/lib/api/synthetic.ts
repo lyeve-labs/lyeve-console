@@ -14,11 +14,11 @@
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import { toChannels, type AlertChannels } from './alert-channels';
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 import { rowsOf, type ListEnvelope } from './list';
+import { plural } from '$lib/format';
 
-export const PROBES_URL = '/api/admin/synthetic-monitoring/probes';
-export const ALERTS_URL = '/api/admin/synthetic-monitoring/alerts';
+const PROBES_URL = '/api/admin/synthetic-monitoring/probes';
+const ALERTS_URL = '/api/admin/synthetic-monitoring/alerts';
 
 export const PROBE_TYPES = [
 	'health_check',
@@ -139,15 +139,6 @@ export interface ProbeAlert {
 	created_at: string;
 }
 
-export type SyntheticGate = Gate;
-
-export const SYNTHETIC_OK: SyntheticGate = GATE_OK;
-
-/** What a refused probe read means, read the way every plugin's is. */
-export function syntheticGate(err: unknown): SyntheticGate {
-	return gateOf(err, 'Could not load probes.');
-}
-
 export async function listProbes(
 	client: HttpClient,
 	limit: number,
@@ -259,7 +250,7 @@ export function runOutcome(results: readonly ProbeResult[]): RunOutcome {
 	};
 }
 
-export const LIMITS_URL = '/api/admin/synthetic-monitoring/limits';
+const LIMITS_URL = '/api/admin/synthetic-monitoring/limits';
 
 /** What a probe write will accept for this tenant, as the plugin answers it. */
 export interface ProbeLimits {
@@ -272,7 +263,7 @@ export interface ProbeLimits {
 /**
  * The limits a probe write is held to, or null when the plugin does not say.
  *
- * The floor depends on what the install is licensed for, so the console reads
+ * The floor depends on what the instance is licensed for, so the console reads
  * it rather than guessing one of its own.
  */
 export async function readProbeLimits(client: HttpClient): Promise<ProbeLimits | null> {
@@ -292,7 +283,7 @@ export async function readProbeLimits(client: HttpClient): Promise<ProbeLimits |
 
 /** The interval field's hint, with the floor when the plugin said what it is. */
 export function intervalHint(limits: ProbeLimits | null): string {
-	const why = 'Each probe sends a request to this instance.';
+	const why = 'Each probe sends a request to this engine.';
 	return limits ? `At least ${limits.minIntervalSeconds}. ${why}` : why;
 }
 
@@ -376,11 +367,11 @@ export function everyLabel(seconds: number): string {
 	if (!Number.isFinite(seconds) || seconds <= 0) return 'Not scheduled';
 	if (seconds % 3600 === 0) {
 		const hours = seconds / 3600;
-		return `Every ${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+		return `Every ${hours} ${plural(hours, 'hour')}`;
 	}
 	if (seconds % 60 === 0) {
 		const minutes = seconds / 60;
-		return `Every ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+		return `Every ${minutes} ${plural(minutes, 'minute')}`;
 	}
 	return `Every ${seconds} seconds`;
 }

@@ -6,7 +6,7 @@ import ExportConfigFields from './ExportConfigFields.svelte';
 afterEach(cleanup);
 
 describe('ExportConfigFields schema choice', () => {
-	const unread = 'Could not load the schema list';
+	const unread = 'Could not load the content type list';
 
 	it('says why there is nothing to pick when the schema list was not read', () => {
 		const { container } = render(ExportConfigFields, { props: { idPrefix: 'x', schemaNames: null } });
@@ -15,7 +15,7 @@ describe('ExportConfigFields schema choice', () => {
 
 	it('counts the schemas a read answered with', () => {
 		const { container } = render(ExportConfigFields, { props: { idPrefix: 'x', schemaNames: ['article', 'page'] } });
-		expect(container.textContent).toContain('Every schema, 2 in this tenant.');
+		expect(container.textContent).toContain('Every content type, 2 in this tenant.');
 		expect(container.textContent).not.toContain(unread);
 	});
 });

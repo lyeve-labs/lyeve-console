@@ -208,7 +208,7 @@ describe('admin/schema preset action', () => {
 
 	it('relays a 409 beside the preset it refused', async () => {
 		const { event } = actionEvent(
-			{ '/api/admin/schemas/presets/notes': () => json({ error: 'schema "notes" already exists' }, 409) },
+			{ '/api/admin/schemas/presets/notes': () => json({ error: 'schema "notes" already exists', code: 'conflict' }, 409) },
 			'notes'
 		);
 		const out = await actions.preset(event);
@@ -291,7 +291,7 @@ describe('admin/schema save action', () => {
 		const { event } = formEvent(
 			{
 				'/fields/title/rename': () => json({}),
-				'/api/admin/schemas': () => json({ error: 'invalid schema: field "x"' }, 422),
+				'/api/admin/schemas': () => json({ error: 'invalid schema: field "x"', code: 'http_422' }, 422),
 			},
 			{ schema: JSON.stringify(posts), original: 'posts', renames: JSON.stringify([{ from: 'title', to: 'headline' }]) },
 		);

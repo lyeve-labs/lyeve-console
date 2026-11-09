@@ -26,14 +26,13 @@ export const init: ServerInit = () => {
 	if (problem) throw new Error(problem);
 };
 
-// Periodically prune expired rate-limit buckets so the in-memory Map
-// does not grow without bound under diverse/spoofed client IPs.
-// .unref() prevents the timer from keeping the Node.js process alive.
+// Expired rate-limit buckets are pruned on a timer, or the in-memory map
+// grows with every client address, spoofed ones included.
 setInterval(cleanupRateLimitStore, WINDOW_MS).unref();
 
-// Static security headers applied to every response. The Content-Security-Policy
-// is configured in svelte.config.js (kit.csp) so SvelteKit can attach nonces to
-// its own inline hydration scripts. Setting script-src here would break it.
+// The Content-Security-Policy is configured in svelte.config.js (kit.csp), not
+// with the headers below, so SvelteKit can attach nonces to its own inline
+// hydration scripts. Setting script-src here would break it.
 export const handle: Handle = async ({ event, resolve }) => {
 	// Every page goes to the setup screen until the engine has an account:
 	// while it is unreachable, in setup mode, or waiting for its first admin.
@@ -53,38 +52,39 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// load, so no session check in a layout comes first.
 	const refused = await limitBody(event);
 
-	const response = withMutableHeaders(refused ?? (await resolve(event)));
-	response.headers.set('X-Frame-Options', 'DENY');
-	response.headers.set('X-Content-Type-Options', 'nosniff');
-	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-	response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+	return withSecurityHeaders(refused ?? (await resolve(event)));
+};
+
+function setSecurityHeaders(headers: Headers): void {
+	headers.set('X-Frame-Options', 'DENY');
+	headers.set('X-Content-Type-Options', 'nosniff');
+	headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+	headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+	headers.set('Cross-Origin-Opener-Policy', 'same-origin');
 	// Nothing here is for an index: every screen is behind a session and the
 	// login is not a page worth finding. robots.txt says the same to the
 	// crawlers that ask first.
-	response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+	headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
 	// HSTS: force HTTPS in production. Gated. $app/environment dev is
 	// true during local dev (http://localhost) where the header is harmful.
 	if (!dev) {
-		response.headers.set(
-			'Strict-Transport-Security',
-			'max-age=63072000; includeSubDomains; preload'
-		);
+		headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
 	}
-	return response;
-};
+}
 
 /**
- * The response itself, or a copy whose headers can be set. A response passed
- * through from fetch, or built by Response.redirect, has immutable headers,
- * and setting one throws.
+ * The response with its security headers, or a copy that carries them. A
+ * response passed through from fetch, or built by Response.redirect, has
+ * immutable headers, and the first set throws before any header is written.
  */
-function withMutableHeaders(response: Response): Response {
+function withSecurityHeaders(response: Response): Response {
 	try {
-		response.headers.set('X-Content-Type-Options', 'nosniff');
+		setSecurityHeaders(response.headers);
 		return response;
 	} catch {
-		return new Response(response.body, response);
+		const copy = new Response(response.body, response);
+		setSecurityHeaders(copy.headers);
+		return copy;
 	}
 }
 

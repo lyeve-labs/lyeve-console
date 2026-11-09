@@ -19,7 +19,7 @@
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import { formRefusal } from '$lib/api/refusal';
 	import { confirmed, fieldErrors, tracked } from '$lib/forms.svelte';
-	import { formatBytes, formatCount, formatDateTime, formatPercent } from '$lib/format';
+	import { formatBytes, formatCount, formatDateTime, formatPercent, plural } from '$lib/format';
 	import { ICON } from '$lib/icon';
 	import {
 		HISTORY_READ_FEATURE,
@@ -396,7 +396,10 @@
 							'The entries stay as they are. Their stored versions cannot be recovered.',
 							{
 								confirmLabel: 'Delete',
-								success: (d) => `Deleted ${formatCount(Number(d?.commits ?? 0))} versions of ${deleteLabel}`,
+								success: (d) => {
+									const n = Number(d?.commits ?? 0);
+									return `${formatCount(n)} ${plural(n, 'version')} of ${deleteLabel} deleted.`;
+								},
 							},
 						)(input)}
 				>
@@ -405,7 +408,7 @@
 					{#if deleted?.deleted && (deleted.held ?? 0) > 0}
 						<Alert tone="warn">
 							A legal hold kept {formatCount(deleted.held)}
-							{deleted.held === 1 ? 'version' : 'versions'} of {typeOptions.find((t) => t.value === deleted.deleted)?.label ?? deleted.deleted}.
+							{plural(deleted.held ?? 0, 'version')} of {typeOptions.find((t) => t.value === deleted.deleted)?.label ?? deleted.deleted}.
 							They stay until the hold is lifted.
 						</Alert>
 					{/if}

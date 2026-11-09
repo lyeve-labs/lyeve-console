@@ -20,6 +20,17 @@ export interface AsidePrefs {
 type Reader = Pick<Storage, 'getItem'> | null | undefined;
 type Writer = Pick<Storage, 'setItem'> | null | undefined;
 
+/**
+ * The browser's localStorage, or null on the server and wherever reaching it
+ * throws, such as a sandboxed frame with site data blocked.
+ */
+export function safeStorage(): Storage | null {
+	try {
+		return typeof localStorage === 'undefined' ? null : localStorage;
+	} catch {
+		return null;
+	}
+}
 export function clampWidth(bounds: Pick<AsideBounds, 'min' | 'max'>, width: number): number {
 	return Math.round(Math.min(bounds.max, Math.max(bounds.min, width)));
 }

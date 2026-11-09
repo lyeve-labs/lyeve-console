@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
-import { fail, type ActionFailure } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import { GATE_OK, section, type Gate, type Section } from '$lib/api/gate';
@@ -10,41 +10,31 @@ import {
 	ADDRESS_DUPLICATE,
 	ADDRESS_LIST_FULL,
 	ADDRESS_SELF_LOCKOUT,
-	HISTORY_WINDOWS,
 	cidrIsSound,
 	clearTenantGlobal,
 	createAddressEntry,
 	deleteAddressEntry,
 	listAddressEntries,
-	readRefusalHistory,
 	readTenantGlobal,
 	setTenantGlobal,
 	type AddressListRead,
-	type RefusalHistory,
 	type TenantGlobalRead,
 } from '$lib/api/rate-limit';
-
-function windowOf(url: URL): number {
-	const raw = url.searchParams.get('hours') ?? '24';
-	return HISTORY_WINDOWS.some((w) => w.value === raw) ? Number(raw) : 24;
-}
+import { asked } from '$lib/server/asked';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();
-	const hours = windowOf(event.url);
 	if (notRunning(plugins, PLUGIN.rateLimit)) {
 		const gate: Gate = { state: 'absent' };
 		return {
 			gate,
 			limit: { ok: false, gate } as Section<TenantGlobalRead>,
 			addresses: { ok: false, gate } as Section<AddressListRead>,
-			history: { ok: false, gate } as Section<RefusalHistory>,
-			hours,
 		};
 	}
 
 	const client = authedClient(event);
-	const [limit, addresses, history] = await Promise.all([
+	const [limit, addresses] = await Promise.all([
 		section(
 			readTenantGlobal(client),
 			'Could not load the tenant limit.',
@@ -53,22 +43,10 @@ export const load: PageServerLoad = async (event) => {
 			listAddressEntries(client),
 			'Could not load the address lists.',
 		),
-		section(
-			readRefusalHistory(client, hours),
-			'Could not load the refusal history.',
-		),
 	]);
 
-	return { gate: GATE_OK as Gate, limit, addresses, history, hours };
+	return { gate: GATE_OK as Gate, limit, addresses };
 };
-
-/**
- * The failure marked with the action that caused it. Each drawer shows only
- * its own action's failure, and the page shows the row actions'.
- */
-function tagged<T extends Record<string, unknown>>(action: string, failure: ActionFailure<T>) {
-	return fail(failure.status, { ...failure.data, action });
-}
 
 function num(raw: FormDataEntryValue | null): number {
 	const n = Number(raw);
@@ -96,15 +74,22 @@ export const actions: Actions = {
 	},
 
 	// Clearing puts the tenant back on the install-wide limit, and is always allowed.
-	clearLimit: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		try {
-			await clearTenantGlobal(authedClient(event));
-		} catch (err) {
-			return tagged('clear', actionFailure(err, 'Could not clear the tenant limit. Try again.'));
-		}
-		return { clearedLimit: true };
-	},
+	clearLimit: asked(
+		{
+			question: 'Clear the tenant limit?',
+			detail: 'This tenant goes back to the global limit alone.',
+			label: 'Clear',
+		},
+		async (event) => {
+			await requireRole(event, ['admin', 'super_admin']);
+			try {
+				await clearTenantGlobal(authedClient(event));
+			} catch (err) {
+				return tagged('clear', actionFailure(err, 'Could not clear the tenant limit. Try again.'));
+			}
+			return { clearedLimit: true };
+		},
+	),
 
 	addAddress: async (event) => {
 		await requireRole(event, ['admin', 'super_admin']);
@@ -140,16 +125,23 @@ export const actions: Actions = {
 		return { savedAddress: cidr, list };
 	},
 
-	deleteAddress: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const form = await event.request.formData();
-		const id = String(form.get('id') ?? '').trim();
-		if (!id) return fail(400, { action: 'deleteAddress', error: 'This form is missing its entry. Reload the page and try again.' });
-		try {
-			await deleteAddressEntry(authedClient(event), id);
-		} catch (err) {
-			return tagged('deleteAddress', actionFailure(err, 'Could not remove the entry. Try again.'));
-		}
-		return { removedAddress: id };
-	},
+	deleteAddress: asked(
+		{
+			question: 'Remove this address from the list?',
+			detail: 'Requests from it are treated like any other from the next request.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['admin', 'super_admin']);
+			const form = await event.request.formData();
+			const id = String(form.get('id') ?? '').trim();
+			if (!id) return fail(400, { action: 'deleteAddress', error: 'This form is missing its entry. Reload the page and try again.' });
+			try {
+				await deleteAddressEntry(authedClient(event), id);
+			} catch (err) {
+				return tagged('deleteAddress', actionFailure(err, 'Could not remove the entry. Try again.'));
+			}
+			return { removedAddress: id };
+		},
+	),
 };

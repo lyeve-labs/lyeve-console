@@ -11,10 +11,10 @@
  * reader's roles and this instance's plugins, so the hub and the sidebar
  * cannot disagree about who may open a page. Only the personal pages, which
  * have no sidebar row, are listed on their own terms: the account page always,
- * and each of the other two while the plugin behind it runs.
+ * and each of the others while the plugin behind it runs.
  */
 import type { NavNode, NavTree } from '@lyeve-labs/ui-kit';
-import { MonitorSmartphone, ShieldCheck, UserRound } from '@lucide/svelte';
+import { Link2, MonitorSmartphone, ShieldCheck, UserRound } from '@lucide/svelte';
 
 export interface HubEntry {
 	id: string;
@@ -37,14 +37,14 @@ const DESCRIBE: Readonly<Record<string, string>> = {
 	localization: 'Choose the languages for content and the order a missing translation falls back through.',
 	email: 'Set up the mail providers and the fallback transport behind them.',
 	recommendations: 'Set up similar entries, trending entries and a feed for each reader, based on what readers do.',
-	permissions: 'Set what each role can do with content and flows, for every schema, one schema or one flow.',
-	security: 'See what protects this instance right now.',
+	permissions: 'Set what each role can do with content and flows, for every content type, one content type or one flow.',
+	security: 'See what protects this engine.',
 	oauth: 'Add the OpenID Connect and OAuth 2.0 providers people can sign in with.',
 	saml: 'Add the SAML identity providers people sign in through, and manage their certificates.',
 	scim: 'Let identity providers create and remove accounts without anyone signing in.',
 	'rate-limits': 'See each rate limit and who is close to reaching one.',
 	'tenant-rate-limits': "Set this tenant's rate limit and the addresses it always allows or blocks, and see what was refused.",
-	captcha: "Choose the captcha this tenant's pages and flows use. The admin sign-in keeps the instance's captcha.",
+	captcha: "Choose the captcha this tenant's pages and flows use. The console sign-in keeps this engine's captcha.",
 	'sign-in': 'Set how long accounts from your identity provider can sign in without it.',
 	'api-access': 'See how external apps authenticate and what each role can do, and get a token to try it.',
 	'api-keys': 'Create machine-to-machine credentials for the content API and see their usage.',
@@ -54,21 +54,21 @@ const DESCRIBE: Readonly<Record<string, string>> = {
 	'message-broker': 'Choose where content events are published, and check that they arrive.',
 	storage: 'Choose where uploads are stored and which provider receives them.',
 	'content-history': 'Choose which content types keep versions and for how long, and see who changed what.',
-	residency: "See the regions this instance runs in and which tenant's data is stored in each.",
+	residency: "See the regions this engine runs in and which tenant's data is stored in each.",
 	gdpr: 'Export or erase every piece of personal data held about one person.',
 	pii: 'Choose what is redacted from responses and logs, and see who viewed it unmasked.',
 	privacy: "Choose what an erasure does with this tenant's form submissions and what people get when they export their data.",
-	license: 'See the license this instance runs on and activate a new key.',
+	license: 'See the license this engine runs on and activate a new key.',
 	configuration: 'See every setting the engine uses and the layer each value came from.',
-	'config-sync': 'Export this configuration as one bundle, or compare, dry run and apply a bundle from another instance.',
+	'config-sync': 'Export this configuration as one bundle, or compare, dry run and apply a bundle from another engine.',
 };
 
 /** The instance groups, by purpose, each naming sidebar entries by id. */
 const GROUPS: readonly { id: string; label: string; description: string; ids: readonly string[] }[] = [
 	{
 		id: 'workspace',
-		label: 'Workspace',
-		description: 'Set how this admin looks and what it offers your team.',
+		label: 'Tenant',
+		description: 'Set how the console looks and what it offers your team.',
 		ids: ['customization', 'localization', 'email', 'recommendations'],
 	},
 	{
@@ -93,8 +93,8 @@ const GROUPS: readonly { id: string; label: string; description: string; ids: re
 	},
 	{
 		id: 'instance',
-		label: 'Instance',
-		description: 'Manage the license and the engine settings, and move settings between instances.',
+		label: 'Engine',
+		description: 'Manage the license and the engine settings, and move settings between engines.',
 		ids: ['license', 'configuration', 'config-sync'],
 	},
 ];
@@ -115,6 +115,7 @@ function leaves(tree: NavTree): Map<string, NavNode> {
 export interface PersonalPages {
 	twoFactor: boolean;
 	trustedDevices: boolean;
+	connectedEditors: boolean;
 }
 
 /**
@@ -133,7 +134,10 @@ export function settingsHub(tree: NavTree, personal: PersonalPages): HubGroup[] 
 				? [{ id: 'mfa', label: 'Two-factor authentication', href: '/admin/settings/mfa', icon: ShieldCheck, description: 'Add a second sign-in step with an authenticator app, and manage your recovery codes.' }]
 				: []),
 			...(personal.trustedDevices
-				? [{ id: 'devices', label: 'Trusted devices', href: '/admin/settings/devices', icon: MonitorSmartphone, description: 'See the browsers that skip the second step, and forget any of them.' }]
+				? [{ id: 'devices', label: 'Trusted devices', href: '/admin/settings/devices', icon: MonitorSmartphone, description: 'Trust the devices you sign in from to lower their sign-in risk score, and forget any you no longer use.' }]
+				: []),
+			...(personal.connectedEditors
+				? [{ id: 'connected-editors', label: 'Builder connections', href: '/admin/settings/connected-editors', icon: Link2, description: 'Approve and revoke the browsers that edit pages from the builder.' }]
 				: []),
 		],
 	};
@@ -160,6 +164,3 @@ export function settingsHub(tree: NavTree, personal: PersonalPages): HubGroup[] 
 	})).filter((g) => g.entries.length > 0);
 	return [account, ...groups];
 }
-
-/** Every instance entry id the hub knows how to place, for the test that keeps it complete. */
-export const HUB_IDS: readonly string[] = GROUPS.flatMap((g) => g.ids);

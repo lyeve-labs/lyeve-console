@@ -71,7 +71,7 @@ describe('planRelation', () => {
 		expect(plan.reads).toBe('_post.author_id');
 		expect(plan.creates.join(' ')).toContain('_post');
 		expect(plan.creates.join(' ')).toContain('_author(id)');
-		expect(plan.kind.storage).toBe('this schema');
+		expect(plan.kind.storage).toBe('this content type');
 	});
 
 	it('states which way a delete travels, because required changes it', () => {
@@ -145,7 +145,7 @@ describe('planRelation', () => {
 
 	it('reports a target that is not a schema here', () => {
 		const s = schema('post', [relation('author', 'ghost', 'has_one')]);
-		expect(planRelation(s, s.fields[0], [s])!.problem).toContain('not a schema');
+		expect(planRelation(s, s.fields[0], [s])!.problem).toContain('not a content type');
 	});
 });
 

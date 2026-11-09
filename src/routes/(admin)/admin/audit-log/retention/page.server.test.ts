@@ -27,6 +27,7 @@ function engine(fields: Record<string, string>, opts: { roles?: string[]; reply?
 		return opts.reply?.clone() ?? json({});
 	});
 	const form = new FormData();
+	form.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) form.set(k, v);
 	const url = new URL('http://localhost/admin/audit-log/retention');
 	return {
@@ -37,7 +38,7 @@ function engine(fields: Record<string, string>, opts: { roles?: string[]; reply?
 
 // The audit plugin's own answers: a struct validation refusal, and the gate it
 // closes while its store is unavailable.
-const REFUSED = json({ error: 'validation failed on field "EventType": failed on \'max=255\'', fields: [] }, 400);
+const REFUSED = json({ error: 'validation failed on field "EventType": failed on \'max=255\'', fields: [], code: 'bad_request' }, 400);
 const OUTAGE = json({ error: 'audit retention is unavailable' }, 503);
 
 describe('retention writes by role', () => {
@@ -125,7 +126,7 @@ describe('removing a retention policy', () => {
 	});
 
 	it('relays a refusal and hides an outage', async () => {
-		const refused = engine({ id: 'p1' }, { reply: json({ error: 'failed to delete retention policy' }, 404) });
+		const refused = engine({ id: 'p1' }, { reply: json({ error: 'failed to delete retention policy', code: 'not_found' }, 404) });
 		expect(((await actions.deletePolicy(refused.event)) as Failure).data.error).toBe('failed to delete retention policy');
 		const down = engine({ id: 'p1' }, { reply: OUTAGE });
 		expect(((await actions.deletePolicy(down.event)) as Failure).data.error).toBe('Could not delete the policy. Try again.');
@@ -161,7 +162,7 @@ describe('placing a legal hold', () => {
 	});
 
 	it('relays a refusal and hides an outage', async () => {
-		const refused = engine({ name: 'Litigation' }, { reply: json({ error: 'name is required' }, 400) });
+		const refused = engine({ name: 'Litigation' }, { reply: json({ error: 'name is required', code: 'bad_request' }, 400) });
 		expect(((await actions.createHold(refused.event)) as Failure).data.error).toBe('name is required');
 		const down = engine({ name: 'Litigation' }, { reply: OUTAGE });
 		expect(((await actions.createHold(down.event)) as Failure).data.error).toBe('Could not create the hold. Try again.');
@@ -183,7 +184,7 @@ describe('releasing a legal hold', () => {
 
 	it('relays a refusal and hides an outage', async () => {
 		// The plugin answers 404 for a hold that is already released.
-		const refused = engine({ id: 'h1' }, { reply: json({ error: 'failed to delete legal hold' }, 404) });
+		const refused = engine({ id: 'h1' }, { reply: json({ error: 'failed to delete legal hold', code: 'not_found' }, 404) });
 		expect(((await actions.releaseHold(refused.event)) as Failure).data).toEqual({ action: 'releaseHold', error: 'failed to delete legal hold' });
 		const down = engine({ id: 'h1' }, { reply: OUTAGE });
 		expect(((await actions.releaseHold(down.event)) as Failure).data.error).toBe('Could not release the hold. Try again.');

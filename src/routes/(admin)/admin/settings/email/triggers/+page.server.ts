@@ -4,7 +4,7 @@ import { ApiError } from '@lyeve-labs/client';
 import { isOutage, section } from '$lib/api/gate';
 import { getSchemas } from '@lyeve-labs/client-rest';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError, actionFailure } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import { refusalOf } from '$lib/api/refusal';
 import {
 	createEmailTrigger,
@@ -15,6 +15,7 @@ import {
 	updateEmailTrigger,
 } from '$lib/api/email-triggers';
 import { readTriggerForm } from '$lib/server/email-trigger-form';
+import { asked } from '$lib/server/asked';
 
 export const load: PageServerLoad = async (event) => {
 	const client = authedClient(event);
@@ -26,7 +27,7 @@ export const load: PageServerLoad = async (event) => {
 		section(listEmailTemplates(client), 'Could not load email templates.'),
 		section(
 			getSchemas(client).then((rows: { name: string }[]) => rows.map((s) => s.name).sort()),
-			'Could not load schemas, so a trigger can only watch every schema for now.',
+			'Could not load content types, so a trigger can only watch every content type for now.',
 		),
 		triggerWriteRefusal(client),
 	]);
@@ -44,7 +45,7 @@ function writeFailure(action: 'save' | 'delete', err: unknown, fallback: string)
 		return fail(refused.status, { ...refused.data, action });
 	}
 	const status = isOutage(err) ? 503 : err instanceof ApiError && err.status === 422 ? 422 : 400;
-	return fail(status, { action, error: actionError(err, fallback) });
+	return tagged(action, actionFailure(err, fallback, status));
 }
 
 export const actions: Actions = {
@@ -65,16 +66,23 @@ export const actions: Actions = {
 		}
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const client = authedClient(event);
-		const id = String((await event.request.formData()).get('id') ?? '').trim();
-		if (!id) return fail(400, { action: 'delete', error: 'This form is missing its trigger. Reload the page and try again.' });
-		try {
-			await deleteEmailTrigger(client, id);
-			return { deleted: id };
-		} catch (err) {
-			return writeFailure('delete', err, 'Could not delete the trigger. Try again.');
-		}
-	},
+	delete: asked(
+		{
+			question: 'Delete this trigger?',
+			detail: 'Mail stops going out for this event.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['admin', 'super_admin']);
+			const client = authedClient(event);
+			const id = String((await event.request.formData()).get('id') ?? '').trim();
+			if (!id) return fail(400, { action: 'delete', error: 'This form is missing its trigger. Reload the page and try again.' });
+			try {
+				await deleteEmailTrigger(client, id);
+				return { deleted: id };
+			} catch (err) {
+				return writeFailure('delete', err, 'Could not delete the trigger. Try again.');
+			}
+		},
+	),
 };

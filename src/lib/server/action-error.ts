@@ -1,11 +1,7 @@
-import { fail } from '@sveltejs/kit';
+import { fail, type ActionFailure } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { refusalOf, refusalText } from '$lib/api/refusal';
-
-/** Whether a status carries a message written for the operator. */
-function isRelayable(status: number): boolean {
-	return (status >= 400 && status < 500) || status === 501;
-}
+import { errorCodeOf } from '$lib/api/limits';
 
 /**
  * Turns a thrown request error into a message worth showing the operator.
@@ -17,20 +13,13 @@ function isRelayable(status: number): boolean {
  * without it the operator sees a form that looks correct and a banner that
  * does not say what to change.
  *
- * A 4xx body is a validation message about the request the operator just made,
- * so it is relayed. Most 5xx bodies can carry driver or infrastructure detail
- * that must not reach a response body, so those collapse to the caller's static
- * fallback.
- *
- * 501 is the exception: it is the engine deliberately stating that an operation
- * is not available on this instance ("this plugin does not expose its
- * migrations, so compatibility cannot be checked"). That sentence is written for
- * the operator, and swallowing it would leave them with "Compatibility check
- * failed" and no way to tell a real failure from an operation that was never
- * possible.
+ * Only a 4xx that carries an API error code is the engine's own refusal, so
+ * only that message is relayed. A 5xx can carry driver or infrastructure
+ * detail, and a 4xx with no code came from something in front of the engine,
+ * such as a proxy's 413. Both collapse to the caller's static sentence.
  */
 export function actionError(err: unknown, fallback: string): string {
-	if (err instanceof ApiError && isRelayable(err.status)) {
+	if (err instanceof ApiError && err.status >= 400 && err.status < 500 && errorCodeOf(err)) {
 		const msg = err.message?.trim();
 		if (msg && msg !== String(err.status)) return msg;
 	}
@@ -47,4 +36,13 @@ export function actionFailure(err: unknown, fallback: string, status = 400) {
 	const refused = refusalOf(err);
 	if (refused) return fail(402, { error: refusalText(refused), refused });
 	return fail(status, { error: actionError(err, fallback) });
+}
+
+/**
+ * A failure tagged with the action that returned it. A page with several
+ * forms reports every one through one result, and the tag tells each form its
+ * own failure. `id` names the row a row action failed on.
+ */
+export function tagged<F extends ActionFailure<Record<string, unknown>>>(action: string, failure: F, id?: string) {
+	return fail(failure.status, { ...(failure.data as F['data']), action, ...(id ? { id } : {}) });
 }

@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { Badge, Button, Drawer, EmptyState, Input, PageShell, PasswordInput, SearchInput, Table, Toggle, confirm, Pagination } from '@lyeve-labs/ui-kit';
-	import { tick } from 'svelte';
+	import { Badge, Button, Drawer, EmptyState, Input, PageShell, PasswordInput, SearchInput, Table, Toggle, Pagination } from '@lyeve-labs/ui-kit';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
 	import { Pencil, Plus, Trash2, Variable as VariableIcon } from '@lucide/svelte';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { flowBack } from '$lib/flow/back';
-	import { submitter } from '$lib/forms.svelte';
+	import { confirmed, submitter } from '$lib/forms.svelte';
 	import type { ActionData, PageData } from './$types';
 	import type { Variable } from '$lib/api/flows';
 	import NotEnabled from '$lib/components/NotEnabled.svelte';
@@ -72,15 +72,11 @@
 		if (form && 'saved' in form && form.saved) open = false;
 	});
 
-	let deleteKey = $state('');
-	let deleteForm = $state<HTMLFormElement>();
-
-	async function askDelete(v: Variable) {
-		const ok = await confirm(`Delete variable vars.${v.key}?`, 'Expressions that use it will fail.', { confirmLabel: 'Delete' });
-		if (!ok) return;
-		deleteKey = v.key;
-		await tick();
-		deleteForm?.requestSubmit();
+	function deleteVariable(key: string): SubmitFunction {
+		return confirmed(`Delete variable vars.${key}?`, 'Expressions that use it will fail.', {
+			confirmLabel: 'Delete',
+			success: `Variable vars.${key} deleted.`,
+		});
 	}
 
 	const save = submitter(() => (open = false));
@@ -178,9 +174,12 @@
 									<Button variant="ghost" size="sm" onclick={() => openEdit(v)} title="Edit" aria-label="Edit {v.key}">
 										<Pencil size={ICON.sm} />
 									</Button>
-									<Button variant="ghost" size="sm" onclick={() => askDelete(v)} title="Delete" aria-label="Delete {v.key}">
-										<Trash2 size={ICON.sm} class="text-danger" />
-									</Button>
+									<form method="POST" action="?/delete" use:enhance={deleteVariable(v.key)}>
+										<input type="hidden" name="key" value={v.key} />
+										<Button variant="ghost" size="sm" type="submit" title="Delete" aria-label="Delete {v.key}">
+											<Trash2 size={ICON.sm} class="text-danger" />
+										</Button>
+									</form>
 								</div>
 							</td>
 						</tr>
@@ -230,12 +229,8 @@
 			<Button variant="primary" type="submit" form="variable-form" loading={save.pending}>{editing ? 'Save' : 'Create'}</Button>
 		{/snippet}
 	</Drawer>
-
-	<form method="POST" action="?/delete" use:enhance bind:this={deleteForm} class="hidden">
-		<input type="hidden" name="key" value={deleteKey} />
-	</form>
 {:else}
 	<PageShell title="Flows" documentTitle="Variables - Flows" width="wide">
-		<NotEnabled level={2} title="Flows" description="Flows are not enabled on this instance." />
+		<NotEnabled level={2} title="Flows" description="Flows are not enabled on this engine." />
 	</PageShell>
 {/if}

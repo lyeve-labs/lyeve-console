@@ -67,7 +67,7 @@
 				<p class="text-muted">
 					Scripts that call the admin API under <span class="font-mono">/api/admin</span> use an
 					{#if operator}<a href="/admin/admin-tokens" class="text-brand hover:underline">admin token</a>{:else}admin token{/if}:
-					a Bearer credential that an admin creates with named grants. It expires within 90 days and logs every request it makes.
+					a Bearer credential that an administrator creates with named grants. It expires within 90 days, and every request made with it is logged.
 				</p>
 				<div class="flex flex-col gap-2">
 					<p class="font-medium text-muted">Role capabilities</p>
@@ -77,7 +77,7 @@
 								<th scope="col">Role</th>
 								<th scope="col">Read content</th>
 								<th scope="col">Write content</th>
-								<th scope="col">Manage schemas</th>
+								<th scope="col">Manage content types</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -92,7 +92,7 @@
 						</tbody>
 					</Table>
 					<p class="text-xs text-faint">
-						Narrow these per schema and per flow with row-level rules on the
+						Narrow these per content type and per flow with row-level rules on the
 						<a href="/admin/settings/permissions" class="text-brand hover:underline">Permissions</a> page.
 					</p>
 				</div>

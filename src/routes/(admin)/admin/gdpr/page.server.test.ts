@@ -44,7 +44,7 @@ describe('privacy request failures', () => {
 	});
 
 	it('relays a refusal written for the operator', async () => {
-		rest.eraseSubject.mockRejectedValue(new ApiError(400, 'identifier must be an email address or a user id'));
+		rest.eraseSubject.mockRejectedValue(new ApiError(400, 'identifier must be an email address or a user id', { error: 'identifier must be an email address or a user id', code: 'bad_request' }));
 		const out = (await actions.erase(formEvent({ subject: 'x', confirm: 'x' }))) as Failure;
 		expect(out.data.error).toBe('identifier must be an email address or a user id');
 	});
@@ -89,13 +89,13 @@ describe('privacy requests', () => {
 	it('erases nothing when the confirmation names someone else', async () => {
 		const out = (await actions.erase(formEvent({ subject: 'jane@example.com', confirm: 'john@example.com' }))) as Failure;
 		expect(out.status).toBe(400);
-		expect(out.data.error).toBe('Confirmation does not match the subject identifier');
+		expect(out.data.error).toBe('Type the subject exactly as above.');
 		expect(rest.eraseSubject).not.toHaveBeenCalled();
 	});
 
 	it.each(['export', 'erase'] as const)('asks for a subject before %s', async (name) => {
 		const out = (await actions[name](formEvent({ subject: ' ', confirm: ' ' }))) as Failure;
-		expect(out.data.error).toBe('Subject identifier is required');
+		expect(out.data.error).toBe("Enter the subject's email or ID.");
 		expect(rest.exportSubject).not.toHaveBeenCalled();
 		expect(rest.eraseSubject).not.toHaveBeenCalled();
 	});
@@ -149,7 +149,7 @@ describe('the export step-up load', () => {
 
 	it('refuses a reader who is not a super admin', async () => {
 		authz.loadUser.mockResolvedValueOnce({ id: 'u2', roles: ['admin'] });
-		await expect(load(loadEvent())).rejects.toMatchObject({ status: 403 });
+		await expect(load(loadEvent())).rejects.toMatchObject({ status: 403, body: { message: 'Only a super admin can open this page.' } });
 		expect(engine.get).not.toHaveBeenCalled();
 	});
 });

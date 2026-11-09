@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '@lyeve-labs/client';
 import {
 	blocksEverything,
 	audienceLabel,
@@ -8,7 +7,6 @@ import {
 	windowLabel,
 	exhausted,
 	rateLabel,
-	rateLimitGate,
 	resetsIn,
 	scopeLabel,
 	scopeTone,
@@ -120,22 +118,6 @@ describe('the endpoint a rule matches', () => {
 		expect(endpointIsSound('POST')).toBe(false);
 		expect(endpointIsSound('post /api/v1/x')).toBe(false);
 		expect(endpointIsSound('')).toBe(false);
-	});
-});
-
-describe('the gate', () => {
-	// The page reads a refusal the way every plugin's page does, so it holds no
-	// idea of what any of the plugin's routes need.
-	it('calls a 404 absent, a 402 not enabled and anything else a failure', () => {
-		expect(rateLimitGate(new ApiError(404, 'not found')).state).toBe('absent');
-		expect(rateLimitGate(new ApiError(402, 'payment required')).state).toBe('locked');
-		expect(rateLimitGate(new ApiError(500, 'internal error')).state).toBe('error');
-		expect(rateLimitGate(new ApiError(503, 'database error')).state).toBe('unavailable');
-	});
-
-	it('never reports a failed read as nothing being limited', () => {
-		const gate = rateLimitGate(new Error('network'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load the rate limit rules.');
 	});
 });
 

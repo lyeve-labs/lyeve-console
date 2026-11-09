@@ -38,7 +38,7 @@ describe('new entry locale', () => {
 		expect(queryByLabelText('Locale')).toBeNull();
 	});
 
-	it('offers no locale on an instance without the localization plugin', () => {
+	it('offers no locale on an engine without the localization plugin', () => {
 		const { queryByLabelText, queryByText } = render(NewEntryPage, { props: { data: data(null), form: null } });
 		expect(queryByLabelText('Locale')).toBeNull();
 		expect(queryByText(/could not be read/)).toBeNull();
@@ -62,7 +62,7 @@ describe('new entry refusals', () => {
 		const { container, queryByRole } = render(NewEntryPage, {
 			props: {
 				data: data(null),
-				form: { error: 'The entry was created, but not every link was saved.', created: 'e1' } as never,
+				form: { error: 'Entry created. Could not add 1 link in tags.', created: 'e1' } as never,
 			},
 		});
 		expect(queryByRole('button', { name: 'Create' })).toBeNull();

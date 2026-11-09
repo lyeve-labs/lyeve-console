@@ -58,9 +58,9 @@ describe('custom page block controls', () => {
 
 	it('keeps the schema a block names on screen when the schema list was not read', () => {
 		render(EditorPage, {
-			props: { data: { customPage: stored, schemas: [], schemasGate: { state: 'error', message: 'Could not load schemas. Blocks keep the schemas they already use.' }, user: { roles: ['admin'] } }, form: null } as never,
+			props: { data: { customPage: stored, schemas: [], schemasGate: { state: 'error', message: 'Could not load content types. Blocks keep the content types they already use.' }, user: { roles: ['admin'] } }, form: null } as never,
 		});
-		expect(document.body.textContent).toContain('Could not load schemas');
+		expect(document.body.textContent).toContain('Could not load content types');
 		expect(document.querySelector('#block-2-schemas')?.closest('div')?.parentElement?.textContent).toContain('articles');
 	});
 });
@@ -78,7 +78,7 @@ describe('heading outline', () => {
 		render(EditorPage, {
 			props: { data: { customPage: stored, schemas: [], schemasGate: { state: 'forbidden' }, user: { roles: ['admin'] } }, form: null } as never,
 		});
-		expect(document.body.textContent).toContain('Your role cannot open the schema list.');
+		expect(document.body.textContent).toContain('Your role cannot open the content type list.');
 	});
 
 	it('steps its headings down one level at a time while the feature is not enabled', () => {

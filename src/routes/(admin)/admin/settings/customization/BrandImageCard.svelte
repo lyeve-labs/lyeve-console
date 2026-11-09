@@ -185,7 +185,7 @@
 				label="Or use an address"
 				mono
 				placeholder="https://"
-				hint="A published media library file, or an https URL. An image on another site is copied into the media library on save and served from this instance."
+				hint="A published media library file, or an https URL. An image on another site is copied into the media library on save and served from this engine."
 				error={fieldError}
 				bind:value={address}
 			/>

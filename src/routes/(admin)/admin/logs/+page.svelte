@@ -16,7 +16,7 @@
 	import type { PageData } from './$types';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { LOG_PAGE_SIZES } from '$lib/api/logs';
-	import { LOG_LEVELS, NO_VALUE, formatCount, formatDateTime, hasTrace, logLevelLabel, logLevelTone } from '$lib/format';
+	import { LOG_LEVELS, NO_VALUE, formatCount, formatDateTime, hasTrace, logLevelLabel, logLevelTone, plural } from '$lib/format';
 	import { FileText, AlertTriangle, BellRing } from '@lucide/svelte';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
 	import { ICON } from '$lib/icon';
@@ -100,7 +100,7 @@
 					value={(levels && logLevelLabel(levels.default_level)) || NO_VALUE}
 					sub={overrideCount === null
 						? 'Could not load'
-						: `${overrideCount} tenant and plugin ${overrideCount === 1 ? 'override' : 'overrides'}`}
+						: `${overrideCount} tenant and plugin ${plural(overrideCount, 'override')}`}
 					accent="brand"
 				/>
 				<Stat
@@ -132,7 +132,7 @@
 					{#if volume?.alerts?.length}
 						<span class="ml-2 flex items-center gap-1 text-xs text-warn">
 							<AlertTriangle size={ICON.xs} aria-hidden="true" />
-							{volume.alerts.length} volume {volume.alerts.length === 1 ? 'alert' : 'alerts'}
+							{volume.alerts.length} volume {plural(volume.alerts.length, 'alert')}
 						</span>
 					{/if}
 				</div>

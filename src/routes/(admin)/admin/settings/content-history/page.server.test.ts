@@ -52,6 +52,7 @@ function loadEvent(features: string[] = []) {
 
 function formEvent(fields: Record<string, string | readonly string[]>) {
 	const body = new FormData();
+	body.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) {
 		for (const one of typeof v === 'string' ? [v] : v) body.append(k, one);
 	}
@@ -261,7 +262,7 @@ describe('prune and delete', () => {
 	});
 
 	it('relays the reason a delete was refused', async () => {
-		engine.delete.mockRejectedValue(new ApiError(422, 'unknown content type'));
+		engine.delete.mockRejectedValue(new ApiError(422, 'unknown content type', { error: 'unknown content type', code: 'http_422' }));
 		const out = (await actions.deleteType(formEvent({ schema: 'nope' }))) as Failed;
 		expect(out.data.error).toBe('unknown content type');
 	});

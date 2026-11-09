@@ -24,6 +24,7 @@
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { ActionData, PageData } from './$types';
 	import { applyAction, enhance } from '$app/forms';
+	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { Ban, KeySquare, Plus, RefreshCw, ScrollText } from '@lucide/svelte';
@@ -34,7 +35,7 @@
 	import TokenExpiryField from '$lib/components/admin-tokens/TokenExpiryField.svelte';
 	import { tracked } from '$lib/forms.svelte';
 	import { narrows } from '$lib/narrow';
-	import { formatCount, formatDate, formatDateTime, relativeTime } from '$lib/format';
+	import { formatCount, formatDate, formatDateTime, plural, relativeTime } from '$lib/format';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
 	import {
@@ -75,11 +76,11 @@
 		return { action: String(v.action), error: String(v.error), fields: v.fields ?? {}, needsMfa: v.needsMfa };
 	}
 
-	// The last refusal, per action, kept here rather than read from `form`: a
+	// The last refusal, per action. It follows `form`, which a post from the
+	// layout's confirmation banner sets, and the handlers below overwrite it: a
 	// success never goes through `form` (see issue below), so `form` would
 	// keep showing a refusal the operator has already fixed.
-	// svelte-ignore state_referenced_locally
-	let failure = $state<Failure | null>(asFailure(form));
+	let failure = $derived<Failure | null>(asFailure(form));
 	const createFailure = $derived(failure?.action === 'create' ? failure : null);
 	const rotateFailure = $derived(failure?.action === 'rotate' ? failure : null);
 	const pageFailure = $derived(failure?.action === 'revoke' ? failure : null);
@@ -179,7 +180,7 @@
 
 	/** Revoking asks first and names the token, then the row stays as revoked. */
 	function revokeToken(t: AdminToken): SubmitFunction {
-		return async ({ cancel }) => {
+		return async ({ cancel, formData }) => {
 			const ok = await confirmDialog(
 				`Revoke token ${t.name} (lyat_${t.display_prefix})?`,
 				'Anything calling the admin API with it is refused from now on. The token stays listed as revoked and cannot be used again.',
@@ -189,6 +190,7 @@
 				cancel();
 				return;
 			}
+			formData.set(CONFIRM_FIELD, CONFIRMED);
 			return async ({ result }) => {
 				if (result.type === 'success') {
 					failure = null;
@@ -526,7 +528,7 @@
 	<Modal open title={issued.rotated ? `Rotated ${issued.name}` : `Token ${issued.name} issued`} onclose={() => (issued = null)}>
 		<div class="flex flex-col gap-4">
 			<Alert tone="warn" title="Copy it now">
-				You will not see this token again. Store it where the script that uses it runs, such as a CI secret.
+				It is not shown again. Store it where the script that uses it runs, such as a CI secret.
 			</Alert>
 			<CopyField id="issued-token" label="Admin token" value={issued.token} secret copyLabel="Copy the token" />
 			<p class="text-xs text-muted">
@@ -537,7 +539,7 @@
 				id="issued-example"
 				label="Try it"
 				value={curlExample(data.adminOrigin)}
-				hint="Set LYEVE_ADMIN_TOKEN to the token first. This lists the schemas if the token has schemas:read."
+				hint="Set LYEVE_ADMIN_TOKEN to the token first. This lists the content types if the token has schemas:read."
 				copyLabel="Copy the example"
 			/>
 		</div>
@@ -550,8 +552,8 @@
 {#if data.log}
 	{@const log = data.log}
 	<Drawer open title="Request log" description={logToken ? `${logToken.name} (lyat_${logToken.display_prefix})` : undefined} size="xl" onclose={closeLog}>
-		{#if log.error}
-			<Alert tone="danger">{log.error}</Alert>
+		{#if log.gate}
+			<GateNotice gate={log.gate} title="Request log" absent="This token does not exist, or you cannot view it." />
 		{:else if log.rows.length === 0}
 			<EmptyState title="No requests yet" description="Calls made with this token appear here, including refused ones." />
 		{:else}
@@ -573,7 +575,7 @@
 								<td data-cell="nowrap" class="text-xs text-muted">{formatDateTime(r.created_at)}</td>
 								{#if dropped !== null}
 									<td colspan="4" class="text-xs text-warn">
-										{formatCount(dropped)} {dropped === 1 ? 'request' : 'requests'} not logged (the log queue was full)
+										{formatCount(dropped)} {plural(dropped, 'request')} not logged (the log queue was full)
 									</td>
 								{:else}
 									<td data-cell="nowrap" class="font-mono text-xs">{r.method}</td>

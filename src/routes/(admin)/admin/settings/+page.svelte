@@ -23,6 +23,7 @@
 			{
 				twoFactor: runs(data.plugins, PLUGIN.mfa),
 				trustedDevices: runs(data.plugins, PLUGIN.deviceFingerprint),
+				connectedEditors: runs(data.plugins, PLUGIN.builder),
 			},
 		),
 	);
@@ -30,7 +31,7 @@
 
 <PageShell
 	title="Settings"
-	description="Find a setting by what you want to change. The pages you see depend on your role and the plugins in this build."
+	description="Find a setting by what you want to change."
 	width="wide"
 >
 	{#each groups as group (group.id)}

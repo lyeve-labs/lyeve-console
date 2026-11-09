@@ -12,7 +12,7 @@ vi.mock('$lib/server/authz', async (importOriginal) => ({
 	}),
 }));
 
-import { actions, load } from './+page.server';
+import { load } from './+page.server';
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -23,7 +23,6 @@ function mockCookies(): Cookies {
 }
 
 type Read = { ok: true; value: unknown } | { ok: false; gate: { state: string } };
-type Failure = { status: number; data: Record<string, unknown> };
 interface Call {
 	method: string;
 	path: string;
@@ -62,8 +61,7 @@ function engine(routes: Record<string, () => Response> = {}) {
 interface Loaded {
 	limit: number;
 	results: Read | null;
-	ranking: Read;
-	synonyms: Read;
+	analytics: Read;
 }
 
 async function runLoad(search: string, routes: Record<string, () => Response> = {}) {
@@ -75,14 +73,6 @@ async function runLoad(search: string, routes: Record<string, () => Response> = 
 		parent: async () => ({ user: { roles: ['admin'] } }),
 	} as never;
 	return { result: (await load(event)) as unknown as Loaded, calls };
-}
-
-function actionEvent(fields: Record<string, string | string[]>, routes: Record<string, () => Response> = {}) {
-	const { fetch, calls } = engine(routes);
-	const fd = new FormData();
-	for (const [k, v] of Object.entries(fields)) for (const one of [v].flat()) fd.append(k, one);
-	const event = { fetch, cookies: mockCookies(), request: { formData: async () => fd } } as never;
-	return { event, calls };
 }
 
 beforeEach(() => {
@@ -138,186 +128,11 @@ describe('the search load', () => {
 		).rejects.toMatchObject({ status: 307, location: '/admin/search?q=cats&offset=20' });
 	});
 
-	it('keeps a failed ranking read as a gate, never as the default weights', async () => {
-		const { result } = await runLoad('', { 'GET /api/admin/search/ranking': () => json({ error: 'down' }, 503) });
+	// The analytics card sits beside the results, so its read runs with every
+	// query and a failure is drawn as its gate.
+	it('keeps a failed analytics read as a gate', async () => {
+		const { result } = await runLoad('', { 'GET /api/admin/search/analytics': () => json({ error: 'down' }, 503) });
 
-		expect(result.ranking).toMatchObject({ ok: false, gate: { state: 'unavailable' } });
-	});
-
-	it('reads the synonym groups up to the page ceiling and keeps their total', async () => {
-		const { result, calls } = await runLoad('', {
-			'GET /api/admin/search/synonyms': () => json({ data: [{ id: 's1', base_term: 'tv', synonyms: ['telly'] }], total_count: 612 }),
-		});
-
-		const asked = new URL(calls.find((c) => c.path.startsWith('/api/admin/search/synonyms'))!.path, 'http://x');
-		expect(asked.searchParams.get('limit')).toBe('500');
-		expect(result.synonyms).toMatchObject({ ok: true, value: { total: 612 } });
-	});
-
-	it('keeps a failed synonym read as a gate, never as no groups', async () => {
-		const { result } = await runLoad('', { 'GET /api/admin/search/synonyms': () => json({ error: 'internal' }, 500) });
-
-		expect(result.synonyms).toMatchObject({ ok: false, gate: { state: 'error' } });
-	});
-});
-
-describe('saving the default weights', () => {
-	const weights = { title_weight: '3', body_weight: '1', tag_weight: '0.5' };
-
-	// The plugin replaces the whole row, so weights sent alone erase the rules.
-	it('sends back the boost rules it read beside the weights', async () => {
-		const { event, calls } = actionEvent(weights);
-
-		expect(await actions.ranking(event)).toEqual({ rankingSaved: true });
-		const put = calls.find((c) => c.method === 'PUT');
-		expect(put?.body).toEqual({
-			schema_name: '*',
-			title_weight: 3,
-			body_weight: 1,
-			tag_weight: 0.5,
-			boost_rules: RANKING.boost_rules,
-		});
-	});
-
-	it('writes nothing when the rules could not be read', async () => {
-		const { event, calls } = actionEvent(weights, { 'GET /api/admin/search/ranking': () => json({ error: 'down' }, 503) });
-
-		const out = (await actions.ranking(event)) as Failure;
-		expect(out.data.rankingError).toBe('Could not save the weights. Try again.');
-		expect(calls.some((c) => c.method === 'PUT')).toBe(false);
-	});
-
-	it('relays the reason the plugin refused', async () => {
-		const { event } = actionEvent(weights, { 'PUT /api/admin/search/ranking': () => json({ error: 'schema_name is required' }, 400) });
-
-		expect(((await actions.ranking(event)) as Failure).data.rankingError).toBe('schema_name is required');
-	});
-
-	it('refuses a weight outside 0 to 10 before it reaches the plugin', async () => {
-		const { event, calls } = actionEvent({ ...weights, tag_weight: '11' });
-
-		expect(((await actions.ranking(event)) as Failure).status).toBe(400);
-		expect(calls).toEqual([]);
-	});
-});
-
-describe('the public schemas', () => {
-	it('saves the picked schemas', async () => {
-		const { event, calls } = actionEvent({ schemas: ['posts', 'pages'] }, {
-			'PUT /api/admin/search/public-schemas': () => json({ schemas: ['posts', 'pages'] }),
-		});
-
-		expect(await actions.publicSchemas(event)).toEqual({ publicSaved: 2 });
-		expect(calls[0].body).toEqual({ schemas: ['posts', 'pages'] });
-	});
-
-	it('relays the reason the plugin refused', async () => {
-		const { event } = actionEvent({ schemas: 'nope' }, {
-			'PUT /api/admin/search/public-schemas': () => json({ error: 'unknown schema nope' }, 400),
-		});
-
-		expect(((await actions.publicSchemas(event)) as Failure).data.publicError).toBe('unknown schema nope');
-	});
-
-	it('keeps outage detail out of the message', async () => {
-		const { event } = actionEvent({ schemas: 'posts' }, {
-			'PUT /api/admin/search/public-schemas': () => json({ error: 'pq: connection refused' }, 503),
-		});
-
-		expect(((await actions.publicSchemas(event)) as Failure).data.publicError).toBe('Could not save the public schemas. Try again.');
-	});
-});
-
-describe('the synonym groups', () => {
-	it('creates a group named after its term', async () => {
-		const { event, calls } = actionEvent({ base_term: 'tv', synonyms: 'telly, television' });
-
-		expect(await actions.createSynonym(event)).toEqual({ synonymSaved: true });
-		expect(calls[0]).toMatchObject({ method: 'POST', body: { name: 'tv', base_term: 'tv', synonyms: ['telly', 'television'] } });
-	});
-
-	it('relays the reason the plugin refused a group', async () => {
-		const { event } = actionEvent({ base_term: 'tv', synonyms: 'telly' }, {
-			'POST /api/admin/search/synonyms': () => json({ error: 'synonym group already exists' }, 409),
-		});
-
-		expect(((await actions.createSynonym(event)) as Failure).data.synonymError).toBe('synonym group already exists');
-	});
-
-	it('keeps outage detail out of a failed create', async () => {
-		const { event } = actionEvent({ base_term: 'tv', synonyms: 'telly' }, {
-			'POST /api/admin/search/synonyms': () => json({ error: 'pq: down' }, 503),
-		});
-
-		expect(((await actions.createSynonym(event)) as Failure).data.synonymError).toBe('Could not save the synonym. Try again.');
-	});
-
-	it('deletes the named group', async () => {
-		const { event, calls } = actionEvent({ id: 's 1' });
-
-		expect(await actions.deleteSynonym(event)).toEqual({ synonymDeleted: true });
-		expect(calls[0]).toMatchObject({ method: 'DELETE', path: '/api/admin/search/synonyms/s%201' });
-	});
-
-	// The New synonym drawer shows create failures. A delete failure under the
-	// same key opened the next drawer with it, as if the create had failed.
-	it('returns a failed delete under its own key', async () => {
-		const { event } = actionEvent({ id: 's1' }, { 'DELETE /api/admin/search/synonyms': () => json({ error: 'not found' }, 404) });
-
-		const out = (await actions.deleteSynonym(event)) as Failure;
-		expect(out.data).toEqual({ synonymDeleteError: 'not found' });
-	});
-
-	it('keeps outage detail out of a failed delete', async () => {
-		const { event } = actionEvent({ id: 's1' }, { 'DELETE /api/admin/search/synonyms': () => json({ error: 'pq: down' }, 503) });
-
-		expect(((await actions.deleteSynonym(event)) as Failure).data).toEqual({ synonymDeleteError: 'Could not delete the synonym. Try again.' });
-	});
-});
-
-describe('rebuilding the index', () => {
-	it('reports how many entries were indexed', async () => {
-		authz.roles = ['super_admin'];
-		const { event } = actionEvent({}, { 'POST /api/admin/search/reindex': () => json({ indexed: 12, message: 'Indexed 12 entries.' }) });
-
-		expect(await actions.reindex(event)).toEqual({ reindexed: 12, reindexMessage: 'Indexed 12 entries.' });
-	});
-
-	it('relays the reason the plugin refused', async () => {
-		authz.roles = ['super_admin'];
-		const { event } = actionEvent({}, { 'POST /api/admin/search/reindex': () => json({ error: 'a reindex is already running' }, 409) });
-
-		expect(((await actions.reindex(event)) as Failure).data.reindexError).toBe('a reindex is already running');
-	});
-
-	it('keeps outage detail out of the message', async () => {
-		authz.roles = ['super_admin'];
-		const { event } = actionEvent({}, { 'POST /api/admin/search/reindex': () => json({ error: 'pq: down' }, 503) });
-
-		expect(((await actions.reindex(event)) as Failure).data.reindexError).toBe('Could not rebuild the index. Try again.');
-	});
-
-	it('refuses an admin before it reaches the plugin', async () => {
-		const { event, calls } = actionEvent({});
-
-		await expect(actions.reindex(event)).rejects.toMatchObject({ status: 403 });
-		expect(calls).toEqual([]);
-	});
-});
-
-describe('the role check', () => {
-	const cases = [
-		['publicSchemas', { schemas: 'posts' }],
-		['ranking', { title_weight: '1', body_weight: '1', tag_weight: '1' }],
-		['createSynonym', { base_term: 'tv', synonyms: 'telly' }],
-		['deleteSynonym', { id: 's1' }],
-	] as const;
-
-	it.each(cases)('refuses %s to an editor before it reaches the plugin', async (name, fields) => {
-		authz.roles = ['editor'];
-		const { event, calls } = actionEvent(fields);
-
-		await expect(actions[name](event)).rejects.toMatchObject({ status: 403 });
-		expect(calls).toEqual([]);
+		expect(result.analytics).toMatchObject({ ok: false, gate: { state: 'unavailable' } });
 	});
 });

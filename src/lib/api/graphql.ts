@@ -3,11 +3,11 @@
  * by introspection, and the persisted query allowlist it keeps per tenant.
  */
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, type Gate } from './gate';
+import { couldNotLoad } from '../outage';
 
 export const GRAPHQL_HTTP = '/api/v1/graphql';
 export const GRAPHQL_WS = '/api/v1/graphql/ws';
-export const PERSISTED_URL = '/api/admin/graphql/persisted-queries';
+const PERSISTED_URL = '/api/admin/graphql/persisted-queries';
 
 export interface PersistedQuery {
 	query_hash: string;
@@ -30,10 +30,6 @@ export interface SchemaRoots {
 	mutation: RootField[];
 	subscription: RootField[];
 }
-
-export type GraphqlGate = Gate;
-
-export const GRAPHQL_OK: GraphqlGate = GATE_OK;
 
 /** Asks for the root fields only, which is what the page lists. */
 export const ROOTS_QUERY = `query Roots {
@@ -64,7 +60,7 @@ function fieldsOf(t: IntrospectedType | undefined): RootField[] {
  */
 export function readRoots(answer: IntrospectionAnswer): { roots: SchemaRoots | null; refused: string | null } {
 	const schema = answer.data?.__schema;
-	if (!schema) return { roots: null, refused: answer.errors?.[0]?.message ?? 'Could not load the GraphQL schema.' };
+	if (!schema) return { roots: null, refused: answer.errors?.[0]?.message ?? couldNotLoad('the GraphQL schema') };
 	return {
 		roots: { query: fieldsOf(schema.queryType), mutation: fieldsOf(schema.mutationType), subscription: fieldsOf(schema.subscriptionType) },
 		refused: null,

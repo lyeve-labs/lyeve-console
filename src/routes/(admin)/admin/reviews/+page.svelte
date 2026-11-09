@@ -1,45 +1,28 @@
 <script lang="ts">
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
 	import {
 		Alert,
 		Badge,
-		Button,
-		Card,
-		Drawer,
 		EmptyState,
 		FilterChips,
-		Input,
-		NumberInput,
 		PageShell,
-		Panel,
 		SectionHeading,
-		SegmentedControl,
-		Select,
 		Pagination,
 		Table,
-		Toggle,
-		confirm as confirmDialog,
 		type StatusTone,
 	} from '@lyeve-labs/ui-kit';
-	import { tick } from 'svelte';
-	import { enhance } from '$app/forms';
 	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { ArrowDown, ArrowUp, ClipboardCheck, Plus, Trash2, X } from '@lucide/svelte';
-	import type { ActionData, PageData } from './$types';
+	import ReviewTabs from '$lib/components/ReviewTabs.svelte';
+	import { ClipboardCheck } from '@lucide/svelte';
+	import type { PageData } from './$types';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { submitter, fieldErrors } from '$lib/forms.svelte';
-	import { REVIEW_STATUSES, approvalsNeeded, conditionText, type ReviewStage, type ReviewStatus } from '$lib/api/review';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { formRefusal, type Refusal } from '$lib/api/refusal';
+	import { REVIEW_STATUSES, type ReviewStatus } from '$lib/api/review';
 	import { formatDateTime, NO_VALUE } from '$lib/format';
+	import { couldNotLoad } from '$lib/outage';
 	import { shortId } from '$lib/utils/entry-identity';
 	import { pageNumber, pageOffset } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
-
-	const submit = submitter(() => (open = false));
+	let { data }: { data: PageData } = $props();
 
 	const STATUS_LABEL: Record<ReviewStatus, string> = {
 		draft: 'Draft',
@@ -71,11 +54,10 @@
 		})),
 	];
 
-	// A failed read draws its gate in place of its section, so these are only
-	// ever rows the engine answered with.
+	// Only rows the engine answered with. A failed definitions read leaves the
+	// names to their short ids, and a note under the filter says why.
 	let definitionRows = $derived(data.definitions.ok ? data.definitions.value : []);
 	let assignmentRows = $derived(data.assignments.ok ? data.assignments.value : []);
-	let schemaNames = $derived(data.schemas.ok ? data.schemas.value : []);
 
 	let byDefinition = $derived(new Map(definitionRows.map((row) => [row.definition.id, row])));
 
@@ -109,599 +91,116 @@
 		return a.overdue || (!!a.due_at && new Date(a.due_at).getTime() < Date.now());
 	}
 
-	function hours(seconds: number): string {
-		return seconds > 0 ? `${Math.round((seconds / 3600) * 10) / 10}h` : NO_VALUE;
-	}
-
 	const pageHref = (offset: number) =>
 		`/admin/reviews?${new URLSearchParams({ ...(data.status ? { status: data.status } : {}), ...(offset ? { offset: String(offset) } : {}) }).toString()}`.replace(/\?$/, '');
-
-	// What the definitions read says this install allows. The ceiling and the
-	// count are the plugin's, so a lifted ceiling never reads as a stale one.
-	let limits = $derived(data.limits);
-	let workflows = $derived(limits?.workflows ?? null);
-	let atCeiling = $derived(!!workflows && workflows.limit !== null && workflows.current >= workflows.limit);
-	let ceilingRefusal = $derived<Refusal | null>(
-		atCeiling && workflows
-			? { kind: 'cap', cap: 'review.workflows', limit: workflows.limit, current: workflows.current, upgradeUrl: '' }
-			: null,
-	);
-	// The paid stage settings. False closes them, null (a plugin that does
-	// not say) leaves them open and a refused create says why.
-	let stagesLocked = $derived(limits?.licensed === false);
-	let refused = $derived(formRefusal(form));
-	let formError = $derived(form && 'error' in form && form.error ? String(form.error) : undefined);
-	// The New definition drawer shows only a failed create. A failed delete
-	// stays on the page, so the next drawer never opens with it.
-	let createFailed = $derived(form && 'action' in form && form.action === 'create');
-
-	const ESCALATE = [
-		{ value: 'none', label: 'Nobody' },
-		{ value: 'user', label: 'A user' },
-		{ value: 'role', label: 'A role' },
-	];
-	const OPS = [
-		{ value: 'equals', label: 'Is' },
-		{ value: 'not_equals', label: 'Is not' },
-		{ value: 'in', label: 'One of' },
-		{ value: 'exists', label: 'Is set' },
-	];
-
-	function stageNotes(stage: ReviewStage): string[] {
-		const notes: string[] = [];
-		if (approvalsNeeded(stage) > 1) notes.push(`${approvalsNeeded(stage)} approvals`);
-		if (stage.escalate_to_role) notes.push(`escalates to ${stage.escalate_to_role}`);
-		else if (stage.escalate_to_user_id) notes.push(`escalates to ${personName(stage.escalate_to_user_id)}`);
-		if (stage.condition) notes.push(`when ${conditionText(stage.condition)}`);
-		return notes;
-	}
-
-	// The create drawer: a name, the schema it reviews, the publish switch and
-	// an ordered list of stages serialized into one hidden field.
-	type StageRow = {
-		key: number;
-		name: string;
-		required_role: string;
-		sla_hours: number;
-		quorum: number;
-		escalate_kind: string;
-		escalate_to: string;
-		condition_field: string;
-		condition_op: string;
-		condition_value: string;
-	};
-	let open = $state(false);
-	let name = $state('');
-	let slug = $state('');
-	let contentSchema = $state<string | null>('');
-	let publishOnApprove = $state(true);
-	let nextKey = 1;
-	let stages = $state<StageRow[]>([]);
-
-	function blankStage(): StageRow {
-		return {
-			key: nextKey++,
-			name: '',
-			required_role: '',
-			sla_hours: 0,
-			quorum: 1,
-			escalate_kind: 'none',
-			escalate_to: '',
-			condition_field: '',
-			condition_op: 'equals',
-			condition_value: '',
-		};
-	}
-
-	function openCreate() {
-		name = '';
-		slug = '';
-		contentSchema = schemaNames[0] ?? '';
-		publishOnApprove = true;
-		stages = [blankStage()];
-		open = true;
-	}
-
-	function move(index: number, by: -1 | 1) {
-		const to = index + by;
-		if (to < 0 || to >= stages.length) return;
-		const next = [...stages];
-		[next[index], next[to]] = [next[to], next[index]];
-		stages = next;
-	}
-
-	let stagesJSON = $derived(
-		JSON.stringify(
-			stages.map((s) => ({
-				name: s.name,
-				required_role: s.required_role,
-				sla_duration_seconds: Math.round(s.sla_hours * 3600),
-				quorum: s.quorum,
-				escalate_kind: s.escalate_kind,
-				escalate_to: s.escalate_to,
-				condition_field: s.condition_field,
-				condition_op: s.condition_op,
-				condition_value: s.condition_value,
-			})),
-		),
-	);
-	let schemaOptions = $derived(schemaNames.map((s) => ({ value: s, label: s })));
-
-	// The accounts an escalation can go to, by email. A stage saved with an
-	// account the directory no longer lists keeps it as an option, so the field
-	// still shows what the stage holds.
-	let peopleOptions = $derived(
-		Object.entries(data.people)
-			.map(([id, email]) => ({ value: id, label: email }))
-			.sort((a, b) => a.label.localeCompare(b.label)),
-	);
-	function escalateOptions(current: string) {
-		if (!current || peopleOptions.some((o) => o.value === current)) return peopleOptions;
-		return [...peopleOptions, { value: current, label: shortId(current) }];
-	}
-	let errors = $derived(fieldErrors(form));
-
-	let deleteForm = $state<HTMLFormElement | null>(null);
-	let deleteId = $state('');
-
-	async function askDelete(id: string, label: string) {
-		const ok = await confirmDialog(
-			`Delete ${label}?`,
-			'Its assignments, their history and their comments go with it.',
-			{ confirmLabel: 'Delete' },
-		);
-		if (!ok) return;
-		deleteId = id;
-		// The hidden form reads the id from the DOM, so it waits for Svelte to
-		// write it there.
-		await tick();
-		deleteForm?.requestSubmit();
-	}
 </script>
 
 <PageShell
 	title="Reviews"
-	description="Define the review stages content moves through, and see where each entry under review stands."
+	description="See where each entry under review stands."
 	width="wide"
 >
 	{#snippet actions()}
 		<Badge tone="violet" size="sm">Beta</Badge>
-		{#if data.operator && data.definitions.ok}
-			<Button variant="primary" size="sm" onclick={openCreate} disabled={atCeiling}>
-				<Plus size={ICON.sm} />
-				New definition
-			</Button>
-		{/if}
 	{/snippet}
 
-	{#if (!open || !createFailed) && (formError || refused)}
-		<FormErrors message={formError} {refused} />
-	{:else if form && 'created' in form && form.created}
-		<Alert tone="success" autoDismiss>Definition created.</Alert>
-	{:else if form && 'deleted' in form && form.deleted}
-		<Alert tone="success" autoDismiss>Definition deleted.</Alert>
-	{/if}
+	<ReviewTabs active="assignments" operator={data.operator} />
 
-	<div class="flex flex-col gap-6">
-		{#if data.operator}
-			<section class="flex flex-col gap-4" aria-label="Definitions">
-				<div class="flex flex-wrap items-center justify-between gap-2">
-					<SectionHeading level={2}>Definitions</SectionHeading>
-					{#if workflows && workflows.limit !== null}
-						<span class="text-xs text-muted" data-testid="workflow-count">
-							{workflows.current} of {workflows.limit}
-							{workflows.limit === 1 ? 'workflow' : 'workflows'}
-						</span>
-					{/if}
-				</div>
-				{#if ceilingRefusal}
-					<RefusalNotice refusal={ceilingRefusal} />
-				{/if}
-				{#if !data.definitions.ok}
-					<GateNotice
-						gate={data.definitions.gate}
-						title="Review definitions"
-						absent="Review definitions are not included in this build."
-					/>
-				{:else if definitionRows.length === 0}
-					<EmptyState
-						title="No definitions yet"
-						description="Create a definition to send content through review stages, each with a required role and an SLA."
-					>
-						{#snippet iconSnippet()}<ClipboardCheck size={ICON.lg} />{/snippet}
-						{#snippet action()}
-							<Button variant="secondary" onclick={openCreate}>
-								<Plus size={ICON.sm} />
-								New definition
-							</Button>
-						{/snippet}
-					</EmptyState>
-				{:else}
-					<Table label="Review definitions">
-						<thead>
-							<tr>
-								<th scope="col">Name</th>
-								<th scope="col">Schema</th>
-								<th scope="col">Stages</th>
-								<th scope="col">On approval</th>
-								<th scope="col" class="text-right">Actions</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each definitionRows as row (row.definition.id)}
-								<tr data-testid="definition-row">
-									<td data-cell="nowrap">
-										<span class="font-medium text-fg">{row.definition.name}</span>
-										<span class="ml-2 font-mono text-xs text-faint">{row.definition.slug}</span>
-									</td>
-									<td data-cell="nowrap" class="font-mono text-xs">{row.definition.content_schema || 'default'}</td>
-									<td>
-										{#if row.stages === null}
-											<span class="text-xs text-warn">Could not load stages. Reload the page to try again.</span>
-										{:else}
-										<ol class="flex flex-wrap items-center gap-1.5">
-											{#each row.stages as stage, i (stage.id)}
-												<li class="flex items-center gap-1 whitespace-nowrap text-xs" data-testid="stage-chip">
-													<span class="text-faint">{i + 1}.</span>
-													<span class="text-fg">{stage.name}</span>
-													{#if stage.required_role}
-														<Badge tone="neutral" size="sm">{stage.required_role}</Badge>
-													{/if}
-													<span class="text-faint">{hours(stage.sla_duration_seconds)}</span>
-													{#each stageNotes(stage) as note (note)}
-														<Badge tone="violet" size="sm">{note}</Badge>
-													{/each}
-												</li>
-											{/each}
-										</ol>
-										{/if}
-									</td>
-									<td data-cell="nowrap">
-										<Badge tone={row.definition.publish_on_approve ? 'success' : 'neutral'}>
-											{row.definition.publish_on_approve ? 'Publishes' : 'No change'}
-										</Badge>
-									</td>
-									<td data-cell="nowrap" class="text-right">
-										<Button
-											variant="ghost"
-											size="sm"
-											onclick={() => askDelete(row.definition.id, row.definition.name)}
-											title="Delete"
-											aria-label="Delete {row.definition.name}"
-										>
-											<Trash2 size={ICON.sm} class="text-danger" />
-										</Button>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</Table>
-				{/if}
-			</section>
-		{/if}
-
-		<section class="flex flex-col gap-4" aria-label="Assignments">
-			<SectionHeading level={2}>Assignments</SectionHeading>
-			<ListToolbar label="Filter assignments">
-				{#snippet filters()}
-					<FilterChips label="Status" value={data.status} options={statusOptions} />
-				{/snippet}
-			</ListToolbar>
-			{#if !data.assignments.ok && data.assignments.gate.state === 'forbidden'}
-				<!-- The rules decide this, not the role, so the notice names them. -->
-				<Alert tone="warn" title="You cannot see reviews">
-					Your roles have no read permission on <span class="font-mono">reviews</span>.
-				</Alert>
-			{:else if !data.assignments.ok}
-				<GateNotice
-					gate={data.assignments.gate}
-					title="Review assignments"
-					absent="Review assignments are not included in this build."
-				/>
-			{:else if assignmentRows.length === 0}
-				<EmptyState
-					title="Nothing under review"
-					description={data.status
-						? 'No assignments have this status. Pick another status to see the rest.'
-						: 'Entries appear here when you start a review from the entry editor.'}
-				>
-					{#snippet iconSnippet()}<ClipboardCheck size={ICON.lg} />{/snippet}
-				</EmptyState>
-			{:else}
-				{#if !data.entriesNamed}
-					<p class="text-xs text-muted">
-						Entries, definitions and stages are shown by ID, because only an admin can see their names.
-					</p>
-				{/if}
-				<Table label="Review assignments">
-					<thead>
-						<tr>
-							<th scope="col">Entry</th>
-							<th scope="col">Definition</th>
-							<th scope="col">Stage</th>
-							<th scope="col">Status</th>
-							<th scope="col">Assignee</th>
-							<th scope="col">Due</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each assignmentRows as a (a.id)}
-							{@const href = entryHref(a.definition_id, a.entry_id)}
-							{@const late = overdue(a)}
-							<tr data-testid="assignment-row" data-status={a.status}>
-								<td data-cell="nowrap" class={a.entry_id in data.entries ? '' : 'font-mono text-xs'}>
-									{#if href}
-										<a {href} class="text-brand underline-offset-2 hover:underline">{entryName(a.entry_id)}</a>
-									{:else}
-										{entryName(a.entry_id)}
-									{/if}
-								</td>
-								<td data-cell="nowrap">{definitionName(a.definition_id)}</td>
-								<td data-cell="nowrap">
-									{stageName(a.definition_id, a.current_stage_id)}
-									{#if a.required_approvals > 1}
-										<Badge tone="neutral" size="sm">
-											{a.approvals.length} of {a.required_approvals} approvals
-										</Badge>
-									{/if}
-								</td>
-								<td data-cell="nowrap">
-									<Badge tone={STATUS_TONE[a.status]} dot>{STATUS_LABEL[a.status]}</Badge>
-								</td>
-								<td data-cell="nowrap" class={a.assignee_id in data.people ? '' : 'font-mono text-xs'}>
-									{personName(a.assignee_id)}
-									{#if a.assignee_ids.length > 1}
-										<span class="font-sans text-muted">and {a.assignee_ids.length - 1} more</span>
-									{/if}
-								</td>
-								<td data-cell="nowrap" class={late ? 'text-danger' : ''} data-overdue={late}>
-									{a.due_at ? formatDateTime(a.due_at) : NO_VALUE}
-									{#if late}
-										<Badge tone="danger" size="sm">Overdue</Badge>
-									{/if}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</Table>
-				<Pagination
-					page={pageNumber(data.offset, data.limit)}
-					perPage={data.limit}
-					count={assignmentRows.length}
-					total={data.total}
-					noun="assignments"
-					href={(page) => pageHref(pageOffset(page, data.limit))}
-				/>
-			{/if}
-		</section>
-	</div>
-</PageShell>
-
-<Drawer bind:open title="New definition">
-	<form
-		method="POST"
-		action="?/create"
-		id="definition-form"
-		use:enhance={submit.enhance}
-		class="flex flex-col gap-4"
-	>
-		<FormErrors message={createFailed ? formError : undefined} refused={createFailed ? refused : null} />
-		<input type="hidden" name="stages" value={stagesJSON} />
-		<input type="hidden" name="publish_on_approve" value={publishOnApprove ? 'true' : 'false'} />
-		<Input
-			id="definition-name"
-			name="name"
-			label="Name"
-			required
-			bind:value={name}
-			placeholder="Editorial review"
-			error={errors.name}
-		/>
-		<Input
-			id="definition-slug"
-			name="slug"
-			label="Slug"
-			hint="Permission rules refer to this definition as review:<slug>. If you leave it empty, it is made from the name. It cannot be changed later."
-			bind:value={slug}
-			class="font-mono"
-			autocomplete="off"
-		/>
-		{#if schemaOptions.length > 0}
-			<Select
-				id="definition-schema"
-				name="content_schema"
-				label="Content schema"
-				hint="The schema whose entries this definition reviews. Approval publishes the row there."
-				options={schemaOptions}
-				searchable
-				bind:value={contentSchema}
+	<section class="flex flex-col gap-4" aria-label="Assignments">
+		<SectionHeading level={2}>Assignments</SectionHeading>
+		<ListToolbar label="Filter assignments">
+			{#snippet filters()}
+				<FilterChips label="Status" value={data.status} options={statusOptions} />
+			{/snippet}
+		</ListToolbar>
+		{#if !data.assignments.ok && data.assignments.gate.state === 'forbidden'}
+			<!-- The rules decide this, not the role, so the notice names them. -->
+			<Alert tone="warn" title="You cannot see reviews">
+				Your roles have no read permission on <span class="font-mono">reviews</span>.
+			</Alert>
+		{:else if !data.assignments.ok}
+			<GateNotice
+				gate={data.assignments.gate}
+				title="Review assignments"
+				absent="Review assignments are not included in this build."
 			/>
+		{:else if assignmentRows.length === 0}
+			<EmptyState
+				title="Nothing under review"
+				description={data.status
+					? 'No assignments have this status. Choose another status to see the rest.'
+					: 'Entries appear here when you start a review from the entry editor.'}
+			>
+				{#snippet iconSnippet()}<ClipboardCheck size={ICON.lg} />{/snippet}
+			</EmptyState>
 		{:else}
-			<Input
-				id="definition-schema"
-				name="content_schema"
-				label="Content schema"
-				hint={data.schemas.ok
-					? 'The schema whose entries this definition reviews.'
-					: 'Could not load schemas. Type the name of the schema whose entries this definition reviews.'}
-				value={contentSchema ?? ''}
-				oninput={(e) => (contentSchema = (e.currentTarget as HTMLInputElement).value)}
-				class="font-mono"
+			{#if !data.entriesNamed}
+				<p class="text-xs text-muted">
+					Entries, definitions and stages are shown by ID, because only an administrator can see their names.
+				</p>
+			{/if}
+			{#if data.operator && !data.definitions.ok}
+				<p class="text-xs text-warn">{couldNotLoad('the definition and stage names', { reload: true })}</p>
+			{/if}
+			<Table label="Review assignments">
+				<thead>
+					<tr>
+						<th scope="col">Entry</th>
+						<th scope="col">Definition</th>
+						<th scope="col">Stage</th>
+						<th scope="col">Status</th>
+						<th scope="col">Assignee</th>
+						<th scope="col">Due</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each assignmentRows as a (a.id)}
+						{@const href = entryHref(a.definition_id, a.entry_id)}
+						{@const late = overdue(a)}
+						<tr data-testid="assignment-row" data-status={a.status}>
+							<td data-cell="nowrap" class={a.entry_id in data.entries ? '' : 'font-mono text-xs'}>
+								{#if href}
+									<a {href} class="text-brand underline-offset-2 hover:underline">{entryName(a.entry_id)}</a>
+								{:else}
+									{entryName(a.entry_id)}
+								{/if}
+							</td>
+							<td data-cell="nowrap">{definitionName(a.definition_id)}</td>
+							<td data-cell="nowrap">
+								{stageName(a.definition_id, a.current_stage_id)}
+								{#if a.required_approvals > 1}
+									<Badge tone="neutral" size="sm">
+										{a.approvals.length} of {a.required_approvals} approvals
+									</Badge>
+								{/if}
+							</td>
+							<td data-cell="nowrap">
+								<Badge tone={STATUS_TONE[a.status]} dot>{STATUS_LABEL[a.status]}</Badge>
+							</td>
+							<td data-cell="nowrap" class={a.assignee_id in data.people ? '' : 'font-mono text-xs'}>
+								{personName(a.assignee_id)}
+								{#if a.assignee_ids.length > 1}
+									<span class="font-sans text-muted">and {a.assignee_ids.length - 1} more</span>
+								{/if}
+							</td>
+							<td data-cell="nowrap" class={late ? 'text-danger' : ''} data-overdue={late}>
+								{a.due_at ? formatDateTime(a.due_at) : NO_VALUE}
+								{#if late}
+									<Badge tone="danger" size="sm">Overdue</Badge>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</Table>
+			<Pagination
+				page={pageNumber(data.offset, data.limit)}
+				perPage={data.limit}
+				count={assignmentRows.length}
+				total={data.total}
+				noun="assignments"
+				href={(page) => pageHref(pageOffset(page, data.limit))}
 			/>
 		{/if}
-		<Toggle
-			id="definition-publish"
-			label="Publish on approval"
-			hint="The last approval publishes the entry. When off, the entry stays as it was and you publish it separately."
-			bind:checked={publishOnApprove}
-		/>
-
-		<Card>
-			<div class="flex flex-col gap-3">
-				<SectionHeading level={3}>Stages, in order</SectionHeading>
-				<ol class="flex flex-col gap-3" aria-label="Stages">
-					{#each stages as stage, i (stage.key)}
-						<li>
-							<Panel pad="sm">
-								<div class="flex flex-col gap-2">
-									<!-- Beside the three stage buttons a phone left the name field
-									     about 105px, which cut its placeholder. The field keeps a
-									     minimum width beside its number, and the buttons wrap below
-									     it as one group when the row is too narrow. -->
-									<div class="flex flex-wrap items-center gap-2">
-										<span class="text-xs text-faint">{i + 1}.</span>
-										<div class="min-w-48 flex-1">
-											<Input
-												id="stage-name-{stage.key}"
-												label="Stage name"
-												required
-												bind:value={stage.name}
-												placeholder="Copy edit"
-											/>
-										</div>
-										<div class="ms-auto flex gap-2">
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												aria-label="Move stage {i + 1} up"
-												disabled={i === 0}
-												onclick={() => move(i, -1)}
-											>
-												<ArrowUp size={ICON.sm} />
-											</Button>
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												aria-label="Move stage {i + 1} down"
-												disabled={i === stages.length - 1}
-												onclick={() => move(i, 1)}
-											>
-												<ArrowDown size={ICON.sm} />
-											</Button>
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												aria-label="Remove stage {i + 1}"
-												disabled={stages.length === 1}
-												onclick={() => (stages = stages.filter((s) => s.key !== stage.key))}
-											>
-												<X size={ICON.sm} />
-											</Button>
-										</div>
-									</div>
-									<div class="grid gap-2 sm:grid-cols-2">
-										<Input
-											id="stage-role-{stage.key}"
-											label="Required role"
-											hint="Leave empty to allow anyone the permission rules allow. The admin and super_admin roles can always act."
-											bind:value={stage.required_role}
-											placeholder="editor"
-											mono
-										/>
-										<NumberInput
-											id="stage-sla-{stage.key}"
-											label="SLA, hours"
-											hint="0 for none, up to 240."
-											min={0}
-											max={240}
-											step={1}
-											bind:value={stage.sla_hours}
-										/>
-									</div>
-									<div class="flex flex-col gap-3 border-t border-line pt-3" data-testid="stage-paid-settings">
-										{#if stagesLocked}
-											<NotEnabled compact title="Quorum, escalation and conditions" />
-										{/if}
-										<NumberInput
-											id="stage-quorum-{stage.key}"
-											label="Approvals needed"
-											hint="1 needs a single approval. A higher number needs that many assignees to approve."
-											min={1}
-											max={100}
-											step={1}
-											disabled={stagesLocked}
-											bind:value={stage.quorum}
-										/>
-										<SegmentedControl
-											label="Escalate to"
-											options={ESCALATE}
-											disabled={stagesLocked || stage.sla_hours === 0}
-											bind:value={stage.escalate_kind}
-										/>
-										{#if stage.escalate_kind === 'user' && peopleOptions.length > 0}
-											<Select
-												id="stage-escalate-{stage.key}"
-												label="User"
-												hint="The user becomes the assignee when the SLA passes."
-												placeholder="Pick a user"
-												options={escalateOptions(stage.escalate_to)}
-												searchable
-												disabled={stagesLocked}
-												bind:value={stage.escalate_to}
-											/>
-										{:else if stage.escalate_kind !== 'none'}
-											<Input
-												id="stage-escalate-{stage.key}"
-												label={stage.escalate_kind === 'user' ? 'User id' : 'Role'}
-												hint={stage.escalate_kind === 'user'
-													? 'The user becomes the assignee when the SLA passes.'
-													: 'Anyone with this role can act on the stage once the SLA passes.'}
-												disabled={stagesLocked}
-												bind:value={stage.escalate_to}
-												mono
-											/>
-										{/if}
-										<div class="grid gap-2 sm:grid-cols-2">
-											<Input
-												id="stage-condition-field-{stage.key}"
-												label="Condition field"
-												hint="Leave empty to run the stage for every entry."
-												disabled={stagesLocked}
-												bind:value={stage.condition_field}
-												placeholder="category"
-												mono
-											/>
-											{#if stage.condition_field.trim()}
-												<SegmentedControl
-													label="Compares"
-													options={OPS}
-													disabled={stagesLocked}
-													bind:value={stage.condition_op}
-												/>
-											{/if}
-										</div>
-										{#if stage.condition_field.trim() && stage.condition_op !== 'exists'}
-											<Input
-												id="stage-condition-value-{stage.key}"
-												label={stage.condition_op === 'in' ? 'Values' : 'Value'}
-												hint={stage.condition_op === 'in' ? 'One per comma, up to 100.' : 'A text, a number, or true or false.'}
-												disabled={stagesLocked}
-												bind:value={stage.condition_value}
-											/>
-										{/if}
-									</div>
-								</div>
-							</Panel>
-						</li>
-					{/each}
-				</ol>
-				<div>
-					<Button type="button" variant="secondary" size="sm" onclick={() => (stages = [...stages, blankStage()])}>
-						<Plus size={ICON.sm} /> New stage
-					</Button>
-				</div>
-			</div>
-		</Card>
-	</form>
-	{#snippet footer()}
-		<Button variant="secondary" onclick={() => (open = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="definition-form" loading={submit.pending}>Create</Button>
-	{/snippet}
-</Drawer>
-
-<form method="POST" action="?/delete" use:enhance bind:this={deleteForm} class="hidden">
-	<input type="hidden" name="id" value={deleteId} />
-</form>
+	</section>
+</PageShell>

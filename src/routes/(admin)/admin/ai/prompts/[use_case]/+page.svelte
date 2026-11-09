@@ -7,7 +7,7 @@
 	import type { ActionData, PageData } from './$types';
 	import AiSection from '$lib/components/ai/AiSection.svelte';
 	import { useCaseLabel } from '$lib/components/ai/use-case';
-	import { formatDateTime } from '$lib/format';
+	import { formatDateTime, plural } from '$lib/format';
 	import { ICON } from '$lib/icon';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -46,7 +46,7 @@
 				{:else}
 					<Badge tone="brand">Using version {p.active_version}</Badge>
 				{/if}
-				<span class="text-xs text-faint">{p.versions.length} saved {p.versions.length === 1 ? 'version' : 'versions'}</span>
+				<span class="text-xs text-faint">{p.versions.length} saved {plural(p.versions.length, 'version')}</span>
 			</div>
 
 			<section class="flex flex-col gap-4">

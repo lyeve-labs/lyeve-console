@@ -15,8 +15,8 @@
  */
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
 
-export const METRICS_URL = '/api/admin/telemetry/metrics';
-export const EXPORTERS_URL = '/api/admin/telemetry/exporters';
+const METRICS_URL = '/api/admin/telemetry/metrics';
+const EXPORTERS_URL = '/api/admin/telemetry/exporters';
 
 /** How many exporters one read asks for. The plugin ships five backends. */
 const EXPORTER_PAGE = 50;
@@ -100,7 +100,7 @@ export function triggerExport(client: HttpClient, name: string): Promise<ExportR
 	return client.post<ExportResult>(`${EXPORTERS_URL}/${encodeURIComponent(name)}/export`, undefined);
 }
 
-export const DESTINATION_URL = '/api/admin/telemetry/destination';
+const DESTINATION_URL = '/api/admin/telemetry/destination';
 
 /**
  * Where this tenant's own series are pushed, besides the instance's
@@ -138,7 +138,7 @@ export interface TenantDestination {
 
 export interface DestinationRead {
 	destination: TenantDestination | null;
-	/** Whether this install may save or change a destination. Removing one is always allowed. */
+	/** Whether this instance may save or change a destination. Removing one is always allowed. */
 	licensed: boolean;
 }
 

@@ -44,7 +44,7 @@ describe('the gate', () => {
 		const { container } = render(GrpcPage, {
 			props: props({ gate: { state: 'locked', upgradeUrl: '' }, status: null }),
 		});
-		expect(said(container)).toContain('Not enabled on this instance');
+		expect(said(container)).toContain('Not enabled on this engine');
 	});
 
 	it('explains the refusal to an admin who may not read it', () => {
@@ -68,7 +68,7 @@ describe('why nothing is listening', () => {
 			props: props({ status: status({ degraded: true, listening: false, address: '' }) }),
 		});
 		const text = said(container);
-		expect(text).toContain('The gRPC plugin is not enabled on this instance, so no listener was started.');
+		expect(text).toContain('The gRPC plugin is not enabled on this engine, so no listener was started.');
 	});
 
 	it('points at the start-up log when it is enabled and still down', () => {

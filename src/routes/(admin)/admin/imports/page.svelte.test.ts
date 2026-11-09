@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, cleanup, screen, fireEvent } from '@testing-library/svelte';
+import { render, cleanup, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ invalidate: vi.fn(async () => {}), goto: vi.fn(async () => {}) }));
@@ -61,6 +61,11 @@ function skippedLevels(): string[] {
 }
 
 describe('Imports', () => {
+	it('opens on the History tab', () => {
+		render(ImportsPage, { props: props({ jobs: [], total: 0 }) });
+		expect(screen.getByRole('tab', { name: 'History' }).getAttribute('aria-selected')).toBe('true');
+	});
+
 	it('puts its sections one level under the page title', () => {
 		render(ImportsPage, { props: props({ jobs: [], total: 0 }) });
 		expect(document.querySelector('h1')).not.toBeNull();
@@ -74,7 +79,7 @@ describe('Imports', () => {
 		expect(text).toContain('A dry run comes first');
 		expect(text).toContain('File upload');
 		expect(text).toContain('Web address');
-		expect(text).toContain('Another LyEve instance');
+		expect(text).toContain('Another LyEve engine');
 		expect(text).toContain('No imports yet');
 	});
 
@@ -126,14 +131,6 @@ describe('Imports reads that failed', () => {
 		render(ImportsPage, { props: props({ detail: { ok: false, gate: { state: 'absent' } } }) });
 		expect(document.body.textContent).toContain('This import no longer exists');
 	});
-
-	it('says why a new template offers no content type when the list was not read', async () => {
-		render(ImportsPage, {
-			props: props({ templates: [], templatesRead: true, schemas: { ok: false, gate: { state: 'unavailable' } } }),
-		});
-		await fireEvent.click(screen.getAllByRole('button', { name: /new template/i })[0]);
-		expect(document.body.textContent).toContain('Could not load content types');
-	});
 });
 
 describe('Imports rollback by role', () => {
@@ -159,31 +156,20 @@ describe('Imports controls', () => {
 		render(ImportsPage, { props: props({ jobs: [], total: 0 }) });
 		expect(screen.getAllByRole('button', { name: /new import/i }).length).toBeGreaterThan(1);
 	});
-
-	it('asks what to do with an existing entry with a sentence on each choice', async () => {
-		render(ImportsPage, { props: props({ templates: [], templatesRead: true }) });
-		await fireEvent.click(screen.getAllByRole('button', { name: /new template/i })[0]);
-		expect(screen.getByRole('radio', { name: /create only/i })).toBeTruthy();
-		expect(document.body.textContent).toContain('Overwrite the fields of an entry the key finds');
-	});
 });
 
 describe('Imports failures stay where they were made', () => {
-	it('shows a failed row action on the page and opens the template drawer clean', async () => {
+	it('shows a failed row action on the page', () => {
 		const failed = 'Could not roll back the import. Try again.';
-		const { container } = render(ImportsPage, {
-			props: props({ templates: [], templatesRead: true }, { action: 'rollback', error: failed }),
-		});
+		const { container } = render(ImportsPage, { props: props({}, { action: 'rollback', error: failed }) });
 		expect(said(container)).toContain(failed);
-		await fireEvent.click(screen.getAllByRole('button', { name: /new template/i })[0]);
-		expect((document.getElementById('template-form') as HTMLFormElement).textContent).not.toContain(failed);
 	});
+});
 
-	it('shows a refused template save in its drawer and not on the page', async () => {
-		const { container } = render(ImportsPage, {
-			props: props({ templates: [], templatesRead: true }, { action: 'saveTemplate', error: 'Map at least one column.' }),
-		});
-		expect(said(container)).not.toContain('Map at least one column.');
+describe('the sources', () => {
+	it('names the workbook among the formats', () => {
+		const { container } = render(ImportsPage, { props: props() });
+		expect(said(container)).toContain('an Excel workbook (XLSX)');
 	});
 });
 

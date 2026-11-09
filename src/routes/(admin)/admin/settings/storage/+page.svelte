@@ -7,6 +7,7 @@
 		Drawer,
 		EmptyState,
 		Input,
+		NumberInput,
 		PageShell,
 		PasswordInput,
 		SectionHeading,
@@ -22,7 +23,8 @@
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { Copy, HardDrive, Pencil, Plug, Plus, Trash2 } from '@lucide/svelte';
 	import { duplicateRow } from '$lib/duplicate';
-	import { confirmed, submitter } from '$lib/forms.svelte';
+	import { plural } from '$lib/format';
+	import { confirmed, drawerFailure, submitter } from '$lib/forms.svelte';
 	import {
 		PROVIDER_FIELDS,
 		PROVIDER_LABELS,
@@ -46,15 +48,13 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const formError = $derived((form as { error?: string } | null)?.error ?? '');
-	// Create and update share one drawer and one form result, so the drawer
-	// shows only a failure of the action it is showing that came back after
-	// it opened. A failed create never shows in the next edit.
-	let openedOver = $state.raw<unknown>(null);
-	const providerError = $derived.by(() => {
-		const failed = form as { action?: string; providerError?: string } | null;
-		if (!failed?.providerError || form === openedOver) return '';
-		return failed.action === (editing ? 'update' : 'create') ? failed.providerError : '';
-	});
+	// Create and update share one drawer, so it shows only a failure of the
+	// action it is showing. A failed create never shows in the next edit.
+	type Failure = { action?: string; providerError?: string } | null;
+	const failure = drawerFailure(() => form as Failure, ['create', 'update']);
+	const providerError = $derived.by(() =>
+		failure.drawer?.action === (editing ? 'update' : 'create') ? (failure.drawer.providerError ?? '') : '',
+	);
 
 	// One drawer for create and edit. A null target is a new provider.
 	let drawerOpen = $state(false);
@@ -65,7 +65,7 @@
 	let useSSL = $state(true);
 	let pathStyle = $state(false);
 	let enabled = $state(true);
-	let priority = $state('0');
+	let priority = $state(0);
 	let publicUnsigned = $state(false);
 
 	const typeOptions = PROVIDER_TYPES.map((t) => ({ value: t, label: PROVIDER_LABELS[t] ?? t }));
@@ -79,9 +79,9 @@
 		useSSL = true;
 		pathStyle = false;
 		enabled = true;
-		priority = '0';
+		priority = 0;
 		publicUnsigned = false;
-		openedOver = form;
+		failure.opened();
 		drawerOpen = true;
 	}
 
@@ -93,9 +93,9 @@
 		useSSL = p.use_ssl;
 		pathStyle = p.path_style;
 		enabled = p.enabled;
-		priority = String(p.priority);
+		priority = p.priority;
 		publicUnsigned = p.local_public_unsigned;
-		openedOver = form;
+		failure.opened();
 		drawerOpen = true;
 	}
 
@@ -126,9 +126,9 @@
 		useSSL = source.use_ssl;
 		pathStyle = source.path_style;
 		enabled = false;
-		priority = String(source.priority);
+		priority = source.priority;
 		publicUnsigned = source.local_public_unsigned;
-		openedOver = form;
+		failure.opened();
 		drawerOpen = true;
 	}
 
@@ -154,8 +154,8 @@
 	function remove(p: StorageProvider): SubmitFunction {
 		return confirmed(
 			`Delete provider ${p.name}?`,
-			'Files already stored there stay where they are, but this instance can no longer read them.',
-			{ confirmLabel: 'Delete', success: `Deleted ${p.name}` },
+			'Files already stored there stay where they are, but this engine can no longer read them.',
+			{ confirmLabel: 'Delete', success: `${p.name} deleted.` },
 		);
 	}
 </script>
@@ -187,7 +187,7 @@
 		{/if}
 		{#if !data.canConfigure}
 			<Alert tone="info">
-				Only a super admin can add, change or delete a provider. Any admin can test one.
+				Only a super admin can add, change or delete a provider. An administrator can test one.
 			</Alert>
 		{/if}
 
@@ -197,7 +197,8 @@
 			     here, so this is the only place it is named. -->
 			<Alert tone="danger">
 				{broken.length}
-				{broken.length === 1 ? 'provider has' : 'providers have'} credentials that can no longer be decrypted. They look configured but fail every upload, and the failure shows up elsewhere as a media error.
+				{plural(broken.length, 'provider has', 'providers have')} credentials that can no longer be decrypted, so every upload
+				to {plural(broken.length, 'it', 'them')} fails. Enter {plural(broken.length, 'its', 'their')} credentials again.
 			</Alert>
 		{/if}
 
@@ -206,7 +207,7 @@
 			     anywhere else. Either way it belongs on the page. -->
 			<Alert tone="warn">
 				{open.length}
-				{open.length === 1 ? 'provider hands' : 'providers hand'} out unsigned URLs that never expire. Anyone who has an object's key can read it. A CDN in front of the directory needs this, but without one it is a data leak.
+				{plural(open.length, 'provider hands', 'providers hand')} out unsigned URLs that never expire. Anyone who has an object's key can read it. A CDN in front of the directory needs this, but without one it is a data leak.
 			</Alert>
 		{/if}
 
@@ -240,16 +241,16 @@
 					Each tenant uploads to its own providers. A tenant with none uses the default tenant's providers, and if there are none, the engine's directory. Among the providers that can take an upload, one with a cost weight set through the API is preferred, lowest weight first. Otherwise the lowest priority number receives it. Every store keeps each tenant's files under a separate prefix.
 				</p>
 				<p>
-					Providers are saved in this instance's database, not in environment variables. Adding one here changes no variable, and changing a variable does not add a provider. While this page is available,
+					Providers are saved in this engine's database. While this page is available,
 					<span class="font-mono text-xs">STORAGE_DRIVER</span> and
 					<span class="font-mono text-xs">STORAGE_S3_*</span>
-					have no effect, because the providers below replace them. The one exception is
-					<span class="font-mono text-xs">STORAGE_LOCAL_PATH</span>, which still sets the directory the fallback writes to.
+					have no effect, because the providers below replace them.
+					<span class="font-mono text-xs">STORAGE_LOCAL_PATH</span> still sets the directory the fallback writes to.
 				</p>
 				<p>
-					On the first start with no providers, an instance that already had
+					On the first start with no providers, an engine that already had
 					<span class="font-mono text-xs">STORAGE_S3_BUCKET</span>
-					set gets one provider built from those variables, so an install that was writing to a bucket keeps writing to it. This happens only once. After that, you manage providers on this page.
+					set gets one provider built from those variables, so it keeps writing to its bucket. This happens only once. After that, you manage providers on this page.
 				</p>
 			</div>
 		</Card>
@@ -391,7 +392,7 @@
 				/>
 			{/if}
 		{/each}
-		<Input id="provider-priority" name="priority" label="Priority" type="text" inputmode="numeric" mono hint="Lower numbers receive uploads first." bind:value={priority} />
+		<NumberInput id="provider-priority" name="priority" label="Priority" min={0} hint="Lower numbers receive uploads first." bind:value={priority} />
 		{#if kind === 's3' || kind === 'minio'}
 			<Toggle id="provider-ssl" label="Use TLS" hint="Talk to the endpoint over HTTPS." bind:checked={useSSL} />
 			<Toggle id="provider-path-style" label="Path-style addresses" hint="Needed by MinIO and some S3-compatible services that do not serve bucket subdomains." bind:checked={pathStyle} />

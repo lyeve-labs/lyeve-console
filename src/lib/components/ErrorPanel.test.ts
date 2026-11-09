@@ -42,7 +42,7 @@ describe('ErrorPanel', () => {
 	// No admin seat left is a refusal too: the engine knows the account and
 	// the instance is full, so the page says why and offers no sign-in.
 	it('reads a 402 as a refusal in the words the load gave', () => {
-		const seats = "Every admin seat is taken. You're using 5 of 5, the most this instance allows.";
+		const seats = "Every admin seat is taken. You're using 5 of 5, the most this engine allows.";
 		const { getByText, getAllByRole, queryByRole } = mount(402, seats);
 		expect(getByText('Access denied')).toBeTruthy();
 		expect(getByText(seats)).toBeTruthy();
@@ -99,13 +99,13 @@ describe('ErrorPanel', () => {
 		});
 
 		it('keeps the detail block for other server failures only', () => {
-			expect(mount(503, 'The experiment could not be read').queryByText('What the server said')).toBeNull();
+			expect(mount(503, 'The experiment could not be read').queryByText('What the engine returned')).toBeNull();
 			cleanup();
-			expect(mount(500, 'boom').getByText('What the server said')).toBeTruthy();
+			expect(mount(500, 'boom').getByText('What the engine returned')).toBeTruthy();
 		});
 
 		it('folds the detail block shut behind a disclosure button', () => {
-			const toggle = mount(500, 'boom').getByRole('button', { name: 'What the server said' });
+			const toggle = mount(500, 'boom').getByRole('button', { name: 'What the engine returned' });
 			expect(toggle.getAttribute('aria-expanded')).toBe('false');
 		});
 

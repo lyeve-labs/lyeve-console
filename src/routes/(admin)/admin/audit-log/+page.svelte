@@ -23,7 +23,7 @@
 	import AuditTabs from '$lib/components/AuditTabs.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { NO_VALUE, formatDateTime } from '$lib/format';
+	import { NO_VALUE, formatDateTime, plural } from '$lib/format';
 	import { listQuery } from '$lib/back';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { PageData, ActionData } from './$types';
@@ -128,7 +128,7 @@
 
 <PageShell
 	title="Audit log"
-	description={data.total === null ? undefined : `${data.total} ${data.total === 1 ? 'entry' : 'entries'}`}
+	description={data.total === null ? undefined : `${data.total} ${plural(data.total, 'entry', 'entries')}`}
 	width="wide"
 >
 	{#snippet actions()}
@@ -158,7 +158,7 @@
 
 	{#if prunedCount > 0}
 		<Alert tone="success" autoDismiss>
-			Pruned {prunedCount} audit log {prunedCount === 1 ? 'entry' : 'entries'}.
+			Pruned {prunedCount} audit log {plural(prunedCount, 'entry', 'entries')}.
 		</Alert>
 	{/if}
 
@@ -217,8 +217,8 @@
 			     empty while the log is not. Neither empty state is true then. -->
 			<EmptyState
 				iconSnippet={emptyIcon}
-				title="Nothing on this page"
-				description={`The audit log has ${data.total} ${data.total === 1 ? 'entry' : 'entries'}, but none are on this page. Some may have been pruned since you opened it.`}
+				title="No entries on this page"
+				description={`The audit log has ${data.total} ${plural(data.total ?? 0, 'entry', 'entries')}, but none are on this page. Go to the first page.`}
 			>
 				{#snippet action()}
 					<Button variant="secondary" href={pageHref(0)}>Go to the first page</Button>
@@ -234,7 +234,7 @@
 			<EmptyState
 				iconSnippet={emptyIcon}
 				title="No audit entries yet"
-				description="Changes to content, schema and settings are recorded here as they happen."
+				description="Changes to content, content types and settings are recorded here as they happen."
 			/>
 		{:else}
 			<div class="flex flex-col gap-4">

@@ -60,6 +60,7 @@ type Failure = { status: number; data: { error: string } };
 
 function replayEvent(fields: Record<string, string>) {
 	const body = new FormData();
+	body.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) body.set(k, v);
 	return { request: new Request('http://localhost/admin/events', { method: 'POST', body }), url: new URL('http://localhost/admin/events') } as never;
 }
@@ -96,7 +97,7 @@ describe('replaying events', () => {
 	it.each([
 		[{ since: '' }, 'Choose the point to replay from.'],
 		[{ since: 'yesterday' }, 'Choose a date and time to replay from.'],
-		[{ since: '2999-01-01T00:00', since_offset: '0' }, 'Choose a time in the past. Nothing has been published after that point yet.'],
+		[{ since: '2999-01-01T00:00', since_offset: '0' }, 'Choose a time in the past.'],
 	])('refuses %o without starting a run', async (fields, sentence) => {
 		const out = (await actions.replay(replayEvent(fields))) as Failure;
 		expect(out.status).toBe(400);
@@ -105,7 +106,7 @@ describe('replaying events', () => {
 	});
 
 	it('relays the engine refusal', async () => {
-		engine.post.mockRejectedValue(new ApiError(409, 'a replay is already in progress'));
+		engine.post.mockRejectedValue(new ApiError(409, 'a replay is already in progress', { error: 'a replay is already in progress', code: 'conflict' }));
 		const out = (await actions.replay(replayEvent({ since: '2026-10-01T09:30', since_offset: '0' }))) as Failure;
 		expect(out.data.error).toBe('a replay is already in progress');
 	});

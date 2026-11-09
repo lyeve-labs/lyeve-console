@@ -4,8 +4,6 @@
  */
 import { ADMIN_SEATS_CAP, refusalOf, type Refusal } from '$lib/api/refusal';
 
-export { ADMIN_SEATS_CAP };
-
 /**
  * The refusal of a write the engine refused at the admin seat ceiling, or
  * null for any other failure, including a refusal at a different cap. An

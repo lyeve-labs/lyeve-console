@@ -14,10 +14,11 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
+import { checked } from '$lib/checkbox';
+import { inSentence } from './gate';
 import type { ListEnvelope } from './list';
 
-export const PROVIDERS_URL = '/api/admin/storage/providers';
+const PROVIDERS_URL = '/api/admin/storage/providers';
 
 export const PROVIDER_TYPES = ['s3', 'gcs', 'azure_blob', 'minio', 'local'] as const;
 export type ProviderType = (typeof PROVIDER_TYPES)[number];
@@ -63,15 +64,6 @@ export interface TestResult {
 	error?: string;
 }
 
-export type StorageGate = Gate;
-
-export const STORAGE_OK: StorageGate = GATE_OK;
-
-/** What a refused storage read means, read the way every plugin's is. */
-export function storageGate(err: unknown): StorageGate {
-	return gateOf(err, 'Could not load storage providers.');
-}
-
 export async function listProviders(client: HttpClient): Promise<ListEnvelope<StorageProvider>> {
 	return client.get<ListEnvelope<StorageProvider>>(PROVIDERS_URL);
 }
@@ -100,7 +92,7 @@ export function testPassed(result: TestResult | null | undefined): boolean {
 
 /** Why a provider failed its test. The plugin sends an empty error on a pass. */
 export function testMessage(result: TestResult | null | undefined): string {
-	return result?.error?.trim() || 'No reason was given.';
+	return result?.error?.trim() || 'The connection test failed, and the provider gave no reason.';
 }
 
 /**
@@ -161,7 +153,7 @@ export function providerTone(
 }
 
 export function providerState(p: StorageProvider): string {
-	if (p.credentials_unavailable) return 'Credentials will not decrypt';
+	if (p.credentials_unavailable) return 'Credentials cannot be decrypted';
 	if (!p.enabled) return 'Disabled';
 	if (p.local_public_unsigned) return 'Serving unsigned URLs';
 	return 'Ready';
@@ -221,7 +213,7 @@ export const PROVIDER_FIELDS: Readonly<Record<ProviderType, readonly ProviderFie
 	s3: [
 		{ key: 'bucket', label: 'Bucket', hint: 'The bucket objects are written to.', required: true, placeholder: 'my-uploads' },
 		{ key: 'region', label: 'Region', hint: 'The bucket region, such as us-east-1. Cloudflare R2 takes auto.', required: true, placeholder: 'us-east-1' },
-		{ key: 'endpoint', label: 'Endpoint', hint: 'Empty for Amazon S3. Set it for an S3-compatible service: Cloudflare R2, Wasabi, Backblaze B2 or DigitalOcean Spaces.', required: false, placeholder: 'https://<account>.r2.cloudflarestorage.com' },
+		{ key: 'endpoint', label: 'Endpoint', hint: 'Leave empty for Amazon S3. Set it for an S3-compatible service: Cloudflare R2, Wasabi, Backblaze B2 or DigitalOcean Spaces.', required: false, placeholder: 'https://<account>.r2.cloudflarestorage.com' },
 		{ key: 'access_key', label: 'Access key ID', hint: 'An IAM key allowed to put, get and delete in this bucket only.', required: true },
 		{ key: 'secret_key', label: 'Secret access key', hint: 'Stored encrypted and never shown again.', required: true, secret: true },
 		{ key: 'cdn_base_url', label: 'CDN base URL', hint: 'Optional. A CDN in front of the bucket. Download links use it.', required: false, placeholder: 'https://cdn.example.com' },
@@ -267,10 +259,10 @@ export function providerBodyFrom(form: FormData, creating: boolean): { body: Pro
 	const body: ProviderBody = {
 		provider_type: type,
 		name,
-		use_ssl: form.get('use_ssl') === 'on' || form.get('use_ssl') === 'true',
-		path_style: form.get('path_style') === 'on' || form.get('path_style') === 'true',
-		enabled: form.get('enabled') === 'on' || form.get('enabled') === 'true',
-		local_public_unsigned: type === 'local' && (form.get('local_public_unsigned') === 'on' || form.get('local_public_unsigned') === 'true'),
+		use_ssl: checked(form, 'use_ssl'),
+		path_style: checked(form, 'path_style'),
+		enabled: checked(form, 'enabled'),
+		local_public_unsigned: type === 'local' && checked(form, 'local_public_unsigned'),
 		priority: Math.max(0, Math.trunc(Number(form.get('priority') ?? 0)) || 0),
 	};
 	const cost = Number(form.get('cost_weight'));
@@ -278,7 +270,7 @@ export function providerBodyFrom(form: FormData, creating: boolean): { body: Pro
 	for (const f of PROVIDER_FIELDS[type]) {
 		const v = String(form.get(f.key) ?? '').trim();
 		if (!v) {
-			if (f.required && (creating || !isCredential(f))) return { error: `${f.label} is required.` };
+			if (f.required && (creating || !isCredential(f))) return { error: `Enter ${inSentence(f.label)}.` };
 			continue;
 		}
 		body[f.key] = v;

@@ -4,6 +4,7 @@ import { ApiError } from '@lyeve-labs/client';
 import { authedClient } from '$lib/server/authz';
 import { actionFailure } from '$lib/server/action-error';
 import { section } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 
 type Setup = { provisioning_uri: string; secret: string };
 
@@ -67,7 +68,7 @@ export const load: PageServerLoad = async (event) => {
 		authedClient(event)
 			.get<{ enabled: boolean; has_passkeys?: boolean }>('/api/admin/mfa/status')
 			.then((s) => ({ enabled: s.enabled === true, hasPasskeys: s.has_passkeys === true })),
-		'Could not load the two-factor status of your account.'
+		couldNotLoad('the two-factor status of your account')
 	);
 	return { mfa };
 };

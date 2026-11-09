@@ -53,7 +53,7 @@ jobs:
           # The secret scan reads history. A shallow clone gives it one commit.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
@@ -93,11 +93,11 @@ jobs:
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level=high
 
-      # Development advisories reach the build and the CI runner rather than a
-      # user, so they stay visible without blocking a release.
+      # Development dependencies run on the build and the CI runner, so a high
+      # or critical advisory in one fails the run. Low and moderate advisories
+      # are printed without failing it, because some have no fixed release.
       - name: Audit development dependencies
         run: pnpm audit --audit-level=high
-        continue-on-error: true
 
       - name: Unit tests
         run: pnpm run test --run
@@ -105,6 +105,6 @@ jobs:
       - name: Build
         run: pnpm run build
         env:
-          # Build needs *some* origin to satisfy adapter-node. Runtime ORIGIN
-          # is supplied by the deployment, this is just to make the build pass.
+          # adapter-node refuses to build without an origin. The deployment
+          # sets the real one at run time.
           ORIGIN: http://localhost:3002

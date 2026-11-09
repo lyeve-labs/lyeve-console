@@ -8,7 +8,7 @@ import { listAllFlows } from '$lib/api/flows';
 import type { FlowOption } from '$lib/flow/types';
 import { isFlowResource } from '$lib/flow/permissions';
 import { getRoleLimits, type RoleLimits } from '$lib/api/permissions';
-import { actionError, actionFailure } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import { gateOf, section, type Gate } from '$lib/api/gate';
 
 // Static text. The engine's own message can carry driver or upstream detail
@@ -125,7 +125,7 @@ export const actions: Actions = {
 		try {
 			await deletePermission(id, client);
 		} catch (e: unknown) {
-			return fail(400, { action: 'delete', error: actionError(e, 'Could not remove the rule. Try again.') });
+			return tagged('delete', actionFailure(e, 'Could not remove the rule. Try again.'));
 		}
 		return { success: true };
 	},

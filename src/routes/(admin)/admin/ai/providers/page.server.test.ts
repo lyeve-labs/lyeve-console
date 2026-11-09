@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { actions, load } from './+page.server';
-import { fixtureLocalProvider, fixtureProvider } from '$lib/components/ai/fixtures';
+import { fixtureLocalProvider, fixtureProvider } from '$lib/components/ai/test-support/fixtures';
 import type { AiProvider } from '$lib/api/ai';
-import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '$lib/components/ai/test-events';
+import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '$lib/components/ai/test-support/events';
 
 type Loaded = Exclude<Awaited<ReturnType<typeof load>>, void>;
 
@@ -81,6 +81,6 @@ describe('admin/ai/providers create', () => {
 			{ '/api/admin/ai/providers': () => refused(402, 'payment_required') },
 			formOf({ name: 'x', kind: 'openai', api_key: 'k', modalities: 'text' })
 		);
-		expect(await actions.create(event)).toMatchObject({ status: 400, data: { error: 'AI is not enabled on this instance.' } });
+		expect(await actions.create(event)).toMatchObject({ status: 400, data: { error: 'AI is not enabled on this engine.' } });
 	});
 });

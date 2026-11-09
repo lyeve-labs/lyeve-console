@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '@lyeve-labs/client';
 import {
 	inUse,
-	realtimeGate,
 	tenantLoad,
 	uptimeSince,
 	type StreamMetrics,
@@ -18,18 +16,6 @@ function metrics(over: Partial<StreamMetrics> = {}): StreamMetrics {
 		...over,
 	};
 }
-
-describe('realtimeGate', () => {
-	it('reads a 402 as not enabled and a 404 as the plugin absent', () => {
-		expect(realtimeGate(new ApiError(402, 'x')).state).toBe('locked');
-		expect(realtimeGate(new ApiError(404, 'x')).state).toBe('absent');
-	});
-
-	it('says a failed read is not a report that nobody is connected', () => {
-		const gate = realtimeGate(new Error('socket'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load realtime metrics.');
-	});
-});
 
 describe('tenantLoad', () => {
 	it('is empty for a missing map rather than throwing', () => {
@@ -83,7 +69,7 @@ describe('uptimeSince', () => {
 });
 
 describe('inUse', () => {
-	// An install that pushes over one transport should read as "nobody uses
+	// An instance that pushes over one transport should read as "nobody uses
 	// this one" on the other, not as a wall of zeros that looks like a fault.
 	it('is false for a transport nothing has touched', () => {
 		expect(inUse(metrics())).toBe(false);

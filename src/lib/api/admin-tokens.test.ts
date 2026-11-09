@@ -234,7 +234,7 @@ describe('describeRefusal', () => {
 		expect(describeRefusal(403, "An admin token's owner must be an admin of its tenant.", 'password').error).toBe(
 			"An admin token's owner must be an admin of its tenant."
 		);
-		expect(describeRefusal(503, 'account check unavailable', 'password').error).toBe('The engine is unavailable. Nothing was changed. Try again in a moment.');
+		expect(describeRefusal(503, 'account check unavailable', 'password').error).toBe('The engine is unavailable, so nothing was changed. Try again in a moment.');
 		expect(describeRefusal(500, 'pq: boom', 'password').error).toBe('Could not issue the token. Try again.');
 	});
 });

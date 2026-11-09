@@ -30,7 +30,7 @@ export interface PresetResult {
 }
 
 /**
- * The catalog and whether this install would accept a saved preset. The
+ * The catalog and whether this instance would accept a saved preset. The
  * plugin says so itself, so the page offers the form only where it works.
  */
 export async function readSchemaPresets(client: HttpClient): Promise<{ presets: SchemaPreset[]; canSave: boolean }> {

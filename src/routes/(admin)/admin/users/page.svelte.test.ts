@@ -118,7 +118,7 @@ describe('Users create', () => {
 	});
 
 	// The roles offered here and on the API key page are the same list.
-	it('offers every role the instance issues', async () => {
+	it('offers every role the engine issues', async () => {
 		const { container, getAllByRole } = render(UsersPage, { props: props() });
 
 		await fireEvent.click(getAllByRole('button', { name: /new user/i })[0]);
@@ -190,7 +190,7 @@ describe('Users form errors', () => {
 	const rejected = {
 		action: 'create',
 		error: 'Check the highlighted fields.',
-		fields: { email: 'Email is required', password: 'Password must be at least 12 characters' },
+		fields: { email: 'Enter an email address.', password: 'Password must be at least 12 characters' },
 	};
 
 	// The failure comes back while the drawer is open, as a submit's does.
@@ -216,7 +216,7 @@ describe('Users form errors', () => {
 		const email = container.querySelector('#new-email');
 		const describedBy = email?.getAttribute('aria-describedby');
 		expect(describedBy).toBe('new-email-error');
-		expect(container.querySelector(`#${describedBy}`)?.textContent).toBe('Email is required');
+		expect(container.querySelector(`#${describedBy}`)?.textContent).toBe('Enter an email address.');
 	});
 
 	it('puts the message on each rejected control rather than one banner', async () => {
@@ -293,7 +293,7 @@ describe('Users set password', () => {
 		expect(box.checked).toBe(true);
 		expect(box.name).toBe('remove_passkeys');
 		expect(box.closest('form')?.getAttribute('action')).toBe('?/setPassword');
-		expect(dialog.textContent).toContain('Recommended. The owner can add their passkeys again after signing in.');
+		expect(dialog.textContent).toContain('Recommended. They can add their passkeys again after signing in.');
 	});
 
 	it('shows the engine refusal on the password control', async () => {

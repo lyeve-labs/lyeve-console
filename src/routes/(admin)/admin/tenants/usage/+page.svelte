@@ -22,10 +22,11 @@
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import { tick } from 'svelte';
 	import { enhance } from '$app/forms';
+	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { Check, Gauge, Pencil, Plus, X } from '@lucide/svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { fieldErrors, submitter } from '$lib/forms.svelte';
+	import { drawerFailure, fieldErrors, submitter } from '$lib/forms.svelte';
 	import { formRefusal, refusalText, type Refusal } from '$lib/api/refusal';
 	import {
 		blocked,
@@ -44,7 +45,7 @@
 		type Quota,
 		type QuotaRequest,
 	} from '$lib/api/usage';
-	import { formatBytes, formatDateTime, formatCount } from '$lib/format';
+	import { formatBytes, formatDateTime, formatCount, plural } from '$lib/format';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
@@ -82,11 +83,8 @@
 	 * show above the tables.
 	 */
 	type Failure = { action?: string; error?: string } | null;
-	const inDrawer = $derived((form as Failure)?.action === 'quota');
-	let openedOver = $state.raw<unknown>(null);
-	const drawerForm = $derived(inDrawer && form !== openedOver ? form : null);
-	const pageForm = $derived(inDrawer ? null : form);
-	const errors = $derived(fieldErrors(drawerForm));
+	const failure = drawerFailure(() => form as Failure, ['quota']);
+	const errors = $derived(fieldErrors(failure.drawer));
 
 	// One drawer for a new quota and an existing one.
 	let editorOpen = $state(false);
@@ -108,7 +106,7 @@
 	const saveQuota = submitter(() => (editorOpen = false));
 
 	function openQuota(q: Quota | null) {
-		openedOver = form;
+		failure.opened();
 		editing = q;
 		tenantId = q?.tenant_id ?? '';
 		requestsLimit = q?.requests_limit ?? 0;
@@ -148,7 +146,7 @@
 	const usageByTenant = $derived(new Map((data.usage.ok ? data.usage.value : []).map((u) => [u.tenant_id, u])));
 
 	function review(r: QuotaRequest, decision: 'approve' | 'deny'): SubmitFunction {
-		return async ({ cancel }) => {
+		return async ({ cancel, formData }) => {
 			if (decision === 'approve') {
 				const confirmed = await confirmDialog(
 					`Approve more quota for ${r.tenant_id}?`,
@@ -159,6 +157,7 @@
 					cancel();
 					return;
 				}
+				formData.set(CONFIRM_FIELD, CONFIRMED);
 			}
 			return async ({ result, update }) => {
 				await update();
@@ -196,7 +195,7 @@
 			absent="Usage quotas are not included in this build. Nothing is metered or capped."
 		/>
 	{:else}
-		<FormErrors message={(pageForm as Failure)?.error || undefined} refused={formRefusal(pageForm)} />
+		<FormErrors message={failure.page?.error || undefined} refused={formRefusal(failure.page)} />
 		{#if !isSuperAdmin}
 			<Alert tone="brand">Your role can view this tenant's quota and requests. Only a super admin can set a quota or review a request.</Alert>
 		{/if}
@@ -231,8 +230,8 @@
 			     exist. -->
 			<Alert tone="warn">
 				{reportingOnly.length}
-				{reportingOnly.length === 1 ? 'quota is' : 'quotas are'} reported but not enforced. Tenants
-				can go past those limits. This is what you get when Hard limit is left off.
+				{plural(reportingOnly.length, 'quota is', 'quotas are')} reported but not enforced, because
+				Hard limit is off. Tenants can go past those limits.
 			</Alert>
 		{/if}
 
@@ -456,9 +455,9 @@
 <Drawer bind:open={editorOpen} title={editing ? `Quota for ${editing.tenant_id}` : 'New quota'}>
 	<form method="POST" action="?/quota" id="quota-form" use:enhance={saveQuota.enhance} class="flex flex-col gap-4">
 		<FormErrors
-			message={(drawerForm as Failure)?.error || undefined}
+			message={failure.drawer?.error || undefined}
 			fields={errors}
-			refused={formRefusal(drawerForm)}
+			refused={formRefusal(failure.drawer)}
 		/>
 		{#if editing}
 			<input type="hidden" name="tenant_id" value={editing.tenant_id} />
@@ -476,8 +475,8 @@
 		<input type="hidden" name="bandwidth_bytes_limit" value={keptBytes(bandwidthGib, shownBandwidthGib, editing?.bandwidth_bytes_limit ?? 0)} />
 		<NumberInput id="quota-requests" label="API calls a month" min={0} disabled={paidRefusal !== null} bind:value={requestsLimit} />
 		<div class="grid gap-4 sm:grid-cols-2">
-			<NumberInput id="quota-storage" label="Storage (GiB)" min={0} disabled={paidRefusal !== null} bind:value={storageGib} />
-			<NumberInput id="quota-bandwidth" label="Bandwidth a month (GiB)" min={0} disabled={paidRefusal !== null} bind:value={bandwidthGib} />
+			<NumberInput id="quota-storage" label="Storage (GB)" min={0} disabled={paidRefusal !== null} bind:value={storageGib} />
+			<NumberInput id="quota-bandwidth" label="Bandwidth a month (GB)" min={0} disabled={paidRefusal !== null} bind:value={bandwidthGib} />
 		</div>
 		<input type="hidden" name="is_hard_limit" value={hardLimit ? 'true' : 'false'} />
 		<Toggle

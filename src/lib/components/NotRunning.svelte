@@ -46,8 +46,8 @@
 	{#if reason.state === 'withheld'}
 		<EmptyState
 			{level}
-			title="Withheld from this tenant"
-			description="An administrator turned off {title} for this tenant. Ask them to turn it back on."
+			title="Turned off for this tenant"
+			description="{title} is turned off for this tenant. Ask a super admin to turn it back on."
 		>
 			{#snippet iconSnippet()}<Ban size={ICON.lg} />{/snippet}
 		</EmptyState>
@@ -56,7 +56,7 @@
 	{:else if reason.state === 'failed'}
 		<EmptyState
 			{level}
-			title="Failed to start"
+			title="Stopped at startup"
 			description="The {plugin} plugin stopped with an error at startup."
 			action={detailsLink}
 		>
@@ -90,7 +90,7 @@
 			{level}
 			title="Not running"
 			description={operator
-				? 'The plugin behind this page is not running. No reason was given.'
+				? 'The plugin behind this page is not running.'
 				: 'The plugin behind this page is not running. Ask an administrator why.'}
 			action={operator ? detailsLink : undefined}
 		>

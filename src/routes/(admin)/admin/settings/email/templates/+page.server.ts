@@ -1,8 +1,8 @@
 import type { Actions, PageServerLoad } from './$types';
-import { fail, type ActionFailure } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { authedClient, requireUser } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import { section, type Section } from '$lib/api/gate';
@@ -21,6 +21,7 @@ import {
 	type TemplateStarter,
 	type TemplateStatus,
 } from '$lib/api/email-templates';
+import { asked } from '$lib/server/asked';
 
 const STATUSES: TemplateStatus[] = ['draft', 'active', 'archived'];
 
@@ -46,14 +47,6 @@ export const load: PageServerLoad = async (event) => {
 	]);
 	return { templates, starters, limits };
 };
-
-/**
- * The failure marked with the action that caused it. The drawer shows only a
- * failed save, and a failed delete or preview shows above the list.
- */
-function tagged<T extends Record<string, unknown>>(action: string, failure: ActionFailure<T>) {
-	return fail(failure.status, { ...failure.data, action });
-}
 
 const text = (data: FormData, key: string): string => String(data.get(key) ?? '').trim();
 
@@ -91,17 +84,24 @@ export const actions: Actions = {
 		}
 	},
 
-	delete: async (event) => {
-		await requireUser(event);
-		const id = text(await event.request.formData(), 'id');
-		if (!id) return fail(400, { action: 'delete', error: 'This form is missing its template. Reload the page and try again.' });
-		try {
-			await deleteTemplate(authedClient(event), id);
-			return { deleted: id };
-		} catch (err) {
-			return tagged('delete', actionFailure(err, 'Could not delete the template. Try again.', err instanceof ApiError && err.status === 409 ? 409 : 400));
-		}
-	},
+	delete: asked(
+		{
+			question: 'Delete this template?',
+			detail: 'A trigger or a flow that sends it stops sending.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireUser(event);
+			const id = text(await event.request.formData(), 'id');
+			if (!id) return fail(400, { action: 'delete', error: 'This form is missing its template. Reload the page and try again.' });
+			try {
+				await deleteTemplate(authedClient(event), id);
+				return { deleted: id };
+			} catch (err) {
+				return tagged('delete', actionFailure(err, 'Could not delete the template. Try again.', err instanceof ApiError && err.status === 409 ? 409 : 400));
+			}
+		},
+	),
 
 	preview: async (event) => {
 		await requireUser(event);

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GET } from './+server';
-import { mockCookies } from '$lib/components/ai/test-events';
+import { mockCookies } from '$lib/components/ai/test-support/events';
 
 function event(fetch: typeof globalThis.fetch, format = 'markdown', session = true) {
 	const cookies = mockCookies();
@@ -38,8 +38,8 @@ describe('transcript export route', () => {
 
 	it('answers the refusals with their own words', async () => {
 		for (const [status, message] of [
-			[404, 'Transcript not found'],
-			[402, 'AI is not enabled on this instance'],
+			[404, 'This transcript no longer exists.'],
+			[402, 'AI is not enabled on this engine'],
 			[403, 'Only an admin or a super admin can export transcripts.'],
 		] as const) {
 			const fetch = vi.fn(async () => new Response('{"error":"x"}', { status })) as unknown as typeof globalThis.fetch;

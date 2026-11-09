@@ -125,8 +125,8 @@
 			{/if}
 			<Autocomplete
 				id="rl-route"
-				label="Pick a route"
-				hint="Choose from every route on this instance, including plugin routes such as the realtime stream and GraphQL, and your flow URLs. Your choice fills in the endpoint below."
+				label="Choose a route"
+				hint="Choose from every route on this engine, including plugin routes such as the realtime stream and GraphQL, and your flow URLs. Your choice fills in the endpoint below."
 				placeholder="Search by path, method or name"
 				options={routes}
 				onchange={(v) => {

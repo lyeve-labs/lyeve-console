@@ -48,7 +48,7 @@ describe('privacy settings: form submissions on erasure', () => {
 	it('leaves the setting out while its routes do not answer', () => {
 		const { container } = render(PrivacyPage, { props: props({ formErasure: null }) });
 		expect(said(container)).not.toContain('Form submissions on erasure');
-		expect(said(container)).toContain('None of these settings apply to this instance');
+		expect(said(container)).toContain('None of these settings apply to this engine');
 	});
 
 	it('says why the card is empty while its plugin is stopped', () => {
@@ -130,7 +130,7 @@ describe('privacy settings: who may export', () => {
 		const scope = container.querySelector('input[name="scope"]') as HTMLInputElement;
 		expect(scope.value).toBe('every');
 		expect(container.querySelector('input[name="roles"]')).toBeNull();
-		expect(said(container)).toContain('Admins and super admins can always export.');
+		expect(said(container)).toContain('An administrator can always export.');
 	});
 
 	it("offers the user editor's roles less the two that always export, and keeps a custom one already chosen", () => {

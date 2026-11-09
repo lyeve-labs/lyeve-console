@@ -7,6 +7,7 @@ import { ApiError } from '@lyeve-labs/client';
 import { CatalogError, getLLMCatalog } from '$lib/api/assist';
 import { authedHeaders } from '$lib/server/authz';
 import { AI_BUDGET_TEXT, aiBudgetSpent } from '$lib/server/ai-load';
+import { actionError } from '$lib/server/action-error';
 import type { AssistRefusal } from '$lib/flow/assistant';
 
 const NO_CATALOG_TEXT = 'The assistant needs a newer version of the flow plugin.';
@@ -34,8 +35,8 @@ export function refusalStatus(r: AssistRefusal): number {
  * that cannot validate a draft, and `error` the rest. The 503 is the one 5xx whose
  * body is a static sentence written for the operator, so it is relayed with
  * a fallback for an empty one. Every other 5xx collapses to a static line so
- * driver text never reaches the page. A 4xx other than the two gates is the
- * engine describing the request, which is worth showing.
+ * driver text never reaches the page. A coded 4xx other than the two gates is
+ * the engine describing the request, which is worth showing (`actionError`).
  */
 export function assistRefusal(err: unknown): AssistRefusal {
 	if (err instanceof CatalogError) {
@@ -53,11 +54,7 @@ export function assistRefusal(err: unknown): AssistRefusal {
 			const msg = err.message?.trim();
 			return { state: 'unavailable', message: msg && msg !== '503' ? msg : UNAVAILABLE_FALLBACK };
 		}
-		if (err.status >= 400 && err.status < 500) {
-			const msg = err.message?.trim();
-			if (msg && msg !== String(err.status)) return { state: 'error', message: msg };
-		}
-		return { state: 'error', message: FAILED_TEXT };
+		return { state: 'error', message: actionError(err, FAILED_TEXT) };
 	}
 	if (err instanceof Error && err.name === 'TimeoutError') {
 		return { state: 'error', message: 'The assistant took too long to answer. Try a shorter prompt.' };

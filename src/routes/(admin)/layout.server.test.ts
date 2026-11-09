@@ -174,7 +174,7 @@ describe('the console frame', () => {
 			[
 				402,
 				{ error: 'cap_exceeded', cap: 'admin.seats', limit: 3, current: 3, upgrade_url: '' },
-				"Every admin seat is taken. You're using 3 of 3, the most this instance allows. A license that allows more lifts the limit. Removing the admin role from an account also frees a seat. Editors and viewers take no seat.",
+				"Every admin seat is taken. You're using 3 of 3, the most this engine allows. A license that allows more lifts the limit. Removing the admin role from an account also frees a seat. Editors and viewers take no seat.",
 			],
 			[403, { error: 'forbidden' }, 'Access to the admin is blocked for this account or network.'],
 			[429, { error: 'rate limit exceeded' }, BUSY.body],

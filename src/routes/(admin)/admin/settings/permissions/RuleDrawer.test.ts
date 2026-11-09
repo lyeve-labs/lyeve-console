@@ -7,7 +7,7 @@ import RuleDrawer from './RuleDrawer.svelte';
 import { RuleMatrix } from './rules.svelte';
 
 type After = (o: { result: { type: string }; update: (o?: unknown) => Promise<void> }) => Promise<void>;
-type Submit = (input: { cancel: () => void }) => After;
+type Submit = (input: { cancel: () => void }) => Promise<After>;
 
 const forms = vi.hoisted(() => ({ submit: null as Submit | null }));
 vi.mock('$app/forms', () => ({
@@ -109,11 +109,11 @@ describe('RuleDrawer', () => {
 		const { component } = setup();
 		flushSync(() => component.edit('editor', 'article'));
 		const update = vi.fn(async () => {});
-		await (forms.submit as Submit)({ cancel: () => {} })({ result: { type: 'failure' }, update });
+		await (await (forms.submit as Submit)({ cancel: () => {} }))({ result: { type: 'failure' }, update });
 		await tick();
 		expect(ruleForm()).toBeTruthy();
 		expect(update).toHaveBeenCalledWith({ reset: false });
-		await (forms.submit as Submit)({ cancel: () => {} })({ result: { type: 'success' }, update });
+		await (await (forms.submit as Submit)({ cancel: () => {} }))({ result: { type: 'success' }, update });
 		await vi.waitFor(() => expect(ruleForm()).toBeNull());
 	});
 });

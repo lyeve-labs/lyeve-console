@@ -4,7 +4,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import ProvidersPage from './+page.svelte';
 import type { EmailProvider } from '$lib/api/email';
 
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+type Submit = (input: { cancel: () => void; formData: FormData }) => Promise<unknown>;
+const forms = vi.hoisted(() => ({ submits: new Map<HTMLFormElement, unknown>() }));
+vi.mock('$app/forms', () => ({
+	enhance: (form: HTMLFormElement, submit: unknown) => {
+		forms.submits.set(form, submit);
+		return { destroy() {} };
+	},
+}));
 const kit = vi.hoisted(() => ({ confirm: vi.fn(async () => true) }));
 vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
@@ -12,20 +19,21 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 }));
 
 /**
- * Press a row's delete, accept the question, and return its title and what
- * the hidden form held when it was sent. The value has to be in the form by
- * then, which is what waiting on the next render before sending is for.
+ * Submit the form a row's delete button sits in, and return the question it
+ * asked, what the form sends and whether the submit went ahead.
  */
-async function pressDelete(button: HTMLElement, field: string): Promise<{ title: string; sent: string }> {
-	let sent = '';
-	const spy = vi.spyOn(HTMLFormElement.prototype, 'requestSubmit').mockImplementation(function (this: HTMLFormElement) {
-		sent = (this.querySelector(`input[name="${field}"]`) as HTMLInputElement | null)?.value ?? '';
-	});
+async function pressDelete(button: HTMLElement, field: string, answer = true) {
+	const form = button.closest('form') as HTMLFormElement;
+	const cancel = vi.fn();
 	kit.confirm.mockClear();
-	await fireEvent.click(button);
-	await vi.waitFor(() => expect(spy).toHaveBeenCalled());
-	spy.mockRestore();
-	return { title: String((kit.confirm.mock.calls[0] as unknown[] | undefined)?.[0] ?? ''), sent };
+	kit.confirm.mockResolvedValueOnce(answer);
+	await (forms.submits.get(form) as Submit)({ cancel, formData: new FormData(form) });
+	return {
+		action: form.getAttribute('action'),
+		title: String((kit.confirm.mock.calls[0] as unknown[] | undefined)?.[0] ?? ''),
+		sent: String(new FormData(form).get(field) ?? ''),
+		sentOff: !cancel.mock.calls.length,
+	};
 }
 
 
@@ -276,7 +284,9 @@ describe('email page fallback transport', () => {
 		// indent, so a phrase that spans two source lines never matches raw.
 		const text = (setup([smtp], { mail: { ok: true, value: mail } }).container.textContent ?? '').replace(/\s+/g, ' ');
 		expect(text).toContain('Provider pool');
-		expect(text).toContain('tried first');
+		expect(text).toContain('Set up how this engine sends mail.');
+		expect(text).toContain('The healthy provider with the lowest priority number sends first');
+		expect(text).toContain('used when the pool is empty or every provider in it fails');
 		expect(text).toContain('takes effect at the next engine restart');
 	});
 
@@ -330,7 +340,14 @@ describe('email provider delete', () => {
 	it('names the provider and sends its id', async () => {
 		const { getByLabelText } = setup([smtp]);
 		const out = await pressDelete(getByLabelText('Delete Primary'), 'id');
+		expect(out.action).toBe('?/delete');
 		expect(out.title).toBe('Delete provider Primary?');
 		expect(out.sent).toBe('p1');
+		expect(out.sentOff).toBe(true);
+	});
+
+	it('sends nothing when the question is declined', async () => {
+		const { getByLabelText } = setup([smtp]);
+		expect((await pressDelete(getByLabelText('Delete Primary'), 'id', false)).sentOff).toBe(false);
 	});
 });

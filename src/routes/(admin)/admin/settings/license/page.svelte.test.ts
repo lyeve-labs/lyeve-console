@@ -86,7 +86,7 @@ describe('License page status', () => {
 		expect(getByText('example, active')).toBeTruthy();
 	});
 
-	it('says there is no license, and what the instance runs with instead', () => {
+	it('says there is no license, and what the engine runs with instead', () => {
 		const { getByText, container } = mount({ ent: entitlements({ plan: 'free', plan_label: 'Free', state: 'free' }) });
 		expect(getByText('No license')).toBeTruthy();
 		expect(getByText('Everything that needs no license is running.')).toBeTruthy();
@@ -152,7 +152,7 @@ describe('License page status', () => {
 	});
 
 	it('says the state and the plan in the module\'s words and nothing else, in every state', () => {
-		const head = "Settings License See this instance's license and activate a new key. Status";
+		const head = "Settings License See this engine's license and activate a new key. Status";
 		const key = 'License token or key Paste the license token or key you were issued.';
 		const renew = `Renew license ${key} Renew license`;
 		const activate =

@@ -71,7 +71,7 @@ describe('the gate', () => {
 		const { container } = render(SyntheticPage, {
 			props: props({ gate: { state: 'locked', upgradeUrl: '' }, probes: [] }),
 		});
-		expect(said(container)).toContain('Not enabled on this instance');
+		expect(said(container)).toContain('Not enabled on this engine');
 		expect(said(container)).not.toContain('No probes yet');
 	});
 
@@ -174,14 +174,14 @@ describe('the form', () => {
 			props: props({ limits: { probes: { limit: 3, current: 1 }, minIntervalSeconds: 300 } }),
 		});
 		await fireEvent.click(screen.getByRole('button', { name: /new probe/i }));
-		expect(said(document.body)).toContain('At least 300. Each probe sends a request to this instance.');
+		expect(said(document.body)).toContain('At least 300. Each probe sends a request to this engine.');
 		expect(said(document.body)).not.toContain('At least 30.');
 	});
 
 	it('names no floor when the plugin did not say', async () => {
 		render(SyntheticPage, { props: props({ limits: null }) });
 		await fireEvent.click(screen.getByRole('button', { name: /new probe/i }));
-		expect(said(document.body)).toContain('Each probe sends a request to this instance.');
+		expect(said(document.body)).toContain('Each probe sends a request to this engine.');
 		expect(said(document.body)).not.toMatch(/At least \d+\. A probe/);
 	});
 
@@ -196,7 +196,7 @@ describe('the form', () => {
 describe('the empty state', () => {
 	it('says nothing is checking rather than that a read failed', () => {
 		const { container } = render(SyntheticPage, { props: props({ probes: [] }) });
-		expect(said(container)).toContain('Create a probe to check this instance');
+		expect(said(container)).toContain('Create a probe to check this engine');
 	});
 });
 

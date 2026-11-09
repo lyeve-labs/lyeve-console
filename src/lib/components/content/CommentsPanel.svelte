@@ -16,6 +16,7 @@
 	import type { Refusal } from '$lib/api/refusal';
 	import { formatDateTime } from '$lib/format';
 	import { ICON } from '$lib/icon';
+	import { couldNotLoad } from '$lib/outage';
 
 	interface Person {
 		id: string;
@@ -99,7 +100,7 @@
 		{/if}
 
 		{#if unavailable}
-			<Alert tone="warn">Could not load comments. Reload the page to try again.</Alert>
+			<Alert tone="warn">{couldNotLoad('comments', { reload: true })}</Alert>
 		{:else}
 			{#if shown.length === 0}
 				<EmptyState
@@ -160,7 +161,7 @@
 				{/each}
 				<Textarea id="comment-body" name="body" label="New thread" rows={3} bind:value={body} />
 				{#if options.length > 0}
-					<MultiSelect id="comment-mentions" label="Mention" bind:value={mentions} {options} searchable placeholder="Pick people to notify" />
+					<MultiSelect id="comment-mentions" label="Mention" bind:value={mentions} {options} searchable placeholder="Choose people to notify" />
 				{/if}
 				<div class="flex justify-end">
 					<Button variant="primary" size="sm" type="submit" disabled={!body.trim()} loading={start.pending}>Comment</Button>

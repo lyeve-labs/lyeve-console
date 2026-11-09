@@ -12,6 +12,7 @@
 	import { formatBytes, formatCount, formatDate, formatDateTime, formatPercent } from '$lib/format';
 	import { entryTone } from '$lib/tones';
 	import type { ResolvedWidget } from '$lib/api/custom-dashboard';
+	import { couldNotLoad } from '$lib/outage';
 
 	/**
 	 * Draws a tenant's composed dashboard. Every number was read with the
@@ -25,7 +26,7 @@
 </script>
 
 {#snippet unreadable(what: string)}
-	<p class="text-sm text-muted">Could not load {what}. Reload the page to try again.</p>
+	<p class="text-sm text-muted">{couldNotLoad(what, { reload: true })}</p>
 {/snippet}
 
 <div class="grid grid-cols-1 gap-4 lg:grid-cols-6" data-testid="dashboard-widgets">
@@ -47,7 +48,7 @@
 					<div class="flex flex-col gap-3">
 						<SectionHeading level={3}>{w.heading}</SectionHeading>
 						{#if w.unavailable}
-							<p class="text-sm text-muted">This widget needs a plugin that is not running on this instance.</p>
+							<p class="text-sm text-muted">This widget needs a plugin that is not running on this engine.</p>
 						{:else if w.type === 'entry_counts'}
 							<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 								{#each w.counts ?? [] as c (c.schema)}

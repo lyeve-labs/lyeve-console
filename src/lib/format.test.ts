@@ -9,6 +9,8 @@ import {
 	formatDateTime,
 	formatMillis,
 	formatPercent,
+	formatSignedBytes,
+	plural,
 	formatTime,
 	hasTrace,
 	logLevelLabel,
@@ -304,23 +306,28 @@ describe('formatBytes', () => {
 });
 
 describe('formatMillis', () => {
-	// What the slow queries page printed before it shared this function.
-	const before: [ms: number, shown: string][] = [
+	const cases: [ms: number, shown: string][] = [
 		[0, '0 ms'],
-		[0.4, '0 ms'],
-		[1, '1 ms'],
+		[0.0004, '400 ns'],
+		[0.4, '400 µs'],
+		[1, '1.0 ms'],
+		[0.9996, '1.0 ms'],
+		[1.54, '1.5 ms'],
+		[9.96, '10 ms'],
 		[342, '342 ms'],
 		[999, '999 ms'],
 		[999.4, '999 ms'],
-		[999.6, '1000 ms'],
+		[999.6, '1.00 s'],
 		[1000, '1.00 s'],
 		[1500, '1.50 s'],
 		[1234.5, '1.23 s'],
-		[61234, '61.23 s'],
-		[3600000, '3600.00 s'],
+		[59_999, '1m 00s'],
+		[61234, '1m 01s'],
+		[125_000, '2m 05s'],
+		[3600000, '60m 00s'],
 	];
 
-	it.each(before)('prints %s as %s', (ms, shown) => {
+	it.each(cases)('prints %s as %s', (ms, shown) => {
 		expect(formatMillis(ms)).toBe(shown);
 	});
 
@@ -387,5 +394,28 @@ describe('formatPercent', () => {
 		expect(formatPercent(0.0123)).toBe('1.2%');
 		expect(formatPercent(0)).toBe('0.0%');
 		expect(formatPercent(1)).toBe('100.0%');
+	});
+
+	it('names the gap for a rate that was not computed', () => {
+		expect(formatPercent(null)).toBe(NO_VALUE);
+		expect(formatPercent(Number.NaN, '')).toBe('');
+	});
+});
+
+describe('formatSignedBytes', () => {
+	it('keeps the sign of a change and steps up in powers of 1,024', () => {
+		expect(formatSignedBytes(-512)).toBe('-512 B');
+		expect(formatSignedBytes(2048)).toBe('2.0 KB');
+		expect(formatSignedBytes(-1.5 * 1024 ** 2)).toBe('-1.5 MB');
+		expect(formatSignedBytes(0)).toBe('0 B');
+		expect(formatSignedBytes(undefined)).toBe(NO_VALUE);
+	});
+});
+
+describe('plural', () => {
+	it('takes the singular for one and the plural for every other count, zero included', () => {
+		expect(plural(1, 'row')).toBe('row');
+		expect(plural(0, 'row')).toBe('rows');
+		expect(plural(2, 'entry', 'entries')).toBe('entries');
 	});
 });

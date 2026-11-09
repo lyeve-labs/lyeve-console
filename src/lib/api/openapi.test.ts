@@ -93,7 +93,7 @@ describe('buildReference', () => {
 		const m = buildReference(document(['posts', 'pages']), staticGroups);
 		const getOne = m.groups.flatMap((g) => g.endpoints).find((e) => e.path === '/api/v1/content/{schema}/{id}');
 		const schema = getOne?.params?.find((p) => p.name === 'schema');
-		expect(schema?.description).toBe('Collection name. This instance has 2 collections. See the Schema builder.');
+		expect(schema?.description).toBe('Content type name. This engine has 2 content types. See the Schema builder.');
 		expect(schema?.values).toBeUndefined();
 		expect(JSON.stringify(m)).not.toContain('posts, pages');
 	});

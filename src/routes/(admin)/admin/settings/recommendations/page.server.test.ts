@@ -66,7 +66,7 @@ describe('the recompute', () => {
 	});
 
 	it('relays the reason the plugin gives for a refusal', async () => {
-		engine.post.mockRejectedValue(new ApiError(422, 'no content to rank', {}));
+		engine.post.mockRejectedValue(new ApiError(422, 'no content to rank', { error: 'no content to rank', code: 'http_422' }));
 		const out = (await actions.refresh(actionEvent({}))) as Failure;
 		expect(out.status).toBe(400);
 		expect(out.data).toMatchObject({ action: 'refresh' });

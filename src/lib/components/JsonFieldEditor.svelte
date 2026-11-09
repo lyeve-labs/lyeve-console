@@ -86,11 +86,16 @@
 	// A flat object opens as pairs, which is what most json fields hold and the
 	// shape a person can edit without writing a brace. Anything else opens as text.
 	let mode = $state<'pairs' | 'json'>(pairsOf(value) === null ? 'json' : 'pairs');
-	let pairs = $state<JsonPair[]>(openingPairs(value));
+	// Each row keeps its own id, so removing one leaves the inputs below it
+	// bound to the rows they were typed into.
+	type Row = JsonPair & { id: number };
+	let nextRow = 0;
+	const row = (pair: JsonPair = { key: '', value: '' }): Row => ({ ...pair, id: nextRow++ });
+	let pairs = $state<Row[]>(openingPairs(value));
 
-	function openingPairs(text: string): JsonPair[] {
+	function openingPairs(text: string): Row[] {
 		const read = pairsOf(text) ?? [];
-		return read.length > 0 ? read : [{ key: '', value: '' }];
+		return read.length > 0 ? read.map((p) => row(p)) : [row()];
 	}
 
 	const invalid = $derived(parseError(value));
@@ -116,18 +121,18 @@
 		if (next === 'pairs') {
 			const read = pairsOf(value);
 			if (read === null) return;
-			pairs = read.length > 0 ? read : [{ key: '', value: '' }];
+			pairs = read.length > 0 ? read.map((p) => row(p)) : [row()];
 		}
 		mode = next as 'pairs' | 'json';
 	}
 
 	function addPair() {
-		pairs = [...pairs, { key: '', value: '' }];
+		pairs = [...pairs, row()];
 	}
 
 	function removePair(index: number) {
 		pairs = pairs.filter((_, i) => i !== index);
-		if (pairs.length === 0) pairs = [{ key: '', value: '' }];
+		if (pairs.length === 0) pairs = [row()];
 		syncFromPairs();
 	}
 
@@ -153,7 +158,7 @@
 
 	{#if mode === 'pairs'}
 		<div class="flex flex-col gap-2" role="group" aria-label="Keys and values">
-			{#each pairs as pair, index (index)}
+			{#each pairs as pair, index (pair.id)}
 				<div class="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] items-start gap-2">
 					<Input
 						label="Key"

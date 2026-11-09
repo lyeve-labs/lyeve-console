@@ -3,44 +3,40 @@
 	import type { WebhookDelivery } from '@lyeve-labs/client';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { CheckCircle, XCircle, History, RotateCcw } from '@lucide/svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
+	import GateNotice from '$lib/components/GateNotice.svelte';
+	import type { Section } from '$lib/api/gate';
 	import { formRefusal, refusalText, type Refusal } from '$lib/api/refusal';
 	import { formatDateTime } from '$lib/format';
 	import { ICON } from '$lib/icon';
-	import { eventTone } from './event-tone';
-	import type { DeliveryHistory } from './delivery-history.svelte';
+	import { eventTone } from '$lib/tones';
 
 	interface Props {
-		/** The page's one action result, which carries the history and each retry. */
+		/** The page's one action result, which carries each retry. */
 		form: Record<string, unknown> | null | undefined;
-		history: DeliveryHistory;
+		/** The history of the webhook the address names, as the load read it. */
+		deliveries: { id: string; limit: number; read: Section<WebhookDelivery[]> } | null;
+		/** That webhook's name, for the title. */
+		name: string;
 		/** The license refusal a paid write met, which holds the retry. */
 		held?: Refusal | null;
 	}
 
-	let { form, history, held = null }: Props = $props();
+	let { form, deliveries, name, held = null }: Props = $props();
 
 	// A failed retry shows here, beside the row that asked, not behind the panel.
 	const failure = $derived(form?.action === 'retry-delivery' ? (form as { error?: string }) : null);
 
-	// The plugin answers the newest attempts up to the limit asked and offers
-	// no offset, so a full page says the older ones are not listed.
-	let limit = $state(0);
-
-	// Two rows asked in quick succession can answer out of order. A history
-	// applies only to the webhook the drawer names last, or its rows would show
-	// under another webhook's name and each retry would post that webhook's id.
-	// The name is read untracked, so naming a row never replays an old result.
-	$effect(() => {
-		if (form && 'deliveries' in form && form.deliveries) {
-			const d = form.deliveries as { id: string; items: WebhookDelivery[] };
-			if (d.id !== untrack(() => history.webhookId)) return;
-			history.items = d.items ?? [];
-			limit = (d as { limit?: number }).limit ?? 0;
-			history.open = true;
-		}
-	});
+	// Closing takes the webhook out of the address, or the next load would
+	// open its history again.
+	function close() {
+		const next = new URL(page.url);
+		next.searchParams.delete('deliveries');
+		void goto(`${next.pathname}${next.search}`, { noScroll: true, keepFocus: true });
+	}
 
 	let retryResults = $state<Record<string, { success: boolean; message: string }>>({});
 
@@ -54,13 +50,17 @@
 	});
 </script>
 
-<Drawer bind:open={history.open} title="Delivery history for {history.webhookName}" size="xl">
+{#if deliveries}
+	{@const items = deliveries.read.ok ? deliveries.read.value : []}
+	<Drawer open title="Delivery history for {name}" size="xl" onclose={close}>
 	{#snippet children()}
 			<FormErrors message={failure?.error || undefined} refused={formRefusal(failure)} />
 			{#if held}
-				<p class="mb-2 text-xs text-muted" data-testid="retry-held">{refusalText(held)} Retrying a delivery needs it.</p>
+				<p class="mb-2 text-xs text-muted" data-testid="retry-held">{refusalText(held)}</p>
 			{/if}
-			{#if history.items.length === 0}
+			{#if !deliveries.read.ok}
+				<GateNotice gate={deliveries.read.gate} title="Delivery history" absent="This webhook no longer exists." />
+			{:else if items.length === 0}
 				<EmptyState
 					title="No deliveries yet"
 					description="Every attempt this webhook makes is listed here."
@@ -68,15 +68,17 @@
 					{#snippet iconSnippet()}<History size={ICON.lg} />{/snippet}
 				</EmptyState>
 			{:else}
-				{#if limit > 0 && history.items.length >= limit}
-					<p class="mb-2 text-xs text-muted">Showing the newest {limit} attempts. Older attempts are stored but not shown here.</p>
+				<!-- The plugin answers the newest attempts up to the limit asked and
+				     offers no offset, so a full page says the older ones are not listed. -->
+				{#if items.length >= deliveries.limit}
+					<p class="mb-2 text-xs text-muted">Showing the newest {deliveries.limit} attempts. Older attempts are stored but not shown here.</p>
 				{/if}
 				<Table label="Delivery history">
 					<thead>
 						<tr>
 							<th scope="col">Time</th>
 							<th scope="col">Event</th>
-							<th scope="col">Schema</th>
+							<th scope="col">Content type</th>
 							<th scope="col">Status</th>
 							<th scope="col">Duration</th>
 							<th scope="col">Result</th>
@@ -84,7 +86,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each history.items as d (d.id)}
+						{#each items as d (d.id)}
 							<tr>
 								<td class="font-mono text-xs whitespace-nowrap text-muted">
 									{formatDateTime(d.attempted_at)}
@@ -104,23 +106,23 @@
 								<td data-cell="nowrap">
 									{#if d.success}
 										<span class="flex items-center gap-1 text-xs text-success">
-											<CheckCircle class="h-3.5 w-3.5" /> OK
+											<CheckCircle size={ICON.xs} /> OK
 										</span>
 									{:else if d.error}
 										<span class="flex items-center gap-1 text-xs text-danger" title={d.error}>
-											<XCircle class="h-3.5 w-3.5" />
+											<XCircle size={ICON.xs} />
 											{d.error.slice(0, 40)}
 										</span>
 									{:else}
 										<span class="flex items-center gap-1 text-xs text-danger">
-											<XCircle class="h-3.5 w-3.5" /> Failed
+											<XCircle size={ICON.xs} /> Failed
 										</span>
 									{/if}
 								</td>
 								<td>
 									{#if !d.success}
 										<form method="POST" action="?/retry-delivery" use:enhance>
-											<input type="hidden" name="id" value={history.webhookId} />
+											<input type="hidden" name="id" value={deliveries.id} />
 											<input type="hidden" name="delivery_id" value={d.id} />
 											<Button
 												variant="ghost"
@@ -132,7 +134,7 @@
 													d.attempted_at
 												)}"
 											>
-												<RotateCcw class="h-3.5 w-3.5" />
+												<RotateCcw size={ICON.sm} />
 											</Button>
 										</form>
 									{/if}
@@ -153,8 +155,9 @@
 			{/if}
 		{/snippet}
 		{#snippet footer()}
-			<Button variant="secondary" type="button" onclick={() => (history.open = false)}>
+			<Button variant="secondary" type="button" onclick={close}>
 				Close
 			</Button>
 		{/snippet}
-</Drawer>
+	</Drawer>
+{/if}

@@ -8,21 +8,19 @@
  * every route but the settings pair answers it while the switch is off, and the
  * way back is that switch. A 503 that says no provider is enabled is the
  * plugin with nothing to answer through. A 401 is an expired
- * session and goes where the shell sends one. Everything else keeps the engine
- * banner, which is not a report that there is nothing.
+ * session and goes where the shell sends one. Everything else sorts the way
+ * any other read does, so a refused rate and an outage read as themselves.
  */
 
 import { redirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { clearSessionCookie, type SessionEvent } from './session-cookie';
-import { AI_OK, type AiGate } from '$lib/api/ai';
+import type { AiGate } from '$lib/api/ai';
+import { gateOf } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
+import { actionError } from './action-error';
 
-export { AI_OK, type AiGate };
-
-/** The static engine banner for one resource, named in the plural. */
-export function aiBanner(plural: string): string {
-	return `Could not load ${plural}.`;
-}
+export type { AiGate };
 
 export function aiGate(err: unknown, session: SessionEvent, plural: string): AiGate {
 	return sortGate(err, session, plural, 'off');
@@ -42,12 +40,10 @@ function sortGate(err: unknown, session: SessionEvent, plural: string, notFound:
 			clearSessionCookie(session);
 			redirect(302, '/login');
 		}
-		if (err.status === 402) return { state: 'locked' };
-		if (err.status === 403) return { state: 'forbidden' };
 		if (err.status === 404) return { state: notFound };
 		if (noProvider(err)) return { state: 'no_provider' };
 	}
-	return { state: 'error', message: aiBanner(plural) };
+	return gateOf(err, couldNotLoad(plural));
 }
 
 /**
@@ -82,32 +78,29 @@ export function aiBudgetSpent(err: unknown): boolean {
 export type AiWriteRole = 'admin' | 'super_admin';
 
 const ROLE_TEXT: Record<AiWriteRole, string> = {
-	admin: 'Your role cannot change this. Ask an admin if you need it.',
-	super_admin: 'Your role cannot change this. Ask a super admin if you need it.',
+	admin: 'Only an admin or a super admin can change this.',
+	super_admin: 'Only a super admin can change this.',
 };
 
 /**
- * Words for a refused write, by status. The static fallback for the rest.
- * `lowest` is the lowest role the route admits, which a role refusal names.
+ * Words for a refused write, by status. The static fallback for the rest, and
+ * the engine's own sentence only where `actionError` would relay it. `lowest`
+ * is the lowest role the route admits, which a role refusal names.
  */
 export function aiActionError(err: unknown, fallback: string, lowest: AiWriteRole = 'admin'): string {
 	if (err instanceof ApiError) {
 		if (aiBudgetSpent(err)) return AI_BUDGET_TEXT;
-		if (err.status === 402) return 'AI is not enabled on this instance.';
+		if (err.status === 402) return 'AI is not enabled on this engine.';
 		if (err.status === 403) {
 			// The engine's role gate answers a bare "insufficient permissions".
 			// The plugin's own 403 is a sentence about the tenant, worth relaying.
-			const msg = err.message?.trim();
-			if (!msg || msg === 'insufficient permissions' || msg === '403') return ROLE_TEXT[lowest];
+			const msg = actionError(err, '');
+			if (!msg || msg === 'insufficient permissions') return ROLE_TEXT[lowest];
 			return msg;
 		}
 		if (err.status === 404) return 'AI is switched off for this tenant.';
-		if (noProvider(err)) return 'No AI provider is enabled. Add or enable one first.';
+		if (noProvider(err)) return 'No AI provider is enabled. A super admin can add or enable one under AI providers.';
 		if (err.status === 409) return 'No configured provider supports this operation.';
-		if (err.status >= 400 && err.status < 500) {
-			const msg = err.message?.trim();
-			if (msg && msg !== String(err.status)) return msg;
-		}
 	}
-	return fallback;
+	return actionError(err, fallback);
 }

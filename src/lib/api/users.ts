@@ -1,4 +1,5 @@
 import type { HttpClient, User } from '@lyeve-labs/client';
+import { plural } from '../format';
 
 /**
  * An account as the users list reads it. `tenant_local` marks an account that
@@ -36,7 +37,7 @@ export function setUserPassword(
 /** The sentence for the passkeys a password change removed, or empty when it removed none. */
 export function passkeysRemovedText(count: number | undefined): string {
 	if (!count) return '';
-	return count === 1 ? '1 passkey was removed.' : `${count} passkeys were removed.`;
+	return `${count} ${plural(count, 'passkey was', 'passkeys were')} removed.`;
 }
 
 /** The longest password the engine's default hasher reads, in UTF-8 bytes. */

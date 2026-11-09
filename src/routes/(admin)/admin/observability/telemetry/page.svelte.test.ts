@@ -4,7 +4,6 @@ import { tick } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn(async () => {}), invalidateAll: vi.fn(async () => {}) }));
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 
 import TelemetryPage from './+page.svelte';
 import type { MetricFamily } from '$lib/api/telemetry';
@@ -23,30 +22,6 @@ const POOL: MetricFamily = {
 	samples: [{ labels: {}, value: 25 }],
 };
 
-// The exporters as the plugin encodes them. Its times are Go time values,
-// which JSON writes as the zero time rather than leaving them out, and an
-// error has its addresses and URLs redacted.
-const EXPORTERS = [
-	{
-		name: 'pushgateway',
-		healthy: true,
-		last_export: '2026-09-21T10:00:00Z',
-		last_failure: '0001-01-01T00:00:00Z',
-		exports: 4,
-		failures: 0,
-	},
-	{
-		name: 'otlp',
-		healthy: false,
-		last_export: '2026-09-21T09:00:00Z',
-		last_failure: '2026-09-21T10:00:00Z',
-		last_error: 'otlp: export: Post "[redacted]": dial tcp [redacted]: connect: connection refused',
-		last_error_class: 'unreachable',
-		exports: 1,
-		failures: 3,
-	},
-];
-
 /** A read that answered. */
 function ok<T>(value: T) {
 	return { ok: true, value };
@@ -56,8 +31,6 @@ function ok<T>(value: T) {
 function failed(gate: Record<string, unknown>) {
 	return { ok: false, gate };
 }
-
-const NO_DESTINATION = ok({ destination: null, licensed: true });
 
 /** A status report whose telemetry row names the given maturity in its manifest. */
 function statusSaying(maturity: string | undefined) {
@@ -79,19 +52,16 @@ function statusSaying(maturity: string | undefined) {
 }
 
 /**
- * The page's data. Families and exporters are given as their values and
- * wrapped as answered reads, unless a test passes a whole section.
+ * The page's data. Families are given as their values and wrapped as an
+ * answered read, unless a test passes a whole section.
  */
-function props(data: Record<string, unknown>, form: Record<string, unknown> | null = null) {
+function props(data: Record<string, unknown>) {
 	const section = (v: unknown) => (v === null || (typeof v === 'object' && 'ok' in (v as object)) ? v : ok(v));
 	return {
 		data: {
-			destination: NO_DESTINATION,
 			...data,
 			families: section(data.families),
-			exporters: section(data.exporters),
 		} as never,
-		form: form as never,
 	};
 }
 
@@ -102,7 +72,7 @@ describe('the role split', () => {
 	// page carries no such section and no export control at all, rather than
 	// an empty table or a disabled button.
 	it('shows a tenant admin the metrics view only', () => {
-		const { container, queryByTestId, queryByRole } = render(TelemetryPage, props({ superAdmin: false, families: [REQUESTS], exporters: null }));
+		const { container, queryByTestId, queryByRole } = render(TelemetryPage, props({ superAdmin: false, families: [REQUESTS] }));
 		expect(queryByTestId('telemetry-metrics')).not.toBeNull();
 		expect(queryByTestId('telemetry-exporters')).toBeNull();
 		expect(queryByRole('button', { name: /Export .* now/ })).toBeNull();
@@ -111,22 +81,19 @@ describe('the role split', () => {
 		expect(container.textContent).not.toContain('Exporters');
 	});
 
-	it('shows a super admin the registry and the exporters with an export control per row', () => {
-		const { container, queryByTestId, getAllByRole } = render(TelemetryPage, props({ superAdmin: true, families: [POOL, REQUESTS], exporters: EXPORTERS }));
+	it('shows a super admin the whole registry, and leaves the exporters to the export tab', () => {
+		const { container, queryByTestId, queryByRole } = render(TelemetryPage, props({ superAdmin: true, families: [POOL, REQUESTS] }));
 		expect(queryByTestId('telemetry-metrics')).not.toBeNull();
-		expect(queryByTestId('telemetry-exporters')).not.toBeNull();
-		expect(getAllByRole('button', { name: /Export .* now/ })).toHaveLength(2);
+		expect(queryByTestId('telemetry-exporters')).toBeNull();
+		expect(queryByRole('button', { name: /Export .* now/ })).toBeNull();
 		expect(container.textContent).toContain('every tenant');
 		expect(container.textContent).toContain('lyeve_db_pool_max_connections');
-		expect(container.textContent).toContain('Healthy');
-		expect(container.textContent).toContain('Unhealthy');
-		expect(container.textContent).toContain('connection refused');
 	});
 
 	it('wears the Beta badge the plugin asks for, with the gaps named', () => {
 		const { container } = render(
 			TelemetryPage,
-			props({ superAdmin: false, families: [REQUESTS], exporters: null, pluginStatus: statusSaying('beta') }),
+			props({ superAdmin: false, families: [REQUESTS], pluginStatus: statusSaying('beta') }),
 		);
 		expect(container.textContent).toContain('Beta');
 		expect(container.textContent).toContain('One exporter set');
@@ -137,7 +104,7 @@ describe('the role split', () => {
 		for (const pluginStatus of [statusSaying('stable'), statusSaying(undefined), null]) {
 			const { container } = render(
 				TelemetryPage,
-				props({ superAdmin: false, families: [REQUESTS], exporters: null, pluginStatus }),
+				props({ superAdmin: false, families: [REQUESTS], pluginStatus }),
 			);
 			expect(container.textContent).not.toContain('Beta');
 			cleanup();
@@ -149,7 +116,7 @@ describe('the metrics view', () => {
 	it('says the engine did not answer the scrape rather than showing an empty registry', () => {
 		const { container, queryByRole } = render(
 			TelemetryPage,
-			props({ superAdmin: false, families: failed({ state: 'unavailable' }), exporters: null }),
+			props({ superAdmin: false, families: failed({ state: 'unavailable' }) }),
 		);
 		expect(container.textContent).toContain('so telemetry metrics did not load');
 		expect(container.textContent).not.toContain('No series yet');
@@ -159,7 +126,7 @@ describe('the metrics view', () => {
 	it('says the role cannot read the metrics and offers no retry', () => {
 		const { container, queryByRole } = render(
 			TelemetryPage,
-			props({ superAdmin: false, families: failed({ state: 'forbidden' }), exporters: null }),
+			props({ superAdmin: false, families: failed({ state: 'forbidden' }) }),
 		);
 		expect(container.textContent).toContain('Your role cannot open telemetry metrics.');
 		expect(queryByRole('link', { name: /Try again/ })).toBeNull();
@@ -169,18 +136,18 @@ describe('the metrics view', () => {
 		const message = 'Could not load metrics.';
 		const { container } = render(
 			TelemetryPage,
-			props({ superAdmin: true, families: failed({ state: 'error', message }), exporters: [] }),
+			props({ superAdmin: true, families: failed({ state: 'error', message }) }),
 		);
 		expect(container.textContent).toContain(message);
 	});
 
 	it('tells a tenant admin with no series that none has been recorded under their tenant', () => {
-		const { container } = render(TelemetryPage, props({ superAdmin: false, families: [], exporters: null }));
+		const { container } = render(TelemetryPage, props({ superAdmin: false, families: [] }));
 		expect(container.textContent).toContain('under your tenant');
 	});
 
 	it('filters the families by the search', async () => {
-		const { container, getByRole } = render(TelemetryPage, props({ superAdmin: true, families: [POOL, REQUESTS], exporters: [] }));
+		const { container, getByRole } = render(TelemetryPage, props({ superAdmin: true, families: [POOL, REQUESTS] }));
 		const search = getByRole('searchbox', { name: 'Filter families' });
 		await fireEvent.input(search, { target: { value: 'pool' } });
 		await tick();
@@ -196,7 +163,7 @@ describe('the metrics view', () => {
 			type: 'histogram',
 			samples: Array.from({ length: 15 }, (_, i) => ({ labels: { le: String(i), __series: 'bucket' }, value: i })),
 		};
-		const { container, getByRole } = render(TelemetryPage, props({ superAdmin: true, families: [wide], exporters: [] }));
+		const { container, getByRole } = render(TelemetryPage, props({ superAdmin: true, families: [wide] }));
 		expect(container.querySelectorAll('tbody tr')).toHaveLength(12);
 		await fireEvent.click(getByRole('button', { name: 'Show all 15' }));
 		await tick();
@@ -205,33 +172,10 @@ describe('the metrics view', () => {
 	});
 });
 
-describe('the exporters section', () => {
-	it('relays the cooldown on the form that asked', () => {
-		const { container } = render(
-			TelemetryPage,
-			props({ superAdmin: true, families: [], exporters: EXPORTERS }, { name: 'otlp', error: 'otlp exported a moment ago. Wait five seconds and try again.' }),
-		);
-		expect(container.textContent).toContain('Wait five seconds');
-	});
-
-	it('says the exporter list failed rather than that none is configured', () => {
-		const message = 'Could not load exporters.';
-		const { container, queryByTestId } = render(
-			TelemetryPage,
-			props({ superAdmin: true, families: [], exporters: failed({ state: 'error', message }) }),
-		);
-		expect(queryByTestId('telemetry-exporters')?.textContent).toContain(message);
-		expect(container.textContent).not.toContain('No exporters configured');
-	});
-
-	it('says no exporter is configured rather than rendering an empty table', () => {
-		const { container } = render(TelemetryPage, props({ superAdmin: true, families: [], exporters: [] }));
-		expect(container.textContent).toContain('No exporters configured');
-	});
-
-	it('reads Never for an exporter that has not exported', () => {
-		const { container } = render(TelemetryPage, props({ superAdmin: true, families: [], exporters: [{ name: 'statsd', healthy: true, last_export: '0001-01-01T00:00:00Z', last_failure: '0001-01-01T00:00:00Z', exports: 0, failures: 0 }] }));
-		expect(container.textContent).toContain('Never');
-		expect(container.textContent).not.toContain('Invalid Date');
+describe('the metrics page', () => {
+	it('carries the telemetry tabs with Metrics marked', () => {
+		const { getByRole } = render(TelemetryPage, props({ superAdmin: false, families: [REQUESTS] }));
+		expect(getByRole('tab', { name: 'Metrics' }).getAttribute('aria-selected')).toBe('true');
+		expect(getByRole('tab', { name: 'Export' }).getAttribute('aria-selected')).toBe('false');
 	});
 });

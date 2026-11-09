@@ -1,45 +1,25 @@
 <script lang="ts">
-	import {
-		Alert,
-		Badge,
-		Button,
-		Drawer,
-		EmptyState,
-		Input,
-		PageShell,
-		SectionHeading,
-		Stat,
-		Table,
-		Toggle,
-		toast,
-		Pagination,
-	} from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Button, EmptyState, PageShell, SectionHeading, Stat, Table, toast } from '@lyeve-labs/ui-kit';
+	import CacheTabs from '$lib/components/CacheTabs.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import { formRefusal } from '$lib/api/refusal';
 	import { enhance } from '$app/forms';
-	import { confirmed, tracked } from '$lib/forms.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { Database, Eraser, Pencil, Plus, RotateCcw, Route, Trash2 } from '@lucide/svelte';
+	import { Database, RotateCcw } from '@lucide/svelte';
 	import {
 		CIRCUIT_LABELS,
-		atCeiling,
 		inactiveReason,
-		ruleCount,
-		ttlLabel,
-		type CacheRule,
 		circuitState,
 		circuitTone,
 		fullness,
 		hitRate,
-		tagsOf,
 		trippedProviders,
 		underPressure,
 		type CacheProvider,
 	} from '$lib/api/cache';
-	import { formatBytes, formatDateTime } from '$lib/format';
+	import { plural } from '$lib/format';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -48,110 +28,7 @@
 	const rate = $derived(hitRate(data.stats));
 	const full = $derived(fullness(data.stats));
 	const tripped = $derived(trippedProviders(data.providers));
-	const tags = $derived(tagsOf(data.entries));
 	const refusal = $derived(formRefusal(form));
-	// A failed save names the drawer it came from, so it is said inside that
-	// drawer and nowhere else. Every other failure is the page's.
-	const fromDrawer = $derived(
-		form && 'drawer' in form && typeof form.drawer === 'string' ? form.drawer : null,
-	);
-	const rules = $derived(data.rules);
-	const ruleTags = $derived([...new Set(rules.rows.flatMap((r) => r.tags))].sort());
-	const rulesFull = $derived(rules.licensed !== true && atCeiling(rules.limit));
-
-	let ruleOpen = $state(false);
-	let editing = $state<CacheRule | null>(null);
-	let pattern = $state('/api/v1/content/{schema}');
-	let ttl = $state('300');
-	let ruleTagText = $state('');
-	let ruleEnabled = $state(true);
-	let purgeTag = $state('');
-
-	function openCreate() {
-		editing = null;
-		pattern = '/api/v1/content/{schema}';
-		ttl = '300';
-		ruleTagText = '';
-		ruleEnabled = true;
-		ruleOpen = true;
-	}
-
-	function openEdit(r: CacheRule) {
-		editing = r;
-		pattern = r.pattern;
-		ttl = String(r.ttl_seconds);
-		ruleTagText = r.tags.join(', ');
-		ruleEnabled = r.enabled;
-		ruleOpen = true;
-	}
-
-	const saveRule = tracked(() => {
-		const verb = editing ? 'saved' : 'created';
-		const subject = pattern;
-		return async ({ result, update }) => {
-			if (result.type !== 'failure') ruleOpen = false;
-			await update();
-			if (result.type === 'success') toast.success(`Rule for ${subject} ${verb}.`);
-		};
-	});
-
-	function removeRule(r: CacheRule): SubmitFunction {
-		return confirmed(
-			`Delete the rule for ${r.pattern}?`,
-			'Its cached responses are removed, and the route is served without the cache from the next request.',
-			{ confirmLabel: 'Delete', success: `Rule for ${r.pattern} deleted.` },
-		);
-	}
-
-	/**
-	 * A purge evicts this tenant's cached responses. Every one is recomputed on
-	 * its next request, so the confirm says what it puts on the database.
-	 */
-	function purge(what: string): SubmitFunction {
-		return confirmed(
-			`Purge ${what}?`,
-			'Each purged response is computed again on its next request.',
-			{
-				confirmLabel: 'Purge',
-				success: (data) => {
-					const n = (data as { purged?: number } | undefined)?.purged ?? 0;
-					return `${n} ${n === 1 ? 'response' : 'responses'} purged.`;
-				},
-			},
-		);
-	}
-
-	const RECOMPUTED =
-		'Each flushed key is computed again on its next request, which adds that load to the database immediately.';
-
-	/**
-	 * Every flushed key is recomputed on its next request, so this is a
-	 * deliberate load against the database rather than a tidy-up. The plugin
-	 * flushes only the request's tenant when the request names one, so the
-	 * confirm says which of the two this flush is.
-	 */
-	function flushAll(): SubmitFunction {
-		if (data.flushScoped) {
-			return confirmed(
-				"Flush this tenant's cached responses?",
-				`Other tenants' entries and keys outside the response cache are kept. ${RECOMPUTED}`,
-				{ confirmLabel: 'Flush', success: 'Cache flushed for this tenant.' },
-			);
-		}
-		return confirmed(
-			'Flush the cache?',
-			`Your session is not scoped to a tenant. On an install with many tenants, this removes every key of every tenant. On an install with one tenant, it removes that tenant's cached responses. ${RECOMPUTED}`,
-			{ confirmLabel: 'Flush', success: 'Cache flushed.' },
-		);
-	}
-
-	function flushTag(tag: string): SubmitFunction {
-		return confirmed(
-			`Flush everything tagged ${tag}?`,
-			`Every entry with this tag is removed, for every tenant. ${RECOMPUTED}`,
-			{ confirmLabel: 'Flush', success: `Entries tagged ${tag} flushed.` },
-		);
-	}
 
 	function reset(p: CacheProvider): SubmitFunction {
 		return () =>
@@ -164,25 +41,11 @@
 
 <PageShell
 	title="Cache"
-	description="See what is served from the cache, which providers store it and what is stored."
+	description="See how the cache is doing and the state of each provider."
 	width="wide"
 	back={{ href: '/admin/observability', label: 'Observability' }}
 >
-	{#snippet actions()}
-		{#if data.gate.state === 'ok' && rules.gate.state === 'ok'}
-			<!-- At the ceiling a create can only be refused, so the button waits
-			     and the warning beside the rules says why. -->
-			<Button
-				variant="primary"
-				size="sm"
-				onclick={openCreate}
-				disabled={rulesFull}
-				aria-describedby={rulesFull ? 'rules-full' : undefined}
-			>
-				<Plus size={ICON.sm} /> New rule
-			</Button>
-		{/if}
-	{/snippet}
+	<CacheTabs active="overview" />
 
 	{#if data.gate.state !== 'ok'}
 		<GateNotice
@@ -192,7 +55,7 @@
 			absent="The cache is not included in this build."
 		/>
 	{:else}
-		<FormErrors message={fromDrawer ? undefined : formError} refused={fromDrawer ? null : refusal} />
+		<FormErrors message={formError} refused={refusal} />
 
 		{#if tripped.length > 0}
 			<!-- The reading the stats hide. A lower-priority provider picks up
@@ -200,9 +63,8 @@
 			     is entirely out of service. -->
 			<Alert tone="danger">
 				{tripped.length}
-				{tripped.length === 1 ? 'provider is' : 'providers are'} switched off by their circuit
-				breaker. The hit rate above still looks normal because another provider is
-				taking over, so this is the only place it shows.
+				{plural(tripped.length, 'provider is', 'providers are')} switched off by their circuit
+				breaker. Another provider is taking over, so the hit rate above stays normal.
 			</Alert>
 		{/if}
 
@@ -230,9 +92,9 @@
 				     store was full. A capacity problem dressed as a working
 				     cache: the hit rate falls and nothing errors. -->
 				<Alert tone="warn">
-					{data.stats.evictions} entries were removed before they expired because the store
-					is full. The hit rate drops without any error, so this is the only place it
-					shows.
+					{data.stats.evictions}
+					{plural(data.stats.evictions, 'entry was', 'entries were')} removed before they expired
+					because the store is full.
 					{#if full !== null}
 						The store is at {Math.round(full * 100)}% of its limit.
 					{/if}
@@ -247,7 +109,7 @@
 					{#if data.providersLicensed}
 						Every configured provider runs, in priority order, with failover and a circuit breaker on each.
 					{:else}
-						Only one provider runs on this install: the highest-priority one that starts. Other configured
+						Only one provider runs on this engine: the highest-priority one that starts. Other configured
 						providers are listed below as left out.
 					{/if}
 				</p>
@@ -339,242 +201,5 @@
 				</Table>
 			{/if}
 		</section>
-
-		<section class="flex flex-col gap-4" aria-label="Response cache rules">
-			<div class="flex flex-wrap items-center gap-2">
-				<SectionHeading level={2}>Response cache rules</SectionHeading>
-				{#if rules.gate.state === 'ok'}
-					<Badge tone={rulesFull ? 'warn' : 'neutral'}>{ruleCount(rules.limit, rules.rows.length)}</Badge>
-				{/if}
-			</div>
-			<p class="text-sm text-muted">
-				A rule serves one of this tenant's public read routes from the cache for its time to live. When
-				content changes, responses from rules tagged with its content type are purged. A rule with no tags
-				is purged by every content change.
-			</p>
-			{#if rules.gate.state !== 'ok'}
-				<GateNotice
-					gate={rules.gate}
-					title="Response cache rules"
-					absent="Response cache rules need a newer version of the cache plugin."
-				/>
-			{:else}
-				{#if rulesFull}
-					<div id="rules-full">
-						<Alert tone="warn" title="All available rules are in use">
-							{rules.limit?.current} of {rules.limit?.limit} rules are in use. Delete one to add another, or
-							change the license to allow more. Existing rules keep serving either way.
-						</Alert>
-					</div>
-				{/if}
-
-				<div class="flex flex-wrap items-end gap-2">
-					<form method="POST" action="?/purge" use:enhance={purge('every cached response of this tenant')}>
-						<Button variant="secondary" size="sm" type="submit">
-							<Eraser size={ICON.sm} /> Purge all
-						</Button>
-					</form>
-					<form
-						method="POST"
-						action="?/purge"
-						class="flex items-end gap-2"
-						use:enhance={purge(`the responses tagged ${purgeTag || 'with this tag'}`)}
-					>
-						<Input id="purge-tag" name="tag" label="Purge by tag" placeholder="posts" bind:value={purgeTag} />
-						<Button variant="secondary" size="sm" type="submit" disabled={!purgeTag.trim()}>Purge tag</Button>
-					</form>
-					{#if ruleTags.length > 0}
-						<p class="text-xs text-faint">Tags in use: {ruleTags.join(', ')}</p>
-					{/if}
-				</div>
-
-				{#if rules.rows.length === 0}
-					<EmptyState
-						title="No response cache rules yet"
-						description="Create a rule to serve a public read route from the cache. Until then, every public read is computed on each request."
-					>
-						{#snippet iconSnippet()}
-							<Route size={ICON.lg} />
-						{/snippet}
-						{#snippet action()}
-							<Button variant="secondary" onclick={openCreate}>
-								<Plus size={ICON.sm} /> New rule
-							</Button>
-						{/snippet}
-					</EmptyState>
-				{:else}
-					<Table label="Response cache rules">
-						<thead>
-							<tr>
-								<th scope="col">Route</th>
-								<th scope="col">Time to live</th>
-								<th scope="col">Tags</th>
-								<th scope="col">State</th>
-								<th scope="col"><span class="sr-only">Actions</span></th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each rules.rows as r (r.id)}
-								<tr>
-									<td class="max-w-md truncate font-mono text-xs" title={r.pattern}>{r.pattern}</td>
-									<td data-cell="nowrap" class="font-mono text-xs">{ttlLabel(r.ttl_seconds)}</td>
-									<td class="text-xs text-faint">{r.tags.join(', ') || 'Every content change'}</td>
-									<td data-cell="nowrap">
-										<Badge tone={r.enabled ? 'success' : 'neutral'} dot>{r.enabled ? 'Serving' : 'Off'}</Badge>
-									</td>
-									<td data-cell="nowrap">
-										<div class="flex items-center justify-end gap-1">
-											<form method="POST" action="?/purge" use:enhance={purge(`what ${r.pattern} cached`)}>
-												<input type="hidden" name="rule" value={r.id} />
-												<Button variant="ghost" size="sm" type="submit" aria-label="Purge {r.pattern}" title="Purge">
-													<Eraser size={ICON.sm} />
-												</Button>
-											</form>
-											<Button variant="ghost" size="sm" aria-label="Edit {r.pattern}" onclick={() => openEdit(r)}>
-												<Pencil size={ICON.sm} />
-											</Button>
-											<form method="POST" action="?/deleteRule" use:enhance={removeRule(r)}>
-												<input type="hidden" name="id" value={r.id} />
-												<Button variant="ghost" size="sm" type="submit" aria-label="Delete {r.pattern}">
-													<Trash2 size={ICON.sm} class="text-danger" />
-												</Button>
-											</form>
-										</div>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</Table>
-				{/if}
-			{/if}
-		</section>
-
-		<section class="flex flex-col gap-4">
-			<SectionHeading level={2}>Stored</SectionHeading>
-			<div class="flex flex-wrap items-center gap-2">
-				<form method="POST" action="?/flush" use:enhance={flushAll()}>
-					<Button variant="secondary" size="sm" type="submit">
-						<Trash2 size={ICON.sm} />
-						{data.flushScoped ? "Flush this tenant's responses" : 'Flush the cache'}
-					</Button>
-				</form>
-				{#if data.superAdmin}
-					{#each tags as tag (tag)}
-						<form method="POST" action="?/flush" use:enhance={flushTag(tag)}>
-							<input type="hidden" name="tag" value={tag} />
-							<Button variant="ghost" size="sm" type="submit">Flush {tag}</Button>
-						</form>
-					{/each}
-				{/if}
-			</div>
-
-			{#if !data.superAdmin}
-				<p class="text-sm text-muted">
-					Only super admins can see stored keys, because the store has every tenant's keys.
-				</p>
-			{:else if data.entriesGate}
-				<GateNotice
-					gate={data.entriesGate}
-					title="the stored entries"
-					absent="Stored entries need a newer version of the cache plugin."
-				/>
-			{:else if data.unlisted}
-				<Alert tone="brand">
-					This cache provider cannot list its entries. The counters above still include
-					them.
-				</Alert>
-			{:else if data.entries.length === 0}
-				<EmptyState
-					title="Nothing is cached"
-					description="Nothing has been requested yet, or every entry has expired."
-				>
-					{#snippet iconSnippet()}
-						<Database size={ICON.lg} />
-					{/snippet}
-				</EmptyState>
-			{:else}
-				{#if data.flushScoped}
-					<p class="text-xs text-faint">Only this tenant's keys are listed. The counters above include every tenant.</p>
-				{/if}
-				<Table label="Stored">
-					<thead>
-						<tr>
-							<th scope="col">Key</th>
-							<th scope="col">Size</th>
-							<th scope="col">Tags</th>
-							<th scope="col">Expires</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each data.entries as e (e.key)}
-							<tr>
-								<td class="max-w-md truncate font-mono text-xs" title={e.key}>{e.key}</td>
-								<td data-cell="nowrap" class="font-mono text-xs">{formatBytes(e.size, 'GB')}</td>
-								<td data-cell="nowrap" class="text-xs text-faint">
-									{(e.tags ?? []).join(', ') || '-'}
-								</td>
-								<td data-cell="nowrap" class="text-xs text-faint">
-									{formatDateTime(e.expires_at)}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</Table>
-				<Pagination
-					page={pageNumber(data.offset, data.limit)}
-					perPage={data.limit}
-					count={data.entries.length}
-					total={data.total ?? undefined}
-					hasNext={data.hasMore}
-					noun="entries"
-					href={pageHref('/admin/observability/cache', data.limit)}
-				/>
-			{/if}
-		</section>
 	{/if}
 </PageShell>
-
-<Drawer bind:open={ruleOpen} title={editing ? 'Edit rule' : 'New rule'}>
-	<form id="cache-rule-form" method="POST" action={editing ? '?/updateRule' : '?/createRule'} use:enhance={saveRule.enhance}>
-		<FormErrors
-			message={fromDrawer === 'rule' ? formError || undefined : undefined}
-			refused={fromDrawer === 'rule' ? refusal : null}
-		/>
-		{#if editing}
-			<input type="hidden" name="id" value={editing.id} />
-		{/if}
-		<div class="flex flex-col gap-4">
-			<Input
-				id="rule-pattern"
-				name="pattern"
-				label="Route"
-				hint="A path under /api/v1/. A segment can be a glob such as post-* or a {'{name}'} for any one segment. ** can only come last."
-				bind:value={pattern}
-				required
-			/>
-			<Input
-				id="rule-ttl"
-				name="ttl_seconds"
-				label="Time to live, in seconds"
-				hint="How long a cached response is served before it is computed again."
-				bind:value={ttl}
-				required
-			/>
-			<Input
-				id="rule-tags"
-				name="tags"
-				label="Tags"
-				hint="Content types whose changes purge this rule, separated by commas. Leave empty to purge on every content change."
-				bind:value={ruleTagText}
-			/>
-			<input type="hidden" name="enabled" value={ruleEnabled ? 'true' : 'false'} />
-			<Toggle id="rule-enabled" label="Serve from the cache" bind:checked={ruleEnabled} />
-		</div>
-	</form>
-	{#snippet footer()}
-		<Button variant="secondary" onclick={() => (ruleOpen = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="cache-rule-form" loading={saveRule.pending}>
-			{editing ? 'Save' : 'Create'}
-		</Button>
-	{/snippet}
-</Drawer>

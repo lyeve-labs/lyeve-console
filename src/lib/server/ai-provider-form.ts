@@ -38,7 +38,7 @@ export function readProviderForm(data: FormData, existing: AiProvider | null, su
 	if (!isCompatibleKind(kind) && !apiKey && !existing?.has_key) return { error: 'Enter an API key. This kind needs one.' };
 
 	const allowPrivate = str(data, 'allow_private') === 'true';
-	if (allowPrivate && !superAdmin) return { error: 'Only a super admin may allow a private address.' };
+	if (allowPrivate && !superAdmin) return { error: 'Only a super admin can allow a private address.' };
 
 	const modalities = data.getAll('modalities').map(String).filter((m): m is Modality => (MODALITIES as readonly string[]).includes(m));
 	if (modalities.length === 0) return { error: 'Choose at least one modality.' };

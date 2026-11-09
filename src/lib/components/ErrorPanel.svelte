@@ -14,6 +14,7 @@
 	import { page } from '$app/state';
 	import { ICON } from '$lib/icon';
 	import { BUSY, OUTAGE } from '$lib/outage';
+	import { SESSION_ENDED } from '$lib/session';
 
 	/**
 	 * What the reader is told when a page cannot be served.
@@ -88,7 +89,7 @@
 			missing: 'Not found',
 			busy: BUSY.title,
 			outage: OUTAGE.title,
-			server: 'Something went wrong',
+			server: 'Could not complete the request',
 		}[variant],
 	);
 
@@ -102,12 +103,12 @@
 	 */
 	const hint = $derived(
 		{
-			'signed-out': 'Your session expired. Sign in again.',
+			'signed-out': SESSION_ENDED,
 			denied: message || 'You do not have access to this page.',
 			missing: message || 'That page or record does not exist.',
 			busy: message || BUSY.body,
 			outage: OUTAGE.body,
-			server: 'The server could not complete the request. Try again. If it fails again, the details below show what the server returned.',
+			server: 'Try again. If it fails again, the details below show what the engine returned.',
 		}[variant],
 	);
 
@@ -129,7 +130,7 @@
 			{#if variant === 'server'}
 				<!-- Shut by default: a stack trace is the first thing on screen only
 				     for the reader who went looking for it. -->
-				<Collapsible label="What the server said" class="w-full text-left">
+				<Collapsible label="What the engine returned" class="w-full text-left">
 					<pre
 						class="border-line bg-surface-2 text-muted max-h-32 overflow-auto rounded-lg border p-3 text-xs">{message ||
 							'No details.'}</pre>

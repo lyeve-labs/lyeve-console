@@ -11,14 +11,15 @@
  * An engine older than this feature answers 404 on every route here.
  */
 import type { HttpClient } from '@lyeve-labs/client';
-import type { ListEnvelope } from './list';
+import { query, type ListEnvelope } from './list';
+import { record, whole } from './narrow';
 
-export const HISTORY_SETTINGS_URL = '/api/admin/content/history/settings';
-export const HISTORY_USAGE_URL = '/api/admin/content/history/usage';
-export const HISTORY_PRUNE_URL = '/api/admin/content/history/prune';
-export const HISTORY_URL = '/api/admin/content/history';
-export const ACTIVITY_URL = '/api/admin/content/activity';
-export const ACTIVITY_ALL_URL = '/api/admin/content/activity/all';
+const HISTORY_SETTINGS_URL = '/api/admin/content/history/settings';
+const HISTORY_USAGE_URL = '/api/admin/content/history/usage';
+const HISTORY_PRUNE_URL = '/api/admin/content/history/prune';
+const HISTORY_URL = '/api/admin/content/history';
+const ACTIVITY_URL = '/api/admin/content/activity';
+const ACTIVITY_ALL_URL = '/api/admin/content/activity/all';
 
 /** The capability that reads versions older than the read window. */
 export const HISTORY_READ_FEATURE = 'content-pro';
@@ -189,15 +190,6 @@ export function readActivityFilter(url: URL): ActivityFilter {
 	};
 }
 
-/** A body that is not an object reads as an empty one, so a missing key is a default rather than a throw. */
-function record(value: unknown): Record<string, unknown> {
-	return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
-}
-
-function whole(value: unknown): number {
-	return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
-}
-
 function envSwitch(value: unknown): EnvSwitch {
 	return value === 'off' || value === 'on' ? value : 'console';
 }
@@ -284,23 +276,28 @@ export function listActivity(
 	offset: number,
 	tenant?: string,
 ): Promise<ListEnvelope<ActivityRow> | ActivityRow[]> {
-	const params = new URLSearchParams();
-	for (const key of ['schema', 'entry_id', 'actor', 'action', 'source'] as const) {
-		if (filter[key]) params.set(key, filter[key]);
-	}
 	// The page picks days. The route takes times, and `to` keeps the chosen
 	// day whole by asking for everything before the next one.
-	if (filter.from) params.set('from', `${filter.from}T00:00:00Z`);
+	let to: string | undefined;
 	if (filter.to) {
 		const next = new Date(`${filter.to}T00:00:00Z`);
 		next.setUTCDate(next.getUTCDate() + 1);
-		params.set('to', `${next.toISOString().slice(0, 10)}T00:00:00Z`);
+		to = `${next.toISOString().slice(0, 10)}T00:00:00Z`;
 	}
-	if (tenant) params.set('tenant_id', tenant);
-	params.set('limit', String(limit));
-	params.set('offset', String(offset));
+	const params = query({
+		schema: filter.schema,
+		entry_id: filter.entry_id,
+		actor: filter.actor,
+		action: filter.action,
+		source: filter.source,
+		from: filter.from ? `${filter.from}T00:00:00Z` : undefined,
+		to,
+		tenant_id: tenant,
+		limit,
+		offset,
+	});
 	const base = tenant === undefined ? ACTIVITY_URL : ACTIVITY_ALL_URL;
-	return client.get<ListEnvelope<ActivityRow> | ActivityRow[]>(`${base}?${params}`);
+	return client.get<ListEnvelope<ActivityRow> | ActivityRow[]>(`${base}${params}`);
 }
 
 /** Whether the license reads versions older than the read window for this tenant. */

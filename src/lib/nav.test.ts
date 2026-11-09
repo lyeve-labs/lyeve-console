@@ -376,6 +376,14 @@ describe('adminNav matching', () => {
 		}
 	});
 
+	it('lets an area split into tabs mark its row from every tab', () => {
+		const tree = adminNav(SUPER);
+		for (const id of ['telemetry', 'profiler', 'cache', 'captures', 'pii', 'graphql', 'imports', 'tenant-costs', 'api-labs']) {
+			expect(find(tree, id).match, id).toBe('prefix');
+		}
+		expect(find(adminNav(ADMIN), 'tenant-rate-limits').match).toBe('prefix');
+	});
+
 	it('orders the sections that hold a settings sub-page before the settings section', () => {
 		// The kit takes the first match in document order. Settings answers for
 		// /admin/settings and everything under it, so Permissions and OAuth only
@@ -451,10 +459,39 @@ describe('adminSection', () => {
 		expect(adminSection('/admin/ai/providers/p1', tree)).toBe('AI / Providers');
 	});
 
+	it('files every tab under the row of its area', () => {
+		expect(adminTrail('/admin/observability/profiler/memory', tree)).toEqual(['Observability', 'Profiler']);
+		expect(adminTrail('/admin/observability/telemetry/export', tree)).toEqual(['Observability', 'Telemetry']);
+		expect(adminTrail('/admin/observability/cache/rules', tree)).toEqual(['Observability', 'Cache']);
+		expect(adminTrail('/admin/observability/captures/sets', tree)).toEqual(['Observability', 'Request capture']);
+		expect(adminTrail('/admin/observability/goroutines', tree)).toEqual(['Insight', 'Observability']);
+		expect(adminTrail('/admin/settings/pii/reads', tree)).toEqual(['Settings', 'PII masking']);
+		expect(adminTrail('/admin/settings/graphql/persisted', tree)).toEqual(['Delivery', 'GraphQL']);
+		expect(adminTrail('/admin/imports/templates', tree)).toEqual(['Insight', 'Imports']);
+		expect(adminTrail('/admin/tenants/costs/budgets', tree)).toEqual(['Operations', 'Tenant costs']);
+		expect(adminTrail('/admin/api-labs/graphql', tree)).toEqual(['Delivery', 'API labs']);
+		expect(adminTrail('/admin/settings/rate-limits/live', tree)).toEqual(['Settings', 'Rate limits']);
+		expect(adminTrail('/admin/settings/rate-limits/tenant/refusals', adminNav(['admin']))).toEqual(['Settings', 'Rate limits']);
+	});
+
 	it('names a depth-0 destination and its detail pages by the destination alone', () => {
 		expect(adminSection('/admin/flows', tree)).toBe('Flows');
 		expect(adminSection('/admin/flows/f1', tree)).toBe('Flows');
-		expect(adminSection('/admin/settings/mfa', tree)).toBe('Settings');
+	});
+
+	it('names a page with no sidebar row by its own title, under the row that encloses it', () => {
+		for (const roles of [['super_admin'], ['viewer']]) {
+			const nav = adminNav(roles);
+			expect(adminSection('/admin/settings/mfa', nav)).toBe('Settings / Two-factor authentication');
+			expect(adminSection('/admin/settings/devices', nav)).toBe('Settings / Trusted devices');
+			expect(adminSection('/admin/settings/account', nav)).toBe('Settings / Account and appearance');
+			expect(adminSection('/admin/settings/connected-editors', nav)).toBe('Settings / Builder connections');
+			expect(adminSection('/admin/settings/connected-editors/builder', nav)).toBe('Settings / Builder connections');
+		}
+		// A tenant's own page is named by its menu row when the menu lists it.
+		const custom = customizeNav(tree, { hidden: [], pinned: [], links: [], pages: [{ slug: 'launch', title: 'Launch' }] }, ['super_admin']);
+		expect(adminSection('/admin/pages/launch', custom)).toBe('Pages / Launch');
+		expect(adminSection('/admin/pages/launch', tree)).toBe('Pages');
 	});
 
 	it('names the deepest section this reader can actually see', () => {
@@ -487,6 +524,7 @@ describe('pagePlugin', () => {
 	it('names the plugin of a page with no sidebar row', () => {
 		expect(pagePlugin('/admin/settings/mfa')).toBe('mfa');
 		expect(pagePlugin('/admin/settings/devices')).toBe('device-fingerprint');
+		expect(pagePlugin('/admin/settings/connected-editors')).toBe('builder');
 		expect(pagePlugin('/admin/pages/launch')).toBe('multitenant');
 		expect(pagePlugin('/admin/content-activity')).toBe('content');
 	});
@@ -494,6 +532,16 @@ describe('pagePlugin', () => {
 	it('names the same plugin whoever reads, because the role gate is the page\'s own', () => {
 		expect(pagePlugin('/admin/settings/email')).toBe('email');
 		expect(pagePlugin('/admin/tenants')).toBe('multitenant');
+	});
+
+	it('names the plugin of a tab below its area', () => {
+		expect(pagePlugin('/admin/observability/profiler/memory')).toBe('profiler');
+		expect(pagePlugin('/admin/observability/cache/stored')).toBe('cache');
+		expect(pagePlugin('/admin/observability/captures/rules')).toBe('request-capture');
+		expect(pagePlugin('/admin/settings/pii/reads')).toBe('pii-mask');
+		expect(pagePlugin('/admin/imports/templates')).toBe('bulk-import');
+		expect(pagePlugin('/admin/settings/rate-limits/tenant/refusals')).toBe('rate-limit');
+		expect(pagePlugin('/admin/settings/connected-editors/builder')).toBe('builder');
 	});
 
 	it('names nothing for a page the engine owns', () => {

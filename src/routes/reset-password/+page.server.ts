@@ -2,11 +2,12 @@ import { fail } from '@sveltejs/kit';
 import { ApiError, createClient } from '@lyeve-labs/client';
 import { confirmPasswordReset, RESET_MIN_PASSWORD_LENGTH } from '$lib/api/password-reset';
 import { passwordTooLong } from '$lib/api/users';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure } from '$lib/server/action-error';
 import { recoveryRefusal } from '$lib/server/recovery';
 import { checkRateLimit } from '$lib/server/rate-limit';
 import { organizationFromUrl } from '$lib/organization';
 import { asksOrganization } from '$lib/server/sign-in-organization';
+import { checked } from '$lib/checkbox';
 import type { Actions, PageServerLoad } from './$types';
 
 const EXPIRED = 'This reset link no longer works. Request a new one.';
@@ -39,7 +40,7 @@ export const actions: Actions = {
 		const password = String(form.get('password') ?? '');
 		const confirm = String(form.get('confirm') ?? '');
 		// A checkbox posts nothing when it is cleared, so absent means keep.
-		const removePasskeys = form.has('remove_passkeys');
+		const removePasskeys = checked(form, 'remove_passkeys');
 
 		if (!token) return fail(400, { error: EXPIRED, expired: true });
 		if (password.length < RESET_MIN_PASSWORD_LENGTH) {
@@ -49,7 +50,7 @@ export const actions: Actions = {
 		// password, so a refusal there would cost the reader the link.
 		const tooLong = passwordTooLong(password);
 		if (tooLong) return fail(400, { error: tooLong });
-		if (password !== confirm) return fail(400, { error: 'The two passwords do not match.' });
+		if (password !== confirm) return fail(400, { error: 'The passwords do not match.' });
 
 		let removed: number;
 		try {
@@ -62,7 +63,8 @@ export const actions: Actions = {
 			// form stays and shows the engine's sentence. A spent, expired or
 			// unknown token answers 400.
 			if (e instanceof ApiError && e.status === 422 && apiCode(e)) {
-				return fail(422, { error: actionError(e, 'Choose a different password.') });
+				const failed = actionFailure(e, 'Choose a different password.', 422);
+				return fail(failed.status, failed.data);
 			}
 			return fail(400, { error: EXPIRED, expired: true });
 		}

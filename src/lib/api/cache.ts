@@ -14,14 +14,14 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 import type { ListEnvelope } from './list';
 import type { Limit } from './limits';
+import { plural } from '$lib/format';
 
-export const STATS_URL = '/api/admin/cache/stats';
-export const PROVIDERS_URL = '/api/admin/cache/providers';
-export const ENTRIES_URL = '/api/admin/cache/entries';
-export const FLUSH_URL = '/api/admin/cache/flush';
+const STATS_URL = '/api/admin/cache/stats';
+const PROVIDERS_URL = '/api/admin/cache/providers';
+const ENTRIES_URL = '/api/admin/cache/entries';
+const FLUSH_URL = '/api/admin/cache/flush';
 
 export interface CacheStats {
 	hits: number;
@@ -66,15 +66,6 @@ export interface CacheEntry {
 	tags: string[] | null;
 }
 
-export type CacheGate = Gate;
-
-export const CACHE_OK: CacheGate = GATE_OK;
-
-/** What a refused cache read means, read the way every plugin's is. */
-export function cacheGate(err: unknown): CacheGate {
-	return gateOf(err, 'Could not load the cache status.');
-}
-
 export async function readStats(client: HttpClient): Promise<CacheStats> {
 	return client.get<CacheStats>(STATS_URL);
 }
@@ -94,7 +85,7 @@ export interface InactiveProvider {
 }
 
 export interface ProvidersRead extends ListEnvelope<CacheProvider> {
-	/** Whether this install runs every configured provider with failover. */
+	/** Whether this instance runs every configured provider with failover. */
 	licensed?: boolean;
 	inactive?: InactiveProvider[] | null;
 }
@@ -107,13 +98,13 @@ export async function listProviders(client: HttpClient): Promise<ProvidersRead> 
 export function inactiveReason(reason: string): string {
 	switch (reason) {
 		case 'provider_limit':
-			return 'Not running. Only one provider runs unless your license includes failover.';
+			return 'Not running. Only one provider runs on this engine.';
 		case 'networked_unavailable':
-			return 'Not running. Networked cache providers are not available on this instance.';
+			return 'Not running. Networked cache providers are not enabled on this engine.';
 		case 'create_failed':
 			return 'Could not start. Check its address and settings in your deployment.';
 		case 'register_failed':
-			return 'Could not start, usually because another provider already uses its name.';
+			return 'Could not start because another provider already uses its name.';
 		default:
 			return 'Not running.';
 	}
@@ -139,7 +130,7 @@ export interface RulesRead {
 	limits?: { rules?: Limit };
 }
 
-export const RULES_URL = '/api/admin/cache/rules';
+const RULES_URL = '/api/admin/cache/rules';
 
 export interface SaveCacheRule {
 	pattern: string;
@@ -177,20 +168,16 @@ export async function purgeResponses(client: HttpClient, tag: string): Promise<n
 }
 
 /**
- * "4 of 10 rules" when the install holds a ceiling, and the count alone when
+ * "4 of 10 rules" when the instance holds a ceiling, and the count alone when
  * it holds none. The numbers come from the plugin's read, never from here.
  */
 export function ruleCount(limit: Limit | undefined, shown: number): string {
 	const current = limit?.current ?? shown;
-	const noun = current === 1 ? 'rule' : 'rules';
+	const noun = plural(current, 'rule');
 	if (limit && limit.limit !== null) return `${current} of ${limit.limit} rules`;
 	return `${current} ${noun}`;
 }
 
-/** Whether the next create would meet the ceiling the read stated. */
-export function atCeiling(limit: Limit | undefined): boolean {
-	return !!limit && limit.limit !== null && limit.current >= limit.limit;
-}
 
 /** A rule pattern the plugin accepts: a path under /api/v1/ with no query. */
 export function patternIsSound(pattern: string): boolean {

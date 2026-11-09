@@ -140,9 +140,9 @@ describe('permissions page', () => {
 		await tick();
 		// A destructive confirmation has to say which object it means.
 		const [title, message, options] = kit.confirm.mock.calls[0] as unknown as [string, string, { confirmLabel: string }];
-		expect(title).toBe('Delete rule for editor on article');
-		expect(message).toContain('editor');
-		expect(message).toContain('article');
+		expect(title).toBe('Delete the rule for editor on article?');
+		// No parent rule grants anything once this one goes, so the title says it all.
+		expect(message).toBe('');
 		expect(options.confirmLabel).toBe('Delete');
 	});
 });
@@ -220,7 +220,7 @@ describe('permissions page role ceiling', () => {
 		const { queryAllByRole, container } = setupAtCeiling(1);
 		expect(container.textContent).toContain('1 of 1 roles');
 		expect(container.textContent).toContain(
-			"This instance's role ceiling is 1, so you cannot add another role. Your existing roles keep working.",
+			"This engine's role ceiling is 1, so you cannot add another role. Your existing roles keep working.",
 		);
 		expect(queryAllByRole('button').find((b) => b.textContent?.includes('New role'))).toBeFalsy();
 	});
@@ -382,7 +382,7 @@ describe('permissions page role disclosure', () => {
 			['article'],
 		);
 		const first = container.querySelector('#rules-editor tr') as HTMLElement;
-		expect(first.textContent).toContain('Every schema');
+		expect(first.textContent).toContain('Every content type');
 	});
 });
 
@@ -392,13 +392,13 @@ describe('permissions page collapsed summary', () => {
 		// fully granted column over zero schemas, and the operator reads a
 		// blanket grant off a screen that shows nothing.
 		const { container } = setupWith([], []);
-		expect(roleRow(container, 'admin').textContent).toContain('admin grants read on no schema.');
-		expect(roleRow(container, 'admin').textContent).not.toContain('on every schema');
+		expect(roleRow(container, 'admin').textContent).toContain('admin grants read on no content type.');
+		expect(roleRow(container, 'admin').textContent).not.toContain('on every content type');
 	});
 
 	it('reports a role with no rule as granting nothing', () => {
 		const { container } = setupWith([], ['article', 'page']);
-		expect(roleRow(container, 'admin').textContent).toContain('admin grants read on no schema.');
+		expect(roleRow(container, 'admin').textContent).toContain('admin grants read on no content type.');
 	});
 
 	it('reports a partial grant as some and a wildcard grant as every schema', () => {
@@ -407,10 +407,10 @@ describe('permissions page collapsed summary', () => {
 			['article', 'page'],
 		);
 		expect(roleRow(container, 'editor').textContent).toContain(
-			'editor grants read on some schemas.',
+			'editor grants read on some content types.',
 		);
 		expect(roleRow(container, 'reviewer').textContent).toContain(
-			'reviewer grants read on every schema.',
+			'reviewer grants read on every content type.',
 		);
 	});
 
@@ -423,10 +423,10 @@ describe('permissions page collapsed summary', () => {
 
 		expect(container.querySelectorAll('#rules-editor tr').length).toBe(0);
 		expect(roleRow(container, 'editor').textContent).toContain(
-			'editor grants read on some schemas.',
+			'editor grants read on some content types.',
 		);
 		expect(roleRow(container, 'editor').textContent).toContain(
-			'editor grants create on no schema.',
+			'editor grants create on no content type.',
 		);
 	});
 });
@@ -462,8 +462,8 @@ describe('permissions page inherited grants', () => {
 			[rule('editor', '*', ['read', 'update']), rule('editor', 'article', ['read'])],
 			['article', 'page'],
 		);
-		expect(roleRow(container, 'editor').textContent).toContain('editor grants read on every schema.');
-		expect(roleRow(container, 'editor').textContent).toContain('editor grants update on some schemas.');
+		expect(roleRow(container, 'editor').textContent).toContain('editor grants read on every content type.');
+		expect(roleRow(container, 'editor').textContent).toContain('editor grants update on some content types.');
 	});
 
 	it('warns in the editor that an action left clear is denied on the schema', async () => {
@@ -532,7 +532,7 @@ describe('permissions page inherited grants', () => {
 
 		await tick();
 		const [, message] = kit.confirm.mock.calls[0] as unknown as [string, string];
-		expect(message).toContain('The wildcard rule for editor then applies to this schema and grants read.');
+		expect(message).toContain('The wildcard rule for editor then applies to this content type and grants read.');
 		expect(message).not.toContain('does not revoke');
 	});
 });
@@ -554,7 +554,7 @@ describe('permissions page exempt role', () => {
 			['article'],
 		);
 		const add = getAllByRole('button').find(
-			(b) => b.getAttribute('aria-label') === 'Add a schema rule for super_admin',
+			(b) => b.getAttribute('aria-label') === 'Add a content type rule for super_admin',
 		);
 		expect((add as HTMLButtonElement).disabled).toBe(true);
 
@@ -591,7 +591,7 @@ describe('permissions page copy', () => {
 	it('says a schema rule replaces the wildcard rule rather than adding to it', () => {
 		const { container } = setupWith([], ['article']);
 		const text = (container.textContent ?? '').replace(/\s+/g, ' ');
-		expect(text).toContain('A schema rule replaces the wildcard rule on that schema.');
+		expect(text).toContain('A content type rule replaces the wildcard rule on that content type.');
 		expect(text).not.toContain('their actions are unioned');
 		expect(text).not.toContain('cannot be taken back');
 	});
@@ -617,7 +617,7 @@ describe('permissions page flow resources', () => {
 
 	it('offers All flows and each flow as resources beside the schemas', async () => {
 		const { container } = setupFlows([rule('editor', 'article', ['read'])]);
-		await fireEvent.click(container.querySelector('button[aria-label="Add a schema rule for editor"]') as HTMLButtonElement);
+		await fireEvent.click(container.querySelector('button[aria-label="Add a content type rule for editor"]') as HTMLButtonElement);
 		await tick();
 		const dialog = container.querySelector('[role="dialog"]') as HTMLElement;
 		const picker = (dialog.querySelector('input[role="combobox"]') ?? dialog.querySelector('input:not([type="hidden"])')) as HTMLInputElement;
@@ -655,7 +655,7 @@ describe('permissions page flow resources', () => {
 
 	it('keeps the wildcard rule away from flows in the summary', () => {
 		const { container } = setupFlows([rule('reviewer', '*', ['read'])], ['article', 'page']);
-		expect(roleRow(container, 'reviewer').textContent).toContain('reviewer grants read on every schema.');
+		expect(roleRow(container, 'reviewer').textContent).toContain('reviewer grants read on every content type.');
 		expect(roleRow(container, 'reviewer').textContent).toContain('reviewer grants read on no flow.');
 		expect(roleRow(container, 'reviewer').textContent).toContain('reviewer grants activate on no flow.');
 	});
@@ -700,13 +700,13 @@ describe('permissions page drawers', () => {
 	it('takes the ceiling from the refusal when the limits read failed', () => {
 		const refused = { kind: 'cap', cap: 'rbac.roles', limit: 5, current: 5, upgradeUrl: '' };
 		const { container } = setupWith({ action: 'role', roleCapReached: true, refused }, { roleCap: 0, roleCount: null });
-		expect(container.textContent).toContain('The ceiling is 5 roles and this instance has 5.');
+		expect(container.textContent).toContain('The ceiling is 5 roles and this engine has 5.');
 		expect(container.textContent).not.toContain('The ceiling is 0 roles');
 	});
 
 	it('states no ceiling when neither the refusal nor the read gave one', () => {
 		const { container } = setupWith({ action: 'role', roleCapReached: true }, { roleCap: 0, roleCount: null });
-		expect(container.textContent).toContain('This instance allows no more roles.');
+		expect(container.textContent).toContain('This engine allows no more roles.');
 		expect(container.textContent).not.toContain('The ceiling is 0 roles');
 	});
 
@@ -737,7 +737,7 @@ describe('permissions page drawers', () => {
 
 	it('says in the new rule form that the flows could not be read', async () => {
 		const { container, getAllByRole } = setupWith(null, { flowsFailed: true });
-		const add = getAllByRole('button').find((b) => b.getAttribute('aria-label') === 'Add a schema rule for editor');
+		const add = getAllByRole('button').find((b) => b.getAttribute('aria-label') === 'Add a content type rule for editor');
 		expect(add, 'no control adds a rule for a new resource').toBeTruthy();
 		await fireEvent.click(add!);
 		expect(container.ownerDocument.body.textContent).toContain('Could not load flows');

@@ -1,87 +1,23 @@
 import type { PageServerLoad, Actions } from './$types';
-import { error, fail, redirect } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
 import { actionError } from '$lib/server/action-error';
-import { adminNav, navLeaves } from '$lib/nav';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { listMediaChoices, type MediaChoice } from '$lib/api/media';
-import { getDashboardLayout, type DashboardLayout } from '$lib/api/custom-dashboard';
-import { GATE_OK, gateOf, type Gate } from '$lib/api/gate';
 import { LOGO_MAX_BYTES, LOGO_TYPES, logoAddressOk } from '$lib/logo';
-import { importMedia, importRefusal, isForeignAddress } from '$lib/api/media';
+import { importMedia, importRefusal, isForeignAddress, listMediaChoices, type MediaChoice } from '$lib/api/media';
 import { LogoRejected, uploadLogo } from '$lib/server/logo-upload';
-import {
-	EMPTY_SETTINGS,
-	deleteCustomPage,
-	getCustomization,
-	parseAccent,
-	saveCustomPage,
-	saveCustomization,
-	slugify,
-	type CustomLink,
-	type CustomizationSettings,
-} from '$lib/api/customization';
-
-const ROLES = ['viewer', 'editor', 'admin'];
+import { EMPTY_SETTINGS, parseAccent, saveCustomization } from '$lib/api/customization';
+import { current, openTab } from './customization.server';
 
 export const load: PageServerLoad = async (event) => {
 	const { user, plugins } = await event.parent();
-	if (!user.roles.some((r) => r === 'admin' || r === 'super_admin')) error(403, 'Only an admin or a super admin can change customization.');
-	const locked = {
-		gate: GATE_OK as Gate,
-		entitled: false,
-		settings: EMPTY_SETTINGS,
-		pages: [],
-		navChoices: [],
-		// Null is a library that could not be read, never one with nothing in it.
-		mediaChoices: null as MediaChoice[] | null,
-		dashboard: null as DashboardLayout | null,
-	};
-	// The shell says why the page is unavailable while the plugin does not run.
-	if (notRunning(plugins, PLUGIN.multitenant)) return locked;
-	const client = authedClient(event);
-	// Read fresh rather than from the shell, so a save shows what the engine
-	// stored and not what the layout read before it. The plugin's answer also
-	// says whether this tenant may shape its admin at all.
-	// A failed read is drawn as its gate, never as a tenant that may not
-	// customize or as settings that are empty.
-	let custom: Awaited<ReturnType<typeof getCustomization>>;
-	try {
-		custom = await getCustomization(client);
-	} catch (err) {
-		return { ...locked, gate: gateOf(err, 'Could not load customization.') };
-	}
-	if (!custom.entitled) return locked;
-	const [media, dashboard] = await Promise.all([
-		Promise.resolve()
-			.then(() => listMediaChoices(client))
-			.catch((): MediaChoice[] | null => null),
-		getDashboardLayout(client).catch((): DashboardLayout | null => null),
-	]);
-	return {
-		gate: GATE_OK as Gate,
-		entitled: true,
-		settings: custom.settings,
-		pages: custom.pages,
-		// Chosen from the stock menu this operator sees, so an entry the
-		// tenant hid can be brought back.
-		navChoices: navLeaves(adminNav(user.roles, { plugins })),
-		mediaChoices: media,
-		dashboard,
-	};
+	const { gate, custom } = await openTab(event, user, plugins);
+	// Null is a library that could not be read, never one with nothing in it.
+	if (!custom) return { gate, entitled: false, settings: EMPTY_SETTINGS, mediaChoices: null as MediaChoice[] | null };
+	const media = await Promise.resolve()
+		.then(() => listMediaChoices(authedClient(event)))
+		.catch((): MediaChoice[] | null => null);
+	return { gate, entitled: true, settings: custom.settings, mediaChoices: media };
 };
-
-async function current(event: Parameters<Actions[string]>[0]): Promise<CustomizationSettings> {
-	return (await getCustomization(authedClient(event))).settings;
-}
-
-function roleList(form: FormData): string[] {
-	return form
-		.getAll('roles')
-		.map(String)
-		.filter((r) => ROLES.includes(r));
-}
 
 /*
  * The logo and the tab icon are two images on one path: an address or a file,
@@ -203,106 +139,5 @@ export const actions: Actions = {
 		const r = await saveImageUpload(event, 'favicon');
 		if (r.error) return fail(400, { faviconError: r.error });
 		return { faviconSaved: true, faviconUploaded: true };
-	},
-
-	menu: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const form = await event.request.formData();
-		try {
-			const settings = await current(event);
-			settings.menu.hidden = form.getAll('hidden').map(String);
-			settings.menu.pinned = form.getAll('pinned').map(String).filter((id) => !settings.menu.hidden.includes(id));
-			await saveCustomization(authedClient(event), settings);
-			return { menuSaved: true };
-		} catch (err) {
-			return fail(400, { menuError: actionError(err, 'Could not save the menu. Try again.') });
-		}
-	},
-
-	addLink: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const form = await event.request.formData();
-		const link: CustomLink = {
-			label: String(form.get('label') ?? '').trim(),
-			url: String(form.get('url') ?? '').trim(),
-			roles: roleList(form),
-		};
-		const fields: Record<string, string> = {};
-		if (!link.label) fields.label = 'Required';
-		if (!/^https:\/\/\S+$/.test(link.url) && !link.url.startsWith('/admin/')) fields.url = 'An https URL or a path starting /admin/';
-		if (Object.keys(fields).length > 0) return fail(400, { linkError: 'Check the highlighted fields.', fields });
-		try {
-			const settings = await current(event);
-			settings.menu.links = [...settings.menu.links, link];
-			await saveCustomization(authedClient(event), settings);
-			return { linkSaved: true };
-		} catch (err) {
-			return fail(400, { linkError: actionError(err, 'Could not save the link. Try again.') });
-		}
-	},
-
-	removeLink: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const index = Number((await event.request.formData()).get('index'));
-		try {
-			const settings = await current(event);
-			settings.menu.links = settings.menu.links.filter((_, i) => i !== index);
-			await saveCustomization(authedClient(event), settings);
-			return { linkRemoved: true };
-		} catch (err) {
-			return fail(400, { menuError: actionError(err, 'Could not remove the link. Try again.') });
-		}
-	},
-
-	home: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const home = String((await event.request.formData()).get('home_page') ?? '');
-		try {
-			const settings = await current(event);
-			settings.home_page = home;
-			await saveCustomization(authedClient(event), settings);
-			return { homeSaved: true };
-		} catch (err) {
-			return fail(400, { pagesError: actionError(err, 'Could not save the dashboard page. Try again.') });
-		}
-	},
-
-	createPage: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const form = await event.request.formData();
-		const title = String(form.get('title') ?? '').trim();
-		const slug = String(form.get('slug') ?? '').trim() || slugify(title);
-		const fields: Record<string, string> = {};
-		if (!title) fields.title = 'Required';
-		if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) fields.slug = 'Lower-case letters, digits and hyphens';
-		if (Object.keys(fields).length > 0) return fail(400, { pageError: 'Check the highlighted fields.', fields });
-		try {
-			const custom = await getCustomization(authedClient(event));
-			if (custom.pages.some((p) => p.slug === slug)) {
-				return fail(409, { pageError: `A page already uses ${slug}.`, fields: { slug: 'Taken' } });
-			}
-			await saveCustomPage(authedClient(event), {
-				slug,
-				title,
-				description: '',
-				roles: roleList(form),
-				blocks: [],
-				position: custom.pages.length,
-			});
-		} catch (err) {
-			return fail(400, { pageError: actionError(err, 'Could not create the page. Try again.') });
-		}
-		redirect(303, `/admin/settings/customization/pages/${slug}`);
-	},
-
-	deletePage: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		const slug = String((await event.request.formData()).get('slug') ?? '');
-		try {
-			await deleteCustomPage(authedClient(event), slug);
-			return { pageDeleted: true };
-		} catch (err) {
-			return fail(400, { pageDeleteError: actionError(err, 'Could not delete the page. Try again.') });
-		}
 	},
 };

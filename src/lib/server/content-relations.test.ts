@@ -24,7 +24,7 @@ describe('reconciling a many_to_many field', () => {
 		const { event } = eventWith([], () => 403);
 
 		await expect(setRelations(event, 'e1', 'tags', ['t1', 't2'])).rejects.toThrow(
-			'In tags, 2 links could not be added.',
+			'Could not add 2 links in tags.',
 		);
 	});
 
@@ -49,7 +49,7 @@ describe('reconciling a many_to_many field', () => {
 
 		const failed = await setEntryRelations(event, 'e1', { tags: ['t1'], authors: ['a1'] });
 
-		expect(failed).toBe('In authors, 1 link could not be added.');
+		expect(failed).toBe('Could not add 1 link in authors.');
 		expect(fetch.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(2);
 	});
 });

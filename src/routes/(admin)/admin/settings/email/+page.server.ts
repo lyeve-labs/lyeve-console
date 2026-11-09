@@ -1,7 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
-import { fail, type ActionFailure } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import { authedClient, requireUser } from '$lib/server/authz';
-import { actionError, actionFailure } from '$lib/server/action-error';
+import { actionError, actionFailure, tagged } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import {
@@ -14,7 +14,9 @@ import {
 import { parseProvider } from '$lib/email/provider-form';
 import { ApiError } from '@lyeve-labs/client';
 import { sessionToken } from '$lib/server/session-cookie';
+import { SESSION_ENDED } from '$lib/session';
 import { section, type Section } from '$lib/api/gate';
+import { asked } from '$lib/server/asked';
 
 /**
  * The engine config keys that make up the fallback transport.
@@ -104,14 +106,6 @@ export const load: PageServerLoad = async (event) => {
 	return { mail, providers };
 };
 
-/**
- * The failure marked with the action that caused it. The drawer shows only a
- * failed save, and a failed delete shows above the list.
- */
-function tagged<T extends Record<string, unknown>>(action: string, failure: ActionFailure<T>) {
-	return fail(failure.status, { ...failure.data, action });
-}
-
 const text = (data: FormData, key: string): string => String(data.get(key) ?? '').trim();
 
 export const actions: Actions = {
@@ -140,22 +134,29 @@ export const actions: Actions = {
 		}
 	},
 
-	delete: async (event) => {
-		await requireUser(event);
-		const data = await event.request.formData();
-		try {
-			await deleteEmailProvider(authedClient(event), text(data, 'id'));
-		} catch (err) {
-			return tagged('delete', actionFailure(err, 'Could not delete the provider. Try again.'));
-		}
-	},
+	delete: asked(
+		{
+			question: 'Delete this provider?',
+			detail: 'Mail that would go through it goes to the next provider instead.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireUser(event);
+			const data = await event.request.formData();
+			try {
+				await deleteEmailProvider(authedClient(event), text(data, 'id'));
+			} catch (err) {
+				return tagged('delete', actionFailure(err, 'Could not delete the provider. Try again.'));
+			}
+		},
+	),
 
 	// One setting per submission. Sending the whole form would clear every
 	// credential the operator did not retype, because a blank secret is how the
 	// engine is told to unset one.
 	saveSetting: async (event) => {
 		await requireUser(event);
-		if (!sessionToken(event)) return fail(401, { error: 'Your session has ended. Sign in again.' });
+		if (!sessionToken(event)) return fail(401, { error: SESSION_ENDED });
 
 		const data = await event.request.formData();
 		const key = text(data, 'key');

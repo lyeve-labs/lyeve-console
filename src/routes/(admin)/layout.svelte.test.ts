@@ -150,7 +150,7 @@ describe('admin shell landmarks', () => {
 		// aside would give the drawer two landmarks, and the cases above locate
 		// the drawer in strict mode.
 		expect(document.querySelectorAll('aside')).toHaveLength(1);
-		expect(document.querySelector('aside')?.getAttribute('aria-label')).toBe('Admin sidebar');
+		expect(document.querySelector('aside')?.getAttribute('aria-label')).toBe('Console sidebar');
 	});
 
 	it('opens the document with a skip link that reaches the main region', async () => {
@@ -234,6 +234,14 @@ describe('admin shell active row', () => {
 
 		expect(link('Content').getAttribute('aria-current')).toBe('page');
 		expect(link('Dashboard').getAttribute('aria-current')).toBeNull();
+	});
+});
+
+describe('admin shell header', () => {
+	it('names a page the sidebar does not list by its own title', async () => {
+		await mount(SUPER, '/admin/settings/mfa');
+
+		expect(screen.getByText('Settings / Two-factor authentication')).toBeTruthy();
 	});
 });
 
@@ -495,7 +503,7 @@ describe('admin shell code preload', () => {
 	it('gives every sidebar link the viewport code preload, and the page none', async () => {
 		await mount(SUPER);
 
-		const links = [...document.querySelectorAll('nav[aria-label="Admin sections"] a')];
+		const links = [...document.querySelectorAll('nav[aria-label="Console sections"] a')];
 		expect(links.length).toBeGreaterThan(0);
 		for (const a of links) {
 			const setting = a.closest('[data-sveltekit-preload-code]')?.getAttribute('data-sveltekit-preload-code');

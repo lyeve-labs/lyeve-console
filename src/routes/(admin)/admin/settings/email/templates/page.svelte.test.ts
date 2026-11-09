@@ -20,20 +20,21 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 });
 
 /**
- * Press a row's delete, accept the question, and return its title and what
- * the hidden form held when it was sent. The value has to be in the form by
- * then, which is what waiting on the next render before sending is for.
+ * Submit the form a row's delete button sits in, and return the question it
+ * asked, what the form sends and whether the submit went ahead.
  */
-async function pressDelete(button: HTMLElement, field: string): Promise<{ title: string; sent: string }> {
-	let sent = '';
-	const spy = vi.spyOn(HTMLFormElement.prototype, 'requestSubmit').mockImplementation(function (this: HTMLFormElement) {
-		sent = (this.querySelector(`input[name="${field}"]`) as HTMLInputElement | null)?.value ?? '';
-	});
+async function pressDelete(button: HTMLElement, field: string) {
+	const form = button.closest('form') as HTMLFormElement;
+	const submit = forms.submits.find((s) => s.node === form)?.submit as (input: { cancel: () => void; formData: FormData }) => Promise<unknown>;
+	const cancel = vi.fn();
 	kit.confirm.mockClear();
-	await fireEvent.click(button);
-	await vi.waitFor(() => expect(spy).toHaveBeenCalled());
-	spy.mockRestore();
-	return { title: String((kit.confirm.mock.calls[0] as unknown[] | undefined)?.[0] ?? ''), sent };
+	await submit({ cancel, formData: new FormData(form) });
+	return {
+		action: form.getAttribute('action'),
+		title: String((kit.confirm.mock.calls[0] as unknown[] | undefined)?.[0] ?? ''),
+		sent: String(new FormData(form).get(field) ?? ''),
+		sentOff: !cancel.mock.calls.length,
+	};
 }
 
 
@@ -142,8 +143,10 @@ describe('email template delete', () => {
 	it('names the template and sends its id', async () => {
 		render(TemplatesPage, { props: { data: data(), form: null } });
 		const out = await pressDelete(screen.getByRole('button', { name: 'Delete spring-sale' }), 'id');
-		expect(out.title).toBe('Delete template spring-sale');
+		expect(out.action).toBe('?/delete');
+		expect(out.title).toBe('Delete template spring-sale?');
 		expect(out.sent).toBe('t2');
+		expect(out.sentOff).toBe(true);
 	});
 
 	it('offers the ready-made templates in a searchable list', async () => {

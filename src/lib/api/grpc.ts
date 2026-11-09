@@ -12,9 +12,8 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 
-export const STATUS_URL = '/api/admin/grpc/status';
+const STATUS_URL = '/api/admin/grpc/status';
 
 export interface ServiceStatus {
 	name: string;
@@ -31,15 +30,6 @@ export interface GrpcStatus {
 	reflection: boolean;
 	services: ServiceStatus[];
 	transcoded_routes: string[];
-}
-
-export type GrpcGate = Gate;
-
-export const GRPC_OK: GrpcGate = GATE_OK;
-
-/** What a refused gRPC read means, read the way every plugin's is. */
-export function grpcGate(err: unknown): GrpcGate {
-	return gateOf(err, 'Could not load the gRPC status.');
 }
 
 export async function readStatus(client: HttpClient): Promise<GrpcStatus> {
@@ -67,7 +57,7 @@ export const HEALTH_LABELS: Readonly<Record<GrpcHealth, string>> = {
 	serving: 'Serving',
 	partial: 'Listening, but a service is not serving',
 	down: 'Not listening',
-	disabled: 'Not started on this instance',
+	disabled: 'Not started on this engine',
 };
 
 export function healthTone(h: GrpcHealth): StatusTone {

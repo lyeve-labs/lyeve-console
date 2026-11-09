@@ -18,11 +18,19 @@ export interface Limit {
 	current: number;
 }
 
+/**
+ * The string a thrown request error's body carries under `key`, such as the
+ * `field` a refused value names, or empty when it carries none.
+ */
+export function bodyString(err: unknown, key: string): string {
+	if (!(err instanceof ApiError) || !err.body || typeof err.body !== 'object') return '';
+	const value = (err.body as Record<string, unknown>)[key];
+	return typeof value === 'string' ? value : '';
+}
+
 /** The machine code a thrown request error carries, or empty when it carries none. */
 export function errorCodeOf(err: unknown): string {
-	if (!(err instanceof ApiError) || !err.body || typeof err.body !== 'object') return '';
-	const code = (err.body as { code?: unknown }).code;
-	return typeof code === 'string' ? code : '';
+	return bodyString(err, 'code');
 }
 
 /**
@@ -41,6 +49,6 @@ export function limitOf(limits: unknown, key: string): Limit | null {
 }
 
 /** Whether the count has reached a ceiling. No ceiling is never full. */
-export function atLimit(l: Limit | null): boolean {
+export function atLimit(l: Limit | null | undefined): boolean {
 	return !!l && l.limit !== null && l.current >= l.limit;
 }

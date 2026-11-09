@@ -1,11 +1,10 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure, tagged } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import {
-	RETENTION_OK,
 	archiveFailures,
 	createHold,
 	createPolicy,
@@ -15,13 +14,13 @@ import {
 	listHolds,
 	listPolicies,
 	releaseHold,
-	retentionGate,
 	type LegalHold,
-	type RetentionGate,
 	type RetentionPolicy,
 } from '$lib/api/retention';
+import { type Gate, GATE_OK, gateOf, section, type Section } from '$lib/api/gate';
 import { rowsOf } from '$lib/api/list';
-import { section, type Section } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
+import { asked } from '$lib/server/asked';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();
@@ -29,12 +28,12 @@ export const load: PageServerLoad = async (event) => {
 	const client = authedClient(event);
 	let policies: RetentionPolicy[] = [];
 	// The shell says why the page is unavailable while its plugin does not run.
-	let gate: RetentionGate = notRunning(plugins, PLUGIN.audit) ? { state: 'absent' } : RETENTION_OK;
+	let gate: Gate = notRunning(plugins, PLUGIN.audit) ? { state: 'absent' } : GATE_OK;
 	if (gate.state === 'ok') {
 		try {
 			policies = rowsOf(await listPolicies(client));
 		} catch (err) {
-			gate = retentionGate(err);
+			gate = gateOf(err, couldNotLoad('the retention rules'));
 		}
 	}
 
@@ -45,7 +44,7 @@ export const load: PageServerLoad = async (event) => {
 		gate.state === 'ok'
 			? await section(
 					listHolds(client).then((h) => rowsOf(h)),
-					'Could not load the legal holds, so the policies above may not match what is actually deleted.'
+					couldNotLoad('the legal holds')
 				)
 			: { ok: false, gate };
 
@@ -81,24 +80,31 @@ export const actions: Actions = {
 				archival_path_prefix: String(form.get('archival_path_prefix') ?? '').trim(),
 			});
 		} catch (err) {
-			return fail(400, { action: 'createPolicy' as const, error: actionError(err, 'Could not create the policy. Try again.') });
+			return tagged('createPolicy', actionFailure(err, 'Could not create the policy. Try again.'));
 		}
 		return { saved: 'policy' };
 	},
 
-	deletePolicy: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const client = authedClient(event);
-		const form = await event.request.formData();
-		const id = String(form.get('id') ?? '');
-		if (!id) return fail(400, { action: 'deletePolicy' as const, error: 'This form is missing its policy. Reload the page and try again.' });
-		try {
-			await deletePolicy(client, id);
-		} catch (err) {
-			return fail(400, { action: 'deletePolicy' as const, error: actionError(err, 'Could not delete the policy. Try again.') });
-		}
-		return { removed: id };
-	},
+	deletePolicy: asked(
+		{
+			question: 'Delete this policy?',
+			detail: 'Entries it covered are no longer deleted, and the audit log grows until another policy covers them.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const client = authedClient(event);
+			const form = await event.request.formData();
+			const id = String(form.get('id') ?? '');
+			if (!id) return fail(400, { action: 'deletePolicy' as const, error: 'This form is missing its policy. Reload the page and try again.' });
+			try {
+				await deletePolicy(client, id);
+			} catch (err) {
+				return tagged('deletePolicy', actionFailure(err, 'Could not delete the policy. Try again.'));
+			}
+			return { removed: id };
+		},
+	),
 
 	createHold: async (event) => {
 		await requireRole(event, ['super_admin']);
@@ -118,39 +124,53 @@ export const actions: Actions = {
 				filter_tenant_id: String(form.get('filter_tenant_id') ?? '').trim(),
 			});
 		} catch (err) {
-			return fail(400, { action: 'createHold' as const, error: actionError(err, 'Could not create the hold. Try again.') });
+			return tagged('createHold', actionFailure(err, 'Could not create the hold. Try again.'));
 		}
 		return { saved: name };
 	},
 
-	releaseHold: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const client = authedClient(event);
-		const form = await event.request.formData();
-		const id = String(form.get('id') ?? '');
-		if (!id) return fail(400, { action: 'releaseHold' as const, error: 'This form is missing its hold. Reload the page and try again.' });
-		try {
-			await releaseHold(client, id);
-		} catch (err) {
-			return fail(400, { action: 'releaseHold' as const, error: actionError(err, 'Could not release the hold. Try again.') });
-		}
-		return { released: id };
-	},
+	releaseHold: asked(
+		{
+			question: 'Release this legal hold?',
+			detail: 'Entries this hold protected can be deleted again. If a retention policy covers them, the next enforcement run deletes them permanently.',
+			label: 'Release',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const client = authedClient(event);
+			const form = await event.request.formData();
+			const id = String(form.get('id') ?? '');
+			if (!id) return fail(400, { action: 'releaseHold' as const, error: 'This form is missing its hold. Reload the page and try again.' });
+			try {
+				await releaseHold(client, id);
+			} catch (err) {
+				return tagged('releaseHold', actionFailure(err, 'Could not release the hold. Try again.'));
+			}
+			return { released: id };
+		},
+	),
 
 	// Deletes. Not a dry run, and nothing undoes it.
-	enforce: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const client = authedClient(event);
-		try {
-			const run = await enforceNow(client);
-			return {
-				enforced: true,
-				deleted: entriesDeleted(run),
-				policies: run.policies_processed ?? 0,
-				archiveFailed: archiveFailures(run),
-			};
-		} catch (err) {
-			return fail(400, { action: 'enforce' as const, error: actionError(err, 'Could not enforce retention. Try again.') });
-		}
-	},
+	enforce: asked(
+		{
+			question: 'Enforce retention now?',
+			detail: 'Every audit entry past its retention window and not under a legal hold is deleted. This cannot be undone.',
+			label: 'Delete them',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const client = authedClient(event);
+			try {
+				const run = await enforceNow(client);
+				return {
+					enforced: true,
+					deleted: entriesDeleted(run),
+					policies: run.policies_processed ?? 0,
+					archiveFailed: archiveFailures(run),
+				};
+			} catch (err) {
+				return tagged('enforce', actionFailure(err, 'Could not enforce retention. Try again.'));
+			}
+		},
+	),
 };

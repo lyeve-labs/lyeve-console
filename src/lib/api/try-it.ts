@@ -85,7 +85,7 @@ export function refuse(req: TryRequest): TryRefusal | null {
 		}
 		if (!req.acknowledged) {
 			return {
-				reason: `${method} changes data on this instance. Tick the box to send it.`,
+				reason: `${method} changes data on this engine. Tick the box to send it.`,
 			};
 		}
 	}

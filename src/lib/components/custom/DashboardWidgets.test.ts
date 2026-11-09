@@ -43,9 +43,9 @@ describe('DashboardWidgets', () => {
 		expect(widget('Links')).toContain('No links for your role.');
 	});
 
-	it('says a widget this instance cannot serve is not served', () => {
+	it('says a widget this engine cannot serve is not served', () => {
 		draw([{ id: 'a', type: 'api_usage', heading: 'API', unavailable: true, api: null }]);
-		expect(widget('API')).toContain('This widget needs a plugin that is not running on this instance.');
+		expect(widget('API')).toContain('This widget needs a plugin that is not running on this engine.');
 		expect(widget('API')).not.toContain('Could not load');
 	});
 

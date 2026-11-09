@@ -134,6 +134,7 @@ function write(roles: string[], reply: () => Response | Promise<Response>) {
 		return reply();
 	}) as unknown as typeof globalThis.fetch;
 	const form = new FormData();
+	form.set('confirmed', 'yes');
 	form.set('id', 'k1');
 	const url = new URL('http://localhost/admin/api-keys');
 	return { calls, event: { fetch, cookies, url, request: new Request(url, { method: 'POST', body: form }) } as never };
@@ -156,7 +157,7 @@ describe('API keys revoke and delete', () => {
 		['delete', 'Could not delete the API key. Try again.'],
 	] as const)('names %s on a refusal and keeps outage detail off the page', async (name, fallback) => {
 		const { actions } = await import('./+page.server');
-		const refused = write(['super_admin'], () => json({ error: 'api key not found' }, 404));
+		const refused = write(['super_admin'], () => json({ error: 'api key not found', code: 'not_found' }, 404));
 		expect(await actions[name](refused.event)).toMatchObject({ status: 400, data: { action: name, error: 'api key not found' } });
 		const down = write(['super_admin'], () => json({ error: 'dial tcp 10.0.0.4:5432: connection refused' }, 503));
 		expect(await actions[name](down.event)).toMatchObject({ status: 400, data: { action: name, error: fallback } });

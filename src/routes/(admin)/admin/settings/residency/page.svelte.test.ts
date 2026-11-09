@@ -74,7 +74,7 @@ describe('the gate', () => {
 		const { container } = render(ResidencyPage, {
 			props: props({ gate: { state: 'locked', upgradeUrl: '' }, regions: [], report: null }),
 		});
-		expect(said(container)).toContain('Not enabled on this instance');
+		expect(said(container)).toContain('Not enabled on this engine');
 	});
 
 	it('explains the refusal to an admin who may not read it', () => {
@@ -141,7 +141,7 @@ describe('the report', () => {
 			},
 		});
 		const { container } = render(ResidencyPage, { props: props({ report: partial }) });
-		expect(said(container)).toContain('not a complete audit');
+		expect(said(container)).toContain('This report covers one page of tenants, not all of them.');
 	});
 
 	it('says nothing is placed rather than reporting compliance', () => {

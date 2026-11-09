@@ -14,11 +14,10 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 import type { ListEnvelope } from './list';
 
-export const REGIONS_URL = '/api/admin/regions';
-export const REPORT_URL = '/api/admin/residency/report';
+const REGIONS_URL = '/api/admin/regions';
+const REPORT_URL = '/api/admin/residency/report';
 
 export interface GeoCoord {
 	lat: number;
@@ -36,8 +35,6 @@ export interface Region {
 	created_at: string;
 	updated_at: string;
 }
-
-export const REPLICATION_STATUSES = ['syncing', 'synced', 'failed', 'paused'] as const;
 
 export interface TenantResidency {
 	tenant_id: string;
@@ -65,15 +62,6 @@ export interface ResidencyReport {
 	regions: Region[] | null;
 	tenant_regions: TenantResidency[] | null;
 	summary: ResidencySummary | null;
-}
-
-export type ResidencyGate = Gate;
-
-export const RESIDENCY_OK: ResidencyGate = GATE_OK;
-
-/** What a refused residency read means, read the way every plugin's is. */
-export function residencyGate(err: unknown): ResidencyGate {
-	return gateOf(err, 'Could not load the residency report.');
 }
 
 export async function listRegions(

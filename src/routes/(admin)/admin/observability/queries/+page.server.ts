@@ -14,6 +14,7 @@ import {
 } from '$lib/api/query-monitor';
 import { GATE_OK, gateOf, type Gate } from '$lib/api/gate';
 import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
+import { couldNotLoad } from '$lib/outage';
 
 /**
  * Why the capture log was not read. Beside every shared state, the plugin can
@@ -36,7 +37,7 @@ function captureGate(err: unknown): CaptureGate {
 		const said = (err.body as { error?: unknown } | undefined)?.error;
 		if (said === CAPTURE_STORE_REFUSAL) return { state: 'capture_store' };
 	}
-	return gateOf(err, 'Could not load the query log.');
+	return gateOf(err, couldNotLoad('the query log'));
 }
 
 /** The page size when a request names none. */

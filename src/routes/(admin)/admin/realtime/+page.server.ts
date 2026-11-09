@@ -2,17 +2,15 @@ import type { PageServerLoad } from './$types';
 import { authedClient } from '$lib/server/authz';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
-import { gateOf, type Gate } from '$lib/api/gate';
 import {
-	REALTIME_OK,
 	getPlatformMetrics,
 	getSocketMetrics,
 	getStreamMetrics,
-	realtimeGate,
-	type RealtimeGate,
 	type SocketMetrics,
 	type StreamMetrics,
 } from '$lib/api/realtime';
+import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 
 export const load: PageServerLoad = async (event) => {
 	const { user, plugins } = await event.parent();
@@ -24,7 +22,7 @@ export const load: PageServerLoad = async (event) => {
 			stream: null as StreamMetrics | null,
 			socket: null as SocketMetrics | null,
 			platform: null as StreamMetrics | null,
-			gate: { state: 'absent' } as RealtimeGate,
+			gate: { state: 'absent' } as Gate,
 			streamGate: null as Gate | null,
 			socketGate: null as Gate | null,
 			platformGate: null as Gate | null,
@@ -47,9 +45,9 @@ export const load: PageServerLoad = async (event) => {
 
 	// The gate describes the plugin, so it is only a refusal when neither
 	// transport answered. One transport failing is reported beside it.
-	let gate: RealtimeGate = REALTIME_OK;
+	let gate: Gate = GATE_OK;
 	if (!stream && !socket) {
-		gate = realtimeGate(streamRes.status === 'rejected' ? streamRes.reason : undefined);
+		gate = gateOf(streamRes.status === 'rejected' ? streamRes.reason : undefined, couldNotLoad('realtime metrics'));
 	}
 
 	// The per-tenant roster is the operator's view and the engine gates it on
@@ -60,13 +58,13 @@ export const load: PageServerLoad = async (event) => {
 		try {
 			platform = await getPlatformMetrics(client);
 		} catch (err) {
-			platformGate = gateOf(err, 'Could not load connections by tenant.');
+			platformGate = gateOf(err, couldNotLoad('connections by tenant'));
 		}
 	}
 
 	// Each transport that did not answer keeps the reason, so the page reports
 	// it beside the other rather than calling it a transport nobody uses.
-	const failed = (what: string) => `Could not load the ${what} counters.`;
+	const failed = (what: string) => couldNotLoad(`the ${what} counters`);
 	const streamGate =
 		gate.state === 'ok' && streamRes.status === 'rejected' ? gateOf(streamRes.reason, failed('server-sent events')) : null;
 	const socketGate =

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '@lyeve-labs/client';
-import { byType, inApplyOrder, piiGate, shortPattern, type AccessEntry, type RedactionRule } from './pii-mask';
+import { byType, inApplyOrder, shortPattern, type AccessEntry, type RedactionRule } from './pii-mask';
 
 function rule(name: string, priority: number): RedactionRule {
 	return { name, priority, pattern: '.*', replacement: '[redacted]' };
@@ -14,18 +13,6 @@ function look(type: string, id = type): AccessEntry {
 		accessed_at: '2026-09-22T10:00:00Z',
 	};
 }
-
-describe('piiGate', () => {
-	it('reads a 402 as not enabled and a 404 as the plugin absent', () => {
-		expect(piiGate(new ApiError(402, 'x')).state).toBe('locked');
-		expect(piiGate(new ApiError(404, 'x')).state).toBe('absent');
-	});
-
-	it('says a failed read is not a report that nothing is masked', () => {
-		const gate = piiGate(new Error('down'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load the masking settings.');
-	});
-});
 
 describe('inApplyOrder', () => {
 	// Lower priority runs first and decides which rule wins where two

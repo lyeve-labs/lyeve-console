@@ -9,14 +9,12 @@
  * only good while the file is still there. The list says when a job finished
  * rather than promising the file is still downloadable.
  */
-import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 import { formatCount } from '$lib/format';
 
 export const JOBS_URL = '/api/admin/data-export/jobs';
-export const SCHEDULES_URL = '/api/admin/data-export/schedules';
-export const START_URL = '/api/admin/data-export/start';
+const SCHEDULES_URL = '/api/admin/data-export/schedules';
+const START_URL = '/api/admin/data-export/start';
 
 /**
  * The most entries one export holds. The plugin applies it to a request that
@@ -37,7 +35,7 @@ export const FORMAT_LABELS: Readonly<Record<ExportFormat, { label: string; hint:
 	yaml: { label: 'YAML', hint: 'The JSON document written as YAML. Imports back.' },
 	csv: {
 		label: 'CSV',
-		hint: 'A column per field, one file per schema. Several schemas download as a zip. Imports back.',
+		hint: 'A column per field, one file per content type. Several content types download as a zip. Imports back.',
 	},
 	markdown: { label: 'Markdown', hint: 'Each entry as a heading and its body, for reading.' },
 	hugo: { label: 'Hugo', hint: 'Markdown with TOML front matter, for a static site.' },
@@ -128,15 +126,6 @@ interface SchedulePage {
 export interface Page<T> {
 	data: T[];
 	total_count: number;
-}
-
-export type ExportGate = Gate;
-
-export const EXPORT_OK: ExportGate = GATE_OK;
-
-/** What a refused export read means, read the way every plugin's is. */
-export function exportGate(err: unknown): ExportGate {
-	return gateOf(err, 'Could not load exports.');
 }
 
 export async function listJobs(
@@ -245,14 +234,6 @@ export async function startExport(client: HttpClient, body: StartExport): Promis
 
 export async function cancelJob(client: HttpClient, id: string): Promise<void> {
 	await client.post(`${JOBS_URL}/${encodeURIComponent(id)}/cancel`, {});
-}
-
-/** The tone a status wears, in the kit's own vocabulary. */
-export function jobTone(status: JobStatus): StatusTone {
-	if (status === 'completed') return 'success';
-	if (status === 'failed') return 'danger';
-	if (status === 'running') return 'warn';
-	return 'neutral';
 }
 
 /**

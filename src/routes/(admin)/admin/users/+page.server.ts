@@ -5,12 +5,16 @@ import { fail, error, redirect } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
-import { actionError } from '$lib/server/action-error';
+import { actionError, actionFailure, tagged } from '$lib/server/action-error';
+import { checked } from '$lib/checkbox';
 import { passwordTooLong, setUserPassword, type ListedUser } from '$lib/api/users';
 import { seatRefusal } from '$lib/api/admin-seats';
 import { refusalText } from '$lib/api/refusal';
 import { section, type Section } from '$lib/api/gate';
 import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
+import { couldNotLoad } from '$lib/outage';
+import { rolesInWords } from '$lib/roles';
+import { asked } from '$lib/server/asked';
 
 /** The engine's own page size when a request names none. */
 const DEFAULT_LIMIT = 25;
@@ -27,7 +31,7 @@ export const load: PageServerLoad = async (event) => {
 	const { url, parent } = event;
 	const { user, plugins } = await parent();
 	if (!user.roles.includes('super_admin')) {
-		error(403, 'Only a super admin can open this page.');
+		error(403, `Only ${rolesInWords(['super_admin'])} can open this page.`);
 	}
 
 	const client = authedClient(event);
@@ -45,7 +49,7 @@ export const load: PageServerLoad = async (event) => {
 	const [rows, tenants] = await Promise.all([
 		section(
 			client.get<ListedUser[]>(`/api/admin/users?limit=${limit + 1}&offset=${offset}`),
-			'Could not load the accounts.'
+			couldNotLoad('the accounts')
 		),
 		// An account belongs to one tenant. With several, the engine cannot
 		// tell which one a new account is for unless the form names it.
@@ -53,7 +57,7 @@ export const load: PageServerLoad = async (event) => {
 			? Promise.resolve<Section<Tenant[]>>({ ok: true, value: [] })
 			: section(
 					listTenants(client, 500, 0).then((r) => (Array.isArray(r?.items) ? r.items : [])),
-					'Could not load the tenants.'
+					couldNotLoad('the tenants')
 				),
 	]);
 	const page = rows.ok && Array.isArray(rows.value) ? rows.value : [];
@@ -93,11 +97,11 @@ export const actions: Actions = {
 		 * about, so each control carries its own message.
 		 */
 		const fields: Record<string, string> = {};
-		if (!email) fields.email = 'Email is required';
+		if (!email) fields.email = 'Enter an email address.';
 		// The engine judges the password, its minimum included, since an install
 		// may set that, and its refusal lands on this field below. Past the
 		// hasher's limit it fails without naming a rule, so that one is caught here.
-		if (!password) fields.password = 'Password is required';
+		if (!password) fields.password = 'Enter a password.';
 		else if (passwordTooLong(password)) fields.password = passwordTooLong(password) ?? '';
 		// The form offers the choice only where there is one to make, and then
 		// it is required: the engine refuses an account that names no tenant.
@@ -122,10 +126,10 @@ export const actions: Actions = {
 				return fail(422, {
 					action: 'create',
 					error: 'Check the highlighted field.',
-					fields: { password: actionError(err, 'The password does not meet the policy') },
+					fields: { password: actionError(err, 'This password does not meet the password policy.') },
 				});
 			}
-			return fail(400, { action: 'create', error: actionError(err, 'Could not create the user. Try again.') });
+			return tagged('create', actionFailure(err, 'Could not create the user. Try again.'));
 		}
 	},
 
@@ -148,23 +152,30 @@ export const actions: Actions = {
 		} catch (err) {
 			const full = seatRefusal(err);
 			if (full) return fail(402, { action: 'updateRoles', error: refusalText(full), refused: full });
-			return fail(400, { action: 'updateRoles', error: actionError(err, 'Could not save the roles. Try again.') });
+			return tagged('updateRoles', actionFailure(err, 'Could not save the roles. Try again.'));
 		}
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['super_admin']);
-		const { request } = event;
-		const client = authedClient(event);
-		const form = await request.formData();
-		const id = String(form.get('id') ?? '');
-		try {
-			await deleteUser(id, client);
-			return { ok: true };
-		} catch (err) {
-			return fail(400, { action: 'delete', error: actionError(err, 'Could not delete the user. Try again.') });
-		}
-	},
+	delete: asked(
+		{
+			question: 'Delete this user?',
+			detail: 'Their sessions end immediately and their audit trail is kept. This cannot be undone.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['super_admin']);
+			const { request } = event;
+			const client = authedClient(event);
+			const form = await request.formData();
+			const id = String(form.get('id') ?? '');
+			try {
+				await deleteUser(id, client);
+				return { ok: true };
+			} catch (err) {
+				return tagged('delete', actionFailure(err, 'Could not delete the user. Try again.'));
+			}
+		},
+	),
 
 	setPassword: async (event) => {
 		await requireRole(event, ['super_admin']);
@@ -175,7 +186,7 @@ export const actions: Actions = {
 		const password = String(form.get('new_password') ?? '');
 		// The field is named apart from the create form's so a refusal lands
 		// on the control that was submitted and never on the other drawer's.
-		const problem = password ? passwordTooLong(password) : 'Password is required';
+		const problem = password ? passwordTooLong(password) : 'Enter a password.';
 		if (problem) {
 			return fail(400, {
 				action: 'setPassword',
@@ -184,7 +195,7 @@ export const actions: Actions = {
 			});
 		}
 		// A checkbox posts nothing when it is cleared, so absent means keep.
-		const removePasskeys = form.has('remove_passkeys');
+		const removePasskeys = checked(form, 'remove_passkeys');
 		try {
 			const saved = await setUserPassword(id, password, client, removePasskeys);
 			return { ok: true, passkeysRemoved: saved?.passkeys_removed ?? 0 };
@@ -200,10 +211,10 @@ export const actions: Actions = {
 				return fail(422, {
 					action: 'setPassword',
 					error: 'Check the highlighted field.',
-					fields: { new_password: actionError(err, 'The password does not meet the policy') },
+					fields: { new_password: actionError(err, 'This password does not meet the password policy.') },
 				});
 			}
-			return fail(400, { action: 'setPassword', error: actionError(err, 'Could not set the password. Try again.') });
+			return tagged('setPassword', actionFailure(err, 'Could not set the password. Try again.'));
 		}
 	},
 };

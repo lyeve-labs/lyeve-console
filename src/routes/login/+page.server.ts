@@ -12,8 +12,9 @@ import { LANDING } from '$lib/landing';
 import { challengeFrom } from '$lib/captcha';
 import { organizationFromUrl } from '$lib/organization';
 import { askedOrganization, asksOrganization } from '$lib/server/sign-in-organization';
+import { outageFor } from '$lib/outage';
 
-const SIGN_IN_UNAVAILABLE = 'Sign-in is unavailable right now. Try again in a moment.';
+const SIGN_IN_UNAVAILABLE = outageFor('you cannot sign in yet');
 
 /**
  * The page a sign-in returns to: the `next` query when it is an admin page,
@@ -141,7 +142,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const challengeToken = form.get('challenge_token') as string | null;
 
-		// Step 2: MFA verification
+		// A challenge token means the password was already accepted, so only the code is checked.
 		if (challengeToken) {
 			const code = form.get('code') as string;
 			if (!code) return { error: 'Enter the verification code.', mfa_required: true, challenge_token: challengeToken };
@@ -157,7 +158,6 @@ export const actions: Actions = {
 			redirect(302, returnTo(event.url));
 		}
 
-		// Step 1: Password login
 		const email = form.get('email') as string;
 		const password = form.get('password') as string;
 

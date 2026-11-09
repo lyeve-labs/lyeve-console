@@ -19,6 +19,8 @@
 	import AddToRelease from '$lib/components/content/AddToRelease.svelte';
 	import { formRefusal } from '$lib/api/refusal';
 	import { ICON } from '$lib/icon';
+	import { tracked } from '$lib/forms.svelte';
+	import { couldNotLoad } from '$lib/outage';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -44,7 +46,7 @@
 	});
 	let validationErrors = $state<Record<string, string>>({});
 	let errorKeys = $state<Record<string, string>>({});
-	let submitting = $state(false);
+	const save = tracked(() => {});
 
 	let serialized = $derived(serialize(userFields, formValues));
 	let m2mRelations = $derived(
@@ -213,7 +215,7 @@
 					</Button>
 				{/if}
 				{#if data.revisionsFailed}
-					<span class="text-xs text-muted">Could not load the revision history. Reload the page to try again.</span>
+					<span class="text-xs text-muted">{couldNotLoad('the revision history', { reload: true })}</span>
 				{/if}
 				{#if historyOff}
 					<span class="text-xs text-muted" data-testid="history-off">
@@ -261,13 +263,7 @@
 			<form
 				method="POST"
 				action="?/save"
-				use:enhance={() => {
-					submitting = true;
-					return async ({ update }) => {
-						submitting = false;
-						await update();
-					};
-				}}
+				use:enhance={save.enhance}
 				onsubmit={handleSubmit}
 				class="flex flex-col gap-5"
 			>
@@ -289,7 +285,7 @@
 				</Card>
 
 				<div class="flex justify-end">
-					<Button type="submit" loading={submitting}>Save</Button>
+					<Button type="submit" loading={save.pending}>Save</Button>
 				</div>
 			</form>
 

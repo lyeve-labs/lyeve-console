@@ -7,47 +7,31 @@
 		EmptyState,
 		Input,
 		PageShell,
-		Pagination,
-		SearchInput,
 		SectionHeading,
 		Stat,
 		Table,
 		Textarea,
 		Toggle,
-		confirm,
 	} from '@lyeve-labs/ui-kit';
+	import RefreshButton from '$lib/components/RefreshButton.svelte';
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
-	import { Copy, Eye, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2 } from '@lucide/svelte';
+	import { Copy, Pencil, Plus, Search, ShieldCheck, Trash2 } from '@lucide/svelte';
 	import { duplicateRow } from '$lib/duplicate';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
+	import PiiTabs from '$lib/components/PiiTabs.svelte';
 	import {
-		byType,
 		inApplyOrder,
 		overriddenPresets,
 		shortPattern,
 		type CustomRule,
 	} from '$lib/api/pii-mask';
-	import { NO_VALUE, formatDateTime } from '$lib/format';
+	import { plural } from '$lib/format';
+	import { confirmed } from '$lib/forms.svelte';
 	import type { ActionData, PageData } from './$types';
 	import { ICON } from '$lib/icon';
-	import { pageHref, pageNumber } from '$lib/api/list';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
-
-	let refreshing = $state(false);
-	async function refresh() {
-		refreshing = true;
-		try {
-			await invalidateAll();
-		} finally {
-			refreshing = false;
-		}
-	}
-
-	let narrow = $state('');
 
 	const rules = $derived(inApplyOrder(data.rules?.presets ?? []));
 	const custom = $derived(data.rules?.custom ?? []);
@@ -140,40 +124,20 @@
 		open = true;
 	}
 
-	let deleteForm = $state<HTMLFormElement>();
-	let deleteId = $state('');
-
-	async function askDelete(rule: CustomRule) {
-		deleteId = rule.id;
-		const ok = await confirm(
-			`Delete rule ${rule.name}?`,
-			'Values it masks appear unmasked from the next request.',
-			{ confirmLabel: 'Delete' },
-		).catch(() => false);
-		if (ok) deleteForm?.requestSubmit();
-	}
-	const looks = $derived(byType(data.entries));
-	const visible = $derived(
-		narrow.trim()
-			? data.entries.filter((e) =>
-					`${e.pii_type} ${e.record_type ?? ''} ${e.viewer_role ?? ''}`
-						.toLowerCase()
-						.includes(narrow.trim().toLowerCase()),
-				)
-			: data.entries,
-	);
+	const deleteRule = (rule: CustomRule) =>
+		confirmed(`Delete rule ${rule.name}?`, 'Values it masks appear unmasked from the next request.', {
+			confirmLabel: 'Delete',
+		});
 </script>
 
 <PageShell
 	title="PII masking"
-	description="Choose what is masked in responses and logs, and see who read data unmasked."
+	description="Choose what is masked in responses and logs."
 	width="wide"
 	back={{ href: '/admin/settings', label: 'Settings' }}
 >
 	{#snippet actions()}
-		<Button variant="secondary" size="sm" onclick={refresh} loading={refreshing}>
-			<RefreshCw size={ICON.sm} /> Refresh
-		</Button>
+		<RefreshButton />
 		<!-- Optional, because a page can be rendered before its load has run and
 		     a header that dereferences the gate takes the whole page down. -->
 		{#if data.gate?.state === 'ok'}
@@ -182,6 +146,8 @@
 			</Button>
 		{/if}
 	{/snippet}
+
+	<PiiTabs active="rules" />
 
 	{#if data.gate.state !== 'ok'}
 		<GateNotice
@@ -201,7 +167,7 @@
 			<Alert tone="success" autoDismiss>Rule deleted.</Alert>
 		{/if}
 
-		<div class="grid gap-4 sm:grid-cols-4">
+		<div class="grid gap-4 sm:grid-cols-3">
 			<!-- What is running, which is the presets this tenant has not
 			     replaced plus its own enabled rules. The presets alone are not
 			     what masks a value. -->
@@ -213,8 +179,6 @@
 			/>
 			<Stat size="sm" mono label="Your own rules" value={`${enabledCount} of ${maxEnabled}`} />
 			<Stat size="sm" mono label="Mask styles" value={tags.length} />
-			<!-- An unread log has no count, so the tile says so rather than 0. -->
-			<Stat size="sm" mono label="Unmasked reads" value={data.logFailed ? NO_VALUE : data.total} />
 		</div>
 
 		<section class="flex flex-col gap-4">
@@ -270,9 +234,12 @@
 									<Button variant="ghost" size="sm" aria-label={`Duplicate ${rule.name}`} onclick={() => duplicate(rule)}>
 										<Copy size={ICON.sm} />
 									</Button>
-									<Button variant="ghost" size="sm" aria-label={`Delete ${rule.name}`} onclick={() => askDelete(rule)}>
-										<Trash2 size={ICON.sm} class="text-danger" />
-									</Button>
+									<form method="POST" action="?/delete" use:enhance={deleteRule(rule)} class="inline-block">
+										<input type="hidden" name="id" value={rule.id} />
+										<Button variant="ghost" size="sm" type="submit" aria-label={`Delete ${rule.name}`}>
+											<Trash2 size={ICON.sm} class="text-danger" />
+										</Button>
+									</form>
 								</td>
 							</tr>
 						{/each}
@@ -280,12 +247,6 @@
 				</Table>
 			{/if}
 		</section>
-
-		<!-- One hidden form for the delete, submitted by the confirmation
-		     rather than by a button of its own. -->
-		<form method="POST" action="?/delete" use:enhance bind:this={deleteForm} class="hidden">
-			<input type="hidden" name="id" value={deleteId} />
-		</form>
 
 		<section class="flex flex-col gap-4">
 			<SectionHeading level={2}>Presets, in the order they run</SectionHeading>
@@ -296,7 +257,7 @@
 			{#if rules.length === 0}
 				<EmptyState
 					title="No rules loaded"
-					description="Nothing is being masked."
+					description="No rule is loaded, so responses are not masked. Reload the page to try again."
 				>
 					{#snippet iconSnippet()}
 						<ShieldCheck size={ICON.lg} />
@@ -344,89 +305,6 @@
 						<span class="text-xs text-faint">{meaning}</span>
 					{/each}
 				</div>
-			{/if}
-		</section>
-
-		<section class="flex flex-col gap-4">
-			<SectionHeading level={2}>Unmasked reads</SectionHeading>
-
-			{#if data.logFailed}
-				<Alert tone="warn">
-					Could not load the unmasked reads. Masking is still running.
-				</Alert>
-			{:else if data.entries.length === 0}
-				<EmptyState
-					title="No unmasked reads yet"
-					description="A read appears here when someone allowed to see a field views it unmasked."
-				>
-					{#snippet iconSnippet()}
-						<Eye size={ICON.lg} />
-					{/snippet}
-				</EmptyState>
-			{:else}
-				{#if looks.length > 0}
-					<div class="flex flex-wrap items-center gap-2">
-						<span class="text-xs text-muted">Most read on this page</span>
-						{#each looks.slice(0, 6) as look (look.type)}
-							<Badge tone="neutral">{look.type} {look.looks}</Badge>
-						{/each}
-					</div>
-				{/if}
-
-				<ListToolbar label="Filter unmasked reads">
-					{#snippet search()}
-						<label for="pii-narrow" class="sr-only">Search this page</label>
-						<SearchInput
-							id="pii-narrow"
-							bind:value={narrow}
-							placeholder="Kind, record or role on this page"
-						/>
-					{/snippet}
-				</ListToolbar>
-
-				{#if visible.length === 0}
-					<EmptyState
-						title="No unmasked reads match this search"
-						description="The search covers this page only. Clear it to see every read on this page."
-					>
-						{#snippet iconSnippet()}
-							<Search size={ICON.lg} />
-						{/snippet}
-					</EmptyState>
-				{:else}
-					<Table label="Unmasked reads">
-						<thead>
-							<tr>
-								<th scope="col">Read</th>
-								<th scope="col">Kind</th>
-								<th scope="col">Record</th>
-								<th scope="col">Role</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each visible as entry (entry.id)}
-								<tr>
-									<td data-cell="nowrap" class="text-xs text-faint"
-										>{formatDateTime(entry.accessed_at)}</td
-									>
-									<td data-cell="nowrap">{entry.pii_type}</td>
-									<td data-cell="nowrap" class="font-mono text-xs"
-										>{entry.record_type ?? NO_VALUE}</td
-									>
-									<td data-cell="nowrap" class="text-xs">{entry.viewer_role ?? NO_VALUE}</td>
-								</tr>
-							{/each}
-						</tbody>
-					</Table>
-				{/if}
-				<Pagination
-					page={pageNumber(data.offset, data.limit)}
-					perPage={data.limit}
-					count={data.entries.length}
-					total={data.total}
-					noun="reads"
-					href={pageHref('/admin/settings/pii', data.limit)}
-				/>
 			{/if}
 		</section>
 	{/if}
@@ -549,7 +427,7 @@
 			{:else}
 				<Alert tone="success">
 					{result.count}
-					{result.count === 1 ? 'match' : 'matches'}.
+					{plural(result.count, 'match', 'matches')}.
 				</Alert>
 				<div class="flex flex-col gap-1">
 					<span class="text-xs text-muted">What a reader would get</span>

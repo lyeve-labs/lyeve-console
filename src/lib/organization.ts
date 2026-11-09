@@ -18,7 +18,7 @@ const SHAPE = /^[a-z][a-z0-9_]{0,62}$/;
 
 /** What the field says under itself on every signed-out form. */
 export const ORGANIZATION_HINT =
-	"Leave this empty unless your organization's identity provider created your account. Then enter the short name your admin gave you.";
+	"Leave this empty unless your organization's identity provider created your account. Then enter the short name your administrator gave you.";
 
 /** What the field says under itself when the link the reader followed filled it in. */
 export const ORGANIZATION_FROM_LINK_HINT =
@@ -26,7 +26,7 @@ export const ORGANIZATION_FROM_LINK_HINT =
 
 /** The refusal for a name the engine would not read. It says nothing about whether one exists. */
 export const ORGANIZATION_SHAPE =
-	'Enter the short name your admin gave you: lower-case letters, digits and underscores, starting with a letter.';
+	'Enter the short name your administrator gave you: lower-case letters, digits and underscores, starting with a letter.';
 
 export type Organization = { ok: true; value: string } | { ok: false; error: string };
 

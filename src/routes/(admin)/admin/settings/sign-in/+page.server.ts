@@ -2,21 +2,21 @@ import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
 import { actionFailure } from '$lib/server/action-error';
-import { GATE_OK, type Gate } from '$lib/api/gate';
 import {
 	PROVIDER_WINDOW_MAX_DAYS,
 	parseWindowDays,
-	providerWindowGate,
 	readProviderWindow,
 	saveProviderWindow,
 	type ProviderWindow,
 } from '$lib/api/provider-window';
+import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 
 export const load: PageServerLoad = async (event) => {
 	try {
 		return { gate: GATE_OK as Gate, window: await readProviderWindow(authedClient(event)) };
 	} catch (err) {
-		return { gate: providerWindowGate(err), window: null as ProviderWindow | null };
+		return { gate: gateOf(err, couldNotLoad('the sign-in window')), window: null as ProviderWindow | null };
 	}
 };
 

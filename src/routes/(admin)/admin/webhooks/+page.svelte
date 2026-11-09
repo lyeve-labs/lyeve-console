@@ -21,15 +21,14 @@
 		Table,
 		Textarea,
 		Toggle,
-		confirm as confirmDialog,
 		type ChoiceOption
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { Webhook } from '@lyeve-labs/client';
-	import { tick, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { fieldErrors, submitter } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, fieldErrors, submitter } from '$lib/forms.svelte';
 	import {
 		Plus,
 		Copy,
@@ -49,32 +48,24 @@
 	import { narrows } from '$lib/narrow';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
-	import { eventTone } from './event-tone';
-	import { DeliveryHistory } from './delivery-history.svelte';
+	import { eventTone } from '$lib/tones';
+	import { page } from '$app/state';
 	import DeliveriesDrawer from './DeliveriesDrawer.svelte';
 	import DeadLetterDrawer from './DeadLetterDrawer.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	/*
-	 * Each failure names the action that caused it. The drawer shows only its
-	 * own writes' failures, and only one that came back after it was opened, so
-	 * a failed delete never reads as a failure of the form opened next. The
-	 * rest show above the list.
-	 */
 	type Failure = { action?: string; error?: string } | null;
-	const DRAWER_ACTIONS = ['create', 'update'];
+	const failure = drawerFailure(() => form as Failure, ['create', 'update']);
 	// The history and the queue draw their own writes' failures inside them,
 	// where the reader clicked, rather than behind the open panel.
-	const OTHER_DRAWERS = ['retry-delivery', 'dead-letters-page', 'dead-letter-replay', 'dead-letter-dismiss', 'dead-letter-delete'];
-	const inDrawer = $derived(DRAWER_ACTIONS.includes((form as Failure)?.action ?? ''));
-	let openedOver = $state.raw<unknown>(null);
-	const drawerForm = $derived(inDrawer && form !== openedOver ? form : null);
+	const OTHER_DRAWERS = ['retry-delivery', 'dead-letter-replay', 'dead-letter-dismiss', 'dead-letter-delete'];
+	const drawerForm = $derived(failure.drawer);
 	// A rotation that succeeds settles the result shown before it. The secret
 	// never reaches the form, so the earlier result is set aside instead.
 	let settled = $state.raw<unknown>(null);
 	const pageForm = $derived(
-		inDrawer || OTHER_DRAWERS.includes((form as Failure)?.action ?? '') || (form !== null && form === settled) ? null : form,
+		OTHER_DRAWERS.includes(failure.page?.action ?? '') || (form !== null && form === settled) ? null : failure.page,
 	);
 
 	/*
@@ -149,7 +140,7 @@
 	const formErrors = $derived(fieldErrors(drawerForm));
 
 	function openCreate() {
-		openedOver = form;
+		failure.opened();
 		editing = null;
 		name = '';
 		url = '';
@@ -162,7 +153,7 @@
 	}
 
 	function openEdit(wh: Webhook) {
-		openedOver = form;
+		failure.opened();
 		editing = wh;
 		name = wh.name;
 		url = wh.url;
@@ -186,7 +177,7 @@
 		const draft = duplicateRow(wh as unknown as Record<string, unknown>, {
 			taken: rows.map((w) => w.name),
 		});
-		openedOver = form;
+		failure.opened();
 		editing = null;
 		name = String(draft.name ?? wh.name);
 		url = wh.url;
@@ -196,22 +187,6 @@
 		schemas = [...wh.schemas];
 		readOptions(wh as WebhookRecord);
 		open = true;
-	}
-
-	// Delete goes through the kit's confirm dialog, then a hidden form, so the
-	// row's button never posts on its own and the action stays a form action.
-	let deleteId = $state('');
-	let deleteForm = $state<HTMLFormElement>();
-
-	async function askDelete(wh: Webhook) {
-		const ok = await confirmDialog(`Delete webhook ${wh.name}?`, 'This cannot be undone.', {
-			confirmLabel: 'Delete',
-		});
-		if (!ok) return;
-		deleteId = wh.id;
-		// The hidden form posts what it holds once the value has reached the DOM.
-		await tick();
-		deleteForm?.requestSubmit();
 	}
 
 	// The endpoint takes no search, so the box narrows the page on screen and
@@ -249,8 +224,14 @@
 		}
 	});
 
-	// The history drawer reads what the row's submit names, so the two share it.
-	const history = new DeliveryHistory();
+	// A row's history and the queue open from the address, so a link or a
+	// reload opens them too, and the list keeps its page under them.
+	function drawerHref(param: string, value: string): string {
+		const next = new URL(page.url);
+		next.searchParams.set(param, value);
+		return `${next.pathname}${next.search}`;
+	}
+	const historyName = $derived(rows.find((wh) => wh.id === data.deliveries?.id)?.name ?? data.deliveries?.id ?? '');
 
 	/*
 	 * The plugin shows a rotated secret once and never again, and the old one
@@ -288,12 +269,10 @@
 		<!-- The queue is the same plugin's read: a list that could not be
 		     read offers no queue either. -->
 		{#if data.webhooks.ok}
-			<form method="POST" action="?/dead-letters" use:enhance>
-				<Button variant="secondary" size="sm" type="submit" title="View dead letter queue">
-					<Skull size={ICON.sm} />
-					Dead letters
-				</Button>
-			</form>
+			<Button variant="secondary" size="sm" href={drawerHref('dead', '1')} title="View dead letter queue">
+				<Skull size={ICON.sm} />
+				Dead letters
+			</Button>
 		{/if}
 		<!-- A list that could not be read offers no write against it. -->
 		{#if data.webhooks.ok && isSuperAdmin}
@@ -337,7 +316,7 @@
 		<ListToolbar label="Filter webhooks">
 			{#snippet search()}
 				<label for="webhook-search" class="sr-only">Search this page</label>
-				<SearchInput id="webhook-search" bind:value={query} placeholder="Name, URL, event or schema on this page" />
+				<SearchInput id="webhook-search" bind:value={query} placeholder="Name, URL, event or content type on this page" />
 			{/snippet}
 			{#snippet filters()}
 				<SegmentedControl label="Status" labelHidden bind:value={status} options={STATUSES} />
@@ -345,7 +324,7 @@
 		</ListToolbar>
 
 		{#if visible.length === 0}
-			<EmptyState level={2} title="No webhooks on this page match" description="The search and status filter apply only to this page. Clear them or go to the next page." />
+			<EmptyState level={2} title="No webhooks on this page match" description="Clear the search and the status filter, or go to another page." />
 		{:else}
 		<Table label="Webhooks">
 			<thead>
@@ -353,7 +332,7 @@
 					<th scope="col">Name</th>
 					<th scope="col">URL</th>
 					<th scope="col">Events</th>
-					<th scope="col">Schemas</th>
+					<th scope="col">Content types</th>
 					<th scope="col">Status</th>
 					<th scope="col">Actions</th>
 				</tr>
@@ -404,18 +383,15 @@
 										<FlaskConical size={ICON.sm} />
 									</Button>
 								</form>
-								<form method="POST" action="?/deliveries" use:enhance={history.load(wh)}>
-									<input type="hidden" name="id" value={wh.id} />
-									<Button
-										variant="ghost"
-										size="sm"
-										type="submit"
-										title="Delivery history"
-										aria-label="Delivery history for {wh.name}"
-									>
-										<History size={ICON.sm} />
-									</Button>
-								</form>
+								<Button
+									variant="ghost"
+									size="sm"
+									href={drawerHref('deliveries', wh.id)}
+									title="Delivery history"
+									aria-label="Delivery history for {wh.name}"
+								>
+									<History size={ICON.sm} />
+								</Button>
 								{#if isSuperAdmin}
 									<form method="POST" action="?/rotate-secret" use:enhance={takeSecret}>
 										<input type="hidden" name="id" value={wh.id} />
@@ -448,15 +424,16 @@
 									<Copy size={ICON.sm} />
 								</Button>
 								<!-- Asks first, so one click never destroys a webhook. -->
-								<Button
-									variant="ghost"
-									size="sm"
-									onclick={() => askDelete(wh)}
-									title="Delete"
-									aria-label="Delete {wh.name}"
+								<form
+									method="POST"
+									action="?/delete"
+									use:enhance={confirmed(`Delete webhook ${wh.name}?`, 'This cannot be undone.', { confirmLabel: 'Delete' })}
 								>
-									<Trash2 size={ICON.sm} class="text-danger" />
-								</Button>
+									<input type="hidden" name="id" value={wh.id} />
+									<Button variant="ghost" size="sm" type="submit" title="Delete" aria-label="Delete {wh.name}">
+										<Trash2 size={ICON.sm} class="text-danger" />
+									</Button>
+								</form>
 								{/if}
 							</div>
 
@@ -512,7 +489,7 @@
 			id="webhook-secret"
 			name="secret"
 			label="Signing secret"
-			hint={editing ? 'Leave blank to keep the current secret.' : 'Optional. Signs each payload with HMAC-SHA256.'}
+			hint={editing ? 'Leave empty to keep the current secret.' : 'Optional. Signs each payload with HMAC-SHA256.'}
 			bind:value={secret}
 		/>
 		<CheckboxGroup name="events" label="Events" orientation="horizontal" options={EVENT_OPTIONS} bind:value={events} />
@@ -521,13 +498,13 @@
 		     boxes do. -->
 		<MultiSelect
 			id="webhook-schemas"
-			label="Schemas"
-			placeholder="Every schema"
+			label="Content types"
+			placeholder="Every content type"
 			hint={data.schemas.ok
-				? 'Leave empty to fire on every schema.'
+				? 'Leave empty to fire on every content type.'
 				: editing
-					? 'Could not load schemas. Only the ones this webhook already uses are listed.'
-					: 'Could not load schemas. If you save it like this, the webhook fires for every schema.'}
+					? 'Could not load content types. Only the ones this webhook already uses are listed.'
+					: 'Could not load content types. If you save it like this, the webhook fires for every content type.'}
 			searchable
 			options={schemaOptions}
 			bind:value={schemas}
@@ -544,7 +521,7 @@
 
 		<fieldset class="flex flex-col gap-4 border-t border-line pt-4">
 			<legend class="text-sm font-medium text-fg">Delivery options</legend>
-			<p class="text-xs text-muted">Leave a field empty to use the default. An option that is not enabled on this instance cannot be saved.</p>
+			<p class="text-xs text-muted">Leave a field empty to use the default. An option that is not enabled on this engine cannot be saved.</p>
 			<Textarea
 				id="webhook-template"
 				name="payload_template"
@@ -578,15 +555,11 @@
 	{/snippet}
 </Drawer>
 
-<form method="POST" action="?/delete" use:enhance bind:this={deleteForm} class="hidden">
-	<input type="hidden" name="id" value={deleteId} />
-</form>
-
 <!-- A row's history is a read on that row, so it opens over the list the way
      its edit does, and the queue does the same. -->
-<DeliveriesDrawer {form} {history} {held} />
+<DeliveriesDrawer {form} deliveries={data.deliveries} name={historyName} {held} />
 
-<DeadLetterDrawer {form} {held} />
+<DeadLetterDrawer {form} deadLetters={data.deadLetters} {held} />
 
 {#if reveal}
 	<Modal open title="New signing secret for {reveal.name}" onclose={() => (reveal = null)}>

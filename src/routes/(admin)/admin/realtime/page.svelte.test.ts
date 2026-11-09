@@ -49,7 +49,7 @@ const props = (over: Record<string, unknown> = {}) => ({
 describe('Realtime gate', () => {
 	it('shows the not-enabled state when the engine refuses the routes', () => {
 		const { container } = render(RealtimePage, { props: props({ gate: { state: 'locked', upgradeUrl: '' } }) });
-		expect(said(container)).toContain('Not enabled on this instance');
+		expect(said(container)).toContain('Not enabled on this engine');
 		expect(said(container)).not.toContain('Server-sent events');
 	});
 
@@ -162,10 +162,10 @@ describe('Realtime tenant roster', () => {
 describe('whose counters these are', () => {
 	// The plugin counts connections per tenant and every activity counter
 	// across the whole instance.
-	it('labels the activity counters as the whole instance', () => {
+	it('labels the activity counters as the whole engine', () => {
 		const { container } = render(RealtimePage, { props: props() });
 		const text = said(container);
-		for (const label of ['Events pushed, whole instance', 'Rejected, whole instance', 'Broadcasts, whole instance', 'Reconnections, whole instance']) {
+		for (const label of ['Events pushed, whole engine', 'Rejected, whole engine', 'Broadcasts, whole engine', 'Reconnections, whole engine']) {
 			expect(text, label).toContain(label);
 		}
 	});
@@ -180,7 +180,7 @@ describe('whose counters these are', () => {
 		expect(said(container)).toContain('active 3');
 	});
 
-	it("reads a tenant that never connected as unused, whatever the instance pushed", () => {
+	it("reads a tenant that never connected as unused, whatever the engine pushed", () => {
 		const { container } = render(RealtimePage, {
 			props: props({ stream: stream({ total_connections: 0, active_connections: 0, events_dispatched: 900 }) }),
 		});

@@ -61,7 +61,7 @@ describe('the outcome of a decision', () => {
 	it.each([
 		['approved', 'Device signed in'],
 		['denied', 'Sign-in denied'],
-		['forbidden', 'Only an admin can approve a device'],
+		['forbidden', 'You cannot approve this sign-in'],
 	])('shows %s in place of the request, with no code field', (outcome, title) => {
 		render(DevicePage, { props: props({ view: 'pending', code: 'WDJB-MJHT', request }, { outcome }) });
 		expect(screen.getByText(title)).toBeTruthy();

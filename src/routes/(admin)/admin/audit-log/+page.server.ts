@@ -8,6 +8,8 @@ import { pageNumber, pageOffset, pastEndOffset, statedTotal, withOffset, type Li
 import { section, type Section } from '$lib/api/gate';
 import { AUDIT_EXPORT_CEILING, UUID, endpointQuery, readFilter } from '$lib/server/audit-filter';
 import { formatCount } from '$lib/format';
+import { rolesInWords } from '$lib/roles';
+import { couldNotLoad } from '$lib/outage';
 
 export interface AuditEntry {
 	id: string;
@@ -21,11 +23,12 @@ export interface AuditEntry {
 }
 
 const PAGE_SIZE = 50;
+const READERS = ['admin', 'super_admin'];
 
 export const load: PageServerLoad = async (event) => {
 	const { url } = event;
 	const user = await loadUser(event);
-	if (!user.roles.some((r) => ['super_admin', 'admin'].includes(r))) error(403, 'Only an admin or a super admin can open this page.');
+	if (!user.roles.some((r) => READERS.includes(r))) error(403, `Only ${rolesInWords(READERS)} can open this page.`);
 	const client = authedClient(event);
 	const limit = PAGE_SIZE;
 	// The offset comes from the address, so it is clamped and snapped to a page
@@ -58,7 +61,7 @@ export const load: PageServerLoad = async (event) => {
 
 	const log = await section(
 		readLog(),
-		'Could not load the audit log.'
+		couldNotLoad('the audit log')
 	);
 	const isSuperAdmin = user.roles.includes('super_admin');
 	// The plugin stops an export that names no limit at its ceiling, and it

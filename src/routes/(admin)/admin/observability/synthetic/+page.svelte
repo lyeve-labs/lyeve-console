@@ -46,7 +46,7 @@
 		type Probe,
 		type ProbeType,
 	} from '$lib/api/synthetic';
-	import { formatDateTime } from '$lib/format';
+	import { formatDateTime, plural } from '$lib/format';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
@@ -238,7 +238,7 @@
 
 <PageShell
 	title="Synthetic monitoring"
-	description="Run scheduled checks against this instance and see their results."
+	description="Run scheduled checks against this engine and see their results."
 	width="wide"
 	back={{ href: '/admin/observability', label: 'Observability' }}
 >
@@ -320,7 +320,7 @@
 			{#if data.probes.length === 0}
 				<EmptyState
 					title="No probes yet"
-					description="Create a probe to check this instance on a schedule."
+					description="Create a probe to check this engine on a schedule."
 				>
 					{#snippet iconSnippet()}
 						<Radar size={ICON.lg} />
@@ -478,7 +478,7 @@
 		<div class="flex flex-col gap-4">
 			{#if droppedHeaders.length > 0}
 				<Alert tone="warn">
-					Saving removes the {droppedHeaders.length === 1 ? 'header' : 'headers'} {droppedHeaders.join(', ')}. Their values
+					Saving removes the {plural(droppedHeaders.length, 'header')} {droppedHeaders.join(', ')}. Their values
 					are never shown, so this form cannot keep them. Set them again through the API after saving.
 				</Alert>
 			{/if}
@@ -595,7 +595,7 @@
 				id="probe-threshold"
 				name="alert_threshold"
 				label="Failures before an alert"
-				hint="Failures in a row. A single failure is usually a network problem, not the instance."
+				hint="Failures in a row before an alert is raised."
 				bind:value={alertThreshold}
 			/>
 
@@ -621,7 +621,9 @@
 			{#if target.gate.state === 'locked' || target.gate.state === 'absent'}
 				<NotEnabled
 					title="Notice channels"
-					description="Notice channels are not enabled on this instance."
+					description={target.gate.state === 'locked'
+						? 'Notice channels are not enabled on this engine.'
+						: 'Notice channels are not included in this build.'}
 					url={target.gate.state === 'locked' ? target.gate.upgradeUrl : null}
 				/>
 			{:else}
@@ -639,7 +641,7 @@
 				<input type="hidden" name="id" value={target.probe.id} />
 				<p class="text-sm text-muted">
 					When this probe raises an alert, each channel is notified that it is down, and again when the next
-					run passes. Email alerts work on every install.
+					run passes. Email alerts are always available.
 				</p>
 				<AlertChannelFields
 					prefix="channel_"

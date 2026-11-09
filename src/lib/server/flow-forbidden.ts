@@ -9,5 +9,5 @@ import { actionError } from './action-error';
  * notice as a role refusal rather than a failed request.
  */
 export function forbiddenFailure(err: ApiError) {
-	return fail(403, { error: actionError(err, 'Your role may not do that.'), forbidden: true });
+	return fail(403, { error: actionError(err, 'Your role does not allow this. Ask a super admin to grant it.'), forbidden: true });
 }

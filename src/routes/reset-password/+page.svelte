@@ -24,7 +24,7 @@
 <AuthShell title={done ? 'Password changed' : 'Choose a new password'}>
 	{#if done}
 		<div class="space-y-5">
-			<Alert tone="success" announce>Your password has been changed.{removed ? ` ${removed}` : ''} Sign in with the new one.</Alert>
+			<Alert tone="success" announce>Password changed.{removed ? ` ${removed}` : ''} Sign in with the new one.</Alert>
 			<Button href={withOrganization('/login', data.carried)} variant="primary" full>Sign in</Button>
 		</div>
 	{:else if !data.token || expired}

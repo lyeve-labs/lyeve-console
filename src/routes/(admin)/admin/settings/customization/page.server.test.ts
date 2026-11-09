@@ -5,8 +5,6 @@ import { listMediaChoices } from '$lib/api/media';
 const api = vi.hoisted(() => ({
 	getCustomization: vi.fn(),
 	saveCustomization: vi.fn(),
-	saveCustomPage: vi.fn(),
-	deleteCustomPage: vi.fn(),
 }));
 
 const client = vi.hoisted(() => ({ delete: vi.fn(async () => undefined) }));
@@ -22,16 +20,12 @@ vi.mock('$lib/api/media', async (orig) => ({
 	listMediaChoices: vi.fn(async () => []),
 	importMedia: media.importMedia,
 }));
-vi.mock('$lib/api/custom-dashboard', () => ({
-	getDashboardLayout: vi.fn(async () => ({ entitled: true, custom: false, widgets: [], updated_at: null })),
-}));
 vi.mock('$lib/api/customization', async (orig) => ({
 	...(await orig<typeof import('$lib/api/customization')>()),
 	...api,
 }));
 
 import { actions, load } from './+page.server';
-import { requireRole } from '$lib/server/authz';
 
 const settings = () => ({
 	brand: { name: 'Old', logo_url: '', accent: '', welcome: '' },
@@ -58,18 +52,22 @@ beforeEach(() => {
 	api.saveCustomization.mockImplementation(async (_c: unknown, s: unknown) => s);
 });
 
-describe('customization settings', () => {
+describe('the brand tab', () => {
 	it('asks nothing while the multitenant plugin does not run', async () => {
 		const data = (await load(event({}, false))) as { entitled: boolean };
 		expect(data.entitled).toBe(false);
 		expect(api.getCustomization).not.toHaveBeenCalled();
 	});
 
+	it('refuses a reader who is not an admin', async () => {
+		const e = { ...(event({}) as object), parent: async () => ({ user: { roles: ['editor'] }, plugins: { state: 'named', running: ['multitenant'], withheld: [] } }) };
+		await expect(load(e as never)).rejects.toMatchObject({ status: 403, body: { message: 'Only an admin or a super admin can open this page.' } });
+	});
+
 	it('shows the not-enabled state when the plugin says this tenant may not shape its admin', async () => {
 		api.getCustomization.mockResolvedValue({ entitled: false, settings: settings(), pages: [] });
-		const data = (await load(event({}))) as { entitled: boolean; navChoices: unknown[]; mediaChoices: unknown[] };
+		const data = (await load(event({}))) as { entitled: boolean; mediaChoices: unknown[] };
 		expect(data.entitled).toBe(false);
-		expect(data.navChoices).toEqual([]);
 		expect(data.mediaChoices).toBeNull();
 	});
 
@@ -88,14 +86,6 @@ describe('customization settings', () => {
 		const data = (await load(event({}))) as { mediaChoices: unknown; gate: { state: string } };
 		expect(data.gate).toEqual({ state: 'ok' });
 		expect(data.mediaChoices).toBeNull();
-	});
-
-	it('offers the menu entries of the plugins that run', async () => {
-		const data = (await load(event({}))) as { entitled: boolean; navChoices: { id: string }[] };
-		expect(data.entitled).toBe(true);
-		const ids = data.navChoices.map((c) => c.id);
-		expect(ids).toContain('tenant-costs');
-		expect(ids).not.toContain('search');
 	});
 
 	it('saves the brand and keeps the menu and logo it did not touch', async () => {
@@ -148,25 +138,6 @@ describe('customization settings', () => {
 		const res = (await actions.brand(event({ name: 'Acme', accent: 'blue' }))) as { status: number };
 		expect(res.status).toBe(400);
 		expect(api.saveCustomization).not.toHaveBeenCalled();
-	});
-
-	it('never pins what it hides', async () => {
-		await actions.menu(event({ hidden: ['media'], pinned: ['media', 'flows'] }));
-		const saved = api.saveCustomization.mock.calls[0][1];
-		expect(saved.menu).toMatchObject({ hidden: ['media'], pinned: ['flows'] });
-	});
-
-	it('refuses a link that is neither https nor an admin path', async () => {
-		const res = (await actions.addLink(event({ label: 'X', url: 'javascript:alert(1)' }))) as { status: number };
-		expect(res.status).toBe(400);
-	});
-
-	it('creates a page from its title and opens its editor', async () => {
-		await expect(actions.createPage(event({ title: 'Launch checklist', slug: '' }))).rejects.toMatchObject({
-			status: 303,
-			location: '/admin/settings/customization/pages/launch-checklist',
-		});
-		expect(api.saveCustomPage.mock.calls[0][1]).toMatchObject({ slug: 'launch-checklist', title: 'Launch checklist', blocks: [] });
 	});
 });
 
@@ -278,58 +249,5 @@ describe('tab icon', () => {
 		const res = (await actions.uploadFavicon(svg.ev)) as { status: number; data: { faviconError: string } };
 		expect(res.status).toBe(400);
 		expect(res.data.faviconError).toBe('The tab icon must be a PNG, JPEG or WebP image.');
-	});
-});
-
-describe('menu link, dashboard page and page delete', () => {
-	const refusal = new ApiError(422, 'home_page names no page');
-	const outage = new ApiError(503, 'dial tcp 10.0.0.4:5432: connection refused');
-
-	it('removes the named link and keeps the rest of the menu', async () => {
-		expect(await actions.removeLink(event({ index: '0' }))).toEqual({ linkRemoved: true });
-		const saved = api.saveCustomization.mock.calls[0][1] as ReturnType<typeof settings>;
-		expect(saved.menu.links).toEqual([]);
-		expect(saved.menu.hidden).toEqual(['search']);
-	});
-
-	it('sets the page the dashboard leads with', async () => {
-		expect(await actions.home(event({ home_page: 'welcome' }))).toEqual({ homeSaved: true });
-		expect((api.saveCustomization.mock.calls[0][1] as { home_page: string }).home_page).toBe('welcome');
-	});
-
-	it('deletes the named page', async () => {
-		api.deleteCustomPage.mockResolvedValue(undefined);
-		expect(await actions.deletePage(event({ slug: 'welcome' }))).toEqual({ pageDeleted: true });
-		expect(api.deleteCustomPage).toHaveBeenCalledWith(client, 'welcome');
-	});
-
-	it('relays a refusal under the key of the card it was made in', async () => {
-		api.saveCustomization.mockRejectedValue(refusal);
-		expect(await actions.removeLink(event({ index: '0' }))).toMatchObject({ status: 400, data: { menuError: 'home_page names no page' } });
-		expect(await actions.home(event({ home_page: 'x' }))).toMatchObject({ status: 400, data: { pagesError: 'home_page names no page' } });
-	});
-
-	it('keeps an outage body off the page', async () => {
-		api.getCustomization.mockRejectedValue(outage);
-		expect(await actions.removeLink(event({ index: '0' }))).toMatchObject({ data: { menuError: 'Could not remove the link. Try again.' } });
-		expect(await actions.home(event({ home_page: 'x' }))).toMatchObject({ data: { pagesError: 'Could not save the dashboard page. Try again.' } });
-	});
-
-	it.each(['removeLink', 'home', 'deletePage'] as const)('holds %s to an admin', async (name) => {
-		vi.mocked(requireRole).mockRejectedValueOnce(Object.assign(new Error('403'), { status: 403 }));
-		const e = event({ index: '0', home_page: 'x', slug: 'x' });
-		await expect(actions[name](e)).rejects.toMatchObject({ status: 403 });
-		expect(requireRole).toHaveBeenCalledWith(e, ['admin', 'super_admin']);
-		expect(api.saveCustomization).not.toHaveBeenCalled();
-		expect(api.deleteCustomPage).not.toHaveBeenCalled();
-	});
-});
-
-describe('a failed page delete', () => {
-	it('reports under its own key, which the Pages card draws', async () => {
-		api.deleteCustomPage.mockRejectedValue(new ApiError(404, 'page not found'));
-		expect(await actions.deletePage(event({ slug: 'gone' }))).toMatchObject({ status: 400, data: { pageDeleteError: 'page not found' } });
-		api.deleteCustomPage.mockRejectedValue(new ApiError(503, 'dial tcp 10.0.0.4:5432: connection refused'));
-		expect(await actions.deletePage(event({ slug: 'x' }))).toMatchObject({ data: { pageDeleteError: 'Could not delete the page. Try again.' } });
 	});
 });

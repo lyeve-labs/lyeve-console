@@ -17,7 +17,7 @@ const plan = {
 		schemas: {
 			changes: [
 				{ key: 'articles', action: 'update', fields: ['title'] },
-				{ key: 'legacy', action: 'unchanged', note: 'only on this instance, and kept' },
+				{ key: 'legacy', action: 'unchanged', note: 'only on this engine, and kept' },
 				{ key: 'tags', action: 'unchanged' },
 			],
 		},
@@ -64,7 +64,7 @@ describe('config sync page', () => {
 		const schemas = getByTestId('plan-section-schemas').textContent ?? '';
 		expect(schemas).toContain('1 update');
 		expect(schemas).toContain('2 unchanged');
-		expect(schemas).toContain('only on this instance, and kept');
+		expect(schemas).toContain('only on this engine, and kept');
 		expect(schemas).not.toContain('tags');
 		const flows = getByTestId('plan-section-flows').textContent ?? '';
 		expect(flows).toContain('1 create');
@@ -108,7 +108,7 @@ describe('config sync page', () => {
 
 	it('renders a refused write as the refusal notice, with the forms still there', () => {
 		const { getByTestId } = setup({ scope: 'sync', mode: 'diff', error: 'x', refused: { kind: 'feature', feature: 'example-capability', plugin: 'example', upgradeUrl: '' } });
-		expect(getByTestId('refusal-notice').textContent).toContain('example-capability');
+		expect(getByTestId('refusal-notice').textContent).toContain('Not enabled on this engine');
 		expect(getByTestId('export-form')).toBeTruthy();
 		expect(getByTestId('sync-form')).toBeTruthy();
 	});

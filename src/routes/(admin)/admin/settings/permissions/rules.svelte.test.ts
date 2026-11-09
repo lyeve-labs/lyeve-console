@@ -29,7 +29,7 @@ describe('rule matrix', () => {
 		expect(parentOf('flow:sync')).toBe('flows');
 		expect(parentOf('*')).toBeNull();
 		expect(parentOf('flows')).toBeNull();
-		expect(schemaLabel('*')).toBe('every schema');
+		expect(schemaLabel('*')).toBe('every content type');
 		expect(schemaLabel('flows')).toBe('All flows');
 	});
 
@@ -67,7 +67,7 @@ describe('rule matrix', () => {
 	it('keeps the wildcard rule away from flows in the summary', () => {
 		const m = matrix([rule('editor', '*', ['read'])], ['article'], ['sync']);
 		expect(m.summaryState('editor', 'read')).toBe('some');
-		expect(m.summaryText('editor', 'read')).toBe('editor grants read on every schema. editor grants read on no flow.');
+		expect(m.summaryText('editor', 'read')).toBe('editor grants read on every content type. editor grants read on no flow.');
 		expect(m.summaryText('editor', 'activate')).toBe('editor grants activate on no flow.');
 	});
 

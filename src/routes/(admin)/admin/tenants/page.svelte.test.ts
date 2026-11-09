@@ -65,7 +65,7 @@ describe('Tenants provisioning gate', () => {
 	it('draws the list where creating is not enabled', () => {
 		const { container } = render(TenantsPage, { props: props({ canProvision: false }) });
 
-		expect(container.textContent).toContain('731 tenants on this instance');
+		expect(container.textContent).toContain('731 tenants on this engine');
 		expect(container.textContent).toContain('tenant-0');
 	});
 
@@ -82,7 +82,7 @@ describe('Tenants provisioning gate', () => {
 		const { container, getByTestId } = render(TenantsPage, { props: props({ canProvision: false }) });
 
 		expect(container.textContent).toContain('Tenant provisioning');
-		expect(getByTestId('not-enabled').textContent).toContain('Not enabled on this instance.');
+		expect(getByTestId('not-enabled').textContent).toContain('Not enabled on this engine.');
 	});
 
 	it('draws the create control where creating is enabled', () => {
@@ -125,7 +125,7 @@ describe('Tenants pagination', () => {
 	it('heads the page with the count of the collection, not of the page', () => {
 		const { container } = render(TenantsPage, { props: props() });
 
-		expect(container.textContent).toContain('731 tenants on this instance');
+		expect(container.textContent).toContain('731 tenants on this engine');
 	});
 
 	it('states the slice on screen and the real total', () => {
@@ -161,7 +161,7 @@ describe('Tenants pagination', () => {
 		expect(next.disabled).toBe(true);
 	});
 
-	it('says so when the instance has no tenants at all', () => {
+	it('says so when the engine has no tenants at all', () => {
 		const { container } = render(TenantsPage, {
 			props: props({ tenants: [], total: 0 }),
 		});
@@ -182,7 +182,7 @@ describe('Tenants when the list could not be read', () => {
 		});
 		expect(container.textContent).toContain('so tenants did not load. Try again in a moment.');
 		expect(container.textContent).not.toContain('No tenants yet');
-		expect(container.textContent).not.toContain('0 tenants on this instance');
+		expect(container.textContent).not.toContain('0 tenants on this engine');
 		expect(container.textContent).not.toContain('Tenant provisioning');
 		expect(queryByRole('button', { name: /new tenant/i })).toBeNull();
 		expect(container.querySelector('table')).toBeNull();
@@ -297,7 +297,7 @@ describe('Tenants refusals', () => {
 			props: props({ canProvision: false, provisioningUrl: ADD_ON }),
 		});
 
-		expect(getByTestId('not-enabled').textContent).toContain('Your license does not include creating tenants.');
+		expect(getByTestId('not-enabled').textContent).toContain('Creating tenants is not enabled on this engine.');
 		const link = getByRole('link', { name: 'View the add-on' });
 		expect(link.getAttribute('href')).toBe(ADD_ON);
 		expect(link.getAttribute('rel')).toBe('noopener noreferrer');
@@ -331,8 +331,8 @@ describe('Tenants refusals', () => {
 		const drawer = await refusedCreate({ kind: 'feature', feature: 'example-feature', plugin: 'example', upgradeUrl: ADD_ON });
 
 		const notice = drawer.querySelector('[data-testid="refusal-notice"]') as HTMLElement;
-		expect(notice.textContent).toContain('This needs example-feature');
-		expect(notice.textContent).toContain('The license on this instance does not include example-feature.');
+		expect(notice.textContent).toContain('Not enabled on this engine');
+		expect(notice.textContent).toContain('This is not enabled on this engine.');
 		expect(notice.querySelector(`a[href="${ADD_ON}"]`)?.textContent?.trim()).toBe('View the add-on');
 	});
 
@@ -340,9 +340,9 @@ describe('Tenants refusals', () => {
 		const drawer = await refusedCreate({ kind: 'cap', cap: 'tenants', limit: null, current: null, upgradeUrl: PLAN });
 
 		const notice = drawer.querySelector('[data-testid="refusal-notice"]') as HTMLElement;
-		expect(notice.textContent).toContain('No more tenants on this instance');
-		expect(notice.textContent).toContain('This instance is at its limit for tenants. A license that allows more lifts the limit.');
-		expect(notice.textContent).not.toContain('This is not enabled on this instance');
+		expect(notice.textContent).toContain('No more tenants on this engine');
+		expect(notice.textContent).toContain('This engine is at its limit for tenants. A license that allows more lifts the limit.');
+		expect(notice.textContent).not.toContain('This is not enabled on this engine');
 		expect(notice.querySelector(`a[href="${PLAN}"]`)?.textContent?.trim()).toBe('View the plan');
 	});
 
@@ -350,7 +350,7 @@ describe('Tenants refusals', () => {
 		const drawer = await refusedCreate({ kind: 'cap', cap: 'tenants', limit: null, current: null, upgradeUrl: '' });
 
 		const notice = drawer.querySelector('[data-testid="refusal-notice"]') as HTMLElement;
-		expect(notice.textContent).toContain('No more tenants on this instance');
+		expect(notice.textContent).toContain('No more tenants on this engine');
 		expect(notice.textContent).not.toContain('View the plan');
 	});
 });
@@ -370,7 +370,7 @@ describe('Tenants with none listed and no create offered', () => {
 
 	it('names no tenants below when the license does not include creating them', () => {
 		const { container } = render(TenantsPage, { props: props({ tenants: [], total: 0, canProvision: false }) });
-		expect(container.textContent).toContain('does not include creating tenants');
+		expect(container.textContent).toContain('Creating tenants is not enabled on this engine.');
 		expect(container.textContent).not.toContain('the tenants below');
 		expect(container.textContent).not.toContain('Create a tenant');
 	});

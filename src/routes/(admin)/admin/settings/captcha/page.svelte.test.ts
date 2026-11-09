@@ -20,12 +20,12 @@ const props = (settings: Record<string, unknown> | null, over: Record<string, un
 });
 
 describe('captcha settings', () => {
-	it("always says the admin login uses the install's captcha", () => {
+	it("always says signing in to the console uses this engine's captcha", () => {
 		const { container } = render(CaptchaPage, {
 			props: props({ source: 'instance', tenant: null, instance, licensed: true }),
 		});
-		expect(said(container)).toContain("The admin login always uses the install's captcha");
-		expect(screen.getByTestId('captcha-source').textContent).toContain("install's Turnstile");
+		expect(said(container)).toContain("Signing in to the console always uses this engine's captcha");
+		expect(screen.getByTestId('captcha-source').textContent).toContain("this engine's Turnstile");
 	});
 
 	it('never shows a stored secret and says an empty field keeps it', () => {
@@ -74,7 +74,7 @@ describe('captcha settings', () => {
 		const { container } = render(CaptchaPage, {
 			props: props({ source: 'instance', tenant: null, instance, licensed: false }),
 		});
-		expect(said(container)).toContain('needs a license this install does not have');
+		expect(said(container)).toContain('Tenant captcha settings are not enabled on this engine.');
 	});
 
 	it('turns the save off on an unlicensed install and points it at the reason', () => {

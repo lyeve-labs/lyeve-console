@@ -3,7 +3,14 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EmailTrigger } from '$lib/api/email-triggers';
 
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+type Submit = (input: { cancel: () => void; formData: FormData }) => Promise<unknown>;
+const forms = vi.hoisted(() => ({ submits: new Map<HTMLFormElement, unknown>() }));
+vi.mock('$app/forms', () => ({
+	enhance: (form: HTMLFormElement, submit: unknown) => {
+		forms.submits.set(form, submit);
+		return { destroy() {} };
+	},
+}));
 const kit = vi.hoisted(() => ({ confirm: vi.fn(async () => true) }));
 vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
@@ -11,20 +18,20 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 }));
 
 /**
- * Press a row's delete, accept the question, and return its title and what
- * the hidden form held when it was sent. The value has to be in the form by
- * then, which is what waiting on the next render before sending is for.
+ * Submit the form a row's delete button sits in, and return the question it
+ * asked, what the form sends and whether the submit went ahead.
  */
-async function pressDelete(button: HTMLElement, field: string): Promise<{ title: string; sent: string }> {
-	let sent = '';
-	const spy = vi.spyOn(HTMLFormElement.prototype, 'requestSubmit').mockImplementation(function (this: HTMLFormElement) {
-		sent = (this.querySelector(`input[name="${field}"]`) as HTMLInputElement | null)?.value ?? '';
-	});
+async function pressDelete(button: HTMLElement, field: string) {
+	const form = button.closest('form') as HTMLFormElement;
+	const cancel = vi.fn();
 	kit.confirm.mockClear();
-	await fireEvent.click(button);
-	await vi.waitFor(() => expect(spy).toHaveBeenCalled());
-	spy.mockRestore();
-	return { title: String((kit.confirm.mock.calls[0] as unknown[] | undefined)?.[0] ?? ''), sent };
+	await (forms.submits.get(form) as Submit)({ cancel, formData: new FormData(form) });
+	return {
+		action: form.getAttribute('action'),
+		title: String((kit.confirm.mock.calls[0] as unknown[] | undefined)?.[0] ?? ''),
+		sent: String(new FormData(form).get(field) ?? ''),
+		sentOff: !cancel.mock.calls.length,
+	};
 }
 
 
@@ -69,7 +76,8 @@ describe('email triggers without the license for writes', () => {
 		expect(create.disabled).toBe(true);
 		expect((screen.getByRole('button', { name: 'Edit Order confirmation' }) as HTMLButtonElement).disabled).toBe(true);
 		expect((screen.getByRole('button', { name: 'Delete Order confirmation' }) as HTMLButtonElement).disabled).toBe(false);
-		expect(document.body.textContent).toContain('Creating or editing a trigger needs Trigger Studio');
+		expect(document.body.textContent).toContain('Creating or editing a trigger is not enabled on this engine.');
+		expect(document.body.textContent).not.toContain('Trigger Studio');
 	});
 
 	it('leaves New and Edit live when the license allows them', () => {
@@ -152,7 +160,7 @@ describe('email trigger drawer', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'New trigger' }));
 		const refused = { kind: 'feature', feature: 'Trigger Studio', plugin: 'email', upgradeUrl: '' };
 		await rerender(props({}, { action: 'save', error: 'This needs Trigger Studio.', refused }));
-		expect(drawerText()).toContain('Trigger Studio');
+		expect(drawerText()).toContain('Not enabled on this engine');
 		expect(drawerText()).not.toContain('This needs Trigger Studio.');
 	});
 
@@ -169,8 +177,10 @@ describe('email trigger delete', () => {
 	it('names the trigger and sends its id', async () => {
 		render(TriggersPage, { props: props() });
 		const out = await pressDelete(screen.getByRole('button', { name: 'Delete Order confirmation' }), 'id');
-		expect(out.title).toBe('Delete trigger Order confirmation');
+		expect(out.action).toBe('?/delete');
+		expect(out.title).toBe('Delete trigger Order confirmation?');
 		expect(out.sent).toBe('tr1');
+		expect(out.sentOff).toBe(true);
 	});
 });
 

@@ -17,7 +17,7 @@
 		/** A prefix that keeps each field's id unique on the page. */
 		id: string;
 		label: string;
-		/** False marks the transforms this install may not name in a new request. */
+		/** False marks the transforms this instance may not name in a new request. */
 		licensed?: boolean | null;
 	} = $props();
 

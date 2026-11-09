@@ -184,7 +184,7 @@ describe('flows as resources', () => {
 		expect(result.loadGate).toBeNull();
 	});
 
-	it('reads an instance without the flow plugin as no flows, not a failed read', async () => {
+	it('reads an engine without the flow plugin as no flows, not a failed read', async () => {
 		mockedListPermissions.mockResolvedValue([permission] as never);
 		mockedGetSchemas.mockResolvedValue([] as never);
 		flows.listAllFlows.mockRejectedValueOnce(new ApiError(404, 'not found'));

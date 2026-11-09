@@ -27,6 +27,7 @@
 	import { errorCodeOf } from '$lib/api/limits';
 	import { ApiError } from '@lyeve-labs/client';
 	import { renewingOnce } from '$lib/renew';
+	import { couldNotLoad, outageFor } from '$lib/outage';
 	import { SIGN_IN_AGAIN } from '$lib/session';
 	import {
 		IMPORT_FORMATS,
@@ -57,11 +58,13 @@
 		type ValidateResult,
 	} from '$lib/api/bulk-import';
 	import { formatBytes, formatCount } from '$lib/format';
+	import { plural } from '$lib/format';
 
 	let {
 		open = $bindable(false),
 		schemas,
 		templates = [],
+		templatesFailed = false,
 		licensed = null,
 		onstarted,
 	}: {
@@ -70,7 +73,9 @@
 		schemas: ImportSchema[] | null;
 		/** The tenant's saved mappings, offered on the first step. */
 		templates?: MappingTemplate[];
-		/** Whether the plugin said this install may name the paid transforms. Null when it did not say. */
+		/** Whether the saved mappings could not be read, which the first step says. */
+		templatesFailed?: boolean;
+		/** Whether the plugin said this instance may name the paid transforms. Null when it did not say. */
 		licensed?: boolean | null;
 		onstarted: (job: ImportJob) => void;
 	} = $props();
@@ -116,7 +121,7 @@
 	// tenant with no content types, and neither leaves anything to import into.
 	const schemaHint = $derived(
 		schemas === null
-			? 'Could not load the content types. Reload the page to try again.'
+			? couldNotLoad('the content types', { reload: true })
 			: schemas.length === 0
 				? 'No content types yet. Create one before you import.'
 				: 'Each row becomes an entry of this type.',
@@ -254,13 +259,18 @@
 				// whose answer never came back may already be importing.
 				error = starts
 					? 'Could not confirm whether the import started. Check the entries before you try again.'
-					: 'The request did not reach the engine. Nothing was imported. Try again in a moment.';
+					: outageFor('nothing was imported');
 				return null;
 			}
 			refusal = refusalOf(e);
 			if (!refusal) {
-				error = e.message || 'Could not complete the request. Try again.';
-				hint = parseRefusalHint(error, errorCodeOf(e));
+				// The engine's words reach the reader only on a 4xx that names an
+				// error code. A 5xx can carry driver text, and a 4xx without a code
+				// came from something in front of the engine.
+				const code = errorCodeOf(e);
+				const relayed = e.status >= 400 && e.status < 500 && code !== '' && e.message;
+				error = relayed || 'Could not complete the request. Try again.';
+				hint = relayed ? parseRefusalHint(error, code) : '';
 			}
 			return null;
 		} finally {
@@ -357,7 +367,7 @@
 <Drawer
 	bind:open
 	title="New import"
-	description="Nothing is imported until the last step. The dry run shows which rows would be rejected and why."
+	description="Import rows from a file as entries of one content type. Nothing is written until the last step."
 >
 	<div class="flex flex-col gap-5">
 		<StepIndicator steps={STEPS} current={step + 1} />
@@ -394,7 +404,7 @@
 					id="import-url"
 					label="Address"
 					placeholder="https://example.com/export.json"
-					hint="An http or https link. To import from another LyEve instance, paste the signed download link of a finished export. Private and internal addresses are refused."
+					hint="An http or https link. To import from another LyEve engine, paste the signed download link of a finished export. Private and internal addresses are refused."
 					bind:value={url}
 				/>
 			{/if}
@@ -432,10 +442,12 @@
 					onvaluechange={chooseTemplate}
 					options={templateOptions}
 				/>
+			{:else if templatesFailed}
+				<p class="text-xs text-muted">Could not load the mapping templates. Reload the page to try again.</p>
 			{/if}
 		{:else if step === 1 && preview}
 			<p class="text-sm text-muted">
-				{formatCount(preview.total_rows)} {preview.total_rows === 1 ? 'row' : 'rows'} of {IMPORT_FORMAT_LABELS[preview.source_format] ?? preview.source_format}
+				{formatCount(preview.total_rows)} {plural(preview.total_rows, 'row')} of {IMPORT_FORMAT_LABELS[preview.source_format] ?? preview.source_format}
 				from <span class="font-mono text-xs">{preview.source_name}</span>.
 				{#if preview.export}This is a LyEve export: its slug, title and status are mapped to the entry's own.{/if}
 				{#if template}Mapped from the template {template.name}.{/if}
@@ -459,7 +471,7 @@
 			{/if}
 			{#if preview.errors.length > 0}
 				<Alert tone="warn">
-					{formatCount(preview.errors.length)} rows could not be read and will be rejected, starting with row
+					{formatCount(preview.errors.length)} rows cannot be read and will be rejected, starting with row
 					{preview.errors[0].row_index + 1}: {preview.errors[0].message}
 				</Alert>
 			{/if}
@@ -587,7 +599,7 @@
 		{:else}
 			<Button variant="secondary" onclick={() => (step = 1)}>Back</Button>
 			<Button variant="primary" loading={busy} disabled={importable === 0} onclick={importRows}>
-				Import {formatCount(importable)} {importable === 1 ? 'row' : 'rows'}
+				Import {formatCount(importable)} {plural(importable, 'row')}
 			</Button>
 		{/if}
 	{/snippet}

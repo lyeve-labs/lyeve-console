@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ActionResult, SubmitFunction } from '@sveltejs/kit';
 import { tick } from 'svelte';
 import Page from './+page.svelte';
-import { fixturePrice, fixtureSettings } from '$lib/components/ai/fixtures';
+import { fixturePrice, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 // enhance hands back each form's submit function by its action, so a test can
@@ -141,7 +141,7 @@ describe('AI prices page', () => {
 	it('announces nothing for a failed save', async () => {
 		const view = setup();
 		const finish = await startSave();
-		await finish({ type: 'failure', status: 400, data: { action: 'save', error: 'Model is required.' } });
+		await finish({ type: 'failure', status: 400, data: { action: 'save', error: 'Enter a model.' } });
 		expect(view.getByTestId('price-saved').textContent).toBe('');
 	});
 
@@ -156,9 +156,9 @@ describe('AI prices page', () => {
 	it('shows a failed save inside the open drawer and not on the page behind it', async () => {
 		const { container, getAllByRole, rerender } = setup();
 		await fireEvent.click(getAllByRole('button', { name: /new price/i })[0]);
-		await rerender({ form: { action: 'save', key: 'openai/', error: 'Model is required.' } } as never);
-		expect((container.querySelector('#price-form') as HTMLElement).textContent).toContain('Model is required.');
-		expect(document.body.textContent?.split('Model is required.').length).toBe(2);
+		await rerender({ form: { action: 'save', key: 'openai/', error: 'Enter a model.' } } as never);
+		expect((container.querySelector('#price-form') as HTMLElement).textContent).toContain('Enter a model.');
+		expect(document.body.textContent?.split('Enter a model.').length).toBe(2);
 	});
 
 	it('offers no new price while the layout says AI is off, even with a list answered', () => {

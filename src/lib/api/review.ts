@@ -1,4 +1,6 @@
 import type { HttpClient } from '@lyeve-labs/client';
+import { query } from './list';
+import { num, record, str } from './narrow';
 
 /**
  * The review plugin's API: definitions with ordered stages, the assignment
@@ -79,7 +81,7 @@ export interface ReviewStage {
 }
 
 /**
- * What the definitions read says this install allows: `licensed` for the
+ * What the definitions read says this instance allows: `licensed` for the
  * paid stage settings, and the workflow ceiling with how many the tenant
  * holds. A null limit is no ceiling.
  */
@@ -151,22 +153,10 @@ export interface Paginated<T> {
 	total: number;
 }
 
-/** The definitions page, with what the read says this install allows. */
+/** The definitions page, with what the read says this instance allows. */
 export interface DefinitionPage extends Paginated<ReviewDefinition> {
 	/** Null when the plugin's read carries no such fields. */
 	limits: ReviewLimits | null;
-}
-
-function asObject(v: unknown): Record<string, unknown> {
-	return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
-}
-
-function str(v: unknown): string {
-	return typeof v === 'string' ? v : '';
-}
-
-function num(v: unknown): number {
-	return typeof v === 'number' && Number.isFinite(v) ? v : 0;
 }
 
 function nullableStr(v: unknown): string | null {
@@ -183,7 +173,7 @@ function valueText(v: unknown): string {
 }
 
 export function toCondition(raw: unknown): StageCondition | null {
-	const r = asObject(raw);
+	const r = record(raw);
 	const field = str(r.field);
 	const op = str(r.op);
 	if (!field || !(CONDITION_OPS as readonly string[]).includes(op)) return null;
@@ -208,9 +198,9 @@ export function conditionText(c: StageCondition): string {
 }
 
 export function toLimits(raw: unknown): ReviewLimits | null {
-	const r = asObject(raw);
+	const r = record(raw);
 	if (typeof r.licensed !== 'boolean' && !r.limits) return null;
-	const w = asObject(asObject(r.limits).workflows);
+	const w = record(record(r.limits).workflows);
 	return {
 		licensed: r.licensed === true,
 		workflows: { limit: typeof w.limit === 'number' ? w.limit : null, current: num(w.current) },
@@ -312,12 +302,12 @@ export function actionsFor(status: ReviewStatus): TransitionAction[] {
 }
 
 function rows(res: unknown): Record<string, unknown>[] {
-	const list = Array.isArray(res) ? res : (asObject(res).data ?? []);
-	return (Array.isArray(list) ? list : []).map(asObject);
+	const list = Array.isArray(res) ? res : (record(res).data ?? []);
+	return (Array.isArray(list) ? list : []).map(record);
 }
 
 function total(res: unknown, fallback: number): number {
-	const t = asObject(res).total_count;
+	const t = record(res).total_count;
 	return typeof t === 'number' ? t : fallback;
 }
 
@@ -338,9 +328,9 @@ export async function getDefinition(
 	const res = await client.get<Record<string, unknown>>(
 		`/api/admin/review/definitions/${encodeURIComponent(id)}`,
 	);
-	const stages = Array.isArray(res.stages) ? res.stages.map((s) => toStage(asObject(s))) : [];
+	const stages = Array.isArray(res.stages) ? res.stages.map((s) => toStage(record(s))) : [];
 	stages.sort((a, b) => a.position - b.position);
-	return { definition: toDefinition(asObject(res.definition)), stages };
+	return { definition: toDefinition(record(res.definition)), stages };
 }
 
 export function createDefinition(client: HttpClient, input: DefinitionInput): Promise<ReviewDefinition> {
@@ -363,12 +353,13 @@ export async function listAssignments(
 	client: HttpClient,
 	filters: { status?: string; assignee_id?: string; limit?: number; offset?: number } = {},
 ): Promise<Paginated<ReviewAssignment>> {
-	const q = new URLSearchParams();
-	q.set('limit', String(filters.limit ?? 50));
-	q.set('offset', String(filters.offset ?? 0));
-	if (filters.status) q.set('status', filters.status);
-	if (filters.assignee_id) q.set('assignee_id', filters.assignee_id);
-	const res = await client.get<unknown>(`/api/admin/review/assignments?${q.toString()}`);
+	const q = query({
+		limit: filters.limit ?? 50,
+		offset: filters.offset ?? 0,
+		status: filters.status,
+		assignee_id: filters.assignee_id,
+	});
+	const res = await client.get<unknown>(`/api/admin/review/assignments${q}`);
 	const items = rows(res).map(toAssignment);
 	return { items, total: total(res, items.length) };
 }
@@ -410,5 +401,5 @@ export function transitionAssignment(
 /** Every stage of the assignment's definition with its timing, current stage included. */
 export async function getStageSLA(client: HttpClient, id: string): Promise<StageSLA[]> {
 	const res = await client.get<unknown>(`/api/admin/review/assignments/${encodeURIComponent(id)}/sla`);
-	return (Array.isArray(res) ? res : []).map((r) => toStageSLA(asObject(r)));
+	return (Array.isArray(res) ? res : []).map((r) => toStageSLA(record(r)));
 }

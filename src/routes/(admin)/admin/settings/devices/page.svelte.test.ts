@@ -50,7 +50,7 @@ describe('the gate', () => {
 		const { container } = render(DevicesPage, {
 			props: props({ gate: { state: 'locked', upgradeUrl: '' }, devices: [] }),
 		});
-		expect(said(container)).toContain('Not enabled on this instance');
+		expect(said(container)).toContain('Not enabled on this engine');
 		expect(said(container)).not.toContain('No trusted devices yet');
 	});
 
@@ -63,26 +63,38 @@ describe('the gate', () => {
 	});
 });
 
-describe('this browser', () => {
+describe('this device', () => {
 	// The endpoint fingerprints the request, so the form can only ever trust
 	// the browser reading the page. Offering it while that browser is already
 	// trusted would create a second row for one device.
-	it('offers to trust when this browser is not remembered', () => {
+	it('offers to trust when this device is not trusted', () => {
 		const { container } = render(DevicesPage, { props: props() });
-		expect(said(container)).toContain("remembers the browser you're using now");
+		expect(said(container)).toContain('Each browser counts as its own device');
 	});
 
-	it('says so instead when this browser is already remembered', () => {
+	it('puts Trust this device on the name field row, with the hint under the input', () => {
+		const { container } = render(DevicesPage, { props: props() });
+		const name = container.querySelector('#device-label') as HTMLInputElement;
+		const trust = [...container.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Trust this device');
+		expect(container.querySelector('label[for="device-label"]')?.textContent).toContain('Name this device');
+		expect(name.required).toBe(true);
+		expect(container.querySelector(`#${name.getAttribute('aria-describedby')}`)?.textContent).toBe(
+			'Something you will recognize in the list.',
+		);
+		expect(trust?.parentElement).toBe(name.parentElement?.parentElement);
+	});
+
+	it('says so instead when this device is already trusted', () => {
 		const { container } = render(DevicesPage, {
 			props: props({ userAgent: CHROME_MAC }),
 		});
-		expect(said(container)).toContain('already trusted, as Work laptop');
-		expect(said(container)).not.toContain("remembers the browser you're using now");
+		expect(said(container)).toContain('This device is already trusted, as Work laptop');
+		expect(said(container)).not.toContain('Each browser counts as its own device');
 	});
 
 	// It states a standing condition, so it stays. A confirmation that clears
 	// itself would leave the section a heading over nothing.
-	it('keeps saying this browser is trusted after a while', async () => {
+	it('keeps saying this device is trusted after a while', async () => {
 		vi.useFakeTimers();
 		try {
 			const { container } = render(DevicesPage, { props: props({ userAgent: CHROME_MAC }) });
@@ -93,7 +105,7 @@ describe('this browser', () => {
 		}
 	});
 
-	it('marks the row that looks like this browser', () => {
+	it('marks the row that looks like this device', () => {
 		const { container } = render(DevicesPage, { props: props({ userAgent: CHROME_MAC }) });
 		expect(said(container)).toContain('Looks like this one');
 	});
@@ -124,8 +136,28 @@ describe('the rows', () => {
 	});
 });
 
+describe('one name for the concept', () => {
+	// A second name reads as a second thing, so every heading says device.
+	it('heads both sections with device', () => {
+		const { container } = render(DevicesPage, { props: props() });
+		const headings = [...container.querySelectorAll('h2')].map((h) => h.textContent?.trim());
+		expect(headings).toEqual(['This device', 'Your trusted devices']);
+		expect(container.querySelector('[role="region"]')?.getAttribute('aria-label')).toBe('Your trusted devices');
+	});
+
+	it.each([
+		['not yet trusted', {}],
+		['already trusted', { userAgent: CHROME_MAC }],
+	])('never says remembered or this browser when %s', (_case, over) => {
+		const { container } = render(DevicesPage, { props: props(over) });
+		expect(said(container)).toContain('This device');
+		expect(said(container)).not.toMatch(/remember/i);
+		expect(said(container)).not.toMatch(/this browser/i);
+	});
+});
+
 describe('the empty state', () => {
-	it('says what having no remembered device means', () => {
+	it('says what having no trusted device means', () => {
 		const { container } = render(DevicesPage, { props: props({ devices: [] }) });
 		expect(said(container)).toContain('treated as coming from a new device');
 	});

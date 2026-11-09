@@ -7,6 +7,7 @@
 import { ApiError } from '@lyeve-labs/client';
 import { FlowRefusal, validationErrors, type ValidationError } from '$lib/api/flows';
 import { isOutage } from '$lib/api/gate';
+import { outageFor } from '$lib/outage';
 import { SIGN_IN_AGAIN } from '$lib/session';
 import { isBlockedMessage, notEnabledText } from './blocked';
 import type { FlowDefinition } from './types';
@@ -60,7 +61,7 @@ export function testFailure(err: unknown): TestFailure {
 	if (err instanceof FlowRefusal) return { kind: 'refused', errors: err.errors, text: notEnabledText(err.nodeIds) };
 	// The run was sent again after a renewal, so a 401 here is a session that ended.
 	if (err instanceof ApiError && err.status === 401) return { kind: 'refused', errors: [], text: SIGN_IN_AGAIN };
-	if (isOutage(err)) return { kind: 'refused', errors: [], text: TEST_OUTAGE };
+	if (isOutage(err)) return { kind: 'refused', errors: [], text: outageFor('the test run did not finish') };
 	const message = err instanceof Error ? err.message : '';
 	if (isBlockedMessage(message)) return { kind: 'blocked' };
 	const errors = validationErrors(message);
@@ -71,5 +72,3 @@ export function testFailure(err: unknown): TestFailure {
 	const worded = err instanceof ApiError && err.status >= 400 && err.status < 500 && err.body !== undefined;
 	return { kind: 'refused', errors: [], text: (worded && message) || 'The test run failed.' };
 }
-
-const TEST_OUTAGE = 'The engine is unavailable, so the test run did not finish. Try again in a moment.';

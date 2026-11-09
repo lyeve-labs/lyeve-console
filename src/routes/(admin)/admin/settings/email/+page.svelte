@@ -7,6 +7,7 @@
 		Drawer,
 		EmptyState,
 		Input,
+		NumberInput,
 		PageShell,
 		PasswordInput,
 		SectionHeading,
@@ -16,17 +17,15 @@
 		Table,
 		Textarea,
 		Toggle,
-		confirm,
 	} from '@lyeve-labs/ui-kit';
 	import { Copy, FileText, Lock, Mail, Pencil, Plus, Terminal, Trash2, MailPlus } from '@lucide/svelte';
 	import { duplicateRow } from '$lib/duplicate';
 	import SettingRow from '$lib/components/SettingRow.svelte';
 	import type { ConfigSetting } from './+page.server';
 	import { enhance } from '$app/forms';
-	import { tick } from 'svelte';
 	import type { ActionData, PageData } from './$types';
 	import { API_METHODS, BODY_PLACEHOLDERS, WEBHOOK_EVENTS, webhookPath, type EmailProvider } from '$lib/api/email';
-	import { submitter } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, submitter } from '$lib/forms.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import { ICON } from '$lib/icon';
 
@@ -39,13 +38,12 @@
 	 * next form opened. A failed delete shows above the list. A setting's
 	 * outcome carries its key, and its own row shows it.
 	 */
-	const failure = $derived(form as { action?: string; error?: string; key?: string } | null);
-	let openedOver = $state.raw<unknown>(null);
-	const saveFailure = $derived(failure?.action === 'provider' && form !== openedOver ? failure : null);
+	const failure = drawerFailure(() => form as { action?: string; error?: string; key?: string } | null, ['provider']);
+	const saveFailure = $derived(failure.drawer);
 	// A setting's failure that names no key, such as an ended session, has no
 	// row to show in, so it shows above the list with a failed delete.
 	const deleteFailure = $derived(
-		failure?.action === 'delete' || (failure && !failure.action && !failure.key) ? failure : null,
+		failure.page?.action === 'delete' || (failure.page && !failure.page.action && !failure.page.key) ? failure.page : null,
 	);
 	const pageRefusal = $derived(deleteFailure ? formRefusal(deleteFailure) : null);
 
@@ -93,7 +91,7 @@
 	let transport = $state('smtp');
 	let status = $state('active');
 	let host = $state('');
-	let port = $state('587');
+	let port = $state(587);
 	// The name is state rather than read from `editing`: a duplicate has a
 	// name and no row behind it, so a field reading the row opens blank.
 	let providerName = $state('');
@@ -115,52 +113,38 @@
 		return Object.entries(map ?? {}).map(([key, value]) => ({ key, value }));
 	}
 
+	/** Opens the drawer on a provider's fields, or on empty ones for a new provider. */
+	function fill(p: EmailProvider | null, name: string, initialStatus: string) {
+		providerName = name;
+		transport = p?.transport ?? 'smtp';
+		status = initialStatus;
+		host = p?.host ?? '';
+		port = p?.port || 587;
+		username = p?.username ?? '';
+		useTLS = p?.use_tls ?? false;
+		apiBaseUrl = p?.api_base_url ?? '';
+		apiMethod = p?.api_method || 'POST';
+		apiPath = p?.api_path ?? '';
+		apiHeaders = rows(p?.api_headers);
+		apiBody = p?.api_body ?? '';
+		apiMessageIdPath = p?.api_message_id_path ?? '';
+		webhookEventPath = p?.api_webhook_event_path ?? '';
+		webhookRecipientPath = p?.api_webhook_recipient_path ?? '';
+		webhookMessageIdPath = p?.api_webhook_message_id_path ?? '';
+		webhookReasonPath = p?.api_webhook_reason_path ?? '';
+		eventMap = rows(p?.api_webhook_event_map);
+		failure.opened();
+		open = true;
+	}
+
 	function openCreate() {
 		editing = null;
-		providerName = '';
-		transport = 'smtp';
-		status = 'active';
-		host = '';
-		port = '587';
-		username = '';
-		useTLS = false;
-		apiBaseUrl = '';
-		apiMethod = 'POST';
-		apiPath = '';
-		apiHeaders = [];
-		apiBody = '';
-		apiMessageIdPath = '';
-		webhookEventPath = '';
-		webhookRecipientPath = '';
-		webhookMessageIdPath = '';
-		webhookReasonPath = '';
-		eventMap = [];
-		openedOver = form;
-		open = true;
+		fill(null, '', 'active');
 	}
 
 	function openEdit(p: EmailProvider) {
 		editing = p;
-		providerName = p.name;
-		transport = p.transport;
-		status = p.status === 'paused' ? 'paused' : 'active';
-		host = p.host;
-		port = p.port ? String(p.port) : '587';
-		username = p.username ?? '';
-		useTLS = p.use_tls;
-		apiBaseUrl = p.api_base_url ?? '';
-		apiMethod = p.api_method || 'POST';
-		apiPath = p.api_path ?? '';
-		apiHeaders = rows(p.api_headers);
-		apiBody = p.api_body ?? '';
-		apiMessageIdPath = p.api_message_id_path ?? '';
-		webhookEventPath = p.api_webhook_event_path ?? '';
-		webhookRecipientPath = p.api_webhook_recipient_path ?? '';
-		webhookMessageIdPath = p.api_webhook_message_id_path ?? '';
-		webhookReasonPath = p.api_webhook_reason_path ?? '';
-		eventMap = rows(p.api_webhook_event_map);
-		openedOver = form;
-		open = true;
+		fill(p, p.name, p.status === 'paused' ? 'paused' : 'active');
 	}
 
 	/**
@@ -177,26 +161,7 @@
 			taken: providers.map((x) => x.name),
 		});
 		editing = null;
-		providerName = String(draft.name ?? source.name);
-		transport = source.transport;
-		status = 'paused';
-		host = source.host;
-		port = source.port ? String(source.port) : '587';
-		username = source.username ?? '';
-		useTLS = source.use_tls;
-		apiBaseUrl = source.api_base_url ?? '';
-		apiMethod = source.api_method || 'POST';
-		apiPath = source.api_path ?? '';
-		apiHeaders = rows(source.api_headers);
-		apiBody = source.api_body ?? '';
-		apiMessageIdPath = source.api_message_id_path ?? '';
-		webhookEventPath = source.api_webhook_event_path ?? '';
-		webhookRecipientPath = source.api_webhook_recipient_path ?? '';
-		webhookMessageIdPath = source.api_webhook_message_id_path ?? '';
-		webhookReasonPath = source.api_webhook_reason_path ?? '';
-		eventMap = rows(source.api_webhook_event_map);
-		openedOver = form;
-		open = true;
+		fill(source, String(draft.name ?? source.name), 'paused');
 	}
 
 	const isApi = $derived(transport === 'api');
@@ -210,17 +175,10 @@
 		keyKept ? keptHint : editing ? 'Enter a key for the new transport.' : 'Encrypted at rest and never shown again.',
 	);
 
-	let deleteId = $state('');
-	let deleteForm = $state<HTMLFormElement>();
-
-	async function askDelete(p: EmailProvider) {
-		const ok = await confirm(`Delete provider ${p.name}?`, 'Mail that would go through it goes to the next provider instead.', {
+	function confirmDelete(p: EmailProvider) {
+		return confirmed(`Delete provider ${p.name}?`, 'Mail that would go through it goes to the next provider instead.', {
 			confirmLabel: 'Delete',
 		});
-		if (!ok) return;
-		deleteId = p.id;
-		await tick();
-		deleteForm?.requestSubmit();
 	}
 
 	function endpoint(p: EmailProvider): string {
@@ -233,7 +191,7 @@
 <PageShell
 	title="Email"
 	documentTitle="Email providers"
-	description="Set up how this instance sends mail. Providers in the pool are tried first, and the fallback transport sends anything the pool cannot."
+	description="Set up how this engine sends mail."
 	width="wide"
 	back={{ href: '/admin/settings', label: 'Settings' }}
 >
@@ -318,9 +276,12 @@
 									<Button variant="ghost" size="sm" onclick={() => openDuplicate(p)} title="Duplicate" aria-label="Duplicate {p.name}">
 										<Copy size={ICON.sm} />
 									</Button>
-									<Button variant="ghost" size="sm" onclick={() => askDelete(p)} title="Delete" aria-label="Delete {p.name}">
-										<Trash2 size={ICON.sm} class="text-danger" />
-									</Button>
+									<form method="POST" action="?/delete" use:enhance={confirmDelete(p)}>
+										<input type="hidden" name="id" value={p.id} />
+										<Button variant="ghost" size="sm" type="submit" title="Delete" aria-label="Delete {p.name}">
+											<Trash2 size={ICON.sm} class="text-danger" />
+										</Button>
+									</form>
 								</div>
 							</td>
 						</tr>
@@ -345,7 +306,7 @@
 			<p class="text-sm text-muted">
 				These engine settings are used when the pool is empty or every provider in it fails.
 				Password resets and sign-in links use them when no provider can send, so those still arrive
-				on an instance with no pool. A change takes effect at the next engine restart. A password
+				on an engine with no pool. A change takes effect at the next engine restart. A password
 				is never shown again after you save it, and saving a new one replaces it.
 			</p>
 
@@ -449,7 +410,7 @@
 					<p class="text-xs text-muted">
 						Write <span class="font-mono">{'{{api_key}}'}</span> where the key goes, or <span class="font-mono">{'{{basic:<user>}}'}</span> for a basic-auth header built from that user and the key. Both are filled in at send time and never stored in the header.
 					</p>
-					{#each apiHeaders as h, i (i)}
+					{#each apiHeaders as h, i}
 						<div class="flex items-end gap-2">
 							<Input id="ep-header-key-{i}" name="api_header_key" label="Header" bind:value={h.key} class="min-w-0 flex-1" />
 							<Input id="ep-header-value-{i}" name="api_header_value" label="Value" bind:value={h.value} class="min-w-0 flex-1" />
@@ -473,9 +434,9 @@
 				<SectionHeading level={3} variant="eyebrow">Delivery webhook</SectionHeading>
 				<p class="text-xs text-muted">
 					{#if editing && editing.transport === 'api'}
-						Set the provider's webhook to <span class="font-mono">{webhookPath(editing.id)}</span> on this instance, and send the secret as the token in <span class="font-mono">X-Webhook-Token</span> or <span class="font-mono">?token=</span>.
+						Set the provider's webhook to <span class="font-mono">{webhookPath(editing.id)}</span> on this engine, and send the secret as the token in <span class="font-mono">X-Webhook-Token</span> or <span class="font-mono">?token=</span>.
 					{:else}
-						After you create the provider, the list shows its webhook path on this instance. Send the secret as the token in <span class="font-mono">X-Webhook-Token</span> or <span class="font-mono">?token=</span>.
+						After you create the provider, the list shows its webhook path on this engine. Send the secret as the token in <span class="font-mono">X-Webhook-Token</span> or <span class="font-mono">?token=</span>.
 					{/if}
 					The paths below find each field in what the provider posts.
 				</p>
@@ -487,7 +448,7 @@
 				<fieldset class="flex flex-col gap-2">
 					<legend class="text-xs font-semibold uppercase tracking-wide text-faint">Event map</legend>
 					<p class="text-xs text-muted">Map each event value the provider sends to what it means.</p>
-					{#each eventMap as m, i (i)}
+					{#each eventMap as m, i}
 						<div class="flex items-end gap-2">
 							<Input id="ep-event-key-{i}" name="event_map_key" label="Provider value" bind:value={m.key} class="min-w-0 flex-1" />
 							<div class="min-w-0 flex-1">
@@ -510,7 +471,7 @@
 			<div class="flex flex-col gap-3 rounded-md border border-line p-3" data-testid="smtp-section">
 				<SectionHeading level={3} variant="eyebrow">SMTP server</SectionHeading>
 				<Input id="ep-host" name="host" label="Host" placeholder="smtp.example.com" bind:value={host} required />
-				<Input id="ep-port" name="port" label="Port" inputmode="numeric" bind:value={port} />
+				<NumberInput id="ep-port" name="port" label="Port" min={1} max={65535} bind:value={port} />
 				<Input id="ep-username" name="username" label="Username" bind:value={username} autocomplete="off" />
 				<PasswordInput id="ep-password" name="password" label="Password" hint={passwordKept ? keptHint : 'Encrypted at rest.'} autocomplete="off" />
 				<div>
@@ -521,8 +482,8 @@
 		{/if}
 
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-			<Input id="ep-priority" name="priority" label="Priority" inputmode="numeric" hint="0 sends first." value={String(editing?.priority ?? 0)} />
-			<Input id="ep-max-per-hour" name="max_per_hour" label="Max per hour" inputmode="numeric" hint="0 is unlimited." value={String(editing?.max_per_hour ?? 0)} />
+			<NumberInput id="ep-priority" name="priority" label="Priority" min={0} hint="0 sends first." value={editing?.priority ?? 0} />
+			<NumberInput id="ep-max-per-hour" name="max_per_hour" label="Max per hour" min={0} hint="0 is unlimited." value={editing?.max_per_hour ?? 0} />
 			<SegmentedControl label="Status" name="status" options={STATUS_OPTIONS} bind:value={status} />
 		</div>
 	</form>
@@ -532,6 +493,3 @@
 	{/snippet}
 </Drawer>
 
-<form method="POST" action="?/delete" use:enhance bind:this={deleteForm} class="hidden">
-	<input type="hidden" name="id" value={deleteId} />
-</form>

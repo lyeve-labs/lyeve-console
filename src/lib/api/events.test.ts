@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '@lyeve-labs/client';
 import {
 	didFire,
-	eventsGate,
 	failedOnly,
 	progressOf,
-	runTone,
 	type EventRow,
 	type ReplayRun,
 } from './events';
@@ -39,27 +36,6 @@ function row(over: Partial<EventRow> = {}): EventRow {
 		...over,
 	};
 }
-
-describe('eventsGate', () => {
-	it('reads a 402 as not enabled and a 404 as the plugin absent', () => {
-		expect(eventsGate(new ApiError(402, 'x')).state).toBe('locked');
-		expect(eventsGate(new ApiError(404, 'x')).state).toBe('absent');
-	});
-
-	it('says a failed read is not a report that nothing was published', () => {
-		const gate = eventsGate(new Error('down'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load the event log.');
-	});
-});
-
-describe('runTone', () => {
-	it('uses the kit vocabulary rather than a synonym', () => {
-		expect(runTone('running')).toBe('warn');
-		expect(runTone('completed')).toBe('success');
-		expect(runTone('failed')).toBe('danger');
-		expect(runTone('pending')).toBe('neutral');
-	});
-});
 
 describe('progressOf', () => {
 	// A run knows its total before it starts, so progress drawn from replayed

@@ -50,6 +50,6 @@ describe('CommentsPanel', () => {
 		const { getByTestId } = render(CommentsPanel, {
 			props: { threads: [], people, mentionable: people, refused: { kind: 'feature', feature: 'example-feature', plugin: 'example', upgradeUrl: '' } },
 		});
-		expect(getByTestId('refusal-notice').textContent).toContain('example-feature');
+		expect(getByTestId('refusal-notice').textContent).toContain('Not enabled on this engine');
 	});
 });

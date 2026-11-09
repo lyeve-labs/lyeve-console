@@ -160,7 +160,7 @@ describe('the routes', () => {
 		expect(client.post).toHaveBeenCalledWith('/api/admin/telemetry/exporters/push%2Fgateway/export', undefined);
 	});
 
-	it('answers an instance with no exporter as an empty list', async () => {
+	it('answers an engine with no exporter as an empty list', async () => {
 		const client = { get: vi.fn(async () => ({ data: [], limit: 50, offset: 0, total_count: 0 })) } as unknown as HttpClient;
 		expect(await listExporters(client)).toEqual([]);
 	});

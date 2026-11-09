@@ -7,6 +7,7 @@
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import type { ActionData, PageData } from './$types';
 	import { tracked } from '$lib/forms.svelte';
+	import { couldNotLoad } from '$lib/outage';
 	import { ICON } from '$lib/icon';
 	import { passkeyFailure, provePasskey, type ProofOptions } from '$lib/passkey-proof';
 	import { tick } from 'svelte';
@@ -83,7 +84,7 @@
 	const mfaEnabled = $derived(data.mfa.ok && data.mfa.value.enabled);
 	const hasPasskeys = $derived(data.mfa.ok && data.mfa.value.hasPasskeys);
 	const description = $derived(
-		!data.mfa.ok ? 'Could not load the two-factor status.' : mfaEnabled ? 'Enabled on this account.' : 'Not enabled on this account.'
+		!data.mfa.ok ? couldNotLoad('the two-factor status') : mfaEnabled ? 'Enabled on this account.' : 'Not enabled on this account.'
 	);
 </script>
 
@@ -267,7 +268,7 @@
 		</Card>
 	{:else if mfaEnabled}
 		<Alert tone="success" title="Two-factor authentication is on">
-			Signing in to this account takes a TOTP code.
+			Signing in to this account takes a code from the authenticator app.
 		</Alert>
 		<Card>
 			<form method="POST" action="?/setup" use:enhance={setup.enhance} class="flex flex-col gap-4">
@@ -278,7 +279,7 @@
 					id="replace-code"
 					name="code"
 					label="Code"
-					hint="A current TOTP code, or a backup code."
+					hint="A current code from the authenticator app, or a backup code."
 					bind:value={replaceCode}
 					autocomplete="one-time-code"
 				/>
@@ -296,7 +297,7 @@
 					id="dis-code"
 					name="code"
 					label="Code"
-					hint="A current TOTP code, or a backup code."
+					hint="A current code from the authenticator app, or a backup code."
 					bind:value={disableCode}
 					autocomplete="one-time-code"
 				/>

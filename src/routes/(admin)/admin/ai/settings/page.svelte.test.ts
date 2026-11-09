@@ -2,7 +2,7 @@
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Page from './+page.svelte';
-import { fixtureSettings } from '$lib/components/ai/fixtures';
+import { fixtureSettings } from '$lib/components/ai/test-support/fixtures';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
@@ -29,7 +29,7 @@ describe('AI settings page', () => {
 		expect(getByLabelText('AI for this tenant').getAttribute('aria-checked')).toBe('true');
 		expect(getByLabelText('Store transcripts').getAttribute('aria-checked')).toBe('true');
 		const words = getByTestId('what-never-leaves').textContent ?? '';
-		expect(words).toContain('Only the request to the endpoint you configured leaves this instance');
+		expect(words).toContain('Only the request to the endpoint you configured leaves this engine');
 		expect(words).toContain('LyEve Labs never sees your prompts');
 		expect(words).toContain('They are not anonymized');
 	});
@@ -57,7 +57,7 @@ describe('AI settings page', () => {
 		expect(getByText(/720h \(30 days\)/)).toBeTruthy();
 	});
 
-	it('tells a tenant admin the instance settings are for super admins and shows no default as a value', () => {
+	it('tells a tenant admin the engine settings are for super admins and shows no default as a value', () => {
 		const { getByText, queryByLabelText, queryByText } = setup({ isSuperAdmin: false, instanceReadable: false });
 		expect(queryByLabelText('Retention')).toBeNull();
 		expect(getByText(/Only a super admin can see and change the retention window/)).toBeTruthy();
@@ -65,7 +65,7 @@ describe('AI settings page', () => {
 		expect(queryByText('true (default)')).toBeNull();
 	});
 
-	it('shows no value when a super admin could not read the instance configuration', () => {
+	it('shows no value when a super admin could not read the engine configuration', () => {
 		const { getByText, queryByText } = setup({ instanceReadable: false, instance: instance.map((s) => ({ ...s, editable: false })) });
 		expect(getByText(/Could not load the retention window/)).toBeTruthy();
 		expect(queryByText('720h (default)')).toBeNull();
@@ -73,7 +73,7 @@ describe('AI settings page', () => {
 
 	it('paints the locked and the absent states with no switch', () => {
 		const locked = setup({ aiSettings: null, aiLayoutGate: { state: 'locked' } });
-		expect(locked.getByText('Not enabled on this instance.')).toBeTruthy();
+		expect(locked.getByText('Not enabled on this engine.')).toBeTruthy();
 		expect(locked.queryByLabelText('AI for this tenant')).toBeNull();
 		cleanup();
 		const absent = setup({ aiSettings: null, aiLayoutGate: { state: 'absent' } });

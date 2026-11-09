@@ -3,6 +3,7 @@ import { listPlugins, type PluginBreakdown } from '$lib/api/profiler';
 import { detailFor } from '$lib/plugin-rows';
 import { authedClient } from '$lib/server/authz';
 import type { Gate } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 
 /**
  * The plugin as the shell's status report describes it, and the requests
@@ -39,7 +40,7 @@ export const load: PageServerLoad = async (event) => {
 		? { state: 'forbidden' }
 		: pluginStatus
 			? null
-			: { state: 'error', message: 'Could not load the plugin status.' };
+			: { state: 'error', message: couldNotLoad('the plugin status') };
 
 	return {
 		pluginName: name,

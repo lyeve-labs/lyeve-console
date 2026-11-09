@@ -78,12 +78,15 @@
 
 <section class="flex flex-col gap-4">
 	<SectionHeading level={2}>Streams</SectionHeading>
+	<p class="text-sm text-muted">Subscribe to the realtime plugin's events as a client would.</p>
+	<ul class="flex flex-col gap-1 text-sm text-muted">
+		<li><span class="font-mono">content:&lt;schema&gt;</span> for writes to a content type</li>
+		<li><span class="font-mono">schema:changed</span> for content type changes</li>
+		<li>The topic a flow's publish node names</li>
+		<li><span class="font-mono">*</span> for every event</li>
+	</ul>
 	<p class="text-sm text-muted">
-		Subscribe to the realtime plugin's events as a client would. A content write reaches
-		<span class="font-mono">content:&lt;schema&gt;</span>, a schema change reaches
-		<span class="font-mono">schema:changed</span>, a flow's publish node reaches the topic it names, and
-		<span class="font-mono">*</span> is everything. Events that the broker or the Redis relay bring from another
-		node arrive here too, so you can test a multi-node setup here.
+		Events from other nodes arrive here too, so you can test a multi-node setup.
 	</p>
 
 	<SegmentedControl

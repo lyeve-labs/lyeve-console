@@ -7,9 +7,9 @@
  */
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
 import type { StatusTone } from '@lyeve-labs/ui-kit';
-import type { ListEnvelope } from './list';
+import { query, type ListEnvelope } from './list';
 
-export const RELEASES_URL = '/api/admin/content/releases';
+const RELEASES_URL = '/api/admin/content/releases';
 
 export const RELEASE_STATUSES = ['draft', 'scheduled', 'publishing', 'published', 'failed', 'canceled'] as const;
 export type ReleaseStatus = (typeof RELEASE_STATUSES)[number];
@@ -99,9 +99,7 @@ function releaseURL(id: string, tail = ''): string {
 }
 
 export function listReleases(client: HttpClient, status: string, limit: number, offset: number): Promise<ListEnvelope<Release>> {
-	const q = new URLSearchParams({ limit: String(limit), offset: String(offset) });
-	if (status) q.set('status', status);
-	return client.get<ListEnvelope<Release>>(`${RELEASES_URL}?${q}`);
+	return client.get<ListEnvelope<Release>>(`${RELEASES_URL}${query({ limit, offset, status })}`);
 }
 
 export function getRelease(client: HttpClient, id: string): Promise<Release> {

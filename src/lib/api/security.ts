@@ -51,7 +51,7 @@ export const CONTROL_LABEL: Record<string, string> = {
 export const CONTROL_SUMMARY: Record<string, string> = {
 	'pii-mask': 'Masks personal data in responses and in the log.',
 	'data-residency': 'Refuses writes that would leave the configured region.',
-	'quota/rate-limit': 'Caps requests per client so one caller cannot exhaust the instance.',
+	'quota/rate-limit': 'Caps requests per client so one caller cannot exhaust the engine.',
 	quota: 'Caps what a tenant may store and send.',
 	waf: 'Blocks injection patterns in paths, headers, cookies and bodies.',
 	mfa: 'Asks for a second factor at login.',

@@ -154,59 +154,70 @@ describe('admin/webhooks/+page.server.ts load', () => {
 });
 
 /*
- * The engine answers the dead letter list with its standard envelope, data
- * and total_count. The action reads the envelope as it is sent and hands the
- * page rows, because a reader expecting items and total sees an empty queue
- * while deliveries wait in it.
+ * The address opens the delivery history and the dead letter queue, so the
+ * load reads each one only when its parameter is there. The engine answers the
+ * dead letter list with its standard envelope, data and total_count. The load
+ * reads the envelope as it is sent, because a reader expecting items and total
+ * sees an empty queue while deliveries wait in it.
  */
-describe('admin/webhooks/+page.server.ts dead-letters action', () => {
-	function actionEvent(body: unknown, status = '') {
+describe('admin/webhooks/+page.server.ts drawer reads', () => {
+	function drawerEvent(search: string, answer: (url: string) => Response) {
 		const seen: string[] = [];
 		const fetch = vi.fn(async (url: string) => {
 			const asked = String(url);
 			seen.push(asked);
-			if (asked.includes('/auth/me')) return json({ id: 'u1', roles: ['admin'], disabled: false });
-			return json(body);
+			if (asked.includes('/schemas')) return json([]);
+			if (asked.includes('/api/admin/webhooks?')) return json(hooks(1));
+			return answer(asked);
 		}) as unknown as typeof globalThis.fetch;
-		const form = new FormData();
-		if (status) form.set('status', status);
 		return {
 			seen,
-			event: {
-				fetch,
-				cookies: mockCookies(),
-				request: { formData: async () => form },
-				url: new URL('http://localhost/admin/webhooks'),
-			} as never,
+			event: { fetch, cookies: mockCookies(), url: new URL(`http://localhost/admin/webhooks${search}`) } as never,
 		};
 	}
 
+	it('reads neither drawer while the address names none', async () => {
+		const { seen, event } = drawerEvent('', () => json([]));
+		const out = (await load(event)) as Loaded;
+		expect(out.deliveries).toBeNull();
+		expect(out.deadLetters).toBeNull();
+		expect(seen.some((u) => u.includes('/deliveries') || u.includes('/webhook-dead-letters'))).toBe(false);
+	});
+
+	it('reads the history of the webhook the address names', async () => {
+		const { seen, event } = drawerEvent('?deliveries=w0', () => json([{ id: 'd1' }]));
+		const out = (await load(event)) as Loaded;
+		expect(out.deliveries).toMatchObject({ id: 'w0', limit: 50, read: { ok: true, value: [{ id: 'd1' }] } });
+		expect(seen.find((u) => u.includes('/deliveries'))).toContain('/w0/');
+	});
+
+	it('keeps a failed history read as its gate, never as no deliveries', async () => {
+		const { event } = drawerEvent('?deliveries=w0', () => json({ error: 'pq: timeout' }, 500));
+		const out = (await load(event)) as Loaded;
+		expect(out.deliveries?.read).toEqual({ ok: false, gate: { state: 'error', message: 'Could not load deliveries.' } });
+	});
+
 	it('reads the rows out of the data envelope and states the total', async () => {
-		const { seen, event } = actionEvent({
-			data: [{ id: 'd1', webhook_name: 'inventory' }, { id: 'd2', webhook_name: 'inventory' }],
-			total_count: 188,
-			limit: 50,
-			offset: 0,
-		});
-
-		const result = (await actions['dead-letters'](event)) as {
-			deadLetters: { id: string }[];
-			deadLetterTotal: number | null;
-		};
-
-		expect(result.deadLetters.map((d) => d.id)).toEqual(['d1', 'd2']);
-		expect(result.deadLetterTotal).toBe(188);
+		const { seen, event } = drawerEvent('?dead=1', () =>
+			json({ data: [{ id: 'd1', webhook_name: 'inventory' }, { id: 'd2', webhook_name: 'inventory' }], total_count: 188, limit: 50, offset: 0 }),
+		);
+		const out = (await load(event)) as Loaded;
+		const read = out.deadLetters?.read;
+		expect(read?.ok && read.value.rows.map((d: { id: string }) => d.id)).toEqual(['d1', 'd2']);
+		expect(read?.ok && read.value.total).toBe(188);
 		expect(seen.find((u) => u.includes('/webhook-dead-letters'))).toContain('limit=50');
 	});
 
-	it('passes the status filter through and sends none when the form named none', async () => {
-		const filtered = actionEvent({ data: [], total_count: 0 }, 'pending');
-		await actions['dead-letters'](filtered.event);
-		expect(filtered.seen.find((u) => u.includes('/webhook-dead-letters'))).toContain('status=pending');
+	it('asks for the page of the queue the address names', async () => {
+		const { seen, event } = drawerEvent('?dead=1&dead_offset=100', () => json({ data: [], total_count: 120 }));
+		expect(await load(event)).toMatchObject({ deadLetters: { offset: 100, limit: 50 } });
+		expect(seen.find((u) => u.includes('/webhook-dead-letters'))).toContain('offset=100');
+	});
 
-		const all = actionEvent({ data: [], total_count: 0 });
-		await actions['dead-letters'](all.event);
-		expect(all.seen.find((u) => u.includes('/webhook-dead-letters'))).not.toContain('status=');
+	it('keeps a failed queue read as its gate, never as an empty queue', async () => {
+		const { event } = drawerEvent('?dead=1', () => json({ error: 'pq: timeout' }, 500));
+		const out = (await load(event)) as Loaded;
+		expect(out.deadLetters?.read).toEqual({ ok: false, gate: { state: 'error', message: 'Could not load dead letters.' } });
 	});
 });
 
@@ -223,13 +234,14 @@ describe('admin/webhooks/+page.server.ts writes by role', () => {
 			return json({});
 		}) as unknown as typeof globalThis.fetch;
 		const form = new FormData();
+		form.set('confirmed', 'yes');
 		form.set('id', 'w1');
 		return {
 			seen,
 			event: {
 				fetch,
 				cookies: mockCookies(),
-				request: { formData: async () => form },
+				request: { formData: async () => form, clone: () => ({ formData: async () => form }) },
 				url: new URL('http://localhost/admin/webhooks'),
 			} as never,
 		};
@@ -246,6 +258,25 @@ describe('admin/webhooks/+page.server.ts writes by role', () => {
 		await actions.delete(event);
 		expect(seen.some((u) => u.includes('/api/admin/webhooks/w1'))).toBe(true);
 	});
+
+	// A click before the page hydrates posts the form with no question asked.
+	it('deletes nothing on a post that skipped the question, and asks it on the page', async () => {
+		const fetch = vi.fn();
+		const body = new FormData();
+		body.set('id', 'w1');
+		const url = new URL('http://localhost/admin/webhooks?/delete');
+		const out = await actions.delete({ fetch, cookies: mockCookies(), url, request: new Request(url, { method: 'POST', body }) } as never);
+		expect(fetch).not.toHaveBeenCalled();
+		expect(out).toEqual({
+			unconfirmed: {
+				question: 'Delete this webhook?',
+				detail: 'This cannot be undone.',
+				label: 'Delete',
+				action: '/admin/webhooks?/delete',
+				fields: [['id', 'w1']],
+			},
+		});
+	});
 });
 
 /** An action event whose session reads as `roles` and whose writes answer `answer`. */
@@ -258,14 +289,16 @@ function postEvent(fields: Record<string, string>, answer: (url: string) => Resp
 		return answer(asked);
 	}) as unknown as typeof globalThis.fetch;
 	const form = new FormData();
+	form.set('confirmed', 'yes');
 	for (const [key, value] of Object.entries(fields)) form.set(key, value);
+	const url = new URL('http://localhost/admin/webhooks');
 	return {
 		seen,
 		event: {
 			fetch,
 			cookies: mockCookies(),
-			request: { formData: async () => form },
-			url: new URL('http://localhost/admin/webhooks'),
+			request: new Request(url, { method: 'POST', body: form }),
+			url,
 		} as never,
 	};
 }
@@ -283,7 +316,7 @@ describe('rotating a webhook signing secret', () => {
 	});
 
 	it('names its action on a refusal and keeps driver text out of an outage', async () => {
-		const refused = postEvent({ id: 'w1' }, () => json({ error: 'failed to rotate webhook secret' }, 404), ['super_admin']);
+		const refused = postEvent({ id: 'w1' }, () => json({ error: 'failed to rotate webhook secret', code: 'not_found' }, 404), ['super_admin']);
 		expect(await actions['rotate-secret'](refused.event)).toEqual({
 			status: 400,
 			data: { action: 'rotate-secret', error: 'failed to rotate webhook secret' },
@@ -304,7 +337,6 @@ describe('rotating a webhook signing secret', () => {
 describe('the delivery and dead-letter actions each report their own outcome', () => {
 	const cases = {
 		test: { fields: { id: 'w1' }, ok: { success: true, status_code: 200, message: 'OK' }, fallback: 'Could not test the webhook. Try again.' },
-		deliveries: { fields: { id: 'w1' }, ok: [], fallback: 'Could not load deliveries. Try again.' },
 		'retry-delivery': {
 			fields: { id: 'w1', delivery_id: 'd1' },
 			ok: { delivery_id: 'd1', success: true, message: 'Delivered' },
@@ -327,7 +359,7 @@ describe('the delivery and dead-letter actions each report their own outcome', (
 	});
 
 	it.each(names)('%s names its action on a refusal', async (name) => {
-		const { event } = postEvent(cases[name].fields, () => json({ error: 'dead letter entry is not pending' }, 409));
+		const { event } = postEvent(cases[name].fields, () => json({ error: 'dead letter entry is not pending', code: 'conflict' }, 409));
 		expect(await actions[name](event)).toMatchObject({ status: 400, data: { action: name, error: 'dead letter entry is not pending' } });
 	});
 
@@ -353,23 +385,7 @@ describe('the delivery and dead-letter actions each report their own outcome', (
 		});
 	});
 
-	it('asks for the page of the queue the form names', async () => {
-		const { event, seen } = postEvent({ offset: '100' }, () => json({ data: [], total_count: 120 }));
-		expect(await actions['dead-letters'](event)).toMatchObject({ deadLetterOffset: 100, deadLetterLimit: 50 });
-		expect(seen[0]).toContain('offset=100');
-	});
-
-	it('reports a failed page turn inside the queue and a failed first read above the list', async () => {
-		const turned = postEvent({ turn: 'page', offset: '50' }, () => json({ error: 'pq: timeout' }, 503));
-		expect(await actions['dead-letters'](turned.event)).toMatchObject({ data: { action: 'dead-letters-page' } });
-		// A turn back to the first page is still a turn inside the open queue.
-		const back = postEvent({ turn: 'page', offset: '0' }, () => json({ error: 'pq: timeout' }, 503));
-		expect(await actions['dead-letters'](back.event)).toMatchObject({ data: { action: 'dead-letters-page' } });
-		const first = postEvent({}, () => json({ error: 'pq: timeout' }, 503));
-		expect(await actions['dead-letters'](first.event)).toMatchObject({ data: { action: 'dead-letters' } });
-	});
-
-	it.each([...names, 'dead-letters'] as const)('%s is refused to a session the engine does not sign in', async (name) => {
+	it.each(names)('%s is refused to a session the engine does not sign in', async (name) => {
 		const fetch = vi.fn(async () => json({ error: 'unauthorized' }, 401)) as unknown as typeof globalThis.fetch;
 		const event = {
 			fetch,

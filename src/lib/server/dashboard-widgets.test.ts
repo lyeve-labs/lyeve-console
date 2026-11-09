@@ -93,7 +93,7 @@ describe('resolveWidgets', () => {
 		expect(e.counts?.[0]).toMatchObject({ rows: null, days: null });
 	});
 
-	it('marks a widget whose plugin this instance does not serve, and reads nothing for it', async () => {
+	it('marks a widget whose plugin this engine does not serve, and reads nothing for it', async () => {
 		const { c, get } = client({});
 		const [w] = await resolveWidgets(c, [{ id: 'api', type: 'api_usage', window: '24h' }], ['admin'], { state: 'named', running: ['content', 'media'], withheld: [] }, NOW);
 		expect(w.unavailable).toBe(true);

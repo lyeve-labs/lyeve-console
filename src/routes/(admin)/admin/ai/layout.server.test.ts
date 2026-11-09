@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { load } from './+layout.server';
-import { fixtureSettings } from '$lib/components/ai/fixtures';
-import { json, loadEvent, refused } from '$lib/components/ai/test-events';
+import { fixtureSettings } from '$lib/components/ai/test-support/fixtures';
+import { json, loadEvent, refused } from '$lib/components/ai/test-support/events';
 
 describe('admin/ai layout load', () => {
 	it('reads the tenant switch and says who is a super admin', async () => {

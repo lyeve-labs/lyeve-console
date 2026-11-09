@@ -45,6 +45,7 @@ function write(fields: Record<string, string>, reply: Response = json({})) {
 		return reply.clone();
 	});
 	const form = new FormData();
+	form.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) form.set(k, v);
 	const url = new URL('http://admin/admin/settings/devices');
 	return { calls, event: { fetch, url, request: new Request(url, { method: 'POST', body: form }) } as never };
@@ -79,7 +80,7 @@ describe('device writes', () => {
 	});
 
 	it.each(['trust', 'untrust'] as const)('relays the engine refusal on %s', async (name) => {
-		const { event } = write({ label: 'Laptop', id: 'd1' }, json({ error: 'device limit reached' }, 409));
+		const { event } = write({ label: 'Laptop', id: 'd1' }, json({ error: 'device limit reached', code: 'conflict' }, 409));
 		const out = (await actions[name](event)) as Failure;
 		expect(out.data.error).toBe('device limit reached');
 	});

@@ -101,10 +101,10 @@ describe('the incoming webhook drawer and the failures of other actions', () => 
 				entitlements,
 				user: { roles: ['super_admin'] },
 			},
-			form: { action: 'update', error: 'Field map must be valid JSON.' },
+			form: { action: 'update', error: 'Enter the field map as valid JSON.' },
 		} as never);
 		const form = document.body.querySelector('form#incoming-form') as HTMLFormElement;
-		expect(form.firstElementChild?.textContent).toContain('Field map must be valid JSON.');
+		expect(form.firstElementChild?.textContent).toContain('Enter the field map as valid JSON.');
 	});
 });
 
@@ -113,7 +113,7 @@ describe('the incoming webhook drawer and the failures of other actions', () => 
  * them live let the reader fill in the whole form before the refusal arrived.
  */
 describe('the incoming webhook controls and the license', () => {
-	const HELD = 'The license on this instance does not include creating or changing incoming webhooks.';
+	const HELD = 'Creating and changing incoming webhooks is not enabled on this engine.';
 
 	it('holds New and Edit with the reason when the plugin says the license is missing', () => {
 		const { container, getByRole } = setup({ licensed: false });

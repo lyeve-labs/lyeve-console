@@ -34,12 +34,13 @@
 	// editable after a lapse, so it can be put back to the default.
 	const thresholdLocked = $derived(!!settings && !settings.licensed && !storedCustom);
 
+	// The threshold form, seeded once from the stored settings.
 	// svelte-ignore state_referenced_locally
-	let mode = $state<'default' | 'custom'>(storedCustom ? 'custom' : 'default');
-	// svelte-ignore state_referenced_locally
-	let minCount = $state(settings?.spike_min_count ?? settings?.defaults.spike_min_count ?? 10);
-	// svelte-ignore state_referenced_locally
-	let zScore = $state(settings?.spike_z_score ?? settings?.defaults.spike_z_score ?? 2.5);
+	const threshold = $state({
+		mode: (storedCustom ? 'custom' : 'default') as 'default' | 'custom',
+		minCount: settings?.spike_min_count ?? settings?.defaults.spike_min_count ?? 10,
+		zScore: settings?.spike_z_score ?? settings?.defaults.spike_z_score ?? 2.5,
+	});
 
 	const MODES = [
 		{ value: 'default', label: 'Default' },
@@ -83,7 +84,7 @@
 				<div class="flex flex-col gap-4">
 					<p class="text-sm text-muted">
 						A spike is always logged. Each channel you set here is also notified, at most once every
-						fifteen minutes. Email alerts work on every install.
+						fifteen minutes. Email alerts are always available.
 					</p>
 					<AlertChannelFields
 						prefix={SETTINGS_CHANNEL_PREFIX}
@@ -110,8 +111,8 @@
 						</div>
 						<input type="hidden" name="threshold_mode" value="default" />
 					{:else}
-						<SegmentedControl label="Threshold" name="threshold_mode" bind:value={mode} options={MODES} />
-						{#if mode === 'custom'}
+						<SegmentedControl label="Threshold" name="threshold_mode" bind:value={threshold.mode} options={MODES} />
+						{#if threshold.mode === 'custom'}
 							<div class="grid gap-4 sm:grid-cols-2">
 								<NumberInput
 									id="spike-min-count"
@@ -120,7 +121,7 @@
 									hint="A window with fewer errors is never a spike."
 									min={1}
 									step={1}
-									bind:value={minCount}
+									bind:value={threshold.minCount}
 								/>
 								<NumberInput
 									id="spike-z-score"
@@ -130,7 +131,7 @@
 									min={0.5}
 									max={20}
 									step={0.1}
-									bind:value={zScore}
+									bind:value={threshold.zScore}
 								/>
 							</div>
 						{/if}

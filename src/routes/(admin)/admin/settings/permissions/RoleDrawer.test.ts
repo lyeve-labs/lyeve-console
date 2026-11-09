@@ -5,7 +5,7 @@ import { tick } from 'svelte';
 import RoleDrawer from './RoleDrawer.svelte';
 
 type After = (o: { result: { type: string }; update: (o?: unknown) => Promise<void> }) => Promise<void>;
-type Submit = (input: { cancel: () => void }) => After;
+type Submit = (input: { cancel: () => void }) => Promise<After>;
 
 const forms = vi.hoisted(() => ({ submit: null as Submit | null }));
 vi.mock('$app/forms', () => ({
@@ -49,11 +49,11 @@ describe('RoleDrawer', () => {
 		render(RoleDrawer, { props: { open: true } });
 		await fireEvent.input(screen.getByLabelText(/Role name/), { target: { value: 'reviewer' } });
 		const update = vi.fn(async () => {});
-		await (forms.submit as Submit)({ cancel: () => {} })({ result: { type: 'failure' }, update });
+		await (await (forms.submit as Submit)({ cancel: () => {} }))({ result: { type: 'failure' }, update });
 		await tick();
 		expect((screen.getByLabelText(/Role name/) as HTMLInputElement).value).toBe('reviewer');
 		expect(update).toHaveBeenCalledWith({ reset: false });
-		await (forms.submit as Submit)({ cancel: () => {} })({ result: { type: 'success' }, update });
+		await (await (forms.submit as Submit)({ cancel: () => {} }))({ result: { type: 'success' }, update });
 		await vi.waitFor(() => expect(roleForm()).toBeNull());
 	});
 });

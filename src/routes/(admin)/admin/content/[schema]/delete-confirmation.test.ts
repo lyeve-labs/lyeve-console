@@ -132,9 +132,11 @@ describe('Content entry delete confirmation', () => {
 	it('confirms the delete, so the row does not vanish in silence', async () => {
 		kit.confirm.mockResolvedValue(true);
 
-		const after = (await submit()({ cancel: vi.fn() } as never)) as (a: unknown) => Promise<void>;
+		const formData = new FormData();
+		const after = (await submit()({ cancel: vi.fn(), formData } as never)) as (a: unknown) => Promise<void>;
 		await after({ result: { type: 'success' }, update: async () => {} });
 
-		expect(kit.success).toHaveBeenCalledWith('Deleted The launch post');
+		expect(formData.get('confirmed')).toBe('yes');
+		expect(kit.success).toHaveBeenCalledWith('The launch post deleted.');
 	});
 });

@@ -1,5 +1,6 @@
 import type { HttpClient } from '@lyeve-labs/client';
 import type { LogSearchResponse } from '@lyeve-labs/client-rest';
+import { query as queryString } from './list';
 
 /** Page sizes the logs page offers. The engine caps a search at 1000. */
 export const LOG_PAGE_SIZES = [50, 100, 200, 500] as const;
@@ -12,7 +13,7 @@ export const LOG_DEFAULT_LIMIT = 100;
  */
 export const LOG_MAX_LIMIT = 500;
 
-export const LOG_SEARCH_URL = '/api/admin/logs/search';
+const LOG_SEARCH_URL = '/api/admin/logs/search';
 
 /**
  * The engine's bound on an inbound request id. A longer term cannot be one, so
@@ -55,14 +56,9 @@ export function couldBeId(term: string): boolean {
  */
 export async function searchLogEntries(client: HttpClient, query: LogQuery): Promise<LogSearchResponse> {
 	// Built here rather than through the client's searchLogs(), which sends no offset.
-	const base = new URLSearchParams({ limit: String(query.limit), offset: String(query.offset) });
-	if (query.level) base.set('level', query.level);
-
-	const run = (key?: string, value?: string) => {
-		const qs = new URLSearchParams(base);
-		if (key && value) qs.set(key, value);
-		return client.get<LogSearchResponse>(`${LOG_SEARCH_URL}?${qs}`);
-	};
+	const base = { limit: query.limit, offset: query.offset, level: query.level };
+	const run = (key?: string, value?: string) =>
+		client.get<LogSearchResponse>(`${LOG_SEARCH_URL}${queryString(key ? { ...base, [key]: value } : base)}`);
 	const guess = (key: string, value: string) => run(key, value).catch(() => null);
 
 	const term = query.q.trim();

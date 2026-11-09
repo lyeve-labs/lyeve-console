@@ -494,6 +494,13 @@ describe('icon-size', () => {
     expect(check('icon-size', '<CheckCircle class="h-5 w-5 text-success" />')).toHaveLength(1);
   });
 
+  it('fails a half-step class as well as a whole one', () => {
+    expect(check('icon-size', '<Check class="h-3.5 w-3.5" />')).toEqual([
+      'h-3.5 w-3.5 sizes an icon by class; pass size={...} instead',
+    ]);
+    expect(check('icon-size', '<Loader class="h-2.5 w-2.5 animate-spin" />')).toHaveLength(1);
+  });
+
   it('leaves a box that is not an icon alone', () => {
     // The rule reads a component tag, so a sized div or span is not its subject.
     expect(check('icon-size', '<div class="h-4 w-4 rounded-full bg-brand"></div>')).toEqual([]);

@@ -13,7 +13,7 @@
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
 
-export const CONFIG_SYNC_URL = '/api/admin/config-sync';
+const CONFIG_SYNC_URL = '/api/admin/config-sync';
 
 /** The engine refuses a shorter passphrase, so the form does too. */
 export const MIN_PASSPHRASE = 12;

@@ -1,4 +1,5 @@
 import type { HttpClient } from '@lyeve-labs/client';
+import { record } from './narrow';
 
 /** How a provider row sends: over SMTP, or over a provider's HTTP API. */
 export type EmailTransport = 'smtp' | 'api';
@@ -90,14 +91,9 @@ export interface EmailProviderBody {
 }
 
 const BASE = '/api/admin/email/providers';
-const enc = encodeURIComponent;
-
-function asObject(v: unknown): Record<string, unknown> {
-	return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
-}
 
 function stringMap(v: unknown): Record<string, string> | undefined {
-	const obj = asObject(v);
+	const obj = record(v);
 	const out: Record<string, string> = {};
 	for (const [k, val] of Object.entries(obj)) if (typeof val === 'string') out[k] = val;
 	return Object.keys(out).length > 0 ? out : undefined;
@@ -147,8 +143,8 @@ export function toEmailProvider(raw: Record<string, unknown>): EmailProvider {
  */
 export async function listEmailProviders(client: HttpClient): Promise<EmailProvider[]> {
 	const res = await client.get<unknown>(`${BASE}?limit=100&offset=0`);
-	const rows = Array.isArray(res) ? res : (asObject(res).data ?? []);
-	return (Array.isArray(rows) ? rows : []).map((r) => toEmailProvider(asObject(r)));
+	const rows = Array.isArray(res) ? res : (record(res).data ?? []);
+	return (Array.isArray(rows) ? rows : []).map((r) => toEmailProvider(record(r)));
 }
 
 export function createEmailProvider(client: HttpClient, body: EmailProviderBody): Promise<EmailProvider> {
@@ -160,9 +156,9 @@ export function updateEmailProvider(
 	id: string,
 	body: Partial<EmailProviderBody>,
 ): Promise<EmailProvider> {
-	return client.put<Record<string, unknown>>(`${BASE}/${enc(id)}`, body).then(toEmailProvider);
+	return client.put<Record<string, unknown>>(`${BASE}/${encodeURIComponent(id)}`, body).then(toEmailProvider);
 }
 
 export async function deleteEmailProvider(client: HttpClient, id: string): Promise<void> {
-	await client.delete<void>(`${BASE}/${enc(id)}`);
+	await client.delete<void>(`${BASE}/${encodeURIComponent(id)}`);
 }

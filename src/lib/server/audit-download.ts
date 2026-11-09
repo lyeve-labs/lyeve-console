@@ -2,6 +2,7 @@ import { error, type RequestEvent } from '@sveltejs/kit';
 import { sessionToken } from '$lib/server/session-cookie';
 import { engineFetch } from '$lib/server/engine';
 import { exportBody, readFilter } from '$lib/server/audit-filter';
+import { OUTAGE } from '$lib/outage';
 
 /**
  * Proxy one of the engine's audit exports and hand the bytes back as the
@@ -54,7 +55,7 @@ export async function proxyAuditDownload(
 			signal: AbortSignal.timeout(TIMEOUT_MS)
 		});
 	} catch {
-		error(502, 'Engine unreachable');
+		error(502, OUTAGE.body);
 	}
 
 	if (!res.ok) {

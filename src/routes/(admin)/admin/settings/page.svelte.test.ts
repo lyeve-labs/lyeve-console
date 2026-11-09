@@ -24,7 +24,7 @@ function mount(roles: string[], features: string[] = [], licenseModule = true) {
 describe('settings hub page', () => {
 	it('groups every page by purpose for a super admin', () => {
 		mount(['super_admin']);
-		for (const name of ['Your account', 'Workspace', 'Sign-in and access', 'APIs and delivery', 'Data and compliance', 'Instance']) {
+		for (const name of ['Your account', 'Tenant', 'Sign-in and access', 'APIs and delivery', 'Data and compliance', 'Engine']) {
 			expect(screen.getByRole('region', { name })).toBeTruthy();
 		}
 		const apis = screen.getByRole('region', { name: 'APIs and delivery' });
@@ -44,7 +44,7 @@ describe('settings hub page', () => {
 		cleanup();
 		mount(['super_admin'], [], false);
 		expect(screen.queryByRole('link', { name: /License/ })).toBeNull();
-		const instance = screen.getByRole('region', { name: 'Instance' });
+		const instance = screen.getByRole('region', { name: 'Engine' });
 		expect(within(instance).getByRole('link', { name: /Configuration/ })).toBeTruthy();
 	});
 
@@ -52,7 +52,7 @@ describe('settings hub page', () => {
 		mount(['editor']);
 		expect(screen.getByRole('region', { name: 'Your account' })).toBeTruthy();
 		expect(screen.getByRole('link', { name: /Account and appearance/ }).getAttribute('href')).toBe('/admin/settings/account');
-		expect(screen.queryByRole('region', { name: 'Instance' })).toBeNull();
+		expect(screen.queryByRole('region', { name: 'Engine' })).toBeNull();
 		expect(screen.queryByRole('link', { name: /License/ })).toBeNull();
 	});
 });

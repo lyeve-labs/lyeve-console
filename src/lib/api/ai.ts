@@ -9,7 +9,8 @@
  */
 
 import type { HttpClient } from '@lyeve-labs/client';
-import { rowsOf, statedTotal, type ListEnvelope } from '$lib/api/list';
+import { query, rowsOf, statedTotal, type ListEnvelope } from '$lib/api/list';
+import type { Gate } from '$lib/api/gate';
 
 export const PROVIDER_KINDS = ['openai', 'anthropic', 'openai_compatible', 'anthropic_compatible'] as const;
 export type ProviderKind = (typeof PROVIDER_KINDS)[number];
@@ -207,20 +208,13 @@ export interface AiDashboard {
 }
 
 /**
- * What a read of the plugin answered, sorted for the page. Lives here rather
- * than beside the sorter because a page passes it to a component.
+ * What a read of the plugin answered, sorted for the page: a shared gate, the
+ * tenant's switch turned off, or no provider to answer through. Lives here
+ * rather than beside the sorter because a page passes it to a component. An
+ * absent gate is the plugin not mounted, which only the settings read, the
+ * one the tenant switch leaves open, can tell.
  */
-export type AiGate =
-	| { state: 'ok' }
-	| { state: 'locked' }
-	| { state: 'forbidden' }
-	/** The plugin is not mounted: only the settings read, which the tenant gate leaves open, can tell. */
-	| { state: 'absent' }
-	| { state: 'off' }
-	| { state: 'no_provider' }
-	| { state: 'error'; message: string };
-
-export const AI_OK: AiGate = { state: 'ok' };
+export type AiGate = Gate | { state: 'off' } | { state: 'no_provider' };
 
 /**
  * The gate a page renders under: the layout's word when the settings read
@@ -237,16 +231,6 @@ export interface Page<T> {
 }
 
 const BASE = '/api/admin/ai';
-const enc = encodeURIComponent;
-
-const q = (params: Record<string, string | number | undefined>): string => {
-	const qs = new URLSearchParams();
-	for (const [k, v] of Object.entries(params)) {
-		if (v !== undefined && v !== '') qs.set(k, String(v));
-	}
-	const s = qs.toString();
-	return s ? `?${s}` : '';
-};
 
 export function getAiSettings(client: HttpClient): Promise<AiSettings> {
 	return client.get<AiSettings>(`${BASE}/settings`);
@@ -263,12 +247,12 @@ export async function listProviders(
 	client: HttpClient,
 	params: { limit?: number; offset?: number } = {}
 ): Promise<Page<AiProvider>> {
-	const res = await client.get<ListEnvelope<AiProvider> | AiProvider[]>(`${BASE}/providers${q(params)}`);
+	const res = await client.get<ListEnvelope<AiProvider> | AiProvider[]>(`${BASE}/providers${query(params)}`);
 	return { rows: rowsOf(res), total: statedTotal(res) };
 }
 
 export function getProvider(client: HttpClient, id: string): Promise<AiProvider> {
-	return client.get<AiProvider>(`${BASE}/providers/${enc(id)}`);
+	return client.get<AiProvider>(`${BASE}/providers/${encodeURIComponent(id)}`);
 }
 
 export function createProvider(client: HttpClient, body: ProviderInput): Promise<AiProvider> {
@@ -276,20 +260,20 @@ export function createProvider(client: HttpClient, body: ProviderInput): Promise
 }
 
 export function updateProvider(client: HttpClient, id: string, body: ProviderInput): Promise<AiProvider> {
-	return client.put<AiProvider>(`${BASE}/providers/${enc(id)}`, body);
+	return client.put<AiProvider>(`${BASE}/providers/${encodeURIComponent(id)}`, body);
 }
 
 export async function deleteProvider(client: HttpClient, id: string): Promise<void> {
-	await client.delete<void>(`${BASE}/providers/${enc(id)}`);
+	await client.delete<void>(`${BASE}/providers/${encodeURIComponent(id)}`);
 }
 
 export async function listModels(client: HttpClient, id: string): Promise<string[]> {
-	const res = await client.get<{ models: string[] }>(`${BASE}/providers/${enc(id)}/models`);
+	const res = await client.get<{ models: string[] }>(`${BASE}/providers/${encodeURIComponent(id)}/models`);
 	return res.models ?? [];
 }
 
 export function getCapabilities(client: HttpClient, id: string, model?: string): Promise<ModelCapabilities> {
-	return client.get<ModelCapabilities>(`${BASE}/providers/${enc(id)}/capabilities${q({ model })}`);
+	return client.get<ModelCapabilities>(`${BASE}/providers/${encodeURIComponent(id)}/capabilities${query({ model })}`);
 }
 
 export async function listPrompts(client: HttpClient): Promise<PromptView[]> {
@@ -298,12 +282,12 @@ export async function listPrompts(client: HttpClient): Promise<PromptView[]> {
 }
 
 export function getPrompt(client: HttpClient, useCase: string): Promise<PromptView> {
-	return client.get<PromptView>(`${BASE}/prompts/${enc(useCase)}`);
+	return client.get<PromptView>(`${BASE}/prompts/${encodeURIComponent(useCase)}`);
 }
 
 /** Every save is a new version, which is the one in force from then on. */
 export function savePromptVersion(client: HttpClient, useCase: string, body: string): Promise<AiPromptVersion> {
-	return client.post<AiPromptVersion>(`${BASE}/prompts/${enc(useCase)}`, { body });
+	return client.post<AiPromptVersion>(`${BASE}/prompts/${encodeURIComponent(useCase)}`, { body });
 }
 
 export async function listPrices(client: HttpClient): Promise<ModelPrice[]> {
@@ -317,32 +301,32 @@ export function putPrice(
 	model: string,
 	body: { input_per_1k: number; output_per_1k: number; image_per_call: number }
 ): Promise<ModelPrice> {
-	return client.put<ModelPrice>(`${BASE}/prices/${enc(kind)}/${enc(model)}`, body);
+	return client.put<ModelPrice>(`${BASE}/prices/${encodeURIComponent(kind)}/${encodeURIComponent(model)}`, body);
 }
 
 export async function deletePrice(client: HttpClient, kind: string, model: string): Promise<void> {
-	await client.delete<void>(`${BASE}/prices/${enc(kind)}/${enc(model)}`);
+	await client.delete<void>(`${BASE}/prices/${encodeURIComponent(kind)}/${encodeURIComponent(model)}`);
 }
 
 export async function listTranscripts(
 	client: HttpClient,
 	params: { limit?: number; offset?: number; kind?: string; subject_kind?: string; subject_id?: string } = {}
 ): Promise<Page<Transcript>> {
-	const res = await client.get<ListEnvelope<Transcript> | Transcript[]>(`${BASE}/transcripts${q(params)}`);
+	const res = await client.get<ListEnvelope<Transcript> | Transcript[]>(`${BASE}/transcripts${query(params)}`);
 	return { rows: rowsOf(res), total: statedTotal(res) };
 }
 
 export function getTranscript(client: HttpClient, id: string): Promise<Transcript> {
-	return client.get<Transcript>(`${BASE}/transcripts/${enc(id)}`);
+	return client.get<Transcript>(`${BASE}/transcripts/${encodeURIComponent(id)}`);
 }
 
 export function recapTranscript(client: HttpClient, id: string): Promise<RecapResult> {
-	return client.post<RecapResult>(`${BASE}/transcripts/${enc(id)}/recap`, undefined);
+	return client.post<RecapResult>(`${BASE}/transcripts/${encodeURIComponent(id)}/recap`, undefined);
 }
 
 /** The path the export server route forwards to. */
 export function transcriptExportPath(id: string, format: 'json' | 'markdown'): string {
-	return `${BASE}/transcripts/${enc(id)}/export?format=${format}`;
+	return `${BASE}/transcripts/${encodeURIComponent(id)}/export?format=${format}`;
 }
 
 export function getAiDashboard(client: HttpClient): Promise<AiDashboard> {

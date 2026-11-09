@@ -7,8 +7,9 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
+import { plural } from '$lib/format';
 
-export const SINKS_URL = '/api/admin/audit-log/sinks';
+const SINKS_URL = '/api/admin/audit-log/sinks';
 
 export const SINK_KINDS = ['https', 'splunk', 'datadog'] as const;
 export type SinkKind = (typeof SINK_KINDS)[number];
@@ -90,7 +91,7 @@ export function testSink(client: HttpClient, id: string): Promise<{ delivered: b
 /** How far behind the destination is, in words. */
 export function lagText(s: Pick<AuditSink, 'pending_entries' | 'lag_seconds'>): string {
 	if (s.pending_entries <= 0) return 'Up to date';
-	const n = `${s.pending_entries} ${s.pending_entries === 1 ? 'entry' : 'entries'} waiting`;
+	const n = `${s.pending_entries} ${plural(s.pending_entries, 'entry', 'entries')} waiting`;
 	const secs = s.lag_seconds;
 	if (secs < 60) return `${n}, ${secs}s behind`;
 	if (secs < 3600) return `${n}, ${Math.round(secs / 60)} min behind`;

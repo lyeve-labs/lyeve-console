@@ -19,6 +19,7 @@
 	import type { Snippet } from 'svelte';
 	import { effectiveGate, type AiGate } from '$lib/api/ai';
 	import NotEnabled from '$lib/components/NotEnabled.svelte';
+	import GateNotice from '$lib/components/GateNotice.svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { ICON } from '$lib/icon';
@@ -88,14 +89,14 @@
 
 {#if !blocked}
 	{@render children()}
-{:else if effective.state === 'locked'}
+{:else if effective.state === 'locked' || effective.state === 'full'}
 	<NotEnabled
 		title="AI"
 		{level}
-		description="Providers, prompts, transcripts and the editor assistant are part of the AI plugin."
+		description="Set up providers and prompts, read transcripts and use the editor assistant with the AI plugin."
 	/>
 {:else if effective.state === 'forbidden'}
-	<Alert tone="danger" title="Not allowed">Your role cannot read AI {noun}.</Alert>
+	<Alert tone="danger" title="Not allowed">Only an admin or a super admin can open AI {noun}.</Alert>
 {:else if effective.state === 'absent'}
 	<EmptyState
 		{level}
@@ -141,6 +142,6 @@
 			<Button variant="secondary" href="/admin/ai/providers">Open providers</Button>
 		{/snippet}
 	</EmptyState>
-{:else if effective.state === 'error'}
-	<Alert tone="danger" title="Could not load {noun}">{effective.message}</Alert>
+{:else if effective.state === 'busy' || effective.state === 'unavailable' || effective.state === 'error'}
+	<GateNotice gate={effective} title="AI {noun}" absent="" />
 {/if}

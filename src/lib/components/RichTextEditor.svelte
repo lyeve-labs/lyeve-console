@@ -9,6 +9,7 @@
 		Link, Unlink,
 		Undo2, Redo2,
 	} from '@lucide/svelte';
+	import { Button, Input, closeDialog, dismissDialog, openDialog } from '@lyeve-labs/ui-kit';
 	import { ICON } from '$lib/icon';
 
 	let {
@@ -73,7 +74,7 @@
 	let mounted = $state(true);
 
 	onMount(() => {
-		let instance: InstanceType<typeof import('@tiptap/core').Editor>;
+		let instance: Editor;
 
 		Promise.all([
 			import('@tiptap/core'),
@@ -117,14 +118,24 @@
 		editor.commands.setContent(next, { emitUpdate: false });
 	});
 
-	function handleSetLink() {
-		const existing = editor?.getAttributes('link').href ?? '';
-		const url = window.prompt('Enter URL (leave empty to remove):', existing);
-		if (url === null) return;
-		if (url.trim() === '') {
+	const linkId = $props.id();
+	let linkUrl = $state('');
+
+	async function handleSetLink() {
+		const existing: string = editor?.getAttributes('link').href ?? '';
+		linkUrl = existing;
+		const ok = await openDialog<boolean>({
+			title: linkLabel,
+			body: linkBody,
+			footer: linkFooter,
+			size: 'sm',
+		}).catch(() => false);
+		if (!ok) return;
+		const url = linkUrl.trim();
+		if (url === '') {
 			editor?.chain().focus().unsetLink().run();
 		} else {
-			editor?.chain().focus().setLink({ href: url.trim() }).run();
+			editor?.chain().focus().setLink({ href: url }).run();
 		}
 	}
 
@@ -154,6 +165,15 @@
 	 */
 	const linkLabel = $derived(editorState.link ? 'Edit link' : 'Insert link');
 </script>
+
+{#snippet linkBody()}
+	<Input id={linkId} type="url" label="URL" hint="Leave it empty to remove the link." bind:value={linkUrl} />
+{/snippet}
+
+{#snippet linkFooter()}
+	<Button variant="secondary" size="sm" onclick={() => dismissDialog()}>Cancel</Button>
+	<Button size="sm" onclick={() => closeDialog(true)}>Save</Button>
+{/snippet}
 
 <div
 	class="border border-line-strong rounded-lg overflow-hidden focus-within:border-brand transition-colors"

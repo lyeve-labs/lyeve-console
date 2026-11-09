@@ -2,15 +2,14 @@
 	import {
 		Alert,
 		Badge,
-		Button,
 		CopyButton,
 		EmptyState,
 		PageShell,
 		SectionHeading,
 		Table,
 	} from '@lyeve-labs/ui-kit';
-	import { invalidateAll } from '$app/navigation';
-	import { Network, RefreshCw } from '@lucide/svelte';
+	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import { Network } from '@lucide/svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import {
 		HEALTH_LABELS,
@@ -22,21 +21,11 @@
 		serviceTone,
 		undeclared,
 	} from '$lib/api/grpc';
-	import { NO_VALUE } from '$lib/format';
+	import { NO_VALUE, plural } from '$lib/format';
 	import type { PageData } from './$types';
 	import { ICON } from '$lib/icon';
 
 	let { data }: { data: PageData } = $props();
-
-	let refreshing = $state(false);
-	async function refresh() {
-		refreshing = true;
-		try {
-			await invalidateAll();
-		} finally {
-			refreshing = false;
-		}
-	}
 
 	const health = $derived(grpcHealth(data.status));
 	const gaps = $derived(undeclared(data.status));
@@ -50,15 +39,13 @@
 >
 	{#snippet actions()}
 		{#if data.permitted && data.gate.state === 'ok'}
-			<Button variant="secondary" size="sm" onclick={refresh} loading={refreshing}>
-				<RefreshCw size={ICON.sm} /> Refresh
-			</Button>
+			<RefreshButton />
 		{/if}
 	{/snippet}
 
 	{#if !data.permitted}
 		<Alert tone="brand">
-			Only a super admin can see the gRPC status, because it shows the addresses this server listens on.
+			Only a super admin can see the gRPC status, because it shows the addresses the engine listens on.
 		</Alert>
 	{:else if data.gate.state !== 'ok'}
 		<GateNotice
@@ -76,7 +63,7 @@
 			<!-- No listener was bound on purpose. Calling it a bind failure
 			     sends somebody to look at ports. -->
 			<Alert tone="warn">
-				The gRPC plugin is not enabled on this instance, so no listener was started.
+				The gRPC plugin is not enabled on this engine, so no listener was started.
 			</Alert>
 		{:else if !data.status.listening}
 			<Alert tone="danger">
@@ -90,7 +77,7 @@
 			     first is told it does not exist. -->
 			<Alert tone="warn">
 				{gaps.length}
-				{gaps.length === 1 ? 'service is' : 'services are'} registered on the server but missing from the health service. They accept calls, but a client that runs a health check first is told they do not exist.
+				{plural(gaps.length, 'service is', 'services are')} registered on the server but missing from the health service. They accept calls, but a client that runs a health check first is told they do not exist.
 			</Alert>
 		{/if}
 

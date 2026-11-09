@@ -73,7 +73,7 @@ describe('the gate', () => {
 		const { container } = render(ScimPage, {
 			props: props({ gate: { state: 'locked', upgradeUrl: '' }, providers: [] }),
 		});
-		expect(said(container)).toContain('Not enabled on this instance');
+		expect(said(container)).toContain('Not enabled on this engine');
 		expect(said(container)).not.toContain('New connection');
 	});
 

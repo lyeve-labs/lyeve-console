@@ -11,6 +11,7 @@
 	import { formRefusal } from '$lib/api/refusal';
 	import { ICON } from '$lib/icon';
 	import { tracked } from '$lib/forms.svelte';
+	import { plural } from '$lib/format';
 	import type { StepUpFactor } from '$lib/api/export-step-up';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -57,7 +58,7 @@
 	);
 
 	const confirmError = $derived(
-		eraseConfirm.length > 0 && !canErase ? 'Does not match the subject above' : undefined
+		eraseConfirm.length > 0 && !canErase ? 'Type the subject exactly as above.' : undefined
 	);
 
 	const exportResult = $derived(
@@ -104,7 +105,7 @@
 
 <PageShell
 	title="Privacy requests"
-	description="Export or erase all personal data held for one person. GDPR calls this a data subject request. Only super admins can use this page."
+	description="Export or erase every piece of personal data held about one person. GDPR calls this a data subject request."
 	width="wide"
 	back={{ href: '/admin/settings', label: 'Settings' }}
 >
@@ -155,9 +156,9 @@
 					<div class="flex flex-wrap items-center justify-between gap-3">
 						<span class="text-xs text-muted">
 							{exportResult.summary.total_records}
-							{exportResult.summary.total_records === 1 ? 'record' : 'records'} from
+							{plural(exportResult.summary.total_records, 'record')} from
 							{exportResult.summary.plugins_with_data} of {exportResult.summary.plugins_queried}
-							{exportResult.summary.plugins_queried === 1 ? 'plugin' : 'plugins'}
+							{plural(exportResult.summary.plugins_queried, 'plugin')}
 						</span>
 						<!-- The payload is already in the page, so the link carries it as a
 						     data URI. Button refuses that scheme, which is why this one
@@ -263,7 +264,7 @@
 			<Alert tone="warn" title="Erasure kept some records">
 				<p>
 					Erased <span class="font-medium">{eraseResult.total_rows}</span>
-					{eraseResult.total_rows === 1 ? 'row' : 'rows'} for
+					{plural(eraseResult.total_rows, 'row')} for
 					<span class="font-mono text-xs">{eraseResult.identifier}</span>. Some records were kept,
 					because they cannot be told apart from another account's data in this tenant.
 				</p>
@@ -273,10 +274,9 @@
 			<Alert tone="warn" title="Erasure incomplete">
 				<p>
 					Erased <span class="font-medium">{eraseResult.total_rows}</span>
-					{eraseResult.total_rows === 1 ? 'row' : 'rows'} for
-					<span class="font-mono text-xs">{eraseResult.identifier}</span>, but some data could not be
-					erased and is still stored. The engine log shows which part failed. Run the erasure again once the
-					cause is fixed.
+					{plural(eraseResult.total_rows, 'row')} for
+					<span class="font-mono text-xs">{eraseResult.identifier}</span>, but some data is still stored. Check
+					the engine log for the part that failed, fix the cause, then run the erasure again.
 				</p>
 				<ul class="mt-2 list-disc pl-5 text-xs">
 					{#each eraseFailures as failure, i (i)}
@@ -288,7 +288,7 @@
 			<Alert tone="success" title="Erasure complete" autoDismiss>
 				<p>
 					Erased <span class="font-medium">{eraseResult.total_rows}</span>
-					{eraseResult.total_rows === 1 ? 'row' : 'rows'} for
+					{plural(eraseResult.total_rows, 'row')} for
 					<span class="font-mono text-xs">{eraseResult.identifier}</span>.
 				</p>
 			</Alert>
@@ -301,7 +301,7 @@
 				<SectionHeading level={2}>Before a person exports their own data</SectionHeading>
 				<p class="text-sm text-muted">
 					Signed-in people can download a copy of their own data. Choose what they must confirm first. This
-					applies to every tenant on this install.
+					applies to every tenant on this engine.
 				</p>
 			</div>
 			{#if 'stopped' in data.stepUp}

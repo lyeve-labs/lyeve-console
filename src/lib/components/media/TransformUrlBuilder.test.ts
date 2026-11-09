@@ -29,7 +29,7 @@ describe('TransformUrlBuilder', () => {
 		expect((container.querySelector('#transform-result') as HTMLInputElement | null)?.value ?? container.textContent).toContain(
 			'/api/v1/media/m1/transform?w=800&sig=abc',
 		);
-		expect(container.textContent).toContain('Stops working');
+		expect(container.textContent).toContain('Expires ');
 	});
 
 	it('lays out each fit as a choice with the sentence that says what it does', () => {
@@ -62,7 +62,7 @@ describe('TransformUrlBuilder', () => {
 		const { getByTestId } = render(TransformUrlBuilder, {
 			props: { id: 'm1', published: true, focal: null, refused: { kind: 'feature', feature: 'example-feature', plugin: 'example', upgradeUrl: '' } },
 		});
-		expect(getByTestId('refusal-notice').textContent).toContain('example-feature');
+		expect(getByTestId('refusal-notice').textContent).toContain('Not enabled on this engine');
 	});
 
 	it('renders a cap refusal with its numbers', () => {

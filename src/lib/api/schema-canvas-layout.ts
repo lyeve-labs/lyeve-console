@@ -1,6 +1,6 @@
 /**
  * The schema canvas layout the schema plugin keeps for a tenant, and whether
- * this install draws the canvas at all.
+ * this instance draws the canvas at all.
  */
 
 import type { HttpClient } from '@lyeve-labs/client';
@@ -11,11 +11,11 @@ export type Positions = Record<string, { x: number; y: number }>;
 
 export interface CanvasLayout {
 	positions: Positions;
-	/** Whether this install draws the canvas and saves a layout. */
+	/** Whether this instance draws the canvas and saves a layout. */
 	licensed: boolean;
 }
 
-/** An install that cannot say draws no canvas, which is what an install without the license answers too. */
+/** An instance that cannot say draws no canvas, which is what an instance without the license answers too. */
 export const NO_CANVAS: CanvasLayout = { positions: {}, licensed: false };
 
 export async function readCanvasLayout(client: HttpClient): Promise<CanvasLayout> {

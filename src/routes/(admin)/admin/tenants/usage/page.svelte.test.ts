@@ -223,7 +223,7 @@ describe('a license without paid quotas', () => {
 		const posted = new FormData(form!);
 		expect(posted.get('storage_bytes_limit')).toBe('1234567');
 		expect(posted.get('requests_limit')).toBe('1000');
-		expect(said(document.body)).toContain('Storage (GiB)');
+		expect(said(document.body)).toContain('Storage (GB)');
 	});
 
 	// The footer ends with Cancel and Save. Delete sits alone at its start

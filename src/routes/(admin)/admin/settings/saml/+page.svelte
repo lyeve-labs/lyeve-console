@@ -19,7 +19,7 @@
 		Pagination,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import { confirmed, tracked } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, tracked } from '$lib/forms.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { KeyRound, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from '@lucide/svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
@@ -40,21 +40,9 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	/*
-	 * Each failure names the action that caused it. A drawer shows only its own
-	 * actions' failures, and only one that came back after it was opened, so a
-	 * failed delete never reads as a failure of the form opened next. The rest
-	 * show above the list.
-	 */
-	const failure = $derived(form as { error?: string; action?: string } | null);
-	let openedOver = $state.raw<unknown>(null);
-	function failedIn(actions: string[]): string | undefined {
-		if (!failure?.error || form === openedOver) return undefined;
-		return actions.includes(failure.action ?? '') ? failure.error : undefined;
-	}
-	const DRAWER_ACTIONS = ['create', 'update'];
-	const drawerError = $derived(failedIn(DRAWER_ACTIONS));
-	const rowError = $derived(failure?.error && !DRAWER_ACTIONS.includes(failure.action ?? '') ? failure.error : '');
+	// The drawer shows a failed save, and the rest show above the list.
+	type Failure = { error?: string; action?: string } | null;
+	const failure = drawerFailure(() => form as Failure, ['create', 'update']);
 
 	// An admin may read the providers. Every write is the super admin's, so an
 	// admin is shown the list and no control that would only be refused.
@@ -146,7 +134,7 @@
 		enabled = true;
 		templateKey = '';
 		certHint = '';
-		openedOver = form;
+		failure.opened();
 		open = true;
 	}
 
@@ -168,7 +156,7 @@
 		signAuthnRequests = p.sign_authn_requests;
 		encryptAssertions = p.encrypt_assertions;
 		enabled = p.enabled;
-		openedOver = form;
+		failure.opened();
 		open = true;
 	}
 
@@ -191,7 +179,7 @@
 		return confirmed(
 			`Delete SAML provider ${p.name}?`,
 			'People who sign in through this provider lose access, and its private key is deleted. This cannot be undone.',
-			{ confirmLabel: 'Delete', success: `Deleted ${p.name}` },
+			{ confirmLabel: 'Delete', success: `${p.name} deleted.` },
 		);
 	}
 
@@ -231,8 +219,8 @@
 			absent="SAML SSO is not included in this build."
 		/>
 	{:else}
-		{#if rowError}
-			<Alert tone="danger">{rowError}</Alert>
+		{#if failure.page?.error}
+			<Alert tone="danger">{failure.page.error}</Alert>
 		{/if}
 		{#if !canWrite}
 			<Alert tone="brand">Only a super admin can add, change or remove an identity provider, or renew its certificate.</Alert>
@@ -288,7 +276,7 @@
 			{#if data.providers.length === 0}
 				<EmptyState
 					title="No identity providers yet"
-					description={canWrite ? 'Add one to put a sign-in button on the login page.' : 'Ask a super admin to add one, which puts a sign-in button on the login page.'}
+					description={canWrite ? 'Add one to put a sign-in button on the sign-in page.' : 'Ask a super admin to add one, which puts a sign-in button on the sign-in page.'}
 				>
 					{#snippet iconSnippet()}
 						<KeyRound size={ICON.lg} />
@@ -305,7 +293,7 @@
 				<ListToolbar label="Filter providers">
 					{#snippet search()}
 						<label for="saml-search" class="sr-only">Search providers</label>
-						<SearchInput id="saml-search" bind:value={narrow} placeholder="Search providers" />
+						<SearchInput id="saml-search" bind:value={narrow} placeholder="Name or entity ID" />
 					{/snippet}
 				</ListToolbar>
 
@@ -434,7 +422,7 @@
 		<div class="flex flex-col gap-4">
 			<!-- A refused save keeps the drawer open, so the reason has to be in
 			     it and not behind the panel on the page. -->
-			<FormErrors message={drawerError} />
+			<FormErrors message={failure.drawer?.error} />
 			{#if !editing && templates.length > 0}
 				<Select
 					id="saml-template"
@@ -541,7 +529,7 @@
 				/>
 				<Toggle
 					id="saml-sign-authn"
-					label="Sign our requests"
+					label="Sign requests to the provider"
 					bind:checked={signAuthnRequests}
 					disabled={!editing}
 					hint={editing ? undefined : 'A new provider starts with these three on. Edit it after creating to turn one off.'}

@@ -16,6 +16,7 @@ import {
 	type WidgetWindow,
 } from '$lib/api/custom-dashboard';
 import { WINDOWS } from '$lib/dashboard';
+import { UNTITLED } from '$lib/utils/new-entry';
 import { hoursOf } from '$lib/server/dashboard';
 import { PLUGIN, type PluginName } from '$lib/plugin-names';
 import { runs, type PluginSet } from '$lib/plugins';
@@ -117,7 +118,7 @@ export async function resolveWidgets(
 						: rowsOf(res).map((r) => ({
 								id: String(r.id ?? ''),
 								schema: r.schema ?? w.schema ?? '',
-								title: r.title || '(untitled)',
+								title: r.title || UNTITLED,
 								status: r.status ?? '',
 								updated_at: r.updated_at ?? '',
 							}));

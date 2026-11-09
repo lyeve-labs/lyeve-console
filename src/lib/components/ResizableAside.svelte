@@ -2,7 +2,7 @@
 	import { Button, SectionHeading } from '@lyeve-labs/ui-kit';
 	import { Lock, LockOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from '@lucide/svelte';
 	import { tick, untrack, type Snippet } from 'svelte';
-	import { clampWidth, readAside, writeAside } from '$lib/aside';
+	import { clampWidth, readAside, safeStorage, writeAside } from '$lib/aside';
 	import { ICON } from '$lib/icon';
 
 	/**
@@ -153,20 +153,12 @@
 		return () => wide.removeEventListener('change', sync);
 	});
 
-	function storage(): Storage | null {
-		try {
-			return typeof localStorage === 'undefined' ? null : localStorage;
-		} catch {
-			return null;
-		}
-	}
-
 	const bounds = $derived({ width: defaultWidth, min, max });
 
 	// The key never changes for the life of the aside, so the read happens
 	// once, at mount.
 	const initial = readAside(
-		storage(),
+		safeStorage(),
 		untrack(() => storageKey),
 		untrack(() => bounds)
 	);
@@ -179,7 +171,7 @@
 	const grows = $derived(side === 'start' ? 1 : -1);
 
 	function remember() {
-		writeAside(storage(), storageKey, bounds, { width, locked });
+		writeAside(safeStorage(), storageKey, bounds, { width, locked });
 	}
 
 	function startResize(e: PointerEvent) {

@@ -28,7 +28,7 @@
 		replaysServed,
 		type IdempotencyKey,
 	} from '$lib/api/idempotency';
-	import { formatDateTime } from '$lib/format';
+	import { formatDateTime, plural } from '$lib/format';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
@@ -116,11 +116,10 @@
 			     every retry of that key until it expires. -->
 			<Alert tone="danger">
 				{orphans.length}
-				{orphans.length === 1 ? 'key has' : 'keys have'} been open for more than
-				{ABANDONED_AFTER_SECONDS} seconds. No request takes that long, so the process handling
-				each one stopped before it stored a response. Every retry with one of these keys is
-				refused until the key expires, so the caller sees a write that was accepted but never
-				happened.
+				{plural(orphans.length, 'key has', 'keys have')} been open for more than
+				{ABANDONED_AFTER_SECONDS} seconds, longer than any request takes. Every retry with one of
+				these keys is refused until the key expires, so the caller sees a write that was accepted
+				but never happened. Release a key to let its next request run.
 			</Alert>
 		{/if}
 
@@ -128,8 +127,8 @@
 			<SectionHeading level={2}>Keys</SectionHeading>
 			{#if data.keys.length === 0}
 				<EmptyState
-					title="No idempotency keys"
-					description="No client has sent an idempotency key, or every one has expired."
+					title="No idempotency keys yet"
+					description="Keys appear here when a client sends one."
 				>
 					{#snippet iconSnippet()}
 						<KeyRound size={ICON.lg} />

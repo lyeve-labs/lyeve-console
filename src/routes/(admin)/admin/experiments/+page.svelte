@@ -15,6 +15,7 @@
 		Pagination,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
+	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
 	import { confirmed, tracked } from '$lib/forms.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { Copy, FlaskConical, Pencil, Plus, Trash2 } from '@lucide/svelte';
@@ -30,7 +31,7 @@
 		statusTone,
 		type Experiment,
 	} from '$lib/api/ab-testing';
-	import { formatDateTime } from '$lib/format';
+	import { formatDateTime, plural } from '$lib/format';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
@@ -139,7 +140,7 @@
 	 * where starting and pausing are not.
 	 */
 	function moveExperiment(e: Experiment, move: string): SubmitFunction {
-		return async ({ cancel }) => {
+		return async ({ cancel, formData }) => {
 			if (move === 'stop') {
 				const ok = await confirmDialog(
 					`Stop ${e.name}?`,
@@ -150,6 +151,7 @@
 					cancel();
 					return;
 				}
+				formData.set(CONFIRM_FIELD, CONFIRMED);
 			}
 			return async ({ result, update }) => {
 				await update();
@@ -162,7 +164,7 @@
 		return confirmed(
 			`Delete experiment ${e.name}?`,
 			'Its variants, metrics and recorded exposures are deleted too.',
-			{ confirmLabel: 'Delete', success: `Deleted ${e.name}` },
+			{ confirmLabel: 'Delete', success: `${e.name} deleted.` },
 		);
 	}
 
@@ -171,7 +173,7 @@
 
 <PageShell
 	title="Experiments"
-	description="Run A/B tests, split traffic between variants and see what the results show."
+	description="Split traffic between variants and see which one wins."
 	width="wide"
 >
 	{#snippet actions()}
@@ -217,7 +219,7 @@
 
 			<p class="text-xs text-muted">
 				{running}
-				{running === 1 ? 'experiment is' : 'experiments are'} running and splitting traffic now.
+				{plural(running, 'experiment is', 'experiments are')} running and splitting traffic now.
 			</p>
 
 			{#if visible.length === 0}

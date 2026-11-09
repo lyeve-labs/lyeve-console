@@ -10,10 +10,8 @@ vi.mock('$lib/server/authz', async (importOriginal) => ({
 }));
 vi.mock('@lyeve-labs/client-rest', () => ({ getSchemas: vi.fn(async () => [{ name: 'article' }]) }));
 
-import { actions, load } from './+page.server';
+import { load } from './+page.server';
 import type { ReviewsPage } from './+page.server';
-
-type Failure = { status: number; data: Record<string, unknown> };
 
 function loadEvent() {
 	return {
@@ -23,12 +21,6 @@ function loadEvent() {
 			plugins: { state: 'named', running: ['review'], withheld: [] },
 		}),
 	} as never;
-}
-
-function actionEvent(fields: Record<string, string>) {
-	const data = new FormData();
-	for (const [k, v] of Object.entries(fields)) data.set(k, v);
-	return { request: { formData: async () => data } } as never;
 }
 
 beforeEach(() => {
@@ -52,20 +44,25 @@ beforeEach(() => {
 	});
 });
 
-describe('the reviews load', () => {
-	it('carries what the definitions read says the install allows', async () => {
+describe('the assignments load', () => {
+	// The queue names each assignment's definition and stage from the
+	// definitions, so an operator's load reads them with their stages.
+	it('reads the definitions that name each assignment', async () => {
 		const out = (await load(loadEvent())) as ReviewsPage;
-		expect(out.limits).toEqual({ licensed: false, workflows: { limit: 1, current: 1 } });
+		expect(out.definitions).toMatchObject({ ok: true, value: [{ definition: { id: 'd1' }, stages: [{ id: 's1', name: 'Legal' }] }] });
+		expect(engine.get.mock.calls.some(([url]) => String(url).startsWith('/api/admin/schemas'))).toBe(false);
 	});
 
-	it('reads each stage paid settings', async () => {
-		const out = (await load(loadEvent())) as ReviewsPage;
-		if (!out.definitions.ok) throw new Error('the definitions read failed');
-		expect(out.definitions.value[0].stages?.[0]).toMatchObject({
-			quorum: 2,
-			escalate_to_role: 'lead',
-			condition: { field: 'category', op: 'in', values: ['legal', '4'] },
-		});
+	it('reads no definitions for a reviewer who is not an operator', async () => {
+		const out = (await load({
+			url: new URL('http://localhost/admin/reviews'),
+			parent: async () => ({
+				user: { id: 'u1', roles: ['editor'] },
+				plugins: { state: 'named', running: ['review'], withheld: [] },
+			}),
+		} as never)) as ReviewsPage;
+		expect(out.definitions).toEqual({ ok: true, value: [] });
+		expect(engine.get.mock.calls.some(([url]) => String(url).startsWith('/api/admin/review/definitions'))).toBe(false);
 	});
 });
 
@@ -153,84 +150,3 @@ describe('the reviews load when a read fails', () => {
 		expect((thrown as { location: string }).location).toBe('/admin/reviews?offset=50');
 	});
 });
-
-describe('creating a definition', () => {
-	const fields = {
-		name: 'Legal',
-		content_schema: 'article',
-		stages: JSON.stringify([{ name: 'Legal', sla_duration_seconds: 3600, quorum: 2 }]),
-	};
-
-	it('sends the stage quorum', async () => {
-		engine.post.mockResolvedValue({ id: 'd2' });
-		await actions.create(actionEvent(fields));
-		expect(engine.post.mock.calls[0][1]).toMatchObject({ stages: [{ name: 'Legal', quorum: 2 }] });
-	});
-
-	it('returns the workflow ceiling refusal with its numbers', async () => {
-		engine.post.mockRejectedValue(
-			new ApiError(402, 'cap_exceeded', { error: 'cap_exceeded', cap: 'review.workflows', limit: 1, current: 1 }),
-		);
-		const out = (await actions.create(actionEvent(fields))) as Failure;
-		expect(out.status).toBe(402);
-		expect(out.data.refused).toMatchObject({ kind: 'cap', limit: 1, current: 1 });
-	});
-
-	it('returns a paid stage setting refusal', async () => {
-		engine.post.mockRejectedValue(
-			new ApiError(402, 'payment_required', { error: 'payment_required', plugin: 'review', feature: 'feature:example_feature' }),
-		);
-		const out = (await actions.create(actionEvent(fields))) as Failure;
-		expect(out.data.refused).toMatchObject({ kind: 'feature', feature: 'example-feature' });
-	});
-});
-
-describe('the stages of a definition', () => {
-	it('marks the stages of a definition whose read failed as unread, never as none', async () => {
-		engine.get.mockImplementation(async (url: string) => {
-			if (url.startsWith('/api/admin/review/definitions?')) return { data: [{ id: 'd1', name: 'Editorial' }], total_count: 1 };
-			if (url.startsWith('/api/admin/review/definitions/')) throw new ApiError(503, 'down');
-			return { data: [], total_count: 0 };
-		});
-		const out = (await load(loadEvent())) as ReviewsPage;
-		expect(out.definitions).toMatchObject({ ok: true, value: [{ definition: { id: 'd1' }, stages: null }] });
-	});
-});
-
-describe('deleting a definition', () => {
-	it('deletes the definition it names', async () => {
-		engine.delete.mockResolvedValue(undefined);
-		expect(await actions.delete(actionEvent({ id: 'd1' }))).toEqual({ deleted: true });
-		expect(engine.delete).toHaveBeenCalledWith('/api/admin/review/definitions/d1');
-	});
-
-	// The New definition drawer shows create failures only, so a delete names
-	// itself and never opens the next drawer as if the create had failed.
-	it('names the delete on a refusal and relays its reason', async () => {
-		engine.delete.mockRejectedValue(new ApiError(409, 'definition has active assignments'));
-		const out = (await actions.delete(actionEvent({ id: 'd1' }))) as Failure;
-		expect(out.data).toEqual({ action: 'delete', error: 'definition has active assignments' });
-	});
-
-	it('keeps outage detail out of the message', async () => {
-		engine.delete.mockRejectedValue(new ApiError(503, 'pq: down'));
-		expect(((await actions.delete(actionEvent({ id: 'd1' }))) as Failure).data).toEqual({
-			action: 'delete',
-			error: 'Could not delete the definition. Try again.',
-		});
-	});
-
-	it('refuses an editor before it reaches the plugin', async () => {
-		const { requireRole } = await import('$lib/server/authz');
-		vi.mocked(requireRole).mockRejectedValueOnce(Object.assign(new Error('403'), { status: 403 }));
-		await expect(actions.delete(actionEvent({ id: 'd1' }))).rejects.toMatchObject({ status: 403 });
-		expect(engine.delete).not.toHaveBeenCalled();
-	});
-
-	it('names the create on a refused create', async () => {
-		engine.post.mockRejectedValue(new ApiError(409, 'slug already in use'));
-		const out = (await actions.create(actionEvent({ name: 'Editorial', stages: '[{"name":"Legal"}]' }))) as Failure;
-		expect(out.data).toMatchObject({ action: 'create', error: 'slug already in use' });
-	});
-});
-

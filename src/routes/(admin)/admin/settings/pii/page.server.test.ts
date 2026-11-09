@@ -25,13 +25,14 @@ import { actions, load } from './+page.server';
 
 function formEvent(fields: Record<string, string>) {
 	const body = new FormData();
+	body.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) body.set(k, v);
 	return { request: new Request('http://admin/x', { method: 'POST', body }), cookies: {}, fetch: vi.fn() } as never;
 }
 
-function loadEvent(query = '') {
+function loadEvent() {
 	return {
-		url: new URL(`http://admin.test/admin/settings/pii${query}`),
+		url: new URL('http://admin.test/admin/settings/pii'),
 		parent: async () => ({ plugins: null }),
 	} as never;
 }
@@ -45,7 +46,7 @@ describe('pii rule actions', () => {
 	// The page reads the failure from the error key. A bare string there left
 	// every refused save without a word on screen.
 	it('returns a refused save under the key the page reads', async () => {
-		api.createRule.mockRejectedValue(new ApiError(400, 'pattern does not compile'));
+		api.createRule.mockRejectedValue(new ApiError(400, 'pattern does not compile', { error: 'pattern does not compile', code: 'bad_request' }));
 		const out = (await actions.create(formEvent({ name: 'X', pattern: '(', replacement: '*' }))) as {
 			status: number;
 			data: { error: string };
@@ -55,12 +56,9 @@ describe('pii rule actions', () => {
 });
 
 describe('pii load', () => {
-	it('sends an access log page past the end back to the last page', async () => {
-		api.listAccessLog.mockResolvedValue({ data: [], total_count: 70 });
-		await expect(load(loadEvent('?offset=300'))).rejects.toMatchObject({
-			status: 307,
-			location: '/admin/settings/pii?offset=50',
-		});
+	it('reads the rules and nothing of the access log', async () => {
+		expect(await load(loadEvent())).toEqual({ rules: { presets: [], mask_tags: {} }, gate: { state: 'ok' } });
+		expect(api.listAccessLog).not.toHaveBeenCalled();
 	});
 });
 
@@ -140,7 +138,7 @@ describe('pii rule writes', () => {
 		['delete', 'deleteRule', 'id must be a UUID'],
 		['test', 'testRule', 'body must be a JSON object with pattern, replacement and sample'],
 	] as const)('relays the plugin refusal on %s under its action', async (name, fn, sentence) => {
-		api[fn].mockRejectedValue(new ApiError(400, sentence));
+		api[fn].mockRejectedValue(new ApiError(400, sentence, { error: sentence, code: 'bad_request' }));
 		const out = (await actions[name](formEvent({ id: 'r1', ...RULE }))) as Failure;
 		expect(out.data).toEqual({ action: name, error: sentence });
 	});

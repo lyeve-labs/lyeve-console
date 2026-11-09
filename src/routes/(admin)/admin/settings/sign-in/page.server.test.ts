@@ -95,7 +95,7 @@ describe('sign-in window save', () => {
 	});
 
 	it('relays a refusal the engine states', async () => {
-		api.saveProviderWindow.mockRejectedValue(new ApiError(422, 'days must be a whole number from 0 to 365'));
+		api.saveProviderWindow.mockRejectedValue(new ApiError(422, 'days must be a whole number from 0 to 365', { error: 'days must be a whole number from 0 to 365', code: 'http_422' }));
 		const result = (await actions.save(formEvent({ days: '12' }))) as unknown as Failed;
 		expect(result.status).toBe(400);
 		expect(result.data.error).toBe('days must be a whole number from 0 to 365');

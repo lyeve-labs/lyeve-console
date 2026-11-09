@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { assertRole, authedClient, loadUser } from '$lib/server/authz';
 import { getSecurityControls } from '$lib/api/security';
 import { section } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 
 export const load: PageServerLoad = async (event) => {
 	// The engine answers super_admin only. Checking first turns a lower role's
@@ -11,7 +12,7 @@ export const load: PageServerLoad = async (event) => {
 
 	const report = await section(
 		getSecurityControls(authedClient(event)),
-		'Could not load the security report.'
+		couldNotLoad('the security report')
 	);
 	return { report };
 };

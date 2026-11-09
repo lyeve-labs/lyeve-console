@@ -16,12 +16,12 @@
 	import { Building2, Coins, Pencil, Plus, Trash2, ToggleLeft, ToggleRight } from '@lucide/svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { confirmed, fieldErrors, tracked } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, fieldErrors, tracked } from '$lib/forms.svelte';
 	import { narrows } from '$lib/narrow';
 	import type { PageData, ActionData } from './$types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { Tenant } from '@lyeve-labs/client-rest';
-	import { formatDate, NO_VALUE } from '$lib/format';
+	import { formatDate, NO_VALUE, plural } from '$lib/format';
 	import NotEnabled from '$lib/components/NotEnabled.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import { ICON } from '$lib/icon';
@@ -35,19 +35,9 @@
 	// refused. Editing, disabling and deleting a tenant stay open either way.
 	const canProvision = $derived(data.canProvision);
 
-	/*
-	 * Each failure names the action that caused it. The drawer shows only its
-	 * own writes' failures, and only one that came back after it was opened, so
-	 * a failed delete never reads as a failure of the form opened next. The
-	 * rest show above the list.
-	 */
 	type Failure = { action?: string; error?: string } | null;
-	const DRAWER_ACTIONS = ['create', 'update'];
-	const inDrawer = $derived(DRAWER_ACTIONS.includes((form as Failure)?.action ?? ''));
-	let openedOver = $state.raw<unknown>(null);
-	const drawerForm = $derived(inDrawer && form !== openedOver ? form : null);
-	const pageForm = $derived(inDrawer ? null : form);
-	const errors = $derived(fieldErrors(drawerForm));
+	const failure = drawerFailure(() => form as Failure, ['create', 'update']);
+	const errors = $derived(fieldErrors(failure.drawer));
 
 	// One drawer for both writes: a null target is a new tenant.
 	let open = $state(false);
@@ -64,7 +54,7 @@
 		return confirmed(
 			`Delete ${name}?`,
 			"All of its data and users are deleted. Its stored files stay in the storage backend until that backend's own lifecycle rules remove them.",
-			{ confirmLabel: 'Delete', success: `Deleted ${name}` },
+			{ confirmLabel: 'Delete', success: `${name} deleted.` },
 		);
 	}
 
@@ -85,7 +75,7 @@
 	let plan = $state('');
 
 	function openCreate() {
-		openedOver = form;
+		failure.opened();
 		editing = null;
 		slug = '';
 		name = '';
@@ -94,7 +84,7 @@
 	}
 
 	function openEdit(tenant: Tenant) {
-		openedOver = form;
+		failure.opened();
 		editing = tenant;
 		slug = tenant.slug;
 		name = tenant.name;
@@ -141,7 +131,9 @@
 
 <PageShell
 	title="Tenants"
-	description={data.tenants.ok ? `${data.total} ${data.total === 1 ? 'tenant' : 'tenants'} on this instance` : 'Every tenant on this instance'}
+	description={data.tenants.ok
+		? `See and manage the ${data.total} ${plural(data.total, 'tenant')} on this engine.`
+		: 'See and manage every tenant on this engine.'}
 	width="wide"
 >
 	{#snippet actions()}
@@ -155,7 +147,7 @@
 		{/if}
 	{/snippet}
 
-	<FormErrors message={(pageForm as Failure)?.error || undefined} />
+	<FormErrors message={failure.page?.error || undefined} />
 
 	{#if data.tenants.ok && data.provisionGate}
 		<GateNotice
@@ -168,7 +160,7 @@
 		<NotEnabled
 			level={2}
 			title="Tenant provisioning"
-			description="Your license does not include creating tenants.{stillEditable}"
+			description="Creating tenants is not enabled on this engine.{stillEditable}"
 			url={data.provisioningUrl || null}
 		/>
 	{/if}
@@ -178,13 +170,13 @@
 			level={2}
 			gate={data.tenants.gate}
 			title="Tenants"
-			absent="Multitenancy is not included in this build. This instance has one tenant."
+			absent="Multitenancy is not included in this build. This engine has one tenant."
 		/>
 	{:else if data.tenants.value.length === 0}
 		<EmptyState
 			level={2}
 			title="No tenants yet"
-			description={canProvision ? 'Create a tenant to start serving content on this instance.' : undefined}
+			description={canProvision ? 'Create a tenant to start serving content on this engine.' : undefined}
 		>
 			{#snippet iconSnippet()}
 				<Building2 size={ICON.lg} />
@@ -313,7 +305,7 @@
 
 <Drawer bind:open title={editing ? `Edit ${editing.name}` : 'New tenant'}>
 	<form method="post" action={editing ? '?/update' : '?/create'} id="tenant-form" use:enhance={saveTenantSubmit.enhance} class="flex flex-col gap-4">
-		<FormErrors message={(drawerForm as Failure)?.error || undefined} fields={errors} refused={formRefusal(drawerForm)} />
+		<FormErrors message={failure.drawer?.error || undefined} fields={errors} refused={formRefusal(failure.drawer)} />
 
 		{#if editing}
 			<input type="hidden" name="id" value={editing.id} />

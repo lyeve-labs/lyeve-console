@@ -17,6 +17,8 @@ vi.mock('@lyeve-labs/client-rest', () => ({
 
 import { isHttpError } from '@sveltejs/kit';
 import { load, actions } from './+page.server';
+import { getSchema } from '@lyeve-labs/client-rest';
+import { buildFromData, serialize } from '$lib/utils/content-form';
 import type { PluginSet } from '$lib/plugins';
 
 function json(body: unknown, status = 200): Response {
@@ -402,7 +404,7 @@ describe('content editor save, many_to_many fields', () => {
 
 		const failure = await runSave(saveEvent(fn, { tags: ['t1'] }));
 
-		expect(failure?.data?.error).toBe('The entry was saved, but some links were not. In tags, 1 link could not be added.');
+		expect(failure?.data?.error).toBe('Entry saved. Could not add 1 link in tags.');
 	});
 
 	it('leaves a set that has not changed alone', async () => {
@@ -457,7 +459,7 @@ describe('content editor save, a schema refusal', () => {
 
 		expect(failure.status).toBe(422);
 		expect(failure.data.fieldErrors).toEqual({ email: 'must be a valid email' });
-		expect(failure.data.error).toBe('The entry was not saved. Check the highlighted fields.');
+		expect(failure.data.error).toBe('Check the highlighted fields.');
 	});
 });
 
@@ -693,5 +695,56 @@ describe('content editor load, mentions', () => {
 		} as never)) as { comments: { people: { id: string }[]; mentionable: { id: string }[] } };
 		expect(out.comments.mentionable.map((p) => p.id)).toEqual(['ana']);
 		expect(out.comments.people.map((p) => p.id)).toEqual(['setup', 'ana', 'bo']);
+	});
+});
+
+describe('content editor, an integer past 2^53', () => {
+	const fields = [
+		{ name: 'title', field_type: 'text', required: false, unique: false, indexed: false },
+		{ name: 'views', field_type: 'integer', required: false, unique: false, indexed: false },
+		{ name: 'price', field_type: 'decimal', precision: 10, scale: 2, required: false, unique: false, indexed: false },
+		{ name: 'stats', field_type: 'json', required: false, unique: false, indexed: false },
+	] as const;
+	const stored =
+		'{"id":"e1","created_at":"","updated_at":"","title":"Old","status":"draft",' +
+		'"body":{"title":"Old","views":9007199254740993,"price":"19.90","stats":{"big":1790000000000000000}}}';
+
+	it('saves a title-only edit with the stored digits, and a json number stays a number', async () => {
+		vi.mocked(getSchema).mockResolvedValueOnce({ name: 'article', fields: [...fields] } as never);
+		const puts: string[] = [];
+		const fetchFn = vi.fn(async (path: string, init?: RequestInit) => {
+			if (init?.method === 'PUT') {
+				puts.push(String(init.body));
+				return json({ ok: true });
+			}
+			if (path.includes('/revisions')) {
+				return new Response('{"data":[{"id":"r1","revision_num":1,"title":"Old","body":{"views":9007199254740993,"stats":{"big":1790000000000000000}}}],"total_count":1}');
+			}
+			if (path.includes('/api/admin/content?')) return json({ data: [] });
+			return new Response(stored, { headers: { 'content-type': 'application/json' } });
+		}) as unknown as typeof globalThis.fetch;
+		const event = {
+			fetch: fetchFn,
+			cookies: mockCookies(),
+			params: { schema: 'article', id: 'e1' },
+			parent: async () => ({ plugins: none }),
+		};
+
+		const page = (await load(event as never)) as {
+			item: { data: Record<string, unknown> };
+			revisions: { data: Record<string, unknown> }[];
+		};
+		expect(page.item.data.views).toBe('9007199254740993');
+		expect(page.revisions[0].data.views).toBe('9007199254740993');
+
+		const form = buildFromData([...fields], page.item.data);
+		form.title = 'New';
+		const fd = new FormData();
+		fd.set('data', serialize([...fields], form));
+		await runSave({ ...event, request: { formData: async () => fd } } as never);
+
+		expect(puts).toEqual([
+			'{"title":"New","body":{"title":"New","views":"9007199254740993","price":"19.90","stats":{"big":1790000000000000000}}}',
+		]);
 	});
 });

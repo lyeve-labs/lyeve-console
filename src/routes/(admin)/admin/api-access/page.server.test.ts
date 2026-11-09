@@ -25,7 +25,7 @@ describe('API access token action', () => {
 	});
 
 	it('relays a refusal and hides a server failure', async () => {
-		const refused = event(401, { error: 'invalid credentials' }, { email: 'a@b.c', password: 'x' });
+		const refused = event(401, { error: 'invalid credentials', code: 'unauthorized' }, { email: 'a@b.c', password: 'x' });
 		expect(((await actions.token(refused.ev)) as { data: { tokenError: string } }).data.tokenError).toBe('invalid credentials');
 		const broken = event(500, { error: 'pq: boom' }, { email: 'a@b.c', password: 'x' });
 		expect(((await actions.token(broken.ev)) as { data: { tokenError: string } }).data.tokenError).toBe('Could not create the token. Try again.');

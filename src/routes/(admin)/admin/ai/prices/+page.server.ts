@@ -1,19 +1,14 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { AI_OK, aiActionError, aiGate, type AiGate } from '$lib/server/ai-load';
-import { deletePrice, listPrices, putPrice, PROVIDER_KINDS, type ModelPrice } from '$lib/api/ai';
+import { aiActionError, aiGate } from '$lib/server/ai-load';
+import { GATE_OK, section } from '$lib/api/gate';
+import { deletePrice, listPrices, putPrice, PROVIDER_KINDS } from '$lib/api/ai';
 
 export const load: PageServerLoad = async (event) => {
 	const client = authedClient(event);
-	let gate: AiGate = AI_OK;
-	let prices: ModelPrice[] = [];
-	try {
-		prices = await listPrices(client);
-	} catch (err) {
-		gate = aiGate(err, event, 'prices');
-	}
-	return { gate, prices };
+	const prices = await section(listPrices(client), (err) => aiGate(err, event, 'prices'));
+	return { gate: prices.ok ? GATE_OK : prices.gate, prices: prices.ok ? prices.value : [] };
 };
 
 function money(data: FormData, key: string): number | null {
@@ -31,7 +26,7 @@ export const actions: Actions = {
 		const model = String(data.get('model') ?? '').trim();
 		const key = `${kind}/${model}`;
 		if (!(PROVIDER_KINDS as readonly string[]).includes(kind)) return fail(400, { action: 'save', key, error: 'Choose a provider kind.' });
-		if (!model) return fail(400, { action: 'save', key, error: 'Model is required.' });
+		if (!model) return fail(400, { action: 'save', key, error: 'Enter a model.' });
 		const input = money(data, 'input_per_1k');
 		const output = money(data, 'output_per_1k');
 		const image = money(data, 'image_per_call');

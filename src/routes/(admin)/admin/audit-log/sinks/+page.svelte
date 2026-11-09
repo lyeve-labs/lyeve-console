@@ -14,16 +14,14 @@
 		PasswordInput,
 		SegmentedControl,
 		Toggle,
-		confirm as confirmDialog,
 	} from '@lyeve-labs/ui-kit';
-	import { tick } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { Pencil, Plus, Radio, Send, Trash2 } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
 	import AuditTabs from '$lib/components/AuditTabs.svelte';
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { fieldErrors, submitter } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, fieldErrors, submitter } from '$lib/forms.svelte';
 	import { formRefusal } from '$lib/api/refusal';
 	import {
 		SINK_KINDS,
@@ -34,21 +32,15 @@
 		type AuditSink,
 		type SinkKind,
 	} from '$lib/api/audit-sinks';
-	import { formatDateTime } from '$lib/format';
+	import { formatDateTime, plural } from '$lib/format';
 	import { ICON } from '$lib/icon';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	// The drawer and the row actions report through one result, so each
-	// failure is tagged with its action. The drawer shows only a failed create
-	// or save, the page shows a failed delete or test, and a drawer opened
-	// after a failure starts clean: the result is set aside.
-	let setAside = $state<unknown>(null);
-	const failure = $derived(form && form !== setAside && 'error' in form ? form : null);
-	const inDrawer = $derived(failure?.action === 'create' || failure?.action === 'update');
-	const drawerFailure = $derived(inDrawer ? failure : null);
-	const rowFailure = $derived(inDrawer ? null : failure);
-	const errors = $derived(fieldErrors(drawerFailure));
+	// The drawer shows a failed create or save, and the page shows a failed
+	// delete or test.
+	const failure = drawerFailure(() => (form && 'error' in form ? form : null), ['create', 'update']);
+	const errors = $derived(fieldErrors(failure.drawer));
 
 	// One drawer for both writes: a null target is a new destination.
 	let open = $state(false);
@@ -82,7 +74,7 @@
 		datadogTags = '';
 		enabled = true;
 		backfill = false;
-		setAside = form;
+		failure.opened();
 		open = true;
 	}
 
@@ -96,15 +88,15 @@
 		datadogService = s.datadog_service ?? '';
 		datadogTags = s.datadog_tags ?? '';
 		enabled = s.enabled;
-		setAside = form;
+		failure.opened();
 		open = true;
 	}
 
 	const secretHint = $derived(
 		editing
-			? 'Leave blank to keep the current one.'
+			? 'Leave empty to keep the current one.'
 			: kind === 'https'
-				? 'Leave blank to generate one. It is shown only once.'
+				? 'Leave empty to generate one. It is not shown again.'
 				: 'Required.',
 	);
 
@@ -126,25 +118,12 @@
 	const tested = $derived(
 		form && 'tested' in form ? { id: String(form.tested), delivered: !!form.delivered, error: String(form.testError ?? '') } : null,
 	);
-
-	let targetId = $state('');
-	let deleteForm = $state<HTMLFormElement>();
-	async function askDelete(s: AuditSink) {
-		const ok = await confirmDialog(`Delete destination ${s.name}?`, 'The destination stops receiving the audit log. Entries already sent stay where they are.', {
-			confirmLabel: 'Delete',
-		});
-		if (!ok) return;
-		targetId = s.id;
-		// The hidden field takes the id on the next render.
-		await tick();
-		deleteForm?.requestSubmit();
-	}
 </script>
 
 <PageShell
 	title="Audit log"
 	documentTitle="Audit streaming"
-	description="Stream every audit entry to a security tool outside the instance, delivered at least once and in order."
+	description="Stream every audit entry to a security tool outside the engine, delivered at least once and in order."
 	width="wide"
 >
 	{#snippet actions()}
@@ -161,7 +140,7 @@
 		<GateNotice level={2} gate={data.gate} title="Audit streaming" absent="Audit streaming is not included in this build." />
 	{:else}
 		<div class="flex flex-col gap-4">
-			<FormErrors message={rowFailure ? String(rowFailure.error) : undefined} refused={formRefusal(rowFailure)} />
+			<FormErrors message={failure.page ? String(failure.page.error) : undefined} refused={formRefusal(failure.page)} />
 			{#if success}
 				<Alert tone="success" autoDismiss>{success}</Alert>
 			{/if}
@@ -191,7 +170,7 @@
 								<div class="mt-1 flex flex-wrap gap-4 text-xs text-faint">
 									<span>Last delivered: {s.last_shipped_at ? formatDateTime(s.last_shipped_at) : 'never'}</span>
 									{#if s.consecutive_failures > 0}
-										<span class="text-danger">{s.consecutive_failures} failed {s.consecutive_failures === 1 ? 'attempt' : 'attempts'} in a row</span>
+										<span class="text-danger">{s.consecutive_failures} failed {plural(s.consecutive_failures, 'attempt')} in a row</span>
 									{/if}
 									{#if s.next_attempt_at && s.consecutive_failures > 0}
 										<span>Next try {formatDateTime(s.next_attempt_at)}</span>
@@ -218,9 +197,20 @@
 								<Button variant="ghost" size="sm" onclick={() => openEdit(s)} aria-label="Edit {s.name}">
 									<Pencil size={ICON.sm} />
 								</Button>
-								<Button variant="ghost" size="sm" onclick={() => askDelete(s)} aria-label="Delete {s.name}">
-									<Trash2 size={ICON.sm} class="text-danger" />
-								</Button>
+								<form
+									method="POST"
+									action="?/delete"
+									use:enhance={confirmed(
+										`Delete destination ${s.name}?`,
+										'The destination stops receiving the audit log. Entries already sent stay where they are.',
+										{ confirmLabel: 'Delete' },
+									)}
+								>
+									<input type="hidden" name="id" value={s.id} />
+									<Button variant="ghost" size="sm" type="submit" aria-label="Delete {s.name}">
+										<Trash2 size={ICON.sm} class="text-danger" />
+									</Button>
+								</form>
 							</div>
 						</div>
 					</Card>
@@ -233,9 +223,9 @@
 <Drawer bind:open title={editing ? `Edit ${editing.name}` : 'New destination'}>
 	<form method="POST" action={editing ? '?/update' : '?/create'} id="sink-form" use:enhance={submit.enhance} class="flex flex-col gap-4">
 		<FormErrors
-			message={drawerFailure ? String(drawerFailure.error) : undefined}
+			message={failure.drawer ? String(failure.drawer.error) : undefined}
 			fields={errors}
-			refused={formRefusal(drawerFailure)}
+			refused={formRefusal(failure.drawer)}
 		/>
 		{#if editing}<input type="hidden" name="id" value={editing.id} />{/if}
 		<Input id="sink-name" name="name" label="Name" required bind:value={name} error={errors.name} placeholder="Security team SIEM" />
@@ -253,7 +243,7 @@
 		<Input id="sink-url" name="url" label="URL" type="url" required bind:value={url} error={errors.url} hint={URL_HINTS[kind]} />
 		<PasswordInput id="sink-secret" name="secret" label={SINK_SECRET_LABELS[kind]} hint={secretHint} bind:value={secret} error={errors.secret} />
 		{#if kind === 'splunk'}
-			<Input id="sink-index" name="splunk_index" label="Index" bind:value={splunkIndex} hint="Leave blank for the collector's default index." />
+			<Input id="sink-index" name="splunk_index" label="Index" bind:value={splunkIndex} hint="Leave empty for the collector's default index." />
 		{/if}
 		{#if kind === 'datadog'}
 			<Input id="sink-service" name="datadog_service" label="Service" bind:value={datadogService} />
@@ -287,7 +277,3 @@
 		{/snippet}
 	</Modal>
 {/if}
-
-<form method="POST" action="?/delete" use:enhance bind:this={deleteForm} class="hidden">
-	<input type="hidden" name="id" value={targetId} />
-</form>

@@ -350,9 +350,9 @@ describe('admin/content/+page.server.ts load', () => {
 		expect(loadedRows(data)).toHaveLength(3);
 	});
 
-	// Every content route refuses a reader below admin, so the index says so
+	// Every content route refuses a reader below admin, so the index refuses too
 	// instead of listing collections whose New entry buttons all end in a refusal.
-	it.each(['editor', 'viewer'])('answers the forbidden gate for the %s role without reading', async (role) => {
+	it.each(['editor', 'viewer'])('refuses the %s role without reading', async (role) => {
 		const fetch = vi.fn(async () => json(schemas(3))) as unknown as typeof globalThis.fetch;
 		const event = {
 			fetch: signedIn(fetch, { roles: [role] }),
@@ -360,9 +360,9 @@ describe('admin/content/+page.server.ts load', () => {
 			url: new URL('http://localhost/admin/content'),
 		} as never;
 
-		const data = (await load(event)) as Loaded;
+		const thrown = await Promise.resolve(load(event)).catch((err: unknown) => err);
 
-		expect(data.schemas).toEqual({ ok: false, gate: { state: 'forbidden' } });
+		expect(thrown).toMatchObject({ status: 403, body: { message: 'Only an admin or a super admin can open this page.' } });
 		expect(fetch).not.toHaveBeenCalled();
 	});
 });

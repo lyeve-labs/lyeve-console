@@ -8,6 +8,7 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
+import { formatMillis } from '$lib/format';
 
 export const PROFILER_ROOT = '/api/admin/debug/profiler';
 
@@ -152,27 +153,9 @@ export function clampSeconds(raw: unknown): number {
 	return Math.min(PROFILE_SECONDS.max, Math.max(PROFILE_SECONDS.min, Math.trunc(n)));
 }
 
-/** Nanoseconds as the table reads them. */
+/** Nanoseconds, as the engine reports a duration, in the console's one duration format. */
 export function formatNs(ns: number): string {
-	if (!Number.isFinite(ns)) return '';
-	if (ns >= 1e9) return `${(ns / 1e9).toFixed(2)}s`;
-	if (ns >= 1e6) return `${(ns / 1e6).toFixed(1)}ms`;
-	if (ns >= 1e3) return `${(ns / 1e3).toFixed(0)}µs`;
-	return `${Math.round(ns)}ns`;
-}
-
-/**
- * Bytes with a binary unit and a sign, for heap figures that can shrink:
- * `-512 B`, `2 KiB`, `3.00 GiB`. The rest of the admin reads sizes through
- * the shared byte formatter, which prints KB and never a negative.
- */
-export function formatSignedBinaryBytes(b: number): string {
-	if (!Number.isFinite(b)) return '';
-	const abs = Math.abs(b);
-	if (abs >= 1024 ** 3) return `${(b / 1024 ** 3).toFixed(2)} GiB`;
-	if (abs >= 1024 ** 2) return `${(b / 1024 ** 2).toFixed(1)} MiB`;
-	if (abs >= 1024) return `${(b / 1024).toFixed(0)} KiB`;
-	return `${Math.round(b)} B`;
+	return formatMillis(ns / 1e6, '');
 }
 
 /** The badge a p95 earns: a second is red, a tenth amber, ten milliseconds green. */

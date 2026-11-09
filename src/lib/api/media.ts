@@ -8,6 +8,7 @@
  * inline, where the two are one character apart.
  */
 import type { HttpClient } from '@lyeve-labs/client';
+import { rowsOf, type ListEnvelope } from './list';
 
 /** One row of the media library as the engine lists it. */
 export interface MediaItem {
@@ -160,8 +161,7 @@ export async function setMediaPublic(client: HttpClient, id: string, published: 
  * choosing it would store a link that works for nobody.
  */
 export async function listMediaChoices(client: HttpClient, limit = 200): Promise<MediaChoice[]> {
-	const res = await client.get<{ data?: MediaItem[] } | MediaItem[]>(`/api/admin/media?limit=${limit}&offset=0`);
-	const items = Array.isArray(res) ? res : (res.data ?? []);
+	const items = rowsOf(await client.get<ListEnvelope<MediaItem> | MediaItem[]>(`/api/admin/media?limit=${limit}&offset=0`));
 	return items
 		.filter((m) => m.public && m.public_url)
 		.map((m) => ({

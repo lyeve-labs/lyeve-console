@@ -1,11 +1,11 @@
 <script lang="ts">
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import { formRefusal } from '$lib/api/refusal';
-	import { Alert, Badge, Button, Drawer, EmptyState, Input, Modal, PageShell, SegmentedControl, Select, Table, Textarea, confirm, toast } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Button, Drawer, EmptyState, Input, Modal, PageShell, SegmentedControl, Select, Table, Textarea, toast } from '@lyeve-labs/ui-kit';
 	import { Eye, Lock, Mail, Pencil, Plus, Trash2 } from '@lucide/svelte';
 	import { enhance } from '$app/forms';
 	import { tick } from 'svelte';
-	import { submitter } from '$lib/forms.svelte';
+	import { confirmed, drawerFailure, submitter } from '$lib/forms.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { ActionData, PageData } from './$types';
 	import { REQUIRED_PURPOSE, type EmailTemplate, type TemplateStatus } from '$lib/api/email-templates';
@@ -21,10 +21,9 @@
 	 * delete never reads as a failure of the next form opened. A failed delete
 	 * or preview shows above the list.
 	 */
-	const failure = $derived(form as { action?: string; error?: string } | null);
-	let openedOver = $state.raw<unknown>(null);
-	const saveFailure = $derived(failure?.action === 'save' && form !== openedOver ? failure : null);
-	const pageFailure = $derived(failure?.action === 'delete' || failure?.action === 'preview' ? failure : null);
+	const failure = drawerFailure(() => form as { action?: string; error?: string } | null, ['save']);
+	const saveFailure = $derived(failure.drawer);
+	const pageFailure = $derived(failure.page?.action === 'delete' || failure.page?.action === 'preview' ? failure.page : null);
 	const pageRefusal = $derived(pageFailure ? formRefusal(pageFailure) : null);
 	const formError = $derived(pageFailure?.error ?? '');
 
@@ -67,7 +66,7 @@
 		subject = '';
 		body = BLANK;
 		status = 'active';
-		openedOver = form;
+		failure.opened();
 		open = true;
 	}
 
@@ -77,7 +76,7 @@
 		subject = t.subject;
 		body = t.mjml_source;
 		status = t.status;
-		openedOver = form;
+		failure.opened();
 		open = true;
 	}
 
@@ -97,15 +96,8 @@
 
 	const linkVariable = $derived(editing?.required ? starters.find((s) => s.key === editing?.key)?.link_variable : undefined);
 
-	let deleteId = $state('');
-	let deleteForm = $state<HTMLFormElement>();
-
-	async function askDelete(t: EmailTemplate) {
-		const ok = await confirm(`Delete template ${t.key}`, 'A trigger or a flow that sends it stops sending.', { confirmLabel: 'Delete' });
-		if (!ok) return;
-		deleteId = t.id;
-		await tick();
-		deleteForm?.requestSubmit();
+	function confirmDelete(t: EmailTemplate) {
+		return confirmed(`Delete template ${t.key}?`, 'A trigger or a flow that sends it stops sending.', { confirmLabel: 'Delete' });
 	}
 
 	let previewKey = $state('');
@@ -138,7 +130,7 @@
 <PageShell
 	title="Email templates"
 	documentTitle="Email templates - Settings"
-	description="Write the subject and body of each mail. Start from a ready-made template and preview it with sample values before it goes out."
+	description="Write the subject and body of each mail."
 	width="wide"
 	back={{ href: '/admin/settings/email', label: 'Email' }}
 >
@@ -159,7 +151,7 @@
 	<FormErrors message={formError} refused={pageRefusal} />
 	{#if atCeiling}
 		<Alert tone="info" title="Every template slot is in use">
-			{#snippet children()}This instance has reached its limit of {limit} templates. Edit one, delete one you no longer send, or change the license to allow more.{/snippet}
+			{#snippet children()}This engine has reached its limit of {limit} templates. Edit one, delete one you no longer send, or change the license to allow more.{/snippet}
 		</Alert>
 	{/if}
 
@@ -212,9 +204,12 @@
 									<Pencil size={ICON.sm} />
 								</Button>
 								{#if !t.required}
-									<Button variant="ghost" size="sm" onclick={() => askDelete(t)} aria-label="Delete {t.key}">
-										<Trash2 size={ICON.sm} class="text-danger" />
-									</Button>
+									<form method="POST" action="?/delete" use:enhance={confirmDelete(t)}>
+										<input type="hidden" name="id" value={t.id} />
+										<Button variant="ghost" size="sm" type="submit" aria-label="Delete {t.key}">
+											<Trash2 size={ICON.sm} class="text-danger" />
+										</Button>
+									</form>
 								{/if}
 							</div>
 						</td>
@@ -263,7 +258,7 @@
 			label="Body"
 			rows={18}
 			mono
-			hint={'MJML markup. Print a value with {{.Vars.name}} and your branding with {{.Branding.CompanyName}}, {{.Branding.LogoURL}} or {{.Branding.PrimaryColor}}. At most 16 KiB.'}
+			hint={'MJML markup. Print a value with {{.Vars.name}} and your branding with {{.Branding.CompanyName}}, {{.Branding.LogoURL}} or {{.Branding.PrimaryColor}}. At most 16 KB.'}
 			bind:value={body}
 		/>
 	</form>
@@ -283,9 +278,6 @@
 	{/if}
 </Modal>
 
-<form method="POST" action="?/delete" use:enhance bind:this={deleteForm} class="hidden">
-	<input type="hidden" name="id" value={deleteId} />
-</form>
 <form method="POST" action="?/preview" use:enhance={showPreview} bind:this={previewForm} class="hidden">
 	<input type="hidden" name="key" value={previewKey} />
 </form>

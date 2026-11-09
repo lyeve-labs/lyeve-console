@@ -1,23 +1,24 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { actionFailure } from '$lib/server/action-error';
 import { listSchemaNames } from '$lib/api/search-settings';
 import { readError } from '$lib/server/read-error';
-import { GATE_OK, section } from '$lib/api/gate';
+import { forbiddenText, GATE_OK, section } from '$lib/api/gate';
 import {
 	deleteCustomPage,
 	getCustomPage,
 	saveCustomPage,
 	type CustomPage,
 } from '$lib/api/customization';
+import { asked } from '$lib/server/asked';
 
 export const load: PageServerLoad = async (event) => {
 	const { user, customization } = await event.parent();
-	if (!user.roles.some((r) => r === 'admin' || r === 'super_admin')) error(403, 'Only an admin or a super admin can change customization.');
+	if (!user.roles.some((r) => r === 'admin' || r === 'super_admin')) error(403, forbiddenText('this page', ['admin', 'super_admin']));
 	// The plugin says whether this tenant may shape its admin, and the shell
 	// has read its answer. The customization page says why when it may not.
-	if (!customization.entitled) redirect(303, '/admin/settings/customization');
+	if (!customization.entitled) redirect(303, '/admin/settings/customization/pages');
 	const client = authedClient(event);
 	const [page, schemas] = await Promise.all([
 		// Only the engine's 404 says the page does not exist. A refusal or an
@@ -29,7 +30,7 @@ export const load: PageServerLoad = async (event) => {
 		// outage are not one failure.
 		section(
 			Promise.resolve().then(() => listSchemaNames(client)),
-			'Could not load schemas. Blocks keep the schemas they already use.',
+			'Could not load content types. Blocks keep the content types they already use.',
 		),
 	]);
 	return { customPage: page, schemas: schemas.ok ? schemas.value : [], schemasGate: schemas.ok ? GATE_OK : schemas.gate };
@@ -52,17 +53,26 @@ export const actions: Actions = {
 			await saveCustomPage(authedClient(event), page);
 			return { saved: true };
 		} catch (err) {
-			return fail(400, { error: actionError(err, 'Could not save the page. Try again.') });
+			const failed = actionFailure(err, 'Could not save the page. Try again.');
+			return fail(failed.status, failed.data);
 		}
 	},
 
-	delete: async (event) => {
-		await requireRole(event, ['admin', 'super_admin']);
-		try {
-			await deleteCustomPage(authedClient(event), event.params.slug);
-		} catch (err) {
-			return fail(400, { error: actionError(err, 'Could not delete the page. Try again.') });
-		}
-		redirect(303, '/admin/settings/customization');
-	},
+	delete: asked(
+		{
+			question: 'Delete this page?',
+			detail: 'Its menu entry is removed too, and the dashboard stops showing it.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireRole(event, ['admin', 'super_admin']);
+			try {
+				await deleteCustomPage(authedClient(event), event.params.slug);
+			} catch (err) {
+				const failed = actionFailure(err, 'Could not delete the page. Try again.');
+				return fail(failed.status, failed.data);
+			}
+			redirect(303, '/admin/settings/customization/pages');
+		},
+	),
 };

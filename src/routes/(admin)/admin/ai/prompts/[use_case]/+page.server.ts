@@ -2,23 +2,20 @@ import type { Actions, PageServerLoad } from './$types';
 import { error, fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { authedClient, requireUser } from '$lib/server/authz';
-import { AI_OK, aiActionError, aiGate, type AiGate } from '$lib/server/ai-load';
+import { aiActionError, aiGate } from '$lib/server/ai-load';
+import { GATE_OK, section } from '$lib/api/gate';
 import { getPrompt, savePromptVersion, type PromptView } from '$lib/api/ai';
 
 export const load: PageServerLoad = async (event) => {
 	const { aiSettings } = await event.parent();
 	const client = authedClient(event);
-	let gate: AiGate = AI_OK;
-	let prompt: PromptView | null = null;
-	try {
-		prompt = await getPrompt(client, event.params.use_case);
-	} catch (err) {
+	const read = await section(getPrompt(client, event.params.use_case), (err) => {
 		if (err instanceof ApiError && err.status === 404 && aiSettings?.enabled !== false) {
-			error(404, 'Unknown prompt use case');
+			error(404, 'This use case no longer exists.');
 		}
-		gate = aiGate(err, event, 'prompts');
-	}
-	return { gate, prompt };
+		return aiGate(err, event, 'prompts');
+	});
+	return { gate: read.ok ? GATE_OK : read.gate, prompt: read.ok ? read.value : null };
 };
 
 export const actions: Actions = {
@@ -26,7 +23,7 @@ export const actions: Actions = {
 		await requireUser(event);
 		const data = await event.request.formData();
 		const body = String(data.get('body') ?? '');
-		if (!body.trim()) return fail(400, { scope: 'save', error: 'The prompt cannot be empty.' });
+		if (!body.trim()) return fail(400, { scope: 'save', error: 'Enter a prompt.' });
 		try {
 			const saved = await savePromptVersion(authedClient(event), event.params.use_case, body);
 			return { scope: 'save', version: saved.version };

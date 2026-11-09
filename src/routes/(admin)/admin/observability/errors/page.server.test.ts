@@ -132,7 +132,7 @@ describe('triage', () => {
 	});
 
 	it('relays a 404 for an alert that is gone', async () => {
-		engine.post.mockRejectedValue(new ApiError(404, 'alert not found', { error: 'alert not found' }));
+		engine.post.mockRejectedValue(new ApiError(404, 'alert not found', { error: 'alert not found', code: 'not_found' }));
 		const out = (await actions.triage(actionEvent({ id: 'a1', action: 'resolve' }))) as Failure;
 		expect(out.data.error).toBe('alert not found');
 	});
@@ -177,7 +177,7 @@ describe('acknowledging an alert', () => {
 	});
 
 	it("relays the plugin's refusal", async () => {
-		engine.post.mockRejectedValue(new ApiError(404, 'alert not found', {}));
+		engine.post.mockRejectedValue(new ApiError(404, 'alert not found', { error: 'alert not found', code: 'not_found' }));
 		const out = (await actions.acknowledge(actionEvent({ id: 'a1' }))) as Failure;
 		expect(out.data.error).toBe('alert not found');
 	});

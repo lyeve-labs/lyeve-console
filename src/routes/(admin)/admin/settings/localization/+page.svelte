@@ -33,51 +33,52 @@
 				: { default_locale: '', enabled_locales: [], fallback_chain: [] },
 	);
 
+	// The form, seeded once from what the page opened with.
 	// svelte-ignore state_referenced_locally
-	let defaultLocale = $state(loaded.default_locale);
-	// svelte-ignore state_referenced_locally
-	let enabled = $state<string[]>([...loaded.enabled_locales]);
-	// svelte-ignore state_referenced_locally
-	let chain = $state<string[]>([...loaded.fallback_chain]);
+	const draft = $state({
+		defaultLocale: loaded.default_locale,
+		enabled: [...loaded.enabled_locales],
+		chain: [...loaded.fallback_chain],
+	});
 	let newLocale = $state('');
 	let chainPick = $state<string | null>('');
 	let submitting = $state(false);
 
 	let addable = $derived(
-		enabled
-			.filter((l) => l !== defaultLocale && !chain.includes(l))
+		draft.enabled
+			.filter((l) => l !== draft.defaultLocale && !draft.chain.includes(l))
 			.map((l) => ({ value: l, label: l })),
 	);
 
 	function addLocale() {
 		const code = newLocale.trim();
-		if (!code || enabled.includes(code)) return;
-		enabled = [...enabled, code];
+		if (!code || draft.enabled.includes(code)) return;
+		draft.enabled = [...draft.enabled, code];
 		newLocale = '';
 	}
 
 	function removeLocale(code: string) {
-		enabled = enabled.filter((l) => l !== code);
-		chain = chain.filter((l) => l !== code);
+		draft.enabled = draft.enabled.filter((l) => l !== code);
+		draft.chain = draft.chain.filter((l) => l !== code);
 	}
 
 	function appendToChain() {
 		const pick = chainPick ?? '';
-		if (!pick || chain.includes(pick)) return;
-		chain = [...chain, pick];
+		if (!pick || draft.chain.includes(pick)) return;
+		draft.chain = [...draft.chain, pick];
 		chainPick = '';
 	}
 
 	function move(index: number, by: -1 | 1) {
 		const to = index + by;
-		if (to < 0 || to >= chain.length) return;
-		const next = [...chain];
+		if (to < 0 || to >= draft.chain.length) return;
+		const next = [...draft.chain];
 		[next[index], next[to]] = [next[to], next[index]];
-		chain = next;
+		draft.chain = next;
 	}
 
-	let enabledJSON = $derived(JSON.stringify(enabled));
-	let chainJSON = $derived(JSON.stringify(chain));
+	let enabledJSON = $derived(JSON.stringify(draft.enabled));
+	let chainJSON = $derived(JSON.stringify(draft.chain));
 </script>
 
 <PageShell
@@ -127,7 +128,7 @@
 						label="Default locale"
 						hint="The language of the source fields. Readers who do not ask for a language get this one."
 						placeholder="en"
-						bind:value={defaultLocale}
+						bind:value={draft.defaultLocale}
 						autocomplete="off"
 						mono
 					/>
@@ -142,9 +143,9 @@
 						<span class="font-mono">fr</span> or <span class="font-mono">pt-BR</span>.
 					</p>
 					<div class="flex flex-wrap items-center gap-2" role="list" aria-label="Enabled locales">
-						{#each enabled as code (code)}
+						{#each draft.enabled as code (code)}
 							<div role="listitem">
-								{#if code === defaultLocale}
+								{#if code === draft.defaultLocale}
 									<Tag label="{code} (default)" tone="brand" />
 								{:else}
 									<Tag label={code} removable onremove={() => removeLocale(code)} />
@@ -184,7 +185,7 @@
 						then the source fields.
 					</p>
 					<ol class="flex flex-col gap-2" aria-label="Fallback chain">
-						{#each chain as code, i (code)}
+						{#each draft.chain as code, i (code)}
 							<li>
 								<Panel pad="none">
 									<div class="flex items-center gap-2 px-3 py-2">
@@ -205,7 +206,7 @@
 											variant="ghost"
 											size="sm"
 											aria-label="Move {code} down"
-											disabled={i === chain.length - 1}
+											disabled={i === draft.chain.length - 1}
 											onclick={() => move(i, 1)}
 										>
 											<ArrowDown size={ICON.sm} />
@@ -215,7 +216,7 @@
 											variant="ghost"
 											size="sm"
 											aria-label="Remove {code} from the chain"
-											onclick={() => (chain = chain.filter((l) => l !== code))}
+											onclick={() => (draft.chain = draft.chain.filter((l) => l !== code))}
 										>
 											<X size={ICON.sm} />
 										</Button>
@@ -233,7 +234,7 @@
 							<Select
 								id="chain-pick"
 								label="Append a locale"
-								placeholder="Pick a locale"
+								placeholder="Choose a locale"
 								options={addable}
 								searchable
 								bind:value={chainPick}

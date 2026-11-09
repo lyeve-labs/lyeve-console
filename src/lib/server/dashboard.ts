@@ -7,6 +7,7 @@
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { TrendPoint } from '@lyeve-labs/client-rest';
 import { trafficTone, type Window } from '$lib/dashboard';
+import { formatPercent, plural } from '$lib/format';
 
 /** One hour of traffic, with the gaps the engine leaves already filled. */
 export interface TrafficHour {
@@ -83,8 +84,6 @@ export function attentionOf(
 	window: Window
 ): Attention[] {
 	const out: Attention[] = [];
-	const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
 	if (d.license?.state === 'expired') {
 		out.push({
 			tone: 'danger',
@@ -105,7 +104,7 @@ export function attentionOf(
 	if (d.controlFailures) {
 		out.push({
 			tone: 'danger',
-			text: `${plural(d.controlFailures, 'security control is', 'security controls are')} configured but not in effect.`,
+			text: `${d.controlFailures} ${plural(d.controlFailures, 'security control is', 'security controls are')} configured but not in effect.`,
 			href: '/admin/settings/security',
 			action: 'Security',
 		});
@@ -113,7 +112,7 @@ export function attentionOf(
 	if (d.requests && d.requests.total > 0 && trafficTone(d.requests.errorRate) !== 'neutral') {
 		out.push({
 			tone: trafficTone(d.requests.errorRate) === 'danger' ? 'danger' : 'warn',
-			text: `${(d.requests.errorRate * 100).toFixed(1)}% of requests failed in the last ${window}.`,
+			text: `${formatPercent(d.requests.errorRate)} of requests failed in the last ${window}.`,
 			href: '/admin/analytics',
 			action: 'Analytics',
 		});
@@ -129,7 +128,7 @@ export function attentionOf(
 	if (d.webhooks && d.webhooks.unhealthy > 0) {
 		out.push({
 			tone: 'warn',
-			text: `${plural(d.webhooks.unhealthy, 'webhook is', 'webhooks are')} unhealthy.`,
+			text: `${d.webhooks.unhealthy} ${plural(d.webhooks.unhealthy, 'webhook is', 'webhooks are')} unhealthy.`,
 			href: '/admin/webhooks',
 			action: 'Webhooks',
 		});
@@ -137,7 +136,7 @@ export function attentionOf(
 	if (d.webhooks && d.webhooks.pendingDlq > 0) {
 		out.push({
 			tone: 'warn',
-			text: `${plural(d.webhooks.pendingDlq, 'delivery is', 'deliveries are')} waiting in the dead letter queue.`,
+			text: `${d.webhooks.pendingDlq} ${plural(d.webhooks.pendingDlq, 'delivery is', 'deliveries are')} waiting in the dead letter queue.`,
 			href: '/admin/webhooks',
 			action: 'Webhooks',
 		});
@@ -145,7 +144,7 @@ export function attentionOf(
 	if (d.errorsLogged) {
 		out.push({
 			tone: 'warn',
-			text: `${plural(d.errorsLogged, 'error', 'errors')} logged in the last ${window}.`,
+			text: `${d.errorsLogged} ${plural(d.errorsLogged, 'error')} logged in the last ${window}.`,
 			href: '/admin/logs?level=ERROR',
 			action: 'Logs',
 		});

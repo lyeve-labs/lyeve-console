@@ -1,10 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError } from '@lyeve-labs/client';
 import {
 	listCodes,
 	listEvents,
-	count,
-	errorGate,
 	firstSeenWithin,
 	severityTone,
 	sourceLabel,
@@ -86,32 +83,12 @@ describe('presentation', () => {
 		expect(severityTone('INFO')).toBe('brand');
 		expect(severityTone('')).toBe('neutral');
 	});
-
-	it('keeps a large count readable', () => {
-		expect(count(900)).toBe('900');
-		expect(count(1500)).toBe('1.5k');
-		expect(count(2_500_000)).toBe('2.5M');
-	});
-});
-
-describe('the gate', () => {
-	it('tells a 402, a 404 and any other failure apart', () => {
-		expect(errorGate(new ApiError(402, 'payment required')).state).toBe('locked');
-		expect(errorGate(new ApiError(404, 'not found')).state).toBe('absent');
-		expect(errorGate(new ApiError(500, 'internal error')).state).toBe('error');
-		expect(errorGate(new ApiError(503, 'unavailable')).state).toBe('unavailable');
-	});
-
-	it('never reports a failed read as nothing having failed', () => {
-		const gate = errorGate(new Error('network'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load errors.');
-	});
 });
 
 describe('the event list', () => {
 	const client = (body: unknown) => ({ get: async () => body }) as never;
 
-	it('reads the window the install reads, in days', async () => {
+	it('reads the window the engine reads, in days', async () => {
 		const page = await listEvents(client({ data: [], total_count: 0, hidden_older: 3, window_days: 30 }), 50);
 		expect(page).toMatchObject({ hiddenOlder: 3, windowDays: 30 });
 	});

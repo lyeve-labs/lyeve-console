@@ -76,7 +76,7 @@ describe('formatDimensions', () => {
 });
 
 describe('importing by address', () => {
-	it('tells another site from this instance', () => {
+	it('tells another site from this engine', () => {
 		expect(isForeignAddress('https://images.example.com/logo.png')).toBe(true);
 		expect(isForeignAddress('/api/v1/media/m1/logo.png')).toBe(false);
 	});

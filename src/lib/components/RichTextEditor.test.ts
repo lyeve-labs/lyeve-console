@@ -1,9 +1,19 @@
 // @vitest-environment jsdom
-import { render, cleanup } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { render, cleanup, fireEvent } from '@testing-library/svelte';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import RichTextEditor from './RichTextEditor.svelte';
 
-afterEach(cleanup);
+const kit = vi.hoisted(() => ({ openDialog: vi.fn(async () => false) }));
+vi.mock('@lyeve-labs/ui-kit', async (original) => ({
+	...(await original<typeof import('@lyeve-labs/ui-kit')>()),
+	openDialog: kit.openDialog,
+}));
+
+afterEach(() => {
+	cleanup();
+	kit.openDialog.mockClear();
+	vi.restoreAllMocks();
+});
 
 // The TipTap/ProseMirror editor instance is created asynchronously in onMount
 // (dynamic import + `new Editor(...)`), which jsdom cannot fully drive. These
@@ -20,6 +30,16 @@ describe('RichTextEditor', () => {
 		const { getByLabelText } = render(RichTextEditor, { props: { value: '' } });
 		expect(getByLabelText('Undo')).toBeTruthy();
 		expect(getByLabelText('Redo')).toBeTruthy();
+	});
+
+	// A browser prompt is the one dialog in the console the kit does not draw.
+	it('asks for a link URL in the kit dialog, not a browser prompt', async () => {
+		const prompt = vi.spyOn(window, 'prompt').mockReturnValue(null);
+		const { getByLabelText } = render(RichTextEditor, { props: { value: '' } });
+		await fireEvent.click(getByLabelText('Insert link'));
+		expect(kit.openDialog).toHaveBeenCalledTimes(1);
+		expect((kit.openDialog.mock.calls[0] as unknown[])[0]).toMatchObject({ title: 'Insert link' });
+		expect(prompt).not.toHaveBeenCalled();
 	});
 });
 

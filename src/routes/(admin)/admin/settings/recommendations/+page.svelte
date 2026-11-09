@@ -20,15 +20,14 @@
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import {
 		hasUsers,
-		percent,
 		score,
 		sourceLabel,
 		sourceTone,
 		splitIsSkewed,
-		took,
 		type FeedEntry,
 		INTEGRATION_EXAMPLE,
 	} from '$lib/api/recommendations';
+	import { formatMillis, formatPercent, plural } from '$lib/format';
 	import type { ActionData, PageData } from './$types';
 	import { ICON } from '$lib/icon';
 
@@ -106,33 +105,10 @@
 
 		{#if outcome?.refreshed}
 			<Alert tone="success" autoDismiss>
-				Recomputed in {took(outcome.ms)}: {outcome.pairs} similarity pairs, {outcome.trending}
+				Recomputed in {formatMillis(outcome.ms)}: {outcome.pairs} similarity pairs, {outcome.trending}
 				trending items and {outcome.feeds} feeds.
 			</Alert>
 		{/if}
-
-		<Card>
-			<div class="flex flex-col gap-3 text-sm text-muted">
-				<SectionHeading level={2}>What recommendations do</SectionHeading>
-				<p>
-					Your application tells the engine what each reader does: views, likes, bookmarks and shares,
-					weighted 1, 2, 5 and 3. From that, each reader gets:
-				</p>
-				<ul class="flex list-disc flex-col gap-1 ps-5">
-					<li>More like the entry they are on: entries the same people read over the last 30 days.</li>
-					<li>What is trending: the entries with the most activity this week.</li>
-					<li>A feed of their own: what readers who liked the same entries read next.</li>
-				</ul>
-				<p>
-					Readers are split between the recommended feed and a random baseline, so the split below
-					shows whether recommending changes what people read.
-				</p>
-				<p>
-					The lists are not live. New activity counts only after a super admin recomputes them. There is no schedule yet, so recompute after a batch of activity, or from a cron job that calls
-					<span class="font-mono text-xs">POST /api/admin/recommendations/refresh</span>.
-				</p>
-			</div>
-		</Card>
 
 		<section class="flex flex-col gap-4">
 			<SectionHeading level={2}>Trending now</SectionHeading>
@@ -169,52 +145,6 @@
 						{/each}
 					</tbody>
 				</Table>
-			{/if}
-		</section>
-
-		<section class="flex flex-col gap-4">
-			<SectionHeading level={2}>Wire it into your application</SectionHeading>
-			<p class="text-sm text-muted">
-				Send the reader's token or an API key with every call. The tenant comes from that token or key.
-			</p>
-			<div class="flex flex-col gap-2">
-				<div class="flex justify-end"><CopyButton value={INTEGRATION_EXAMPLE} label="Copy the calls" /></div>
-				<pre class="overflow-auto rounded border border-line bg-surface-2 p-3 font-mono text-xs">{INTEGRATION_EXAMPLE}</pre>
-			</div>
-		</section>
-
-		<section class="flex flex-col gap-4">
-			<SectionHeading level={2}>The split</SectionHeading>
-			{#if !hasUsers(stats)}
-				<!-- Nobody has been bucketed yet, which on a fresh install is
-				     correct. Drawing it as an even split of zero people would read
-				     as a working experiment. -->
-				<EmptyState
-					title="No readers assigned yet"
-					description="A reader is assigned to a group the first time a request signed in as them asks for their group. Generating a feed below assigns no one."
-				>
-					{#snippet iconSnippet()}
-						<Sparkles size={ICON.lg} />
-					{/snippet}
-				</EmptyState>
-			{:else if stats}
-				<div class="grid gap-4 sm:grid-cols-3">
-					<Stat size="sm" mono label="Readers assigned" value={stats.total_users} />
-					<Stat size="sm" mono label="Getting recommendations" value={percent(stats.recommendation_pct)} />
-					<Stat size="sm" mono label="Control arm, random" value={percent(stats.random_pct)} />
-				</div>
-				<p class="text-xs text-muted">
-					{stats.recommendation_count} readers see computed recommendations and
-					{stats.random_count} see random picks, which is what the computed ones are measured
-					against.
-				</p>
-				<!-- The banner sits under the tiles rather than between them, so the
-				     row of three numbers stays whole. -->
-				{#if skewed}
-					<Alert tone="warn">
-						The two arms are far apart. Readers are assigned at random, so a few points of drift is normal, but this much is not. Either the control arm is too small to measure against, or many readers are being shown random content.
-					</Alert>
-				{/if}
 			{/if}
 		</section>
 
@@ -280,7 +210,7 @@
 						</EmptyState>
 					{:else}
 						<p class="text-xs text-muted">
-							{preview.length} {preview.length === 1 ? 'entry' : 'entries'} for {previewFor}.
+							{preview.length} {plural(preview.length, 'entry', 'entries')} for {previewFor}.
 						</p>
 						<Table label="What one reader would see">
 							<thead>
@@ -308,5 +238,74 @@
 				{/if}
 			{/if}
 		</section>
+
+		<section class="flex flex-col gap-4">
+			<SectionHeading level={2}>The split</SectionHeading>
+			{#if !hasUsers(stats)}
+				<!-- Nobody has been bucketed yet, which on a fresh install is
+				     correct. Drawing it as an even split of zero people would read
+				     as a working experiment. -->
+				<EmptyState
+					title="No readers assigned yet"
+					description="A reader is assigned to a group the first time a request signed in as them asks for their group. Generating a feed above assigns no one."
+				>
+					{#snippet iconSnippet()}
+						<Sparkles size={ICON.lg} />
+					{/snippet}
+				</EmptyState>
+			{:else if stats}
+				<div class="grid gap-4 sm:grid-cols-3">
+					<Stat size="sm" mono label="Readers assigned" value={stats.total_users} />
+					<Stat size="sm" mono label="Getting recommendations" value={formatPercent(stats.recommendation_pct / 100)} />
+					<Stat size="sm" mono label="Control arm, random" value={formatPercent(stats.random_pct / 100)} />
+				</div>
+				<p class="text-xs text-muted">
+					{stats.recommendation_count} readers see computed recommendations and
+					{stats.random_count} see random picks, which is what the computed ones are measured
+					against.
+				</p>
+				<!-- The banner sits under the tiles rather than between them, so the
+				     row of three numbers stays whole. -->
+				{#if skewed}
+					<Alert tone="warn">
+						The two arms are far apart. Either the control arm is too small to measure against, or many readers are being shown random content.
+					</Alert>
+				{/if}
+			{/if}
+		</section>
+
+		<section class="flex flex-col gap-4">
+			<SectionHeading level={2}>Wire it into your application</SectionHeading>
+			<p class="text-sm text-muted">
+				Send the reader's token or an API key with every call. The tenant comes from that token or key.
+			</p>
+			<div class="flex flex-col gap-2">
+				<div class="flex justify-end"><CopyButton value={INTEGRATION_EXAMPLE} label="Copy the calls" /></div>
+				<pre class="overflow-auto rounded border border-line bg-surface-2 p-3 font-mono text-xs">{INTEGRATION_EXAMPLE}</pre>
+			</div>
+		</section>
+
+		<Card>
+			<div class="flex flex-col gap-3 text-sm text-muted">
+				<SectionHeading level={2}>What recommendations do</SectionHeading>
+				<p>
+					Your application tells the engine what each reader does: views, likes, bookmarks and shares,
+					weighted 1, 2, 5 and 3. From that, each reader gets:
+				</p>
+				<ul class="flex list-disc flex-col gap-1 ps-5">
+					<li>More like the entry they are on: entries the same people read over the last 30 days.</li>
+					<li>What is trending: the entries with the most activity this week.</li>
+					<li>A feed of their own: what readers who liked the same entries read next.</li>
+				</ul>
+				<p>
+					Readers are split between the recommended feed and a random baseline, so the split above
+					shows whether recommending changes what people read.
+				</p>
+				<p>
+					The lists are not live. New activity counts only after a super admin recomputes them. There is no schedule yet, so recompute after a batch of activity, or from a cron job that calls
+					<span class="font-mono text-xs">POST /api/admin/recommendations/refresh</span>.
+				</p>
+			</div>
+		</Card>
 	{/if}
 </PageShell>

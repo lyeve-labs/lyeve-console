@@ -123,7 +123,7 @@ describe('release writes', () => {
 		['cancel', () => actions.cancel(event()), 'post'],
 		['delete', () => actions.delete(event()), 'delete'],
 	] as const)('names %s on a refusal and relays its reason', async (action, run, method) => {
-		engine[method].mockRejectedValue(new ApiError(409, 'the release is publishing'));
+		engine[method].mockRejectedValue(new ApiError(409, 'the release is publishing', { error: 'the release is publishing', code: 'conflict' }));
 		const out = (await run()) as Failure;
 		expect(out.data).toMatchObject({ action, error: 'the release is publishing' });
 	});
@@ -139,7 +139,7 @@ describe('release writes', () => {
 	});
 
 	it('relays the role refusal the engine sends', async () => {
-		engine.post.mockRejectedValue(new ApiError(403, 'insufficient permissions'));
+		engine.post.mockRejectedValue(new ApiError(403, 'insufficient permissions', { error: 'insufficient permissions', code: 'forbidden' }));
 		expect(((await actions.cancel(event())) as Failure).data).toMatchObject({ action: 'cancel', error: 'insufficient permissions' });
 	});
 

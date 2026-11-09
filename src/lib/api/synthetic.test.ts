@@ -14,7 +14,6 @@ import {
 	probeTarget,
 	probeTone,
 	probeType,
-	syntheticGate,
 	type Probe,
 	type ProbeResult,
 } from './synthetic';
@@ -118,22 +117,6 @@ describe('the type the form may send', () => {
 	});
 });
 
-describe('the gate sorts a refusal by what it means', () => {
-	it('tells a 402, a 404 and any other failure apart', () => {
-		expect(syntheticGate(new ApiError(402, 'payment required')).state).toBe('locked');
-		expect(syntheticGate(new ApiError(404, 'not found')).state).toBe('absent');
-		expect(syntheticGate(new ApiError(500, 'internal error')).state).toBe('error');
-		expect(syntheticGate(new ApiError(503, 'database error')).state).toBe('unavailable');
-	});
-
-	// An operator reading "nothing is wrong" after a failed read is the worst
-	// outcome a monitoring page can produce.
-	it('never reports a failed read as everything passing', () => {
-		const gate = syntheticGate(new Error('network'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load probes.');
-	});
-});
-
 function result(over: Partial<ProbeResult> = {}): ProbeResult {
 	return {
 		id: 'r1',
@@ -226,9 +209,9 @@ describe('the probe limits', () => {
 
 	it('puts the floor in the hint only when it is known', () => {
 		expect(intervalHint({ probes: { limit: 0, current: 0 }, minIntervalSeconds: 15 })).toBe(
-			'At least 15. Each probe sends a request to this instance.',
+			'At least 15. Each probe sends a request to this engine.',
 		);
-		expect(intervalHint(null)).toBe('Each probe sends a request to this instance.');
+		expect(intervalHint(null)).toBe('Each probe sends a request to this engine.');
 	});
 });
 

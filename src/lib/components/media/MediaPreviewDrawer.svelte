@@ -7,12 +7,13 @@
 		Input,
 		SectionHeading,
 		Textarea,
-		confirm,
 		CopyField,
 	} from '@lyeve-labs/ui-kit';
 	import { Download, File, FileText, Music, Sparkles, Trash2 } from '@lucide/svelte';
 	import { browser } from '$app/environment';
 	import { enhance } from '$app/forms';
+	import type { SubmitFunction } from '@sveltejs/kit';
+	import { confirmed } from '$lib/forms.svelte';
 	import {
 		formatDimensions,
 		mediaFileUrl,
@@ -33,11 +34,9 @@
 	interface Props {
 		/** The item on show, or null while the drawer is shut. */
 		item: MediaItem | null;
-		/** True while the page's delete action is in flight. */
-		deleting?: boolean;
 		onclose: () => void;
-		/** Called once the operator has confirmed. The page owns the request. */
-		ondelete: (item: MediaItem) => void;
+		/** Called once a delete went through and the list reloaded without the item. */
+		ondeleted?: () => void | Promise<void>;
 		/** Whether the AI plugin can suggest alt text. */
 		aiEnabled?: boolean;
 		/** A suggestion that came back for this item, to review before saving. */
@@ -57,9 +56,8 @@
 
 	let {
 		item,
-		deleting = false,
 		onclose,
-		ondelete,
+		ondeleted,
 		aiEnabled = false,
 		suggestion = '',
 		detailsError = '',
@@ -94,7 +92,7 @@
 	const kind = $derived(item ? mediaKind(item.content_type) : 'other');
 	const fileUrl = $derived(item ? mediaFileUrl(item.id) : '');
 	// The URL the operator copies has to resolve from wherever it is pasted,
-	// and the download route is the one that answers on every install. The
+	// and the download route is the one that answers on every instance. The
 	// storage backend's own URL is empty on a local-disk one.
 	const absoluteUrl = $derived(browser && fileUrl ? window.location.origin + fileUrl : fileUrl);
 	// A published file has an address anyone can load, and that is the one a
@@ -118,13 +116,27 @@
 		return rows;
 	});
 
-	async function askDelete() {
-		if (!item) return;
-		const ok = await confirm(`Delete ${item.filename}?`, 'The file is removed from the library, and any page that links to it can no longer load it. This cannot be undone.', {
+	// The question and the toast name the file asked about, read at submit
+	// time. The flag starts once the question is answered, so a declined
+	// question never spins the button.
+	let deleting = $state(false);
+	const remove: SubmitFunction = async (input) => {
+		const name = item?.filename ?? 'file';
+		const after = await confirmed(`Delete ${name}?`, 'The file is removed from the library, and any page that links to it can no longer load it. This cannot be undone.', {
 			confirmLabel: 'Delete',
-		});
-		if (ok) ondelete(item);
-	}
+			success: `${name} deleted.`,
+		})(input);
+		if (!after) return;
+		deleting = true;
+		return async (opts) => {
+			try {
+				await after(opts);
+			} finally {
+				deleting = false;
+			}
+			if (opts.result.type === 'success') await ondeleted?.();
+		};
+	};
 </script>
 
 {#if item}
@@ -172,14 +184,15 @@
 			<DescriptionList layout="stacked" items={facts} />
 
 			<FormErrors message={deleteError || undefined} />
-			<div class="flex flex-wrap gap-2">
+			<form method="POST" action="?/delete" class="flex flex-wrap gap-2" use:enhance={remove}>
+				<input type="hidden" name="id" value={item.id} />
 				<Button variant="secondary" size="sm" href={fileUrl} download={item.filename}>
 					<Download size={ICON.sm} /> Download
 				</Button>
-				<Button variant="danger" size="sm" loading={deleting} onclick={askDelete}>
+				<Button variant="danger" size="sm" type="submit" loading={deleting}>
 					<Trash2 size={ICON.sm} /> Delete
 				</Button>
-			</div>
+			</form>
 
 			<form
 				method="POST"
@@ -204,12 +217,12 @@
 				<p class="text-xs text-faint">
 					{item.public
 						? 'Anyone can load this file at the path below on your site. Content fields can point at it.'
-						: 'Only signed-in operators can open this file. Publish it to give it an address a site or a content field can use.'}
+						: 'Only someone signed in to the console can open this file. Publish it to give it an address a site or a content field can use.'}
 				</p>
 			</form>
 
 			<div class="flex flex-col gap-3" data-testid="media-copy">
-				<CopyField id="media-url" label={item.public ? 'Public path' : 'Admin URL'} value={snippets.url} copyLabel="Copy URL" />
+				<CopyField id="media-url" label={item.public ? 'Public path' : 'Console URL'} value={snippets.url} copyLabel="Copy URL" />
 				{#if kind === 'image'}
 					<CopyField id="media-markdown" label="Markdown" value={snippets.markdown} copyLabel="Copy as Markdown" />
 					<CopyField id="media-html" label="HTML" value={snippets.html} copyLabel="Copy as HTML" />

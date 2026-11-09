@@ -118,9 +118,9 @@
 <PageShell
 	title={data.customPage.title}
 	documentTitle={`${page.title || 'Page'} - Customization`}
-	description="Build the page from blocks. It opens at /admin/pages/{data.customPage.slug}."
+	description="Build the page from blocks."
 	width="wide"
-	back={{ href: '/admin/settings/customization', label: 'Customization' }}
+	back={{ href: '/admin/settings/customization/pages', label: 'Customization' }}
 >
 	{#snippet actions()}
 		<Badge tone="violet" size="sm">Beta</Badge>
@@ -141,8 +141,8 @@
 			<GateNotice
 				level={2}
 				gate={data.schemasGate}
-				title="The schema list"
-				absent="The schema list is not included in this build, so you cannot choose a schema below."
+				title="The content type list"
+				absent="The content type list is not included in this build, so you cannot choose a content type below."
 			/>
 		{/if}
 
@@ -186,15 +186,15 @@
 						<Select id="block-{i}-tone" label="Tone" options={toneOptions} value={block.tone || 'brand'} onvaluechange={(v) => (block.tone = v as Block['tone'])} />
 					{:else if block.type === 'content'}
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-							<Select id="block-{i}-schema" label="Schema" searchable options={withOwn([block.schema])} value={block.schema ?? ''} onvaluechange={(v) => (block.schema = v)} />
+							<Select id="block-{i}-schema" label="Content type" searchable options={withOwn([block.schema])} value={block.schema ?? ''} onvaluechange={(v) => (block.schema = v)} />
 							<SegmentedControl label="Status" options={statusOptions} value={block.status ?? ''} onchange={(v) => (block.status = v as Block['status'])} />
 							<NumberInput id="block-{i}-limit" label="Entries" min={1} max={50} bind:value={block.limit} />
 						</div>
 					{:else if block.type === 'stats'}
 						<MultiSelect
 							id="block-{i}-schemas"
-							label="Schemas to count"
-							placeholder="Pick schemas"
+							label="Content types to count"
+							placeholder="Choose content types"
 							hint="Up to 12."
 							searchable
 							options={withOwn(block.schemas ?? [])}

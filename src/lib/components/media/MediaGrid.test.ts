@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import MediaGrid from './MediaGrid.svelte';
-import { AUDIO, IMAGE, ONE_OF_EACH, PDF, TEXT, VIDEO } from './fixtures';
+import { AUDIO, IMAGE, ONE_OF_EACH, PDF, TEXT, VIDEO } from './test-support/fixtures';
 
 afterEach(cleanup);
 

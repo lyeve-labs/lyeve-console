@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Page from './+page.svelte';
-import { fixtureDefaultPrompt, fixturePrompt, fixtureSettings } from '$lib/components/ai/fixtures';
+import { fixtureDefaultPrompt, fixturePrompt, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
@@ -88,7 +88,7 @@ describe('AI prompt page', () => {
 
 	it('paints the locked state and no editor', () => {
 		const { container, getByText } = setup({ gate: { state: 'locked' }, prompt: null });
-		expect(getByText('Not enabled on this instance.')).toBeTruthy();
+		expect(getByText('Not enabled on this engine.')).toBeTruthy();
 		expect(container.querySelector('textarea')).toBeNull();
 	});
 });

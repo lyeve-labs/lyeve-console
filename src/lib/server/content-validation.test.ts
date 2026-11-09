@@ -18,7 +18,7 @@ describe('a schema refusal from the content plugin', () => {
 		);
 
 		expect(out).toEqual({
-			error: 'The entry was not saved. Check the highlighted fields.',
+			error: 'Check the highlighted fields.',
 			fieldErrors: { email: 'must be a valid email', age: 'must be at most 120' },
 		});
 	});
@@ -38,7 +38,7 @@ describe('a schema refusal from the content plugin', () => {
 		const out = fieldRefusalOf(new ApiError(422, JSON.stringify(body), body), ['status', 'data']);
 
 		expect(out).toEqual({
-			error: 'The entry was not saved. Check the highlighted fields.',
+			error: 'Check the highlighted fields.',
 			fieldErrors: { data: 'The key email holds a masked value.' },
 			errorKeys: { data: 'email' },
 		});
@@ -48,7 +48,7 @@ describe('a schema refusal from the content plugin', () => {
 		const out = fieldRefusalOf(refusal([{ field: 'data.email', message: 'is not an address' }]), ['data']);
 
 		expect(out).toEqual({
-			error: 'The entry was not saved. Check the highlighted fields.',
+			error: 'Check the highlighted fields.',
 			fieldErrors: { data: 'is not an address' },
 			errorKeys: { data: 'email' },
 		});

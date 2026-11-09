@@ -23,7 +23,7 @@ describe('parseStages', () => {
 		expect(parseStages(JSON.stringify([{ name: 'a', sla_duration_seconds: 900000 }]))).toEqual({
 			error: 'Stage 1: enter an SLA from 0 to 240 hours.',
 		});
-		expect(parseStages('not json')).toEqual({ error: 'Could not read the stages. Reload the page and try again.' });
+		expect(parseStages('not json')).toEqual({ error: 'Could not load the stages. Reload the page to try again.' });
 	});
 });
 

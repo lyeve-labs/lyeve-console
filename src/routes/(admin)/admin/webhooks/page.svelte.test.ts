@@ -60,32 +60,26 @@ function setup(roles: string[] = ['super_admin']) {
 }
 
 describe('webhooks page', () => {
-	it('does not delete straight from the row', async () => {
-		// A row that posts ?/delete directly destroys a webhook on one click and
-		// never reaches the confirmation.
-		const { container } = setup();
-		const rowForms = [...container.querySelectorAll('tbody form[action="?/delete"]')];
-		expect(rowForms, 'a delete form is live in the row').toHaveLength(0);
-	});
-
 	it('asks first, names the webhook, and posts its id only once agreed', async () => {
-		const { container, getByTitle } = setup();
-		const form = container.querySelector('form[action="?/delete"]') as HTMLFormElement;
-		const submit = vi.spyOn(form, 'requestSubmit').mockImplementation(() => {});
+		const { getByTitle } = setup();
+		const form = getByTitle('Delete').closest('form') as HTMLFormElement;
+		expect(form.getAttribute('action')).toBe('?/delete');
+		expect(new FormData(form).get('id')).toBe('w1');
+		const submit = forms.submits.find((f) => f.node === form)?.submit as (input: unknown) => Promise<unknown>;
 
-		await fireEvent.click(getByTitle('Delete'));
-		await tick();
+		const declined = vi.fn();
+		await submit({ cancel: declined });
 		expect(kit.confirm).toHaveBeenCalledWith('Delete webhook Ship it?', 'This cannot be undone.', {
 			confirmLabel: 'Delete',
 		});
-		expect(submit).not.toHaveBeenCalled();
+		expect(declined).toHaveBeenCalled();
 
 		kit.confirm.mockResolvedValue(true);
-		await fireEvent.click(getByTitle('Delete'));
-		await tick();
-		await tick();
-		expect(new FormData(form).get('id')).toBe('w1');
-		expect(submit).toHaveBeenCalled();
+		const agreed = vi.fn();
+		const formData = new FormData(form);
+		await submit({ cancel: agreed, formData });
+		expect(agreed).not.toHaveBeenCalled();
+		expect(formData.get('confirmed')).toBe('yes');
 	});
 
 	it('creates and edits in one drawer, Create on new and Save on a row', async () => {
@@ -127,7 +121,7 @@ describe('the webhook list when it could not be read', () => {
 		expect(container.textContent).not.toContain('No webhooks yet');
 		expect(queryByRole('button', { name: /new webhook/i })).toBeNull();
 		// The queue is the same plugin's read, so it is not offered either.
-		expect(queryByRole('button', { name: /dead letters/i })).toBeNull();
+		expect(queryByRole('link', { name: /dead letters/i })).toBeNull();
 		expect(container.querySelector('table')).toBeNull();
 	});
 
@@ -153,7 +147,7 @@ describe('the webhook controls by role', () => {
 		expect(queryByRole('button', { name: 'Delete Ship it' })).toBeNull();
 		expect(queryByRole('button', { name: /rotate the signing secret/i })).toBeNull();
 		expect(getByRole('button', { name: 'Test Ship it' })).toBeTruthy();
-		expect(getByRole('button', { name: 'Delivery history for Ship it' })).toBeTruthy();
+		expect(getByRole('link', { name: 'Delivery history for Ship it' })).toBeTruthy();
 		expect(container.textContent).toContain(superAdminOnly);
 	});
 
@@ -300,8 +294,10 @@ describe('the failures of the history and the queue', () => {
 		},
 	);
 
-	it('still reports a queue that could not be opened above the list', () => {
-		const { container } = render(WebhooksPage, { props: props({ action: 'dead-letters', error: 'Could not load dead letters. Try again.' }) });
-		expect(container.textContent).toContain('Could not load dead letters. Try again.');
+	// Each drawer opens from the address, so a link or a reload opens it too.
+	it('links the queue and each row\'s history by the address that opens them', () => {
+		const { getByRole } = render(WebhooksPage, { props: props(null) });
+		expect(getByRole('link', { name: 'Delivery history for Ship it' }).getAttribute('href')).toContain('deliveries=w1');
+		expect(getByRole('link', { name: /dead letters/i }).getAttribute('href')).toContain('dead=1');
 	});
 });

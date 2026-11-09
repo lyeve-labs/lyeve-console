@@ -1,13 +1,6 @@
-/** Duration formatting for run lists. The relative clock lives in $lib/format,
- * beside the absolute one, because which register a surface uses is a decision. */
+import { formatMillis } from '$lib/format';
 
-
-/** `12 ms`, `1.4 s`, `2m 05s`. */
+/** How long a run or a step took: `12 ms`, `1.44 s`, `2m 05s`, and empty when it was not measured. */
 export function formatDuration(ms: number | null | undefined): string {
-	if (ms === null || ms === undefined || !Number.isFinite(ms)) return '';
-	if (ms < 1000) return `${Math.round(ms)} ms`;
-	if (ms < 60_000) return `${(ms / 1000).toFixed(1)} s`;
-	const minutes = Math.floor(ms / 60_000);
-	const seconds = Math.round((ms % 60_000) / 1000);
-	return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
+	return formatMillis(ms, '');
 }

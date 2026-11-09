@@ -29,6 +29,7 @@
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { MIGRATIONS_DEPENDENCY, type PendingStatement } from '$lib/api/migrate';
 	import { overlayClosed } from '$lib/overlay';
+	import { plural } from '$lib/format';
 
 	interface Props {
 		/** Migrations waiting to be applied, or null when the engine did not answer. */
@@ -82,9 +83,6 @@
 		};
 	};
 
-	const chip =
-		'flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs whitespace-nowrap';
-
 	// Below sm the words leave the screen and stay with a screen reader. Each
 	// state keeps an icon of its own shape, so the chip never says which state
 	// it is in by color alone.
@@ -95,18 +93,18 @@
 	<!-- Not "checking": the shell asked and got no answer. Reading that as zero
 	     would paint this green and claim a database nobody heard from is in step
 	     with the schemas. -->
-	<span
-		class="{chip} border-line text-faint"
-		data-testid="db-status"
-		title="Could not check for pending migrations"
-	>
-		<CircleHelp size={ICON.sm} class="shrink-0" aria-hidden="true" />
-		<span class={words}>Database unknown</span>
+	<span data-testid="db-status" title="Could not check for pending migrations">
+		<Badge size="md" class="h-8">
+			<CircleHelp size={ICON.sm} class="shrink-0" aria-hidden="true" />
+			<span class={words}>Database unknown</span>
+		</Badge>
 	</span>
 {:else if pending === 0}
-	<span class="{chip} border-line text-success" data-testid="db-status" title="No pending migrations">
-		<CircleCheck size={ICON.sm} class="shrink-0" aria-hidden="true" />
-		<span class={words}>Database synced</span>
+	<span data-testid="db-status" title="No pending migrations">
+		<Badge tone="success" size="md" class="h-8">
+			<CircleCheck size={ICON.sm} class="shrink-0" aria-hidden="true" />
+			<span class={words}>Database synced</span>
+		</Badge>
 	</span>
 {:else}
 	<!-- Pending work, so the control that clears it is the thing on screen
@@ -118,17 +116,17 @@
 		type="button"
 		data-testid="db-status"
 		loading={syncing}
-		title="{pending} migration{pending === 1 ? '' : 's'} waiting to be applied"
+		title="{pending} {plural(pending, 'migration')} waiting to be applied"
 		onclick={() => (confirming = true)}
 	>
 		<CircleAlert size={ICON.sm} class="shrink-0 text-warn" aria-hidden="true" />
 		<span class="text-warn">{pending} pending</span>
-		<span class="text-warn {words}">migration{pending === 1 ? '' : 's'}</span>
+		<span class="text-warn {words}">{plural(pending, 'migration')}</span>
 	</Button>
 	<Modal
 		bind:open={confirming}
 		size="lg"
-		title="Apply {pending} pending migration{pending === 1 ? '' : 's'}"
+		title="Apply {pending} pending {plural(pending, 'migration')}"
 		description="Every statement queued for every tenant runs now. A dropped column cannot be brought back."
 	>
 		<ul class="flex flex-col gap-2 text-sm" data-testid="db-status-queue">
@@ -153,7 +151,7 @@
 		{#snippet footer()}
 			<Button variant="secondary" onclick={() => (confirming = false)}>Cancel</Button>
 			<Button variant="danger" type="submit" form="db-status-apply" loading={syncing}>
-				Apply {pending} migration{pending === 1 ? '' : 's'}
+				Apply {pending} {plural(pending, 'migration')}
 			</Button>
 		{/snippet}
 	</Modal>

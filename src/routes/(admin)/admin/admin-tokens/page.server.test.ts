@@ -19,6 +19,7 @@ function event(replies: Record<string, Reply>, form: Record<string, string | str
 		return new Response(r.status === 204 ? null : JSON.stringify(r.body ?? {}), { status: r.status, headers: { 'content-type': 'application/json' } });
 	});
 	const data = new FormData();
+	data.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(form)) for (const one of [v].flat()) data.append(k, one);
 	const cookies = { get: (n: string) => (n === '__Host-sys_session' ? 'tok' : n === '__Host-csrf' ? 'c' : undefined) };
 	return {
@@ -107,6 +108,11 @@ describe('the revoke action', () => {
 		const again = event({ 'DELETE /api/admin/admin-tokens/t1': { status: 409, body: { error: 'This admin token is already revoked.' } } }, { id: 't1' });
 		expect(((await actions.revoke(again.ev)) as { data: { error: string } }).data.error).toBe('This token was already revoked.');
 	});
+
+	it.each([500, 502, 503])('makes no claim about the change when the revoke meets a %i', async (status) => {
+		const { ev } = event({ 'DELETE /api/admin/admin-tokens/t1': { status, body: { error: 'x' } } }, { id: 't1' });
+		expect(((await actions.revoke(ev)) as { data: { error: string } }).data.error).toBe('Check whether the token was revoked, then try again.');
+	});
 });
 
 describe('the load', () => {
@@ -183,10 +189,11 @@ describe('the load', () => {
 	});
 
 	it.each([
-		[502, 'The engine is unavailable'],
-		[504, 'The engine is unavailable'],
-		[429, 'Too many requests'],
-	])('says what a %i on the request log means', async (status, words) => {
+		[502, 'unavailable'],
+		[504, 'unavailable'],
+		[429, 'busy'],
+		[404, 'absent'],
+	])('says what a %i on the request log means', async (status, state) => {
 		const { ev } = loadEvent(
 			['super_admin'],
 			{
@@ -196,8 +203,8 @@ describe('the load', () => {
 			},
 			'http://admin/admin/admin-tokens?log=t1'
 		);
-		const out = (await load(ev)) as { log: { error: string } };
-		expect(out.log.error).toContain(words);
+		const out = (await load(ev)) as { log: { gate: { state: string } } };
+		expect(out.log.gate.state).toBe(state);
 	});
 
 	it('sends a request log offset past the end back to its last page', async () => {

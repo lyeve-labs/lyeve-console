@@ -2,6 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { authedClient, authedHeaders, loadUser, requireUser } from '$lib/server/authz';
 import { engineOriginFor } from '$lib/server/engine';
+import { checked } from '$lib/checkbox';
 import {
 	MAX_SHOWN_BODY,
 	presentBody,
@@ -79,7 +80,7 @@ export const actions: Actions = {
 		const refusal = refuse({
 			method,
 			path,
-			acknowledged: form.get('acknowledge') === 'on',
+			acknowledged: checked(form, 'acknowledge'),
 			canWrite: user.roles.includes('super_admin'),
 		});
 		if (refusal) return fail(422, { tryError: refusal.reason });
@@ -123,7 +124,7 @@ export const actions: Actions = {
 			// have the reader debugging an endpoint that was never reached. The
 			// runtime's own words can name an internal address, so none of them
 			// are shown.
-			return fail(502, { tryError: 'Could not send the request. Try again in a moment.' });
+			return fail(502, { tryError: 'Could not send the request. Try again.' });
 		}
 	},
 };

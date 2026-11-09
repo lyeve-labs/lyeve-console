@@ -13,11 +13,10 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 import type { ListEnvelope } from './list';
 
-export const KEYS_URL = '/api/admin/idempotency';
-export const STATS_URL = '/api/admin/idempotency/stats';
+const KEYS_URL = '/api/admin/idempotency';
+const STATS_URL = '/api/admin/idempotency/stats';
 
 export interface IdempotencyKey {
 	key: string;
@@ -32,15 +31,6 @@ export interface IdempotencyStats {
 	total: number;
 	completed: number;
 	in_flight: number;
-}
-
-export type IdempotencyGate = Gate;
-
-export const IDEMPOTENCY_OK: IdempotencyGate = GATE_OK;
-
-/** What a refused idempotency read means, read the way every plugin's is. */
-export function idempotencyGate(err: unknown): IdempotencyGate {
-	return gateOf(err, 'Could not load idempotency keys.');
 }
 
 export async function readStats(client: HttpClient): Promise<IdempotencyStats> {

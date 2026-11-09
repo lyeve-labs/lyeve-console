@@ -2,6 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { authedClient, requireUser } from '$lib/server/authz';
 import { actionError } from '$lib/server/action-error';
+import { checked } from '$lib/checkbox';
 import { refusalOf, refusalText } from '$lib/api/refusal';
 import { pageOf, pageWindow, pastEndOffset, withOffset, type ListEnvelope } from '$lib/api/list';
 import { section, type Section } from '$lib/api/gate';
@@ -9,6 +10,8 @@ import { describeMedia, importMedia, importRefusal, parseTags, setMediaPublic, u
 import { ApiError } from '@lyeve-labs/client';
 import { PLUGIN } from '$lib/plugin-names';
 import { runs } from '$lib/plugins';
+import { couldNotLoad } from '$lib/outage';
+import { asked } from '$lib/server/asked';
 
 export type { MediaItem } from '$lib/api/media';
 
@@ -47,7 +50,7 @@ const MAX_LIMIT = 199;
  */
 const NO_FILE = 'This form is missing its file. Reload the page and try again.';
 
-const LIST_FAILED = 'Could not load the media library.';
+const LIST_FAILED = couldNotLoad('the media library');
 
 /**
  * The grid renders one window of the library. A library of ten thousand files
@@ -95,21 +98,28 @@ export const load: PageServerLoad = async (event) => {
 };
 
 export const actions: Actions = {
-	delete: async (event) => {
-		await requireUser(event);
-		const { request } = event;
-		const client = authedClient(event);
-		const data = await request.formData();
-		const id = String(data.get('id') ?? '');
-		if (!id) return fail(400, { error: NO_FILE });
-		try {
-			await client.delete(`/api/admin/media/${encodeURIComponent(id)}`);
-		} catch (err) {
-			// The delete is asked from the preview drawer, which stays open on a
-			// refusal, so the failure names its file and shows there.
-			return fail(400, { deleteError: actionError(err, 'Could not delete the file. Try again.'), deleteId: id });
-		}
-	},
+	delete: asked(
+		{
+			question: 'Delete this file?',
+			detail: 'The file is removed from the library, and any page that links to it can no longer load it. This cannot be undone.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireUser(event);
+			const { request } = event;
+			const client = authedClient(event);
+			const data = await request.formData();
+			const id = String(data.get('id') ?? '');
+			if (!id) return fail(400, { error: NO_FILE });
+			try {
+				await client.delete(`/api/admin/media/${encodeURIComponent(id)}`);
+			} catch (err) {
+				// The delete is asked from the preview drawer, which stays open on a
+				// refusal, so the failure names its file and shows there.
+				return fail(400, { deleteError: actionError(err, 'Could not delete the file. Try again.'), deleteId: id });
+			}
+		},
+	),
 
 	update: async (event) => {
 		await requireUser(event);
@@ -139,7 +149,7 @@ export const actions: Actions = {
 			const item = await importMedia(authedClient(event), {
 				url,
 				alt_text: String(data.get('alt_text') ?? '').trim(),
-				public: data.get('public') === 'true',
+				public: checked(data, 'public'),
 			});
 			return { imported: item };
 		} catch (err) {

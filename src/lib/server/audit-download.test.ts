@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
 import { proxyAuditDownload } from './audit-download';
+import { OUTAGE } from '$lib/outage';
 
 /*
  * The export is a proxy, because SvelteKit refuses a form action that returns
@@ -138,6 +139,6 @@ describe('proxyAuditDownload', () => {
 			(e: { status?: number }) => e
 		);
 
-		expect(thrown.status).toBe(502);
+		expect(thrown).toMatchObject({ status: 502, body: { message: OUTAGE.body } });
 	});
 });

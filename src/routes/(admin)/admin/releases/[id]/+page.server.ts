@@ -20,6 +20,7 @@ import {
 	updateRelease,
 	type ReleaseConflict,
 } from '$lib/api/content-releases';
+import { couldNotLoad } from '$lib/outage';
 
 /** What a row of the release names, read from the entry itself. */
 export interface EntryLabel {
@@ -90,7 +91,7 @@ export const load: PageServerLoad = async (event) => {
 		release = await getRelease(client, event.params.id);
 	} catch (err) {
 		if (err instanceof ApiError && err.status === 404) error(404, 'Release not found');
-		const gate = gateOf(err, 'Could not load the release.');
+		const gate = gateOf(err, couldNotLoad('the release'));
 		return {
 			release: null,
 			gate,

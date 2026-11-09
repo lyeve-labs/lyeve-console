@@ -7,10 +7,8 @@ import {
 	metadataPath,
 	providerHealth,
 	signInPath,
-	samlGate,
 	type SamlProvider,
 } from './saml';
-import { ApiError } from '@lyeve-labs/client';
 
 const NOW = new Date('2026-09-23T12:00:00Z');
 
@@ -123,22 +121,5 @@ describe('provider names go into a URL encoded', () => {
 
 	it('encodes a name that would otherwise add a path segment', () => {
 		expect(signInPath('a/b')).toBe('/api/admin/auth/saml/a%2Fb');
-	});
-});
-
-describe('the gate sorts a refusal by what it means', () => {
-	it('tells a 402, a 404 and any other failure apart', () => {
-		expect(samlGate(new ApiError(402, 'payment required')).state).toBe('locked');
-		expect(samlGate(new ApiError(404, 'not found')).state).toBe('absent');
-		expect(samlGate(new ApiError(500, 'internal error')).state).toBe('error');
-		expect(samlGate(new ApiError(503, 'database error')).state).toBe('unavailable');
-		expect(samlGate(new Error('network')).state).toBe('error');
-	});
-
-	// An operator reading "no providers configured" after a failed read would
-	// go and configure a second one.
-	it('never reports a failed read as an empty list', () => {
-		const gate = samlGate(new Error('network'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load identity providers.');
 	});
 });

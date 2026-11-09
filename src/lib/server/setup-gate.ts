@@ -75,18 +75,13 @@ export function safeNext(next: string | null): string | null {
 const READY_TTL_MS = 15_000;
 let readyUntil = 0;
 
-/** Clears the cached ready state. Tests call it between cases. */
-export function resetSetupGateCache(): void {
-	readyUntil = 0;
-}
-
 /**
  * The one setup check: returns where to send the request, or null to let it
  * through. Every route reads this one answer, so no two disagree when the
  * engine cannot be reached.
  *
  * A request that carries a session goes through when the engine cannot be
- * reached. That session belonged to an install that already had an account,
+ * reached. That session belonged to an instance that already had an account,
  * so the engine is down rather than unset, and the page's own session check
  * shows the outage page. The setup screen would ask a signed-in reader to
  * configure an engine that is only away, and a form posted during the outage

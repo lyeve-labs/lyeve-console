@@ -3,6 +3,7 @@
  * reads and writes.
  */
 import type { HttpClient } from '@lyeve-labs/client';
+import { whole } from './narrow';
 
 /** A ceiling and what already counts against it. A limit of 0 is no ceiling. */
 export interface Ceiling {
@@ -13,10 +14,6 @@ export interface Ceiling {
 export interface RoleLimits {
 	/** The ceiling on distinct roles holding rules, and how many hold one in the caller's tenant. */
 	roles: Ceiling;
-}
-
-function whole(value: unknown): number {
-	return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
 }
 
 /**

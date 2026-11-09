@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { getSchemaStats, getSchemas } from '@lyeve-labs/client-rest';
 import type { Schema } from '@lyeve-labs/client';
 import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
@@ -14,6 +14,8 @@ import {
 	type SortDir
 } from '$lib/api/collections';
 import { authedClient, loadUser } from '$lib/server/authz';
+import { couldNotLoad } from '$lib/outage';
+import { rolesInWords } from '$lib/roles';
 
 /**
  * Resolve typed text to exactly one collection.
@@ -80,7 +82,7 @@ const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 199;
 
 /** What the index says when the collections could not be read. */
-const LIST_FAILED = 'Could not load collections.';
+const LIST_FAILED = couldNotLoad('collections');
 
 /**
  * The roles the content plugin serves. Every one of its routes refuses the
@@ -174,10 +176,11 @@ function ordered(
 export const load: PageServerLoad = async (event) => {
 	const { url } = event;
 	const user = await loadUser(event);
+	if (!user.roles.some((r) => CONTENT_ROLES.includes(r))) {
+		error(403, `Only ${rolesInWords(CONTENT_ROLES)} can open this page.`);
+	}
 	const client = authedClient(event);
-	const read: Section<Schema[]> = user.roles.some((r) => CONTENT_ROLES.includes(r))
-		? await section(getSchemas(client), LIST_FAILED)
-		: { ok: false, gate: { state: 'forbidden' } };
+	const read: Section<Schema[]> = await section(getSchemas(client), LIST_FAILED);
 	const typed = (url.searchParams.get('schema') ?? url.searchParams.get('q') ?? '').trim();
 	const { sort, dir } = sortFromParams(url.searchParams);
 	const filter = filterFromParams(url.searchParams);

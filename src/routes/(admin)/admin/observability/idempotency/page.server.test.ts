@@ -23,8 +23,9 @@ function loadEvent(query = '') {
 
 function actionEvent(fields: Record<string, string>) {
 	const data = new FormData();
+	data.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) data.set(k, v);
-	return { request: { formData: async () => data } } as never;
+	return { request: { formData: async () => data, clone: () => ({ formData: async () => data }) } } as never;
 }
 
 beforeEach(() => {
@@ -70,7 +71,7 @@ describe('a release the engine does not carry out', () => {
 	});
 
 	it('relays the engine refusal', async () => {
-		engine.delete.mockRejectedValue(new ApiError(409, 'key is in flight'));
+		engine.delete.mockRejectedValue(new ApiError(409, 'key is in flight', { error: 'key is in flight', code: 'conflict' }));
 		const out = (await actions.release(actionEvent({ key: 'order-17' }))) as Failure;
 		expect(out.data.error).toBe('key is in flight');
 	});

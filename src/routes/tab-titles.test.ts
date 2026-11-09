@@ -21,7 +21,7 @@ import Harness from './tab-title-harness.test.svelte';
 type Expected = string | { expr: string };
 
 const TAB_TITLES: [string, Expected][] = [
-	['(admin)/+error.svelte', { expr: "status === 404 ? 'Not found' : status === 401 || status === 402 || status === 403 ? 'No access' : status === 429 ? BUSY.title : status === 503 ? OUTAGE.title : 'Something went wrong'" }],
+	['(admin)/+error.svelte', { expr: "status === 404 ? 'Not found' : status === 401 ? 'Not signed in' : status === 402 || status === 403 ? 'No access' : status === 429 ? BUSY.title : status === 503 ? OUTAGE.title : 'Could not open this page'" }],
 	['(admin)/admin/+page.svelte', 'Dashboard'],
 	['(admin)/admin/admin-tokens/+page.svelte', 'Admin tokens'],
 	['(admin)/admin/ai/prices/+page.svelte', 'AI prices'],
@@ -83,6 +83,7 @@ const TAB_TITLES: [string, Expected][] = [
 	['(admin)/admin/settings/captcha/+page.svelte', 'Captcha'],
 	['(admin)/admin/settings/config-sync/+page.svelte', 'Config sync'],
 	['(admin)/admin/settings/configuration/+page.svelte', 'Configuration'],
+	['(admin)/admin/settings/connected-editors/+page.svelte', 'Builder connections'],
 	['(admin)/admin/settings/customization/+page.svelte', 'Customization'],
 	['(admin)/admin/settings/customization/dashboard/+page.svelte', 'Dashboard - Customization'],
 	['(admin)/admin/settings/customization/pages/[slug]/+page.svelte', { expr: "`${page.title || 'Page'} - Customization`" }],
@@ -114,7 +115,7 @@ const TAB_TITLES: [string, Expected][] = [
 	['(admin)/admin/users/+page.svelte', 'Users'],
 	['(admin)/admin/webhooks/+page.svelte', 'Webhooks'],
 	['(admin)/admin/webhooks/incoming/+page.svelte', 'Incoming webhooks'],
-	['+error.svelte', { expr: "status === 404 ? 'Not found' : status === 401 || status === 402 || status === 403 ? 'No access' : status === 429 ? BUSY.title : status === 503 ? OUTAGE.title : 'Something went wrong'" }],
+	['+error.svelte', { expr: "status === 404 ? 'Not found' : status === 401 ? 'Not signed in' : status === 402 || status === 403 ? 'No access' : status === 429 ? BUSY.title : status === 503 ? OUTAGE.title : 'Could not open this page'" }],
 	['admin/device/+page.svelte', 'Approve a device'],
 	['auth/magic-link/verify/+page.svelte', 'Sign in with your link'],
 	['forgot-password/+page.svelte', 'Reset your password'],

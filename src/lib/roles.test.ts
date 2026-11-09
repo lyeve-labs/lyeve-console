@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { ROLES, ROLE_OPTIONS, roleTone } from './roles';
+import { ROLES, ROLE_OPTIONS, roleTone, rolesInWords } from './roles';
 
 const read = (rel: string) =>
 	readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf8');
 
 describe('the role list', () => {
-	it('offers the four roles this instance issues, least privileged first', () => {
+	it('offers the four roles this engine issues, least privileged first', () => {
 		expect(ROLES).toEqual(['viewer', 'editor', 'admin', 'super_admin']);
 	});
 
@@ -47,5 +47,13 @@ describe('the pages that pick roles', () => {
 			expect(src, page).toContain("from '$lib/roles'");
 			expect(src, page).not.toMatch(/const ROLE_OPTIONS\s*=/);
 		}
+	});
+});
+
+describe('rolesInWords', () => {
+	it('names the roles a check admits, least privileged first', () => {
+		expect(rolesInWords(['super_admin', 'admin'])).toBe('an admin or a super admin');
+		expect(rolesInWords(['super_admin', 'editor', 'admin'])).toBe('an editor, an admin or a super admin');
+		expect(rolesInWords(['super_admin'])).toBe('a super admin');
 	});
 });

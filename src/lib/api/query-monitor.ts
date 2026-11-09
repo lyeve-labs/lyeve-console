@@ -13,7 +13,7 @@
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
 
-export const QUERY_LOG_URL = '/api/admin/query-log';
+const QUERY_LOG_URL = '/api/admin/query-log';
 
 /** The dialects the plugin can explain, each with its own analyze route. */
 export const ANALYZABLE = ['postgres', 'mysql', 'mssql'] as const;
@@ -167,7 +167,7 @@ const DIALECT_NAME: Record<Dialect, string> = {
  */
 export function noSuggestionText(dialect: Dialect, read: AnalysisRead): string {
 	if (dialect === 'mssql') {
-		return 'SQL Server suggested no index. If this instance runs another database, this list is always empty.';
+		return 'SQL Server suggested no index.';
 	}
 	const name = DIALECT_NAME[dialect];
 	const source = PLAN_SOURCE[dialect];
@@ -177,19 +177,19 @@ export function noSuggestionText(dialect: Dialect, read: AnalysisRead): string {
 	}
 	switch (read.noPlansReason) {
 		case 'other_dialect':
-			return `No plans were read. This instance does not run ${name}.`;
+			return `No plans were read, because the database is not ${name}.`;
 		case 'capture_disabled':
 			return `No plans were read. Reading ${source} is turned off by QUERY_MONITOR_DISABLE_PG_STAT_CAPTURE.`;
 		case 'source_missing':
 			return dialect === 'postgres'
 				? `No plans were read. Plans come from ${source}, and the extension is not installed in this database.`
-				: `No plans were read. Plans come from ${source}, and this server does not expose its statement digests.`;
+				: `No plans were read. Plans come from ${source}, and the database does not expose its statement digests.`;
 		case 'source_unreadable':
-			return `No plans were read. The check for ${source} failed, so it is not known whether plans can be read.`;
+			return `No plans were read. Could not check whether ${source} is available.`;
 		case 'none_captured':
 			return `No plans were read yet. ${source} is available, but none of the recent slow requests captured a plan.`;
 		default:
-			return 'No plans were read, so there is nothing to suggest.';
+			return 'No plans were read.';
 	}
 }
 

@@ -2,10 +2,20 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+// enhance keeps each form's submit handler, so a case can run the one a
+// delete would run and read the question it asks.
+const kit = vi.hoisted(() => ({
+	submits: new Map<HTMLFormElement, (input: unknown) => unknown>(),
+	confirm: vi.fn(async () => false),
+}));
+vi.mock('$app/forms', () => ({
+	enhance: (node: HTMLFormElement, submit: (input: unknown) => unknown) => {
+		kit.submits.set(node, submit);
+		return { destroy: () => kit.submits.delete(node) };
+	},
+}));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
-const kit = vi.hoisted(() => ({ confirm: vi.fn(async () => false) }));
 vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
 	confirm: kit.confirm,
@@ -60,7 +70,7 @@ describe('audit sinks page', () => {
 			{ sinks: [sink] },
 			{ action: 'delete', error: 'x', refused: { kind: 'feature', feature: 'example-capability', plugin: 'example', upgradeUrl: '' } },
 		);
-		expect(getAllByTestId('refusal-notice')[0].textContent).toContain('example-capability');
+		expect(getAllByTestId('refusal-notice')[0].textContent).toContain('Not enabled on this engine');
 	});
 
 	it('says why the page is empty when the plugin is not there', () => {
@@ -80,7 +90,10 @@ describe('audit sink controls', () => {
 
 	it('names the destination in the delete confirmation title', async () => {
 		setup({ sinks: [sink] });
-		await fireEvent.click(screen.getByRole('button', { name: 'Delete Security SIEM' }));
+		const form = screen.getByRole('button', { name: 'Delete Security SIEM' }).closest('form');
+		const submit = form && kit.submits.get(form);
+		expect(submit).toBeTruthy();
+		await submit?.({ cancel: vi.fn() });
 		const [title] = kit.confirm.mock.calls[0] as unknown as [string];
 		expect(title).toBe('Delete destination Security SIEM?');
 	});
@@ -95,7 +108,7 @@ describe('audit sink failures stay where they were made', () => {
 	});
 
 	it('keeps a refused create in the drawer and off the page', () => {
-		const { container } = setup({ sinks: [sink] }, { action: 'create', error: 'Check the highlighted fields.', fields: { url: 'URL is required' } });
+		const { container } = setup({ sinks: [sink] }, { action: 'create', error: 'Check the highlighted fields.', fields: { url: 'Enter the URL.' } });
 		expect(container.textContent).not.toContain('Check the highlighted fields.');
 	});
 });

@@ -14,14 +14,14 @@
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
 import { toChannels, type AlertChannels } from './alert-channels';
-import { GATE_OK, gateOf, type Gate } from './gate';
-import { rowsOf, statedTotal, type ListEnvelope } from './list';
+import { query, readAll, rowsOf, statedTotal, type ListEnvelope } from './list';
+import { count, num } from './narrow';
 
-export const BASE_URL = '/api/admin/error-tracking';
-export const ALERTS_URL = `${BASE_URL}/alerts`;
-export const CODES_URL = `${BASE_URL}/codes`;
-export const EVENTS_URL = `${BASE_URL}/events`;
-export const SETTINGS_URL = `${BASE_URL}/alert-settings`;
+const BASE_URL = '/api/admin/error-tracking';
+const ALERTS_URL = `${BASE_URL}/alerts`;
+const CODES_URL = `${BASE_URL}/codes`;
+const EVENTS_URL = `${BASE_URL}/events`;
+const SETTINGS_URL = `${BASE_URL}/alert-settings`;
 
 /** Where an alert is in its triage. */
 export const ALERT_STATUSES = ['open', 'resolved', 'ignored'] as const;
@@ -95,8 +95,8 @@ export interface ErrorEvent {
 
 /**
  * A page of events. `hidden_older` counts the events older than the window
- * this install reads, which the page leaves out. It is 0 when the install
- * reads everything. `window_days` is that window, null when the install reads
+ * this instance reads, which the page leaves out. It is 0 when the instance
+ * reads everything. `window_days` is that window, null when the instance reads
  * every event.
  */
 export interface EventPage {
@@ -143,24 +143,13 @@ export interface AlertPage {
 	total: number | null;
 }
 
-export type ErrorGate = Gate;
-
-export const ERROR_OK: ErrorGate = GATE_OK;
-
-/** What a refused error tracking read means, read the way every plugin's is. */
-export function errorGate(err: unknown): ErrorGate {
-	return gateOf(err, 'Could not load errors.');
-}
-
 export async function listAlerts(
 	client: HttpClient,
 	limit: number,
 	offset: number,
 	status: AlertStatus | '' = ''
 ): Promise<AlertPage> {
-	const q = new URLSearchParams({ limit: String(limit), offset: String(offset) });
-	if (status) q.set('status', status);
-	const res = await client.get<ListEnvelope<ErrorAlert>>(`${ALERTS_URL}?${q}`);
+	const res = await client.get<ListEnvelope<ErrorAlert>>(`${ALERTS_URL}${query({ limit, offset, status })}`);
 	return { alerts: rowsOf(res), total: statedTotal(res) };
 }
 
@@ -173,15 +162,7 @@ export async function assign(client: HttpClient, id: string, assignee: string): 
 	await client.put(`${ALERTS_URL}/${encodeURIComponent(id)}/assignee`, { assignee });
 }
 
-function num(v: unknown, fallback = 0): number {
-	return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
-}
-
-function nullableNum(v: unknown): number | null {
-	return typeof v === 'number' && Number.isFinite(v) ? v : null;
-}
-
-/** The newest events, with the count of older ones the install does not read. */
+/** The newest events, with the count of older ones the instance does not read. */
 export async function listEvents(client: HttpClient, limit: number): Promise<EventPage> {
 	const res = await client.get<Record<string, unknown>>(`${EVENTS_URL}?limit=${limit}&offset=0`);
 	const data = Array.isArray(res?.data) ? (res.data as ErrorEvent[]) : [];
@@ -189,7 +170,7 @@ export async function listEvents(client: HttpClient, limit: number): Promise<Eve
 		data,
 		total: num(res?.total_count, data.length),
 		hiddenOlder: num(res?.hidden_older),
-		windowDays: nullableNum(res?.window_days),
+		windowDays: count(res?.window_days),
 	};
 }
 
@@ -199,8 +180,8 @@ export function toAlertSettings(raw: unknown): AlertSettings {
 	const secret = typeof r.webhook_signing_secret === 'string' ? r.webhook_signing_secret : '';
 	return {
 		channels: toChannels(r.channels),
-		spike_min_count: nullableNum(r.spike_min_count),
-		spike_z_score: nullableNum(r.spike_z_score),
+		spike_min_count: count(r.spike_min_count),
+		spike_z_score: count(r.spike_z_score),
 		defaults: { spike_min_count: num(d.spike_min_count, 10), spike_z_score: num(d.spike_z_score, 2.5) },
 		licensed: r.licensed === true,
 		...(secret ? { webhook_signing_secret: secret } : {}),
@@ -224,15 +205,11 @@ const CODES_PAGE = 500;
  * as an unclassified failure.
  */
 export async function listCodes(client: HttpClient): Promise<ListEnvelope<ErrorCode>> {
-	const all: ErrorCode[] = [];
-	for (let offset = 0; ; offset += CODES_PAGE) {
-		const page = await client.get<ListEnvelope<ErrorCode>>(`${CODES_URL}?limit=${CODES_PAGE}&offset=${offset}`);
-		const rows = rowsOf(page);
-		all.push(...rows);
-		const total = statedTotal(page);
-		if (rows.length < CODES_PAGE || (total !== null && all.length >= total)) break;
-	}
-	return { data: all, total_count: all.length };
+	const { rows } = await readAll(async (limit, offset) => {
+		const page = await client.get<ListEnvelope<ErrorCode>>(`${CODES_URL}?limit=${limit}&offset=${offset}`);
+		return { rows: rowsOf(page), total: statedTotal(page) };
+	}, CODES_PAGE);
+	return { data: rows, total_count: rows.length };
 }
 
 export async function acknowledge(client: HttpClient, id: string): Promise<void> {
@@ -321,12 +298,4 @@ export function triageOrder(
 		if (aLive !== bLive) return aLive ? -1 : 1;
 		return Date.parse(b.last_seen) - Date.parse(a.last_seen);
 	});
-}
-
-/** A count that stays readable past a thousand. */
-export function count(n: number): string {
-	if (!Number.isFinite(n)) return '0';
-	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-	if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-	return String(n);
 }

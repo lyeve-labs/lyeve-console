@@ -53,11 +53,12 @@ function loadEvent(routes: Record<string, Route>, plugins = withEmail) {
 
 function actionEvent(form: FormData, routes: Record<string, Route>) {
 	const { fetch, calls } = fetchFor(routes);
-	return { calls, event: { fetch, cookies: mockCookies(), request: { formData: async () => form }, url: new URL('http://localhost/admin/settings/email'), params: {} } as never };
+	return { calls, event: { fetch, cookies: mockCookies(), request: { formData: async () => form, clone: () => ({ formData: async () => form }) }, url: new URL('http://localhost/admin/settings/email'), params: {} } as never };
 }
 
 function form(entries: Record<string, string | string[]>): FormData {
 	const fd = new FormData();
+	fd.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(entries)) {
 		for (const one of Array.isArray(v) ? v : [v]) fd.append(k, one);
 	}
@@ -115,7 +116,7 @@ describe('admin/settings/email actions', () => {
 
 		const refused = actionEvent(
 			form({ id: 'p1', name: 'Api', transport: 'api', api_key: 'k', api_base_url: 'https://api.example.test', from_addr: 'a@b.c', priority: '0', max_per_hour: '0' }),
-			{ '/email/providers/p1': () => json({ error: 'Invalid api_base_url' }, 400) },
+			{ '/email/providers/p1': () => json({ error: 'Invalid api_base_url', code: 'bad_request' }, 400) },
 		);
 		const result = (await actions.update(refused.event)) as { status: number; data: { error: string } };
 		expect(result.status).toBe(400);

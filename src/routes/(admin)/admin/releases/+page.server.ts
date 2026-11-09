@@ -4,7 +4,8 @@ import { authedClient, requireUser } from '$lib/server/authz';
 import { actionFailure } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
-import { GATE_OK, gateOf, type Gate } from '$lib/api/gate';
+import { GATE_OK, section, type Gate } from '$lib/api/gate';
+import { couldNotLoad } from '$lib/outage';
 import { pageWindow, pastEndOffset, rowsOf, statedTotal, totalOf, withOffset } from '$lib/api/list';
 import { RELEASE_STATUSES, createRelease, listReleases, type Release } from '$lib/api/content-releases';
 
@@ -14,22 +15,16 @@ export const load: PageServerLoad = async (event) => {
 	const raw = event.url.searchParams.get('status') ?? '';
 	const status = (RELEASE_STATUSES as readonly string[]).includes(raw) ? raw : '';
 
-	let releases: Release[] = [];
-	let total = 0;
-	let stated: number | null = null;
-	let gate: Gate = notRunning(plugins, PLUGIN.content) ? { state: 'absent' } : GATE_OK;
-	if (gate.state === 'ok') {
-		try {
-			const res = await listReleases(authedClient(event), status, limit, offset);
-			releases = rowsOf(res);
-			total = Math.max(totalOf(res), offset + releases.length);
-			stated = statedTotal(res);
-		} catch (err) {
-			gate = gateOf(err, 'Could not load releases.');
-		}
+	const read = notRunning(plugins, PLUGIN.content)
+		? null
+		: await section(listReleases(authedClient(event), status, limit, offset), couldNotLoad('releases'));
+	const gate: Gate = !read ? { state: 'absent' } : read.ok ? GATE_OK : read.gate;
+	const releases: Release[] = read?.ok ? rowsOf(read.value) : [];
+	const total = read?.ok ? Math.max(totalOf(read.value), offset + releases.length) : 0;
+	if (read?.ok) {
+		const back = pastEndOffset(releases.length, limit, offset, statedTotal(read.value));
+		if (back !== null) redirect(307, withOffset(event.url, back));
 	}
-	const back = gate.state === 'ok' ? pastEndOffset(releases.length, limit, offset, stated) : null;
-	if (back !== null) redirect(307, withOffset(event.url, back));
 	return { releases, total, limit, offset, status, gate };
 };
 

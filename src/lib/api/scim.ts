@@ -17,10 +17,9 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 import type { ListEnvelope } from './list';
 
-export const PROVIDERS_URL = '/api/admin/scim/providers';
+const PROVIDERS_URL = '/api/admin/scim/providers';
 export const SCIM_BASE_PATH = '/api/v1/scim/v2';
 
 /** How a SCIM attribute maps onto a field here. */
@@ -54,15 +53,6 @@ export interface ScimProvider {
 	deprovision_action: string;
 	created_at: string;
 	updated_at: string;
-}
-
-export type ScimGate = Gate;
-
-export const SCIM_OK: ScimGate = GATE_OK;
-
-/** What a refused SCIM read means, read the way every plugin's is. */
-export function scimGate(err: unknown): ScimGate {
-	return gateOf(err, 'Could not load SCIM connections.');
 }
 
 export async function listProviders(

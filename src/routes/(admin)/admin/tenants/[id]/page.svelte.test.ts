@@ -74,7 +74,7 @@ describe('the member drawer and the failures of other actions', () => {
 	it('shows a failed grant inside the open drawer, first in its form', async () => {
 		const { rerender } = render(TenantPage, { props: props() });
 		await fireEvent.click(screen.getByRole('button', { name: /new member/i }));
-		await rerender(props({}, { action: 'grant', memberError: 'Choose at least one role.', fields: { roles: 'Required' } }));
+		await rerender(props({}, { action: 'grant', memberError: 'Choose at least one role.', fields: { roles: 'Choose at least one role.' } }));
 		const form = document.body.querySelector('form#member-form') as HTMLFormElement;
 		expect(form.firstElementChild?.textContent).toContain('Choose at least one role.');
 	});

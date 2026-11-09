@@ -2,10 +2,12 @@ import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { authedClient, requireUser } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
-import { engineBanner, flowLoadOutcome } from '$lib/server/flow-load';
+import { actionFailure, tagged } from '$lib/server/action-error';
+import { flowLoadOutcome } from '$lib/server/flow-load';
+import { couldNotLoad } from '$lib/outage';
 import { GATE_OK, gateOf, type Gate } from '$lib/api/gate';
 import { flowClient } from '$lib/server/flow-client';
+import { checked } from '$lib/checkbox';
 import {
 	createDatasource,
 	deleteDatasource,
@@ -18,6 +20,7 @@ import {
 	type DatasourceKind,
 } from '$lib/api/flows';
 import { SSL_MODES, authFromForm } from '$lib/flow/datasources';
+import { asked } from '$lib/server/asked';
 
 const KINDS: DatasourceKind[] = ['postgres', 'mysql', 'mssql', 'http', 'google_sheets'];
 
@@ -38,7 +41,7 @@ export const load: PageServerLoad = async (event) => {
 		({ rows: datasources, enabled: available } = await listDatasources(client));
 	} catch (err) {
 		({ locked } = flowLoadOutcome(err, { cookies, url }, 'datasources'));
-		if (!locked) gate = gateOf(err, engineBanner('datasources'));
+		if (!locked) gate = gateOf(err, couldNotLoad('datasources'));
 	}
 	return { datasources, available, locked, gate };
 };
@@ -52,7 +55,7 @@ function isRefused(err: unknown): boolean {
 	return err instanceof ApiError && err.status === 402;
 }
 
-const REFUSED = { error: 'Datasources are not enabled on this instance.', refused: true };
+const REFUSED = { error: 'Datasources are not enabled on this engine.', refused: true };
 
 /** The plugin's name rule, in words a reader can act on. */
 const NAME_RULE = 'Start the name with a lower case letter, and use up to 40 lower case letters, digits, dashes and underscores.';
@@ -73,7 +76,6 @@ function invalidFailure(err: unknown) {
 	return fail(422, { action: 'save', error, nameError });
 }
 
-const on = (v: FormDataEntryValue | null): boolean => v === 'true' || v === 'on';
 const text = (data: FormData, key: string): string => String(data.get(key) ?? '').trim();
 
 /**
@@ -85,7 +87,7 @@ const text = (data: FormData, key: string): string => String(data.get(key) ?? ''
 function bodyFrom(data: FormData): DatasourceBody | string {
 	const name = text(data, 'name');
 	const kind = text(data, 'kind') as DatasourceKind;
-	if (!name) return 'A datasource needs a name.';
+	if (!name) return 'Enter a name.';
 	if (!KINDS.includes(kind)) return 'Choose a kind.';
 
 	const config: Record<string, unknown> = {};
@@ -98,7 +100,7 @@ function bodyFrom(data: FormData): DatasourceBody | string {
 		config.user = text(data, 'user');
 		const modes = SSL_MODES[kind].map((m) => m.value);
 		const ssl = text(data, 'ssl') || modes[0];
-		if (!modes.includes(ssl)) return `TLS must be one of ${modes.join(', ')} for ${kind}.`;
+		if (!modes.includes(ssl)) return `Choose one of ${modes.join(', ')} for TLS on ${kind}.`;
 		config.ssl = ssl;
 		const password = text(data, 'password');
 		if (password) secret.password = password;
@@ -141,8 +143,8 @@ function bodyFrom(data: FormData): DatasourceBody | string {
 		kind,
 		config,
 		secret: Object.keys(secret).length > 0 ? secret : undefined,
-		allow_writes: on(data.get('allow_writes')),
-		allow_private: on(data.get('allow_private')),
+		allow_writes: checked(data, 'allow_writes'),
+		allow_private: checked(data, 'allow_private'),
 	};
 }
 
@@ -158,7 +160,7 @@ export const actions: Actions = {
 			await createDatasource(client, body);
 		} catch (err) {
 			if (isRefused(err)) return fail(402, { ...REFUSED, action: 'save' });
-			return invalidFailure(err) ?? fail(400, { action: 'save', error: actionError(err, 'Could not create the datasource. Try again.') });
+			return invalidFailure(err) ?? tagged('save', actionFailure(err, 'Could not create the datasource. Try again.'));
 		}
 	},
 
@@ -173,20 +175,27 @@ export const actions: Actions = {
 			await updateDatasource(client, id, body);
 		} catch (err) {
 			if (isRefused(err)) return fail(402, { ...REFUSED, action: 'save' });
-			return invalidFailure(err) ?? fail(400, { action: 'save', error: actionError(err, 'Could not save the datasource. Try again.') });
+			return invalidFailure(err) ?? tagged('save', actionFailure(err, 'Could not save the datasource. Try again.'));
 		}
 	},
 
-	delete: async (event) => {
-		await requireUser(event);
-		const client = authedClient(event);
-		const data = await event.request.formData();
-		try {
-			await deleteDatasource(client, text(data, 'id'));
-		} catch (err) {
-			return fail(400, { action: 'delete', error: actionError(err, 'Could not delete the datasource. Try again.') });
-		}
-	},
+	delete: asked(
+		{
+			question: 'Delete this datasource?',
+			detail: 'Flows that use it fail at that node until you create it again.',
+			label: 'Delete',
+		},
+		async (event) => {
+			await requireUser(event);
+			const client = authedClient(event);
+			const data = await event.request.formData();
+			try {
+				await deleteDatasource(client, text(data, 'id'));
+			} catch (err) {
+				return tagged('delete', actionFailure(err, 'Could not delete the datasource. Try again.'));
+			}
+		},
+	),
 
 	test: async (event) => {
 		await requireUser(event);
@@ -198,7 +207,7 @@ export const actions: Actions = {
 			return { testResult: { id, ...result } };
 		} catch (err) {
 			if (isRefused(err)) return fail(402, { ...REFUSED, action: 'test' });
-			return fail(400, { action: 'test', error: actionError(err, 'Could not test the datasource. Try again.') });
+			return tagged('test', actionFailure(err, 'Could not test the datasource. Try again.'));
 		}
 	},
 };

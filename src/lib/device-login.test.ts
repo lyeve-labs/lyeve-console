@@ -67,8 +67,8 @@ describe('expiresIn', () => {
 describe('tenantLabel', () => {
 	it('names the tenant, or says there is none', () => {
 		expect(tenantLabel('acme')).toBe('acme');
-		expect(tenantLabel('')).toBe('No tenant (instance-wide account)');
-		expect(tenantLabel(null)).toBe('No tenant (instance-wide account)');
+		expect(tenantLabel('')).toBe('No tenant (engine-wide account)');
+		expect(tenantLabel(null)).toBe('No tenant (engine-wide account)');
 	});
 });
 

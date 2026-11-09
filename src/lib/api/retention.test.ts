@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '@lyeve-labs/client';
 import {
 	activeHolds,
 	archivalLabel,
@@ -11,7 +10,6 @@ import {
 	listPolicies,
 	policyIsCatchAll,
 	policyScope,
-	retentionGate,
 	retentionLabel,
 	type LegalHold,
 	type RetentionPolicy,
@@ -118,20 +116,6 @@ describe('archival', () => {
 		expect(archivalLabel(policy())).toBe('Archived to glacier');
 		expect(archivalTone(policy())).toBe('success');
 		expect(archivalLabel(policy({ archival_storage: '' }))).toBe('Archived');
-	});
-});
-
-describe('the gate', () => {
-	it('tells a 402, a 404 and any other failure apart', () => {
-		expect(retentionGate(new ApiError(402, 'payment required')).state).toBe('locked');
-		expect(retentionGate(new ApiError(404, 'not found')).state).toBe('absent');
-		expect(retentionGate(new ApiError(500, 'internal error')).state).toBe('error');
-		expect(retentionGate(new ApiError(503, 'unavailable')).state).toBe('unavailable');
-	});
-
-	it('never reports a failed read as nothing being deleted', () => {
-		const gate = retentionGate(new Error('network'));
-		expect(gate.state === 'error' && gate.message).toBe('Could not load the retention rules.');
 	});
 });
 

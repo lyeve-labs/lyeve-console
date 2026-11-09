@@ -53,8 +53,8 @@ describe('Admin error page', () => {
 
 	it('keeps the server face and the detail block for 500', () => {
 		const { getByText } = renderAt(500, 'boom');
-		expect(getByText('Something went wrong')).toBeTruthy();
-		expect(getByText('What the server said')).toBeTruthy();
+		expect(getByText('Could not complete the request')).toBeTruthy();
+		expect(getByText('What the engine returned')).toBeTruthy();
 		expect(getByText('boom')).toBeTruthy();
 	});
 

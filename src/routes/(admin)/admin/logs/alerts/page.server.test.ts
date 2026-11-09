@@ -28,8 +28,9 @@ function loadEvent(roles = ['super_admin'], running = ['logging']) {
 
 function actionEvent(fields: Record<string, string>) {
 	const data = new FormData();
+	data.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) data.set(k, v);
-	return { request: { formData: async () => data } } as never;
+	return { request: { formData: async () => data, clone: () => ({ formData: async () => data }) } } as never;
 }
 
 const RULE = { level: 'WARN', max_count: '50', window: '15m', enabled: 'true' };

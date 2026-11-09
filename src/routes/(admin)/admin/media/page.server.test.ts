@@ -249,11 +249,24 @@ function actionEvent(fields: Record<string, string>, answer: () => Response = ()
 		return answer();
 	}) as unknown as typeof globalThis.fetch;
 	const fd = new FormData();
+	fd.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) fd.set(k, v);
-	return { event: { fetch, cookies: mockCookies(), request: { formData: async () => fd } } as never, calls };
+	return { event: { fetch, cookies: mockCookies(), request: { formData: async () => fd, clone: () => ({ formData: async () => fd }) } } as never, calls };
 }
 
 describe('deleting a file', () => {
+	// The preview drawer posts the delete. Before the page hydrates, it posts
+	// with no question asked.
+	it('deletes nothing on a post that skipped the question', async () => {
+		const fetch = vi.fn();
+		const body = new FormData();
+		body.set('id', 'm1');
+		const url = new URL('http://admin/admin/media?/delete');
+		const out = await actions.delete({ fetch, cookies: mockCookies(), url, request: new Request(url, { method: 'POST', body }) } as never);
+		expect(fetch).not.toHaveBeenCalled();
+		expect(out).toMatchObject({ unconfirmed: { question: 'Delete this file?', label: 'Delete', action: '/admin/media?/delete', fields: [['id', 'm1']] } });
+	});
+
 	it('deletes the file it names', async () => {
 		const { event, calls } = actionEvent({ id: 'm 1' }, () => new Response(null, { status: 204 }));
 		expect(await actions.delete(event)).toBeUndefined();
@@ -263,7 +276,7 @@ describe('deleting a file', () => {
 	// The delete is asked from the preview drawer, which stays open on a
 	// refusal, so the failure names its file for that drawer to show.
 	it('returns a refusal against the file it was for', async () => {
-		const { event } = actionEvent({ id: 'm1' }, () => json({ error: 'media is referenced by a content entry' }, 409));
+		const { event } = actionEvent({ id: 'm1' }, () => json({ error: 'media is referenced by a content entry', code: 'conflict' }, 409));
 		const out = (await actions.delete(event)) as Failure;
 		expect(out.data).toEqual({ deleteError: 'media is referenced by a content entry', deleteId: 'm1' });
 	});
@@ -294,7 +307,7 @@ describe('importing a file from an address', () => {
 	});
 
 	it('relays the reason the plugin refused', async () => {
-		const { event } = actionEvent({ url: 'https://example.com/a.png' }, () => json({ error: 'file type not allowed' }, 415));
+		const { event } = actionEvent({ url: 'https://example.com/a.png' }, () => json({ error: 'file type not allowed', code: 'http_415' }, 415));
 		expect(((await actions.importUrl(event)) as Failure).data.importError).toContain('file type not allowed');
 	});
 
@@ -322,7 +335,7 @@ describe('describing an image', () => {
 			json({ error: 'payment_required', plugin: 'ai', feature: 'feature:ai', upgrade_url: '' }, 402),
 		);
 		expect(((await actions.describe(license.event)) as Failure).data.detailsError).toBe(
-			'The license on this instance does not include ai. Nothing was changed.',
+			'This is not enabled on this engine. Nothing was changed.',
 		);
 	});
 

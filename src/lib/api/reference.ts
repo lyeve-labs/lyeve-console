@@ -1,7 +1,7 @@
 /**
- * API reference data. Structured definitions for every endpoint exposed by the CMS.
- * This is a first-party data model, not an OpenAPI/Swagger artifact.
- * The UI renders it via the custom /admin/api-reference page.
+ * The endpoint catalog the API reference page draws. The console carries it
+ * rather than asking the engine, because the page explains each route in the
+ * console's own words, which no machine description the engine serves holds.
  */
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -9,7 +9,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 export type AuthRequirement =
 	| 'none'           // Public: no token needed
 	| 'bearer'         // Bearer JWT (Content API)
-	| 'cookie'         // HTTP-only __Host-sys_session cookie (Admin UI)
+	| 'cookie'         // HTTP-only __Host-sys_session cookie (the console)
 	| 'bearer-or-cookie'; // Either works (Admin API endpoints)
 
 export interface EndpointParam {
@@ -52,7 +52,7 @@ export interface EndpointGroup {
 const adminAuthGroup: EndpointGroup = {
 	id: 'admin-auth',
 	label: 'Admin · Auth',
-	description: 'Authentication and setup for the admin panel. Uses HTTP-only cookie sessions.',
+	description: 'Authentication and setup for LyEve Console. Uses HTTP-only cookie sessions.',
 	server: 'admin',
 	baseUrl: '/api/admin',
 	endpoints: [
@@ -60,7 +60,7 @@ const adminAuthGroup: EndpointGroup = {
 			method: 'GET',
 			path: '/api/admin/setup',
 			summary: 'Setup status',
-			description: 'Returns whether the CMS has been initialized (i.e. at least one admin user exists).',
+			description: 'Returns whether the engine has been set up, which means at least one admin account exists.',
 			auth: 'none',
 			response: {
 				description: 'Setup state',
@@ -72,7 +72,7 @@ const adminAuthGroup: EndpointGroup = {
 			path: '/api/admin/setup',
 			summary: 'Initial setup',
 			description:
-				'Creates the first super_admin user. Only works when no users exist yet, and only with the setup token: LYEVE_SETUP_TOKEN, or the one-time token the engine logs at boot. 401 without it.',
+				'Creates the first super admin account. It works only while no account exists, and only with the setup token: LYEVE_SETUP_TOKEN, or the one-time token the engine logs at boot. Without it the answer is 401.',
 			auth: 'none',
 			requestBody: {
 				description: 'First user credentials and the setup token',
@@ -122,65 +122,65 @@ const adminAuthGroup: EndpointGroup = {
 
 const adminSchemasGroup: EndpointGroup = {
 	id: 'admin-schemas',
-	label: 'Admin · Schemas',
-	description: 'Manage content type definitions. Schema writes require admin or super_admin role.',
+	label: 'Admin · Content types',
+	description: 'Manage content type definitions. Only an admin or a super admin can write a content type.',
 	server: 'admin',
 	baseUrl: '/api/admin',
 	endpoints: [
 		{
 			method: 'GET',
 			path: '/api/admin/schemas',
-			summary: 'List schemas',
+			summary: 'List content types',
 			auth: 'cookie',
 			response: {
-				description: 'Array of schema definitions',
+				description: 'Array of content type definitions',
 				example: `[{ "name": "posts", "display_name": "Posts", "fields": [...] }]`,
 			},
 		},
 		{
 			method: 'GET',
 			path: '/api/admin/schemas/{name}',
-			summary: 'Get schema',
+			summary: 'Get content type',
 			auth: 'cookie',
-			params: [{ name: 'name', in: 'path', type: 'string', required: true, description: 'Schema identifier' }],
+			params: [{ name: 'name', in: 'path', type: 'string', required: true, description: 'Content type identifier' }],
 			response: {
-				description: 'Single schema definition',
+				description: 'Single content type definition',
 				example: `{ "name": "posts", "display_name": "Posts", "fields": [...] }`,
 			},
 		},
 		{
 			method: 'POST',
 			path: '/api/admin/schemas',
-			summary: 'Create / update schema',
-			description: 'Creates a new schema or updates an existing one. Generates and applies DDL automatically.',
+			summary: 'Create / update content type',
+			description: 'Creates a new content type or updates an existing one. Generates and applies DDL automatically.',
 			auth: 'cookie',
 			roles: ['admin', 'super_admin'],
 			requestBody: {
-				description: 'Full schema definition',
+				description: 'Full content type definition',
 				example: `{\n  "name": "posts",\n  "display_name": "Posts",\n  "with_created_at": true,\n  "with_updated_at": true,\n  "fields": [\n    {\n      "name": "title",\n      "field_type": "text",\n      "required": true,\n      "unique": false,\n      "indexed": true\n    }\n  ]\n}`,
 			},
 			response: {
-				description: 'Saved schema',
+				description: 'Saved content type',
 				example: `{ "name": "posts", "display_name": "Posts", "fields": [...] }`,
 			},
 		},
 		{
 			method: 'DELETE',
 			path: '/api/admin/schemas/{name}',
-			summary: 'Delete schema',
-			description: "Deletes the schema definition and this tenant's rows. The table is dropped only when no other tenant defines the schema. This cannot be undone.",
+			summary: 'Delete content type',
+			description: "Deletes the content type definition and this tenant's rows. The table is dropped only when no other tenant defines the content type. This cannot be undone.",
 			auth: 'cookie',
 			roles: ['admin', 'super_admin'],
-			params: [{ name: 'name', in: 'path', type: 'string', required: true, description: 'Schema identifier' }],
+			params: [{ name: 'name', in: 'path', type: 'string', required: true, description: 'Content type identifier' }],
 			response: { description: 'Empty 204 response.', example: '' },
 		},
 		{
 			method: 'GET',
 			path: '/api/admin/schemas/{name}/stats',
-			summary: 'Schema stats',
-			description: 'Returns row count and storage size for the collection table.',
+			summary: 'Content type stats',
+			description: "Returns row count and storage size for the content type's table.",
 			auth: 'cookie',
-			params: [{ name: 'name', in: 'path', type: 'string', required: true, description: 'Schema identifier' }],
+			params: [{ name: 'name', in: 'path', type: 'string', required: true, description: 'Content type identifier' }],
 			response: {
 				description: 'Stats object',
 				example: `{ "rows": 142, "table": "content_posts" }`,
@@ -189,14 +189,14 @@ const adminSchemasGroup: EndpointGroup = {
 		{
 			method: 'POST',
 			path: '/api/admin/schemas/import',
-			summary: 'Import schemas',
+			summary: 'Import content types',
 			description:
-				'Plans an import of a schema bundle, or of definitions from another system named by from, and applies it only with apply=true. The body is JSON or YAML, sent as application/json, application/yaml, application/x-yaml or text/yaml, at most 4 MiB. 422 when the definitions cannot be read, 409 when their references cannot be satisfied.',
+				'Plans an import of a content type bundle, or of definitions from another system named by from, and applies it only with apply=true. The body is JSON or YAML, sent as application/json, application/yaml, application/x-yaml or text/yaml, at most 4 MiB. 422 when the definitions cannot be read, 409 when their references cannot be satisfied.',
 			auth: 'cookie',
 			roles: ['super_admin'],
 			params: [
 				{ name: 'from', in: 'query', type: 'string', required: false, description: 'Source format', values: ['lyeve', 'json-schema', 'openapi', 'strapi', 'contentful', 'wordpress'] },
-				{ name: 'apply', in: 'query', type: 'boolean', required: false, description: 'Write the changes; without it nothing is written' },
+				{ name: 'apply', in: 'query', type: 'boolean', required: false, description: 'Write the changes. Without it, nothing is written.' },
 			],
 			response: {
 				description: 'The plan, and whether it was applied.',
@@ -209,7 +209,7 @@ const adminSchemasGroup: EndpointGroup = {
 const adminUsersGroup: EndpointGroup = {
 	id: 'admin-users',
 	label: 'Admin · Users',
-	description: 'Manage CMS admin users. All endpoints require super_admin role.',
+	description: "Manage the console's accounts. Only a super admin can call these endpoints.",
 	server: 'admin',
 	baseUrl: '/api/admin',
 	endpoints: [
@@ -303,7 +303,7 @@ const adminMigrateGroup: EndpointGroup = {
 const adminWebhooksGroup: EndpointGroup = {
 	id: 'admin-webhooks',
 	label: 'Admin · Webhooks',
-	description: 'Manage outgoing HTTP webhooks. The CMS fires a POST to each matching URL after content lifecycle events.',
+	description: 'Manage outgoing HTTP webhooks. Each matching URL receives a POST after a content event.',
 	server: 'admin',
 	baseUrl: '/api/admin',
 	endpoints: [
@@ -378,7 +378,7 @@ const adminWebhooksGroup: EndpointGroup = {
 			method: 'POST',
 			path: '/api/admin/webhooks/{id}/rotate-secret',
 			summary: 'Rotate webhook secret',
-			description: 'Replaces the webhook signing secret. Optionally pass new_secret in body; omitting it auto-generates one. Requires super_admin.',
+			description: 'Replaces the webhook signing secret. Pass new_secret in the body to choose it, or omit it to generate one. Only a super admin can call this.',
 			auth: 'cookie',
 			roles: ['super_admin'],
 			params: [{ name: 'id', in: 'path', type: 'uuid', required: true, description: 'Webhook UUID' }],
@@ -524,7 +524,7 @@ const adminDeadLettersGroup: EndpointGroup = {
 			method: 'DELETE',
 			path: '/api/admin/webhook-dead-letters/{id}',
 			summary: 'Delete dead letter',
-			description: 'Permanently removes the dead letter entry. Irreversible.',
+			description: 'Removes the dead letter entry. This cannot be undone.',
 			auth: 'cookie',
 			roles: ['admin', 'super_admin'],
 			params: [{ name: 'id', in: 'path', type: 'uuid', required: true, description: 'Dead letter UUID' }],
@@ -573,7 +573,7 @@ const adminSystemGroup: EndpointGroup = {
 			path: '/api/admin/plugins/{name}/schema',
 			summary: 'Plugin configuration schema',
 			description:
-				'Returns the JSON Schema for a plugin\'s configuration struct, used by the admin UI to auto-generate a configuration form.',
+				"Returns the JSON Schema for a plugin's configuration, which the console uses to draw its settings form.",
 			auth: 'cookie',
 			roles: ['admin', 'super_admin'],
 			params: [{ name: 'name', in: 'path', type: 'string', required: true, description: 'Plugin name' }],
@@ -590,7 +590,7 @@ const adminSystemGroup: EndpointGroup = {
 const apiAuthGroup: EndpointGroup = {
 	id: 'api-auth',
 	label: 'API · Auth',
-	description: 'Obtain Bearer tokens for the Content API. Tokens are JWTs signed with EdDSA (Ed25519), verifiable via /.well-known/jwks.json; HS256 is a legacy fallback.',
+	description: 'Obtain bearer tokens for the content API. Tokens are JWTs signed with EdDSA (Ed25519) and verifiable at /.well-known/jwks.json. HS256 is a legacy fallback.',
 	server: 'api',
 	baseUrl: '/api/v1',
 	endpoints: [
@@ -614,29 +614,29 @@ const apiAuthGroup: EndpointGroup = {
 
 const apiSchemasGroup: EndpointGroup = {
 	id: 'api-schemas',
-	label: 'API · Schemas',
-	description: 'Read-only schema discovery for API consumers. Useful for dynamic form generation.',
+	label: 'API · Content types',
+	description: 'Read-only content type discovery for API consumers. Useful for dynamic form generation.',
 	server: 'api',
 	baseUrl: '/api/v1',
 	endpoints: [
 		{
 			method: 'GET',
 			path: '/api/v1/schemas',
-			summary: 'List schemas',
+			summary: 'List content types',
 			auth: 'bearer',
 			response: {
-				description: 'Array of schema definitions',
+				description: 'Array of content type definitions',
 				example: `[{ "name": "posts", "display_name": "Posts", "fields": [...] }]`,
 			},
 		},
 		{
 			method: 'GET',
 			path: '/api/v1/schemas/{name}',
-			summary: 'Get schema',
+			summary: 'Get content type',
 			auth: 'bearer',
-			params: [{ name: 'name', in: 'path', type: 'string', required: true, description: 'Schema identifier' }],
+			params: [{ name: 'name', in: 'path', type: 'string', required: true, description: 'Content type identifier' }],
 			response: {
-				description: 'Single schema definition',
+				description: 'Single content type definition',
 				example: `{ "name": "posts", "display_name": "Posts", "fields": [...] }`,
 			},
 		},
@@ -647,105 +647,103 @@ const apiSchemasGroup: EndpointGroup = {
 // parameter the engine resolves per request, so it is documented once. The
 // loader states the count of collections from the engine's document, never
 // their names.
-export function makeContentGroup(): EndpointGroup {
-	const base = '/api/v1/content/{schema}';
-	const schemaParam: EndpointParam = {
-		name: 'schema',
-		in: 'path',
-		type: 'string',
-		required: true,
-		description: 'Collection name, as listed by GET /api/v1/schemas.',
-	};
-	const idParam: EndpointParam = {
-		name: 'id',
-		in: 'path',
-		type: 'uuid',
-		required: true,
-		description: 'Content item ID',
-	};
-	return {
-		id: 'api-content',
-		label: 'API · Content',
-		description:
-			'CRUD operations over any collection. Write endpoints require editor, admin, or super_admin role.',
-		server: 'api',
-		baseUrl: '/api/v1',
-		endpoints: [
-			{
-				method: 'GET',
-				path: base,
-				summary: 'List content',
-				auth: 'bearer',
-				params: [
-					schemaParam,
-					{ name: 'limit', in: 'query', type: 'number', required: false, description: 'Max records to return (default 25)' },
-					{ name: 'offset', in: 'query', type: 'number', required: false, description: 'Pagination offset (default 0)' },
-				],
-				response: {
-					description: 'Paginated array of content items',
-					example: `[\n  {\n    "id": "uuid",\n    "schema_name": "posts",\n    "data": { ... },\n    "created_at": "2026-01-01T00:00:00Z",\n    "updated_at": "2026-01-01T00:00:00Z"\n  }\n]`,
-				},
+const base = '/api/v1/content/{schema}';
+const schemaParam: EndpointParam = {
+	name: 'schema',
+	in: 'path',
+	type: 'string',
+	required: true,
+	description: 'Content type name, as listed by GET /api/v1/schemas.',
+};
+const idParam: EndpointParam = {
+	name: 'id',
+	in: 'path',
+	type: 'uuid',
+	required: true,
+	description: 'Content item ID',
+};
+const apiContentGroup: EndpointGroup = {
+	id: 'api-content',
+	label: 'API · Content',
+	description:
+		'Create, read, update and delete records in any content type. Only an editor, an admin or a super admin can write.',
+	server: 'api',
+	baseUrl: '/api/v1',
+	endpoints: [
+		{
+			method: 'GET',
+			path: base,
+			summary: 'List content',
+			auth: 'bearer',
+			params: [
+				schemaParam,
+				{ name: 'limit', in: 'query', type: 'number', required: false, description: 'Max records to return (default 25)' },
+				{ name: 'offset', in: 'query', type: 'number', required: false, description: 'Pagination offset (default 0)' },
+			],
+			response: {
+				description: 'Paginated array of content items',
+				example: `[\n  {\n    "id": "uuid",\n    "schema_name": "posts",\n    "data": { ... },\n    "created_at": "2026-01-01T00:00:00Z",\n    "updated_at": "2026-01-01T00:00:00Z"\n  }\n]`,
 			},
-			{
-				method: 'GET',
-				path: `${base}/{id}`,
-				summary: 'Get content item',
-				auth: 'bearer',
-				params: [schemaParam, idParam],
-				response: {
-					description: 'Single content item',
-					example: `{\n  "id": "uuid",\n  "schema_name": "posts",\n  "data": { ... },\n  "created_at": "2026-01-01T00:00:00Z"\n}`,
-				},
+		},
+		{
+			method: 'GET',
+			path: `${base}/{id}`,
+			summary: 'Get content item',
+			auth: 'bearer',
+			params: [schemaParam, idParam],
+			response: {
+				description: 'Single content item',
+				example: `{\n  "id": "uuid",\n  "schema_name": "posts",\n  "data": { ... },\n  "created_at": "2026-01-01T00:00:00Z"\n}`,
 			},
-			{
-				method: 'POST',
-				path: base,
-				summary: 'Create content',
-				auth: 'bearer',
-				roles: ['editor', 'admin', 'super_admin'],
-				params: [schemaParam],
-				requestBody: {
-					description: 'Field values wrapped in a data object',
-					example: `{\n  "data": {\n    "title": "My first post",\n    "published": false\n  }\n}`,
-				},
-				response: {
-					description: 'Created content item',
-					example: `{\n  "id": "uuid",\n  "schema_name": "posts",\n  "data": { ... },\n  "created_at": "2026-01-01T00:00:00Z"\n}`,
-				},
+		},
+		{
+			method: 'POST',
+			path: base,
+			summary: 'Create content',
+			auth: 'bearer',
+			roles: ['editor', 'admin', 'super_admin'],
+			params: [schemaParam],
+			requestBody: {
+				description: 'Field values wrapped in a data object',
+				example: `{\n  "data": {\n    "title": "My first post",\n    "published": false\n  }\n}`,
 			},
-			{
-				method: 'PUT',
-				path: `${base}/{id}`,
-				summary: 'Update content',
-				auth: 'bearer',
-				roles: ['editor', 'admin', 'super_admin'],
-				params: [schemaParam, idParam],
-				requestBody: {
-					description: 'Partial or full field values',
-					example: `{\n  "data": {\n    "published": true\n  }\n}`,
-				},
-				response: {
-					description: 'Updated content item',
-					example: `{\n  "id": "uuid",\n  "schema_name": "posts",\n  "data": { ... }\n}`,
-				},
+			response: {
+				description: 'Created content item',
+				example: `{\n  "id": "uuid",\n  "schema_name": "posts",\n  "data": { ... },\n  "created_at": "2026-01-01T00:00:00Z"\n}`,
 			},
-			{
-				method: 'DELETE',
-				path: `${base}/{id}`,
-				summary: 'Delete content',
-				auth: 'bearer',
-				roles: ['editor', 'admin', 'super_admin'],
-				params: [schemaParam, idParam],
-				response: { description: 'Empty 204 response.', example: '' },
+		},
+		{
+			method: 'PUT',
+			path: `${base}/{id}`,
+			summary: 'Update content',
+			auth: 'bearer',
+			roles: ['editor', 'admin', 'super_admin'],
+			params: [schemaParam, idParam],
+			requestBody: {
+				description: 'Partial or full field values',
+				example: `{\n  "data": {\n    "published": true\n  }\n}`,
 			},
-		],
-	};
-}
+			response: {
+				description: 'Updated content item',
+				example: `{\n  "id": "uuid",\n  "schema_name": "posts",\n  "data": { ... }\n}`,
+			},
+		},
+		{
+			method: 'DELETE',
+			path: `${base}/{id}`,
+			summary: 'Delete content',
+			auth: 'bearer',
+			roles: ['editor', 'admin', 'super_admin'],
+			params: [schemaParam, idParam],
+			response: { description: 'Empty 204 response.', example: '' },
+		},
+	],
+};
 
 const apiJwksGroup: EndpointGroup = {
 	id: 'api-jwks',
 	label: 'API · JWKS',
-	description: 'JSON Web Key Set for verifying EdDSA (Ed25519) tokens issued by the CMS.',
+	description: 'JSON Web Key Set for verifying the EdDSA (Ed25519) tokens the engine issues.',
 	server: 'api',
 	baseUrl: '/.well-known',
 	endpoints: [
@@ -774,6 +772,6 @@ export const staticGroups: EndpointGroup[] = [
 	adminSystemGroup,
 	apiAuthGroup,
 	apiSchemasGroup,
-	makeContentGroup(),
+	apiContentGroup,
 	apiJwksGroup,
 ];

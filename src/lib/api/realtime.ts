@@ -12,11 +12,10 @@
  * middleware gates it, rather than a role branch inside one handler.
  */
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, gateOf, type Gate } from './gate';
 
-export const SSE_METRICS_URL = '/api/admin/realtime/metrics';
-export const SSE_PLATFORM_URL = '/api/admin/realtime/metrics/platform';
-export const WS_METRICS_URL = '/api/admin/ws/metrics';
+const SSE_METRICS_URL = '/api/admin/realtime/metrics';
+const SSE_PLATFORM_URL = '/api/admin/realtime/metrics/platform';
+const WS_METRICS_URL = '/api/admin/ws/metrics';
 
 /**
  * Counters the SSE connection manager keeps.
@@ -45,15 +44,6 @@ export interface SocketMetrics extends StreamMetrics {
 	broadcasts_sent?: number;
 	pings_sent?: number;
 	pongs_received?: number;
-}
-
-export type RealtimeGate = Gate;
-
-export const REALTIME_OK: RealtimeGate = GATE_OK;
-
-/** What a refused realtime read means, read the way every plugin's is. */
-export function realtimeGate(err: unknown): RealtimeGate {
-	return gateOf(err, 'Could not load realtime metrics.');
 }
 
 export async function getStreamMetrics(client: HttpClient): Promise<StreamMetrics> {
@@ -113,7 +103,7 @@ export function uptimeSince(since: string, now = new Date()): string {
 /**
  * Whether a transport looks used at all.
  *
- * An install that pushes over SSE and never opens a socket should read as
+ * An instance that pushes over SSE and never opens a socket should read as
  * "not in use" rather than as a wall of zeros that looks like a fault. Only
  * the accepted connections are the tenant's own. The plugin counts pushed
  * events across the whole instance, so another tenant's traffic says nothing
