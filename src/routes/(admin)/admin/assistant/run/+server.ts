@@ -33,7 +33,10 @@ export const POST: RequestHandler = async ({ request, cookies, url, fetch }) => 
 	} catch {
 		return json({ ok: false, status: 0, message: UNCERTAIN });
 	}
-	if (res.ok) return json({ ok: true, status: res.status });
+	if (res.ok) {
+		await res.body?.cancel();
+		return json({ ok: true, status: res.status });
+	}
 	if (res.status === 401) return json({ ok: false, status: 401, message: SESSION_ENDED });
 	const body = (await res.json().catch(() => null)) as { error?: unknown; code?: unknown; errors?: unknown } | null;
 	if (res.status < 500 && typeof body?.error === 'string' && typeof body.code === 'string' && body.error.trim()) {

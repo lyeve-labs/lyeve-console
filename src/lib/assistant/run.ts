@@ -28,6 +28,9 @@ export function readRun(input: unknown): RunRequest | null {
 	const method = input.method.toUpperCase();
 	const path = input.path;
 	if (!METHODS.has(method) || !PATH.test(path) || path.includes('..') || path.includes('//')) return null;
+	// An encoded or single dot segment would leave the path the person saw
+	// once the URL is resolved, so only a path that resolves to itself runs.
+	if (new URL(path, 'http://x').pathname !== path) return null;
 	return {
 		method: method as RunRequest['method'],
 		path,
@@ -36,13 +39,23 @@ export function readRun(input: unknown): RunRequest | null {
 	};
 }
 
-/** The path with its query, each value as text and an array as repeated keys. */
+const text = (v: unknown) => (typeof v === 'object' ? JSON.stringify(v) : String(v));
+
+/**
+ * The path with its query, spelled as the AI plugin spells the request it
+ * proposes, so what runs is what the person approved: a scalar as
+ * name=value, a list as the name repeated, and an object as name[key]=value.
+ */
 export function runTarget(run: RunRequest): string {
 	const params = new URLSearchParams();
 	for (const [key, value] of Object.entries(run.query ?? {})) {
-		for (const v of Array.isArray(value) ? value : [value]) {
-			if (v === null || v === undefined) continue;
-			params.append(key, typeof v === 'object' ? JSON.stringify(v) : String(v));
+		if (value === null || value === undefined) continue;
+		if (Array.isArray(value)) {
+			for (const v of value) if (v !== null && v !== undefined) params.append(key, text(v));
+		} else if (isObject(value)) {
+			for (const [sub, v] of Object.entries(value)) if (v !== null && v !== undefined) params.append(`${key}[${sub}]`, text(v));
+		} else {
+			params.append(key, text(value));
 		}
 	}
 	const q = params.toString();
