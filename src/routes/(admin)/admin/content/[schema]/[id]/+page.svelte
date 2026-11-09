@@ -280,6 +280,7 @@
 							relations={data.relations}
 							mediaChoices={data.mediaChoices}
 							error={translationError || reviewError || commentError || releaseError || revisionError ? null : form?.error}
+							label="{schemaLabel} entry"
 						/>
 					</div>
 				</Card>
