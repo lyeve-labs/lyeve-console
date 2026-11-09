@@ -311,18 +311,54 @@ describe('SchemaEditor', () => {
 
 	it('shows a saved table its API, and its history to a super admin only', () => {
 		setup();
-		expect(screen.getByRole('button', { name: /This collection's API/ })).toBeTruthy();
-		expect(screen.queryByRole('button', { name: /History/ })).toBeNull();
+		expect(screen.getByRole('tab', { name: 'API' })).toBeTruthy();
+		expect(screen.queryByRole('tab', { name: /History/ })).toBeNull();
 		cleanup();
 		setup({ isSuperAdmin: true });
-		expect(screen.getByRole('button', { name: /History/ })).toBeTruthy();
+		expect(screen.getByRole('tab', { name: /History/ })).toBeTruthy();
+	});
+
+	it('reads the history when its tab is first chosen', async () => {
+		const { props } = setup({ isSuperAdmin: true });
+		const submit = vi.fn();
+		props.ddl.form = { requestSubmit: submit } as unknown as HTMLFormElement;
+		expect(submit).not.toHaveBeenCalled();
+		await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
+		expect(submit).toHaveBeenCalledTimes(1);
+		expect(screen.getByTestId('schema-history')).toBeTruthy();
+	});
+
+	it('stops asking for the history once another tab is chosen', async () => {
+		// The page keeps one history reader for every type it opens, so a reader
+		// left open would fetch each later type's history on its definition.
+		const { props } = setup({ isSuperAdmin: true });
+		await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
+		expect(props.ddl.open).toBe(true);
+		await fireEvent.click(screen.getByRole('tab', { name: 'Definition' }));
+		expect(props.ddl.open).toBe(false);
+	});
+
+	it('keeps the relation help on the Definition tab and the routes on the API tab', async () => {
+		setup();
+		expect(screen.getByRole('button', { name: /How relations work/ })).toBeTruthy();
+		expect(screen.queryByText(/^\/api\/v1\/content\/posts/)).toBeNull();
+		await fireEvent.click(screen.getByRole('tab', { name: 'API' }));
+		expect(screen.queryByRole('button', { name: /How relations work/ })).toBeNull();
+		expect(screen.getAllByText(/^\/api\/v1\/content\/posts/).length).toBeGreaterThan(0);
+	});
+
+	it('draws no tabs for a table that is not saved yet', () => {
+		setup({ saved: null, isNewSchema: true });
+		expect(screen.queryByRole('tablist')).toBeNull();
+		expect(screen.getByRole('button', { name: /How relations work/ })).toBeTruthy();
 	});
 
 	// The row shows a route and the button copies a curl command built from
 	// it, so the button's own words say what it copies, and its description
 	// names the route that sets it apart from the other rows.
-	it('says on each route row that its copy button copies a curl command', () => {
+	it('says on each route row that its copy button copies a curl command', async () => {
 		setup();
+		await fireEvent.click(screen.getByRole('tab', { name: 'API' }));
 		const copies = screen.getAllByRole('button', { name: 'curl' });
 		expect(copies.length).toBeGreaterThan(1);
 		for (const b of copies) expect(b.textContent).toContain('curl');

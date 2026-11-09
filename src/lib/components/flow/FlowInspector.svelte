@@ -173,20 +173,29 @@
 			<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-2 {categoryText(nodeSpec?.category)}">
 				<Icon size={ICON.md} />
 			</span>
+			<!-- The title takes the row's free width. The badge sits on the meta
+			     line under it, where it wraps below the node type in a narrow
+			     inspector instead of covering the title. -->
 			<div class="min-w-0 flex-1">
 				<SectionHeading level={2}>{nodeSpec?.label ?? node.type}</SectionHeading>
-				<p class="truncate font-mono text-xs text-muted" title={nodeSpec?.description}>{node.type}</p>
+				<div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+					<p class="min-w-0 truncate font-mono text-xs text-muted" title={nodeSpec?.description}>{node.type}</p>
+					{#if nodeSpec?.side_effects}<Badge tone="warn" size="sm">side effects</Badge>{/if}
+				</div>
 			</div>
-			{#if nodeSpec?.side_effects}<Badge tone="warn" size="sm">side effects</Badge>{/if}
-			{#if onassist}
-				<Button variant="ghost" size="sm" aria-label="Ask the assistant about this node" onclick={onassist}>
-					<WandSparkles size={ICON.sm} />
-				</Button>
-			{/if}
-			{#if onguide}
-				<Button variant="ghost" size="sm" aria-label="Open the guide" onclick={onguide}>
-					<BookOpen size={ICON.sm} />
-				</Button>
+			{#if onassist || onguide}
+				<div class="flex shrink-0 items-center">
+					{#if onassist}
+						<Button variant="ghost" size="icon" aria-label="Ask the assistant about this node" onclick={onassist}>
+							<WandSparkles size={ICON.sm} />
+						</Button>
+					{/if}
+					{#if onguide}
+						<Button variant="ghost" size="icon" aria-label="Open the guide" onclick={onguide}>
+							<BookOpen size={ICON.sm} />
+						</Button>
+					{/if}
+				</div>
 			{/if}
 		</div>
 		<Input

@@ -86,7 +86,7 @@ describe('schema confirmations with a row count nobody read', () => {
 	it('says the count is unknown before applying queued drops', async () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
-		await fireEvent.click(screen.getByRole('button', { name: /History/ }));
+		await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
 		await play('?/history', { type: 'success', data: { name: 'posts', entries: [], pending: 2, limit: 200 } });
 
 		await fireEvent.click(await screen.findByRole('button', { name: 'Apply' }));
@@ -101,7 +101,7 @@ describe('schema history', () => {
 	it('draws placeholders while the history is read', async () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
-		await fireEvent.click(screen.getByRole('button', { name: /History/ }));
+		await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
 		const submit = forms.handlers.get('?/history') as SubmitFunction;
 		await submit({ formData: new FormData(), cancel() {} } as never);
 
@@ -111,7 +111,7 @@ describe('schema history', () => {
 	it('offers to read a failed history again', async () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
-		await fireEvent.click(screen.getByRole('button', { name: /History/ }));
+		await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
 		await play('?/history', { type: 'failure', data: { error: 'The engine did not answer.' } });
 
 		expect(await screen.findByText('Could not load the history')).toBeTruthy();
@@ -124,7 +124,7 @@ describe('schema history', () => {
 	it('keeps a failed apply on screen after the history is read again', async () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
-		await fireEvent.click(screen.getByRole('button', { name: /History/ }));
+		await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
 		await play('?/history', { type: 'success', data: { name: 'posts', entries: [], pending: 1, limit: 200 } });
 
 		await play('?/applyPending', { type: 'failure', data: { error: 'The queued changes could not be applied.' } });
@@ -155,7 +155,7 @@ describe('the header count after a write', () => {
 	it('reads the count again after the queued changes are applied', async () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
-		await fireEvent.click(screen.getByRole('button', { name: /History/ }));
+		await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
 		await play('?/history', { type: 'success', data: { name: 'posts', entries: [], pending: 1, limit: 200 } });
 
 		await play('?/applyPending', { type: 'success', data: { applied: 1 } });
@@ -176,7 +176,7 @@ describe('the header count after a write', () => {
 	it('reads the count again after an apply that failed part way', async () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
-		await fireEvent.click(screen.getByRole('button', { name: /History/ }));
+		await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
 		await play('?/history', { type: 'success', data: { name: 'posts', entries: [], pending: 2, limit: 200 } });
 
 		await play('?/applyPending', { type: 'failure', data: { error: 'The queued changes could not be applied.' } });
