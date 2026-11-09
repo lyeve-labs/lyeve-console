@@ -328,6 +328,16 @@ describe('SchemaEditor', () => {
 		expect(screen.getByTestId('schema-history')).toBeTruthy();
 	});
 
+	it('stops asking for the history once another tab is chosen', async () => {
+		// The page keeps one history reader for every type it opens, so a reader
+		// left open would fetch each later type's history on its definition.
+		const { props } = setup({ isSuperAdmin: true });
+		await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
+		expect(props.ddl.open).toBe(true);
+		await fireEvent.click(screen.getByRole('tab', { name: 'Definition' }));
+		expect(props.ddl.open).toBe(false);
+	});
+
 	it('keeps the relation help on the Definition tab and the routes on the API tab', async () => {
 		setup();
 		expect(screen.getByRole('button', { name: /How relations work/ })).toBeTruthy();

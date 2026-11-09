@@ -82,8 +82,9 @@
 
 	function chooseTab(id: string) {
 		tab = id as EditorTab;
-		// The history is read when it is first shown, not when the table opens.
-		if (tab === 'history') ddl.open = true;
+		// The history is read while its tab is shown, not when the table opens,
+		// so a type opened later on its definition costs no request.
+		ddl.open = tab === 'history';
 	}
 
 	type SystemColumn = 'with_created_at' | 'with_updated_at' | 'with_soft_delete' | 'with_localization';
@@ -927,7 +928,7 @@
 
 	</div>
 	{:else if activeTab === 'api' && saved}
-	<div class="flex min-w-0 flex-col gap-3 text-sm text-muted" role="tabpanel" aria-label="API">
+	<div class="flex min-w-0 flex-col gap-3 text-sm text-muted" role="tabpanel" aria-label="API" tabindex="0">
 		<p>
 			Read and write this content type's entries through these routes. Reads need a bearer token. Writes need the
 			editor, admin or super admin role. See the
@@ -957,7 +958,7 @@
 		</ul>
 	</div>
 	{:else if activeTab === 'history' && saved && isSuperAdmin}
-	<div class="min-w-0" role="tabpanel" aria-label="History">
+	<div class="min-w-0" role="tabpanel" aria-label="History" tabindex="0">
 		<SchemaHistory {ddl} />
 	</div>
 	{/if}
