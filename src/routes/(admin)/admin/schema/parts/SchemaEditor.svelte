@@ -339,7 +339,10 @@
 <!-- Positioned, so the absolutely placed sr-only labels inside it scroll here
      instead of stretching the shell's scroll range below the editor. -->
 <div class="relative min-h-0 min-w-0 flex-1 overflow-auto p-6">
-<div class="flex flex-col gap-4">
+<!-- The editor sits beside the list in a wide column and in a panel as narrow
+     as 420px on the canvas, so its rows split by its own width, not the
+     window's. -->
+<div class="@container flex flex-col gap-4">
 	<!-- The live region is mounted whether or not there is a message in
 	     it. Alert carries role="alert", but an element inserted into the
 	     page at the moment of the failure is announced inconsistently.
@@ -364,7 +367,7 @@
 
 	<fieldset disabled={!canWrite} class="flex min-w-0 flex-col gap-4">
 	<legend class="sr-only">Definition of {schema.display_name || schema.name || 'the new schema'}</legend>
-	<div class="grid min-w-0 gap-3 sm:grid-cols-2">
+	<div class="grid min-w-0 gap-3 @xl:grid-cols-2">
 		<Input
 			id="schema-display-name"
 			label="Display name"
@@ -682,7 +685,7 @@
 							error={problemAt(`relation-type-${rowId}`)}
 						/>
 					</div>
-					<div class="grid gap-3 sm:grid-cols-2">
+					<div class="grid gap-3 @xl:grid-cols-2">
 						<Select
 							id="relation-target-{rowId}"
 							label="Target schema"
@@ -757,7 +760,7 @@
 				     under the row, as a relation's settings do. An absent value
 				     is the engine's default, which is what each box shows. -->
 				<div
-					class="grid gap-3 border-t border-line/60 bg-surface/60 p-3 sm:grid-cols-2"
+					class="grid gap-3 border-t border-line/60 bg-surface/60 p-3 @xl:grid-cols-2"
 					data-testid="decimal-panel-{rowId}"
 					use:keysStayInRow
 				>
