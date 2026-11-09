@@ -59,14 +59,15 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions: Actions = {
 	// One switch per submission. The plugin keeps whatever the body omits, so a
-	// form that names one switch cannot flip the other.
+	// form that names one switch cannot flip another.
 	save: async (event) => {
 		await requireUser(event);
 		const data = await event.request.formData();
-		const body: { enabled?: boolean; transcripts_enabled?: boolean } = {};
-		if (data.has('enabled')) body.enabled = String(data.get('enabled')) === 'true';
-		if (data.has('transcripts_enabled')) body.transcripts_enabled = String(data.get('transcripts_enabled')) === 'true';
-		if (body.enabled === undefined && body.transcripts_enabled === undefined) {
+		const body: { enabled?: boolean; transcripts_enabled?: boolean; assistant_enabled?: boolean } = {};
+		for (const key of ['enabled', 'transcripts_enabled', 'assistant_enabled'] as const) {
+			if (data.has(key)) body[key] = String(data.get(key)) === 'true';
+		}
+		if (Object.keys(body).length === 0) {
 			return fail(400, { scope: 'switch', error: 'Nothing to change.' });
 		}
 		try {

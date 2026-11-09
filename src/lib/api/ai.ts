@@ -75,6 +75,8 @@ export interface AiSettings {
 	tenant_id: string;
 	enabled: boolean;
 	transcripts_enabled: boolean;
+	/** Whether signed-in people may ask the assistant. Absent from a plugin older than the switch, and on by default. */
+	assistant_enabled?: boolean;
 	updated_by?: string;
 	updated_at: string;
 }
@@ -238,7 +240,7 @@ export function getAiSettings(client: HttpClient): Promise<AiSettings> {
 
 export function putAiSettings(
 	client: HttpClient,
-	body: { enabled?: boolean; transcripts_enabled?: boolean }
+	body: { enabled?: boolean; transcripts_enabled?: boolean; assistant_enabled?: boolean }
 ): Promise<AiSettings> {
 	return client.put<AiSettings>(`${BASE}/settings`, body);
 }
