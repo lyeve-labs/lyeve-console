@@ -6,14 +6,19 @@
 		AccountMenuItem,
 		AppShell,
 		Banner,
+		Button,
 		DialogContainer,
 		Logo,
 		PageShell,
 		SidebarNav,
 		ThemeToggle,
 		Toaster,
+		activeAssistForm,
 	} from '@lyeve-labs/ui-kit';
-	import { BookOpen, LifeBuoy, LogOut, MonitorSmartphone, Settings, ShieldCheck } from '@lucide/svelte';
+	import { BookOpen, LifeBuoy, LogOut, MonitorSmartphone, Settings, ShieldCheck, Sparkles } from '@lucide/svelte';
+	import AssistantPanel from '$lib/components/assistant/AssistantPanel.svelte';
+	import { AssistantSession } from '$lib/assistant/session.svelte';
+	import { ICON } from '$lib/icon';
 	import ConfirmFallback from '$lib/components/ConfirmFallback.svelte';
 	import DbStatus from '$lib/components/DbStatus.svelte';
 	import RouteProgress from '$lib/components/RouteProgress.svelte';
@@ -89,6 +94,17 @@
 	// reader left.
 	const here = $derived(page.url.pathname + page.url.search);
 
+	// The assistant answers every signed-in role, each within its own
+	// permissions, while the AI plugin runs. It works on the form the page has
+	// open, and the conversation stays while the reader moves between pages.
+	const hasAssistant = $derived(runs(plugins, PLUGIN.ai));
+	let assistantOpen = $state(false);
+	const assistant = new AssistantSession({ form: activeAssistForm });
+	const assistantPage = () => ({
+		path: page.url.pathname,
+		title: document.title,
+	});
+
 	let navOpen = $state(false);
 	// On a phone the drawer is a modal over the page. A link in it opens its
 	// page underneath, so the drawer closes once that navigation completes.
@@ -149,6 +165,15 @@
      browser. -->
 <RouteProgress />
 
+{#snippet assistantPanel()}
+	<AssistantPanel
+		session={assistant}
+		administrator={operator}
+		page={assistantPage}
+		onclose={() => (assistantOpen = false)}
+	/>
+{/snippet}
+
 <div class="contents" class:tenant-accent={!!tenantAccent} style={tenantAccent || undefined}>
 <AppShell
 	{section}
@@ -158,6 +183,10 @@
 	rail={shell.focus}
 	headerHidden={shell.focus}
 	sidebarLabel="Console sidebar"
+	panel={hasAssistant ? assistantPanel : undefined}
+	bind:panelOpen={assistantOpen}
+	panelLabel="Assistant"
+	panelStorageKey="lyeve-console-assistant"
 >
 	{#snippet brand({ rail })}
 		<!-- The rail is 56px and its row has the inline gutter: the 28px mark fits
@@ -208,6 +237,19 @@
 	{/snippet}
 
 	{#snippet headerActions()}
+		{#if hasAssistant}
+			<Button
+				variant={assistantOpen ? 'secondary' : 'ghost'}
+				size="sm"
+				aria-label="Assistant"
+				aria-expanded={assistantOpen}
+				onclick={() => (assistantOpen = !assistantOpen)}
+			>
+				<Sparkles size={ICON.sm} aria-hidden="true" />
+				<!-- A phone's header has room for the icon alone. -->
+				<span class="hidden sm:inline">Assistant</span>
+			</Button>
+		{/if}
 		<!-- Absent for a session that cannot apply a migration: the engine refuses
 		     the write to anyone but an admin, so the control is not offered. -->
 		{#if data.migrations}
