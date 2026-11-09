@@ -4,6 +4,7 @@
 	import ObservabilityTabs from '$lib/components/ObservabilityTabs.svelte';
 	import type { ActionData, PageData } from './$types';
 	import GoroutineEnginePanel from './GoroutineEnginePanel.svelte';
+	import RuntimeScalingPanel from './RuntimeScalingPanel.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
@@ -11,7 +12,7 @@
 <PageShell
 	title="Observability"
 	documentTitle="Goroutine engine - Observability"
-	description="See the worker pool, the parallel engine and the async hooks, and resize them."
+	description="See and resize the goroutine engine, and set how the engine uses its CPU, memory and database."
 	width="wide"
 >
 	{#snippet actions()}
@@ -21,4 +22,6 @@
 	<ObservabilityTabs active="goroutines" />
 
 	<GoroutineEnginePanel engine={data.goroutineEngine} {form} />
+
+	<RuntimeScalingPanel runtime={data.runtime} {form} />
 </PageShell>

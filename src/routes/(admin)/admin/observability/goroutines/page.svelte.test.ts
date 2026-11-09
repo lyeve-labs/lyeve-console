@@ -49,6 +49,12 @@ function engine(over: Record<string, unknown> = {}) {
 function data(overrides: Record<string, unknown> = {}) {
 	return {
 		goroutineEngine: engine(),
+		runtime: {
+			settings: { ok: true, value: { available: false, licensed: false, stored: false, revision: 0, settings: {}, facts: {}, replicas: { count: 1, known: false, attached: false, applied: 0 } } },
+			recommendations: null,
+			inputs: {},
+			superAdmin: true,
+		},
 		...overrides,
 	};
 }

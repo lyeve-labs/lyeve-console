@@ -186,3 +186,196 @@ describe('the tunable actions', () => {
 		expect(calls.some((c) => c.init?.method === 'PUT')).toBe(false);
 	});
 });
+
+
+const RUNTIME = {
+	available: true,
+	licensed: true,
+	stored: true,
+	revision: 4,
+	settings: {},
+	facts: {},
+	replicas: { count: 1, known: false, attached: false, applied: 1 },
+};
+const RECOMMENDATIONS = { facts: {}, presets: {}, recommended: {}, warnings: [] };
+
+describe('the runtime settings read', () => {
+	function loadAt(search: string, routes: Record<string, Route>, roles = ['super_admin']) {
+		const { fetch, calls } = fetchFor(routes, roles);
+		const event = {
+			fetch,
+			cookies: mockCookies(),
+			url: new URL(`http://localhost/admin/observability/goroutines${search}`),
+			parent: async () => ({ user: { id: 'u1', roles }, entitlements: NO_ENTITLEMENTS, plugins: null }),
+		} as never;
+		return { event, calls };
+	}
+
+	it('reads the recommendations with the typed inputs when the settings say they are licensed', async () => {
+		const { event, calls } = loadAt('?replicas=3&database_cores=8', {
+			...views,
+			'/runtime/settings': () => json(RUNTIME),
+			'/runtime/recommendations': () => json(RECOMMENDATIONS),
+		});
+		const result = (await load(event)) as Loaded;
+		expect(result.runtime.settings).toEqual({ ok: true, value: RUNTIME });
+		expect(result.runtime.recommendations).toEqual({ ok: true, value: RECOMMENDATIONS });
+		expect(result.runtime.inputs).toEqual({ replicas: 3, database_cores: 8 });
+		expect(calls.find((c) => c.url.includes('/runtime/recommendations'))?.url).toContain('?replicas=3&database_cores=8');
+	});
+
+	it('does not ask for recommendations on an unlicensed or unavailable engine', async () => {
+		for (const over of [{ licensed: false }, { available: false }]) {
+			const { event, calls } = loadAt('', { ...views, '/runtime/settings': () => json({ ...RUNTIME, ...over }) });
+			const result = (await load(event)) as Loaded;
+			expect(result.runtime.recommendations).toBeNull();
+			expect(calls.some((c) => c.url.includes('/runtime/recommendations'))).toBe(false);
+		}
+	});
+
+	it('makes no runtime read for an admin who is not a super admin', async () => {
+		const { event, calls } = loadAt('?replicas=3', {
+			...views,
+			'/runtime/settings': () => json(RUNTIME),
+			'/runtime/recommendations': () => json(RECOMMENDATIONS),
+		}, ['admin']);
+		const result = (await load(event)) as Loaded;
+		expect(result.runtime.settings).toEqual({ ok: false, gate: { state: 'forbidden' } });
+		expect(result.runtime.recommendations).toBeNull();
+		expect(result.runtime.superAdmin).toBe(false);
+		expect(calls.some((c) => c.url.includes('/api/admin/runtime/'))).toBe(false);
+		expect(result.goroutineEngine.pool).toEqual(POOL);
+	});
+
+	it('keeps a 403 from either runtime read as the forbidden gate', async () => {
+		const settings = loadAt('', { ...views, '/runtime/settings': () => json({ error: 'forbidden' }, 403) });
+		expect(((await load(settings.event)) as Loaded).runtime.settings).toEqual({ ok: false, gate: { state: 'forbidden' } });
+		const recs = loadAt('', {
+			...views,
+			'/runtime/settings': () => json(RUNTIME),
+			'/runtime/recommendations': () => json({ error: 'forbidden' }, 403),
+		});
+		expect(((await load(recs.event)) as Loaded).runtime.recommendations).toEqual({ ok: false, gate: { state: 'forbidden' } });
+	});
+
+	it('keeps a failed settings read as a gate and leaves the other panels', async () => {
+		const { event } = loadAt('', { ...views, '/runtime/settings': () => json({ error: 'boom' }, 500) });
+		const result = (await load(event)) as Loaded;
+		expect(result.runtime.settings).toEqual({ ok: false, gate: { state: 'error', message: 'Could not load runtime settings.' } });
+		expect(result.goroutineEngine.pool).toEqual(POOL);
+	});
+});
+
+describe('the runtime action', () => {
+	const put = (route: Route, fields: Record<string, string> = { revision: '4', gc_percent: '200' }, roles = ['super_admin']) =>
+		actionEvent(form(fields), { '/runtime/settings': route }, roles);
+
+	it('puts only the changed fields with the revision', async () => {
+		const { event, calls } = put(() => json(RUNTIME));
+		const result = await actions.runtime(event);
+		expect(result).toEqual({ form: 'runtime', saved: true, stored: true, poolWarning: false });
+		const sent = calls.find((c) => c.url.includes('/runtime/settings'));
+		expect(sent?.init?.method).toBe('PUT');
+		expect(JSON.parse(String(sent?.init?.body))).toEqual({ revision: 4, gc_percent: 200 });
+	});
+
+	it('says when the change was applied but not stored', async () => {
+		const { event } = put(() => json({ ...RUNTIME, stored: false }));
+		expect(await actions.runtime(event)).toEqual({ form: 'runtime', saved: true, stored: false, poolWarning: false });
+	});
+
+	it('carries only that the engine warned about the pool, never its words', async () => {
+		const { event } = put(() => json({ ...RUNTIME, warning: 'pool takes 40 of 100 connections' }), { revision: '4', database_max_connections: '40' });
+		const result = await actions.runtime(event);
+		expect(result).toEqual({ form: 'runtime', saved: true, stored: true, poolWarning: true });
+		expect(JSON.stringify(result)).not.toContain('pool takes');
+	});
+
+	it('returns a 402 as the license refusal', async () => {
+		const { event } = put(() => json({ error: 'payment_required', plugin: 'example', feature: 'feature:example_feature' }, 402));
+		const result = (await actions.runtime(event)) as { status: number; data: { form: string; refused: unknown; error?: string } };
+		expect(result.status).toBe(402);
+		expect(result.data.form).toBe('runtime');
+		expect(result.data.refused).toMatchObject({ kind: 'feature', feature: 'example-feature' });
+		expect(result.data.error).toBe('This is not enabled on this engine. Nothing was changed.');
+	});
+
+	it.each([
+		[
+			{ error: 'the runtime settings changed since they were read', code: 'stale_revision' },
+			'Someone changed these settings after you opened them. Reload them to see the latest version.',
+		],
+		[
+			{ error: 'this install runs without runtime settings', code: 'runtime_settings_unavailable' },
+			'Could not save the settings, because runtime settings are not available on this engine. Reload the page to see what changed.',
+		],
+		[
+			{ error: 'this install runs without that scaling primitive', code: 'scaling_primitive_missing' },
+			'Could not save the settings, because this engine has no database pool to resize. Leave the pool unchanged and save again.',
+		],
+		[
+			{ error: 'this setting is pinned by the deployment: GOGC sets it', code: 'setting_pinned', variable: 'GOGC', source: 'environment' },
+			'Could not save the settings, because the environment variable GOGC sets one of them. Change GOGC where the engine is deployed, then restart the engine.',
+		],
+		[
+			{ error: 'this setting is pinned by the deployment: runtime.gc_percent sets it', code: 'setting_pinned', variable: 'runtime.gc_percent', source: 'file' },
+			'Could not save the settings, because the configuration file key runtime.gc_percent sets one of them. Change it in the configuration file, then restart the engine.',
+		],
+		[{ error: 'a conflict this console has not met', code: 'something_new' }, 'Could not save the settings. Reload the page and try again.'],
+	])('words a 409 from its code, never from its English (%o)', async (body, sentence) => {
+		const { event } = put(() => json(body, 409));
+		const result = await actions.runtime(event);
+		expect(result).toMatchObject({ status: 409, data: { form: 'runtime', error: sentence } });
+		expect(JSON.stringify(result)).not.toContain(body.error);
+	});
+
+	it.each([
+		[
+			422,
+			{ error: 'database_max_connections must be between 5 and 10000', code: 'setting_out_of_bounds', field: 'database_max_connections', min: 5, max: 10000 },
+			'Enter between 5 and 10,000 connections per replica.',
+		],
+		[
+			422,
+			{ error: 'the collector can be off only while a memory limit below the container\'s or the machine\'s memory is in force', code: 'gc_off_needs_memory_limit', gc_percent: -1 },
+			"A GC target of -1 turns garbage collection off, which needs a soft memory limit below the container's or the machine's memory. Set a lower soft memory limit, or enter a GC target of 0 or more.",
+		],
+		[422, { error: 'a refusal this console has not met', code: 'something_new' }, 'Could not save the settings with these values. Check them and try again.'],
+		[
+			400,
+			{ error: 'this route does not take the field threads', code: 'unknown_field', field: 'threads' },
+			'Could not save the settings, because this console and the engine are on different versions. Reload the page. If this happens again, update the console to match the engine.',
+		],
+	])('words a %i from its code, never from its English', async (status, body, sentence) => {
+		const { event } = put(() => json(body, status));
+		const result = await actions.runtime(event);
+		expect(result).toMatchObject({ status, data: { form: 'runtime', error: sentence } });
+		expect(JSON.stringify(result)).not.toContain(body.error);
+	});
+
+	it('keeps transport failures to the console sentence', async () => {
+		const down = put(() => json({ error: 'pq: connection refused' }, 503));
+		expect(await actions.runtime(down.event)).toMatchObject({ status: 400, data: { form: 'runtime', error: 'Check whether your change was saved, then try again.' } });
+	});
+
+	it('puts a value the form refuses on its own field before the round trip', async () => {
+		const { event, calls } = put(() => json(RUNTIME), { revision: '4', database_max_connections: '3' });
+		expect(await actions.runtime(event)).toMatchObject({
+			status: 422,
+			data: { form: 'runtime', fields: { database_max_connections: 'Enter between 5 and 10,000 connections.' } },
+		});
+		expect(calls.some((c) => c.init?.method === 'PUT')).toBe(false);
+	});
+
+	it('refuses a form that changes nothing before the round trip', async () => {
+		const { event, calls } = put(() => json(RUNTIME), { revision: '4' });
+		expect(await actions.runtime(event)).toMatchObject({ status: 422, data: { form: 'runtime', error: 'Change a setting first.' } });
+		expect(calls.some((c) => c.init?.method === 'PUT')).toBe(false);
+	});
+
+	it('refuses an admin who is not super admin before the round trip', async () => {
+		const { event, calls } = put(() => json(RUNTIME), undefined, ['admin']);
+		await expect(actions.runtime(event)).rejects.toMatchObject({ status: 403 });
+		expect(calls.some((c) => c.init?.method === 'PUT')).toBe(false);
+	});
+});
