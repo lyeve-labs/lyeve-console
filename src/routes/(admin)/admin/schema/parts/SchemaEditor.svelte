@@ -336,7 +336,9 @@
 	</div>
 {/snippet}
 
-<div class="min-h-0 min-w-0 flex-1 overflow-auto p-6">
+<!-- Positioned, so the absolutely placed sr-only labels inside it scroll here
+     instead of stretching the shell's scroll range below the editor. -->
+<div class="relative min-h-0 min-w-0 flex-1 overflow-auto p-6">
 <div class="flex flex-col gap-4">
 	<!-- The live region is mounted whether or not there is a message in
 	     it. Alert carries role="alert", but an element inserted into the
