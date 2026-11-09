@@ -218,6 +218,9 @@
 
 	/** Opens a schema, and a saved copy of it for dirty and for what a save changes. */
 	function open(s: Schema | null, asSaved = true) {
+		// Another type, or a new one once it is saved, opens on its definition.
+		// The same type opened again after a save keeps the tab it was on.
+		if (s?.name !== saved?.name) editorTab = 'definition';
 		selected = s ? cloneSchema(s) : null;
 		saved = s && asSaved ? JSON.parse(JSON.stringify(selected)) : null;
 		saveError = '';

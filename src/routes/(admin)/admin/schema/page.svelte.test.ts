@@ -223,6 +223,17 @@ describe('schema builder relation panel', () => {
 		}
 	});
 
+	it('opens another content type on its definition, whichever tab the last one showed', async () => {
+		// The tab is held by the page, so without a reset a type opened after
+		// the API tab, or a new type once it is saved, hid its fields behind it.
+		await openPosts();
+		await fireEvent.click(screen.getByRole('tab', { name: 'API' }));
+		expect(screen.getByRole('tab', { name: 'API' }).getAttribute('aria-selected')).toBe('true');
+		await fireEvent.click(screen.getByRole('button', { name: 'Authors' }));
+		await tick();
+		expect(screen.getByRole('tab', { name: 'Definition' }).getAttribute('aria-selected')).toBe('true');
+	});
+
 	it('shows the selected collection its own API, with a request to copy', async () => {
 		await openPosts();
 		await fireEvent.click(screen.getByRole('tab', { name: 'API' }));
