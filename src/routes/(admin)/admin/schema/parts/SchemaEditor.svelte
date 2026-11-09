@@ -8,7 +8,7 @@
 	import { dndzone, type DndEvent } from 'svelte-dnd-action';
 	import { tick } from 'svelte';
 	import type { Action } from 'svelte/action';
-	import { BookOpen, GripVertical, Link2, Pencil, Plus, RefreshCw, Trash2, TriangleAlert } from '@lucide/svelte';
+	import { BookOpen, ChevronDown, GripVertical, Link2, Pencil, Plus, RefreshCw, Trash2, TriangleAlert } from '@lucide/svelte';
 	import { collectionRoutes } from '$lib/api/collection-api';
 	import { curlFor } from '$lib/api/request-preview';
 	import { RELATION_KINDS, planRelation, planSchemaRelations, tableName, type RelationType } from '$lib/relations';
@@ -325,6 +325,12 @@
 		return target.display_name || target.name;
 	}
 
+	/** The schema plugin refuses longer help text. */
+	const HELP_TEXT_MAX = 500;
+
+	/** Which rows show their help text band, by row id. */
+	let helpOpen = $state<Record<string, boolean>>({});
+
 	let topSysFields = $derived(schema.fields.filter((f) => f.system && !isTimestamp(f)));
 	let userFields = $derived(schema.fields.filter((f) => !f.system));
 	let bottomSysFields = $derived(schema.fields.filter((f) => f.system && isTimestamp(f)));
@@ -345,6 +351,8 @@
 		<span class="hidden w-10 shrink-0 @xl:block"></span>
 		<span class="hidden w-10 shrink-0 @xl:block"></span>
 		<span class="hidden w-14 shrink-0 @xl:block"></span>
+		<span class="hidden w-12 shrink-0 @xl:block"></span>
+		<span class="hidden w-8 shrink-0 @xl:block"></span>
 		<span class="hidden w-8 shrink-0 @xl:block"></span>
 	</div>
 {/snippet}
@@ -363,6 +371,8 @@
 		<span class="hidden w-10 shrink-0 @xl:block"></span>
 		<span class="hidden w-10 shrink-0 @xl:block"></span>
 		<span class="hidden w-14 shrink-0 @xl:block"></span>
+		<span class="hidden w-12 shrink-0 @xl:block"></span>
+		<span class="hidden w-8 shrink-0 @xl:block"></span>
 		<span class="hidden w-8 shrink-0 @xl:block"></span>
 	</div>
 {/snippet}
@@ -573,6 +583,8 @@
 		<span class="w-10 shrink-0 text-center">Idx</span>
 		<span class="w-10 shrink-0 text-center" title="Translated per locale">i18n</span>
 		<span class="w-14 shrink-0 text-center" title="Never served on public delivery">Private</span>
+		<span class="w-12 shrink-0 text-center" title="Never read or filled by the assistant">No AI</span>
+		<span class="w-8 shrink-0"></span>
 		<span class="w-8 shrink-0"></span>
 	</div>
 
@@ -675,6 +687,28 @@
 							onchange={(checked) => (field.private = checked || undefined)}
 						/>
 					</div>
+					<!-- Kept from the assistant. Unchecked stores no mark, as Private does. -->
+					<div class="flex shrink-0 items-center gap-1.5 @xl:w-12 @xl:justify-center" title="Never read or filled by the assistant">
+						<span class="text-xs text-faint @xl:hidden" aria-hidden="true">No AI</span>
+						<Checkbox
+							size="sm"
+							label="No AI, {fieldLabel(field)}"
+							labelHidden
+							checked={field.no_ai === true}
+							onchange={(checked) => (field.no_ai = checked || undefined)}
+						/>
+					</div>
+					<button
+						type="button"
+						onclick={() => (helpOpen[rowId] = !helpOpen[rowId])}
+						aria-expanded={helpOpen[rowId] === true}
+						aria-controls="help-band-{rowId}"
+						aria-label="Help text, {fieldLabel(field)}"
+						title={field.help_text ? 'Help text set' : 'Add help text'}
+						class="relative hit-area flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-surface-2 hover:text-fg {field.help_text ? 'text-brand' : 'text-faint'}"
+					>
+						<ChevronDown size={ICON.sm} class="transition-transform duration-base {helpOpen[rowId] ? 'rotate-180' : ''}" />
+					</button>
 					{#if canWrite}
 					<button
 						type="button"
@@ -690,6 +724,23 @@
 					{/if}
 				</div>
 			</div>
+
+			{#if helpOpen[rowId]}
+				<!-- Its own band under the row, as the relation's is: on the row's
+				     line a sentence-long input has no room to be read. -->
+				<div id="help-band-{rowId}" class="border-t border-line/60 bg-surface/60 p-3" use:keysStayInRow>
+					<Input
+						id="help-text-{rowId}"
+						name="help-text-{rowId}"
+						label="Help text"
+						hint="Shown under the field to editors and followed by the assistant, up to 500 characters."
+						maxlength={HELP_TEXT_MAX}
+						autocomplete="off"
+						value={field.help_text ?? ''}
+						oninput={(e: Event & { currentTarget: HTMLInputElement }) => (field.help_text = e.currentTarget.value || undefined)}
+					/>
+				</div>
+			{/if}
 
 			{#if localizedCleared[rowId] && localizableProblem(field) !== null}
 				<p id="localized-note-{rowId}" class="px-3 pb-3 text-xs text-muted">

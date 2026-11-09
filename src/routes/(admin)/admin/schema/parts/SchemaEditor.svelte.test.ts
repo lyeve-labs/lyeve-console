@@ -157,6 +157,39 @@ describe('SchemaEditor', () => {
 		expect(props.schema.fields[1].private).toBeUndefined();
 	});
 
+	it('marks a field No AI, and offers no No AI box on a system field', async () => {
+		const { props } = setup();
+		expect(screen.queryByRole('checkbox', { name: 'No AI, id' })).toBeNull();
+		const box = screen.getByRole('checkbox', { name: 'No AI, title' });
+		await fireEvent.click(box);
+		expect(props.schema.fields[1].no_ai).toBe(true);
+		await fireEvent.click(box);
+		expect(props.schema.fields[1].no_ai).toBeUndefined();
+	});
+
+	it('writes help text into the field, capped at 500 characters, and stores none when it is emptied', async () => {
+		const { props } = setup();
+		expect(screen.queryByRole('button', { name: 'Help text, id' })).toBeNull();
+		const toggle = screen.getByRole('button', { name: 'Help text, title' });
+		expect(toggle.getAttribute('aria-expanded')).toBe('false');
+		await fireEvent.click(toggle);
+		expect(toggle.getAttribute('aria-expanded')).toBe('true');
+		const input = screen.getByLabelText('Help text') as HTMLInputElement;
+		expect(input.maxLength).toBe(500);
+		await fireEvent.input(input, { target: { value: 'One sentence a reader understands.' } });
+		expect(props.schema.fields[1].help_text).toBe('One sentence a reader understands.');
+		await fireEvent.input(input, { target: { value: '' } });
+		expect(props.schema.fields[1].help_text).toBeUndefined();
+	});
+
+	it('shows the help text a saved field already has', async () => {
+		const schema = posts();
+		schema.fields[1].help_text = 'At most 120 characters.';
+		setup({ schema });
+		await fireEvent.click(screen.getByRole('button', { name: 'Help text, title' }));
+		expect((screen.getByLabelText('Help text') as HTMLInputElement).value).toBe('At most 120 characters.');
+	});
+
 	it('says a relation into a schema that is not public is not served on public delivery', () => {
 		const note = 'Public delivery does not serve this relation until Authors is public too.';
 		const withRelation = (): Schema => {
@@ -397,10 +430,10 @@ describe('SchemaEditor column headings', () => {
 		return [...row.children];
 	}
 
-	it('names every column a field row has, the translation and private boxes included', () => {
+	it('names every column a field row has, the translation, private and No AI boxes included', () => {
 		setup();
 		const names = [...header().children].map((c) => c.textContent?.trim()).filter(Boolean);
-		expect(names).toEqual(['Field', 'Type', 'Req', 'Idx', 'i18n', 'Private']);
+		expect(names).toEqual(['Field', 'Type', 'Req', 'Idx', 'i18n', 'Private', 'No AI']);
 	});
 
 	it('gives the headings, a system row and a field row the same columns', () => {
