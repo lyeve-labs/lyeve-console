@@ -3,8 +3,9 @@ import { cleanup, render } from '@testing-library/svelte';
 import { flushSync, tick } from 'svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import { activeAssistForm, type FormAssistController } from '@lyeve-labs/ui-kit';
-import type { FieldType, SchemaField } from '@lyeve-labs/client';
+import type { Content, FieldType, SchemaField } from '@lyeve-labs/client';
 import ContentForm from './ContentForm.svelte';
+import { fieldKey } from '$lib/utils/content-form';
 
 afterEach(cleanup);
 
@@ -63,18 +64,45 @@ describe('ContentForm and the assistant', () => {
 		expect(described[0]).toMatchObject({ withheld: false, name: 'title', hint: 'The headline.', value: 'Hello' });
 	});
 
-	it('withholds a No AI field, so its value never reaches an assistant', async () => {
-		const formValues = $state({ title: 'Hello', notes: 'Call the patient on Monday.' });
-		render(ContentForm, {
-			props: { fields: [field('title', 'text'), field('notes', 'text', { no_ai: true })], formValues },
-		});
+	const entries = [
+		{ id: 'r1', data: { title: 'One' } },
+		{ id: 'r2', data: { title: 'Two' } },
+	] as unknown as Content[];
+	const choices = { authors: { items: entries, total: 2, failed: false } };
+	const related = (relation_type: 'belongs_to' | 'many_to_many') => ({ relation_type, relation_to: 'authors' }) as Partial<SchemaField>;
+
+	// Every control an editor can type into, one row per kind, so a control
+	// that loses its No AI mark fails here. A uid is read-only and an inverse
+	// relation is shown, not edited, so neither registers at all.
+	it.each([
+		['text', 'text', 'Call the patient on Monday.', 'Something else.', {}, {}],
+		['rich text', 'rich_text', '<p>Call the patient on Monday.</p>', '<p>Something else.</p>', {}, {}],
+		['number', 'number', 7, 8, {}, {}],
+		['integer', 'integer', 7, 8, {}, {}],
+		['decimal', 'decimal', 7.5, 8.5, {}, {}],
+		['boolean', 'boolean', true, false, {}, {}],
+		['date', 'date', '2026-03-14', '2026-04-01', {}, {}],
+		['datetime', 'datetime', '2026-03-14T09:30', '2026-04-01T10:00', {}, {}],
+		['json', 'json', '{"diagnosis":"private"}', '{"a":1}', {}, {}],
+		['email', 'email', 'patient@example.com', 'other@example.com', {}, {}],
+		['url', 'url', 'https://example.com/private', 'https://example.com/other', {}, {}],
+		['media', 'media', '/api/v1/media/scan.png', '/api/v1/media/other.png', {}, {}],
+		['relation picker', 'relation', 'r1', 'r2', related('belongs_to'), choices],
+		['relation by ID', 'relation', 'r1', 'r2', related('belongs_to'), {}],
+		['many-to-many relation', 'relation', ['r1'], ['r2'], related('many_to_many'), choices],
+	] as const)('withholds a No AI %s field, so its value never reaches an assistant', async (_, type, held, other, extra, relations) => {
+		const secret = field('secret', type as FieldType, { ...extra, no_ai: true });
+		const key = fieldKey(secret);
+		const formValues = $state<Record<string, unknown>>({ [key]: held });
+		render(ContentForm, { props: { fields: [secret], formValues, relations } });
 		await settle();
-		const notes = form().describe()[1];
-		expect(notes).toEqual({ withheld: true, label: 'notes', kind: 'text' });
-		expect(JSON.stringify(form().describe())).not.toContain('Call the patient');
-		const result = form().suggest({ notes: 'Something else.' });
+		const described = form().describe();
+		expect(described).toEqual([{ withheld: true, label: 'secret', kind: expect.any(String) }]);
+		const result = form().suggest({ secret: other as never });
 		expect(result.applied).toEqual([]);
-		expect(formValues.notes).toBe('Call the patient on Monday.');
+		await settle();
+		expect(formValues[key]).toEqual(held);
+		expect(form().pending()).toEqual([]);
 	});
 
 	it('writes an accepted suggestion into the form state the page saves', async () => {
