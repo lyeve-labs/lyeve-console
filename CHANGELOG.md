@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Versions are listed newest first.
 
+## [Unreleased]
+
+### Changed
+
+- The console moves to ui-kit 0.57.0. Focus rings and a focused field's border draw in the deeper brand color, the row the keyboard is on in a menu fills like a hovered row, the lists and calendars opened from a field draw a softer border, and scroll bars take the theme's colors.
+
 ## [0.28.0] - 2026-11-11
 
 ### Added
