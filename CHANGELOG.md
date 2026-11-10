@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
-- The console moves to ui-kit 0.57.0. Focus rings and a focused field's border draw in the deeper brand color, the row the keyboard is on in a menu fills like a hovered row, the lists and calendars opened from a field draw a softer border, and scroll bars take the theme's colors.
+- The console moves to ui-kit 0.58.0. Focus rings and a focused field's border draw in the deeper brand color, the row the keyboard is on in a menu fills like a hovered row, the lists and calendars opened from a field draw a softer border, and scroll bars take the theme's colors. Secondary and outline buttons and select fields draw the same soft border as cards, and a select's border firms under the pointer.
 - The focus rings the console draws itself, on the dashboard and settings tiles, the flow editor, the media library and the rich text field, use the kit's focus color, so they match the kit's controls and follow a tenant's accent color. The flow editor's problems list draws the same soft border as the kit's menus.
 - The searches on the flows, flow variables, media, logs, content types and audit log lists, and the subject filter on AI transcripts, run as you type once you pause, and Enter still searches at once. The field keeps focus while the list changes, and its own clear button shows every row again. The Search buttons and the Clear links beside the field are gone. Where a list has filters beside the search, each one applies as you change it, and a list that matches nothing offers Clear filters.
 - Searching the content types list narrows it and no longer opens a content type whose name the search matches. The content type picker on an entry list still opens one by name.

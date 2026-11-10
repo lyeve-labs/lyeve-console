@@ -2,7 +2,7 @@
 # client releases are listed here. Every third-party package stays subject to
 # the rule.
 minimumReleaseAgeExclude:
-  - '@lyeve-labs/ui-kit@0.57.0'
+  - '@lyeve-labs/ui-kit@0.58.0'
   - '@lyeve-labs/client@0.8.0'
 # SvelteKit pins cookie ^0.6.0, which is vulnerable to CVE-2024-47764. Pinned to
 # an exact 0.7.2 rather than a range: it carries the fix and keeps the named
