@@ -26,13 +26,13 @@
 	} from '$lib/api/collections';
 	import { NO_VALUE, formatCount, formatDateTime, plural } from '$lib/format';
 	import { ICON } from '$lib/icon';
+	import { liveFilter } from '$lib/live-filter.svelte';
 
 	let { data }: { data: PageData } = $props();
 
 	// Seeded from the load so a no-JavaScript search comes back with the box
 	// still holding what was typed.
-	// svelte-ignore state_referenced_locally
-	let query = $state(data.query ?? '');
+	const live = liveFilter(() => data.query ?? '');
 
 	/**
 	 * Matching covers the machine name as well as the display name. An operator
@@ -52,7 +52,7 @@
 	const rows = $derived(data.schemas.ok ? data.schemas.value : []);
 
 	let filtered = $derived(
-		rows.filter((s: Schema) => matches(s, query.trim().toLowerCase())),
+		rows.filter((s: Schema) => matches(s, live.value.trim().toLowerCase())),
 	);
 
 	/**
@@ -148,7 +148,7 @@
 		     margin, so the row grows to 44px and holds the whole area. -->
 		<a
 			href={sortHref(key)}
-			class="relative -my-1 coarse:-my-0.5 py-1 inline-flex items-center gap-1 hit-area outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-brand"
+			class="relative -my-1 coarse:-my-0.5 py-1 inline-flex items-center gap-1 hit-area outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-focus"
 		>
 			{label}
 			{#if data.sort === key}
@@ -200,13 +200,14 @@
 			{/snippet}
 		</EmptyState>
 	{:else}
-		<!-- A GET form, so submitting navigates without JavaScript. The server
-		     resolves a name that names exactly one collection and opens it. The
+		<!-- A GET form, so Enter still searches without JavaScript. The search
+		     narrows the list as you type and never opens a content type: only the
+		     picker on a content type's page does that by name. The
 		     order rides along as hidden fields so a search does not reset it, and
 		     the chips are links: the subset lives in the URL beside the sort, so it
 		     survives a reload and a page turn. A rows chip carries its count only
 		     when the rows were already read for the set. -->
-		<form method="GET">
+		<form method="GET" {@attach live.form}>
 			<ListToolbar label="Filter content types">
 				{#snippet search()}
 					<div class="flex items-center gap-2">
@@ -215,13 +216,13 @@
 							id="collection-search"
 							name="q"
 							placeholder="Search by name or machine name"
-							bind:value={query}
+							bind:value={live.value}
+							oninput={live.input}
 							class="min-w-0 flex-1"
 						/>
 						<input type="hidden" name="sort" value={data.sort} />
 						<input type="hidden" name="dir" value={data.dir} />
 						{#if data.filter !== 'all'}<input type="hidden" name="filter" value={data.filter} />{/if}
-						<Button type="submit" variant="secondary">Search</Button>
 					</div>
 				{/snippet}
 				{#snippet filters()}
@@ -288,7 +289,7 @@
 									     grows under a finger is clipped by an overflow the link carries. -->
 									<a
 										href="/admin/content/{schema.name}"
-										class="relative -my-1 py-1 hit-area block font-medium outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-brand {f.rows ===
+										class="relative -my-1 py-1 hit-area block font-medium outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-focus {f.rows ===
 										0
 											? 'text-muted'
 											: 'text-fg'}"

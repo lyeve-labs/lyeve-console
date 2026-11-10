@@ -190,3 +190,18 @@ describe('variables page for a role the plugin refuses', () => {
 		expect(queryByText('New variable')).toBeNull();
 	});
 });
+
+describe('variables search', () => {
+	it('searches as you type, with no Search button and no Clear link', () => {
+		const { getByTestId, queryByRole } = render(VariablesPage, {
+			props: {
+				data: { variables, total: 2, q: 'region', locked: false, gate: { state: 'ok' }, user: { roles: ['super_admin'] }, entitlements: licensed },
+				form: null,
+			} as never,
+		});
+		const form = getByTestId('variable-filters');
+		expect(form.querySelector('button[type="submit"]')).toBeNull();
+		expect(form.hasAttribute('data-sveltekit-replacestate')).toBe(true);
+		expect(queryByRole('link', { name: 'Clear' })).toBeNull();
+	});
+});

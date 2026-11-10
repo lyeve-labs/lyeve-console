@@ -229,7 +229,7 @@
 			>
 				<button
 					type="button"
-					class="flex w-full items-center gap-2 rounded-t-lg px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+					class="flex w-full items-center gap-2 rounded-t-lg px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
 					aria-label="{row.label}, {row.kind === 'trigger' ? 'trigger' : row.type}"
 					aria-pressed={isSelected(row.id)}
 					onclick={() => pick(row.id, row.kind)}
@@ -299,7 +299,7 @@
 			>
 				<button
 					type="button"
-					class="flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm text-muted outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+					class="flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm text-muted outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
 					aria-label="Note {note.id}"
 					aria-pressed={isSelected(note.id)}
 					onclick={() => pick(note.id, 'note')}

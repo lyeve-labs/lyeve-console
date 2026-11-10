@@ -107,7 +107,7 @@
 					<input type="hidden" name="to" value={to} />
 					<Button type="submit" variant="secondary">Apply</Button>
 					{#if filtered}
-						<Button variant="ghost" href="/admin/content-activity">Clear</Button>
+						<Button variant="ghost" href="/admin/content-activity">Clear filters</Button>
 					{/if}
 				{/snippet}
 			</ListToolbar>

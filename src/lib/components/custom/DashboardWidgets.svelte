@@ -53,7 +53,7 @@
 							<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 								{#each w.counts ?? [] as c (c.schema)}
 									<div class="flex flex-col gap-2">
-										<a href="/admin/content/{c.schema}" class="block rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-brand">
+										<a href="/admin/content/{c.schema}" class="block rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 											<Stat
 												size="sm"
 												mono

@@ -48,7 +48,7 @@
 	{#if isList || isObject}
 		<button
 			type="button"
-			class="inline-flex items-center gap-1 rounded text-left text-fg outline-none hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-brand"
+			class="inline-flex items-center gap-1 rounded text-left text-fg outline-none hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-focus"
 			aria-expanded={open}
 			onclick={() => (open = !open)}
 		>

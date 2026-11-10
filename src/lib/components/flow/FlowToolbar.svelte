@@ -115,7 +115,7 @@
 		<a
 			href={back.href}
 			data-testid="page-back"
-			class="relative hit-area -ms-1 inline-flex shrink-0 items-center gap-1 rounded-md px-1 py-1 text-xs text-muted outline-none transition-colors duration-base hover:text-fg focus-visible:ring-2 focus-visible:ring-brand"
+			class="relative hit-area -ms-1 inline-flex shrink-0 items-center gap-1 rounded-md px-1 py-1 text-xs text-muted outline-none transition-colors duration-base hover:text-fg focus-visible:ring-2 focus-visible:ring-focus"
 		>
 			<ArrowLeft size={ICON.sm} aria-hidden="true" class="shrink-0" />
 			{back.label}

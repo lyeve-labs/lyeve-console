@@ -194,7 +194,7 @@
 			     not a quiet instance. -->
 			<div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
 				{#if data.offers.schema}
-					<a href="/admin/content" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-brand">
+					<a href="/admin/content" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 						<Stat
 							class="h-full"
 							label="Content types"
@@ -207,7 +207,7 @@
 				<!-- The entry counts are read from a route the engine admits only
 				     from an admin, so no other role is shown a count. -->
 				{#if data.isAdmin && data.offers.content}
-					<a href="/admin/content" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-brand">
+					<a href="/admin/content" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 						<Stat class="h-full"
 							label="Entries"
 							accent="neutral"
@@ -218,7 +218,7 @@
 				{/if}
 				{#if data.isAdmin}
 					{#if data.offers.analytics}
-						<a href="/admin/analytics" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-brand">
+						<a href="/admin/analytics" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 							<Stat class="h-full"
 								label="Requests, {data.window}"
 								value={data.requests ? formatCount(data.requests.total) : 'unknown'}
@@ -226,7 +226,7 @@
 								tone={data.requests ? trafficTone(errorRate) : 'neutral'}
 							/>
 						</a>
-						<a href="/admin/analytics" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-brand">
+						<a href="/admin/analytics" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 							<Stat class="h-full"
 								label="P95 latency, {data.window}"
 								accent="neutral"
@@ -237,7 +237,7 @@
 					{/if}
 					<!-- The scheduler lists its jobs to a super admin only. -->
 					{#if data.superAdmin && data.offers.jobs}
-						<a href="/admin/jobs" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-brand">
+						<a href="/admin/jobs" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 							<Stat class="h-full"
 								label="Failed jobs"
 								value={data.jobs ? formatCount(data.jobs.failed.length) : 'unknown'}
@@ -247,7 +247,7 @@
 						</a>
 					{/if}
 					{#if data.offers.logs}
-						<a href="/admin/logs?level=ERROR" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-brand">
+						<a href="/admin/logs?level=ERROR" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 							<Stat class="h-full"
 								label="Errors logged, {data.window}"
 								value={data.errorsLogged === null ? 'unknown' : formatCount(data.errorsLogged)}
@@ -257,7 +257,7 @@
 						</a>
 					{/if}
 					{#if data.offers.webhooks}
-						<a href="/admin/webhooks" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-brand">
+						<a href="/admin/webhooks" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 							<Stat class="h-full"
 								label="Webhooks failing"
 								value={data.webhooks ? formatCount(data.webhooks.unhealthy) : 'unknown'}
@@ -270,7 +270,7 @@
 					{/if}
 				{/if}
 				{#if data.license}
-					<a href="/admin/settings/license" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-brand">
+					<a href="/admin/settings/license" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 						<Stat class="h-full"
 							label="License"
 							value={data.license.plan || NO_VALUE}

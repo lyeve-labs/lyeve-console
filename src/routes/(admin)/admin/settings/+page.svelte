@@ -51,7 +51,7 @@
 						<Card pad="none" hover class="h-full *:h-full">
 							<a
 								href={entry.href}
-								class="flex h-full items-start gap-3 rounded-card p-4 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+								class="flex h-full items-start gap-3 rounded-card p-4 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
 							>
 								{#if entry.icon}
 									<entry.icon size={ICON.md} class="mt-0.5 shrink-0 text-muted" />

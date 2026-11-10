@@ -164,7 +164,7 @@
 		aria-roledescription="image viewer"
 		aria-label={frameLabel}
 		tabindex="0"
-		class="relative h-[60vh] w-full touch-none select-none overflow-hidden rounded-lg bg-surface-2/50 outline-none focus-visible:ring-2 focus-visible:ring-brand {zoomed ? (dragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'}"
+		class="relative h-[60vh] w-full touch-none select-none overflow-hidden rounded-lg bg-surface-2/50 outline-none focus-visible:ring-2 focus-visible:ring-focus {zoomed ? (dragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'}"
 		{onpointerdown}
 		{onpointermove}
 		{onpointerup}
