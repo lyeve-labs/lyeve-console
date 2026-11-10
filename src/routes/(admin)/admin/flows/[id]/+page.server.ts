@@ -39,6 +39,7 @@ import {
 	deleteTemplate,
 	saveTemplate,
 } from '$lib/api/flows';
+import { unfillableFields } from '$lib/flow/fill';
 import { emptyDefinition, type FlowDefinition, type SchemaOption } from '$lib/flow/types';
 import { normalizeDefinition } from '$lib/flow/graph';
 import type { HttpClient } from '@lyeve-labs/client';
@@ -159,6 +160,7 @@ export const load: PageServerLoad = async (event) => {
 		name: s.name,
 		display_name: s.display_name || s.name,
 		fields: (s.fields ?? []).map((f) => f.name),
+		unfillable: unfillableFields(s.fields ?? []),
 	}));
 
 	return {

@@ -168,6 +168,8 @@ export interface SchemaOption {
 	name: string;
 	display_name: string;
 	fields: string[];
+	/** Why the "Fill fields with AI" node never fills a field, by field name. */
+	unfillable?: Record<string, string>;
 }
 
 /** A datasource as the pickers need it. The config stores the name. Introspection takes the id. */

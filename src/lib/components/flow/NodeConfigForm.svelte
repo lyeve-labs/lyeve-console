@@ -28,6 +28,7 @@
 		toJSONText,
 		widgetFor,
 	} from '$lib/flow/schema';
+	import { fillableFieldsOf, fillProblem } from '$lib/flow/fill';
 	import { ICON } from '$lib/icon';
 
 	interface Props {
@@ -54,6 +55,8 @@
 		tables?: Record<string, TablesState>;
 		/** Asks the page to introspect a datasource it has no result for. */
 		onintrospect?: (id: string) => void;
+		/** The form edits the "Fill fields with AI" node, whose field list takes only the fields it may fill. */
+		fillNode?: boolean;
 		onchange: (value: Record<string, unknown>) => void;
 	}
 
@@ -71,6 +74,7 @@
 		events = [],
 		tables = {},
 		onintrospect,
+		fillNode = false,
 		onchange,
 	}: Props = $props();
 
@@ -80,6 +84,7 @@
 	const SCHEMA_KEY = 'schema';
 	const DATASOURCE_KEY = 'datasource';
 	const SORT_KEY = 'sort';
+	const FILL_KEY = 'fields';
 
 	const schemaRows = $derived(schemaOptions(schemas));
 	const flowRows = $derived(flowOptions(flows, selfId));
@@ -87,8 +92,19 @@
 	const siblingFields = $derived(fieldsOf(schemas, value[SCHEMA_KEY]));
 	const schemaKnown = $derived(siblingFields.length > 0);
 
+	function fillsFields(key: string): boolean {
+		return fillNode && key === FILL_KEY;
+	}
+
 	function fieldRows(key: string) {
+		if (fillsFields(key)) return fieldOptions(fillableFieldsOf(schemas, value[SCHEMA_KEY]));
 		return fieldOptions(siblingFields, key === SORT_KEY);
+	}
+
+	/** Why the node refuses each field the list already holds, so a saved one it cannot fill stays in sight. */
+	function fillProblems(key: string): string[] {
+		if (!fillsFields(key)) return [];
+		return tags(value[key]).flatMap((f) => fillProblem(schemas, value[SCHEMA_KEY], f) ?? []);
 	}
 
 	const fieldsEmptyHint = $derived(
@@ -454,8 +470,12 @@
 						options={fieldRows(field.key).filter((o) => !tags(current).includes(o.value))}
 						value={null}
 						placeholder="Add a field"
-						hint={hint ?? 'Pick a field, or type a custom one below and press Enter.'}
+						hint={hint ??
+							(fillsFields(field.key) && fieldRows(field.key).length === 0
+								? 'No field of this content type can be filled with AI.'
+								: 'Pick a field, or type a custom one below and press Enter.')}
 						{error}
+						describedBy={fillProblems(field.key).map((_, i) => `${id}-problem-${i}`).join(' ') || undefined}
 						onvaluechange={(v) => {
 							if (v) set(field.key, [...tags(current), v]);
 						}}
@@ -481,10 +501,18 @@
 				{#if tags(current).length > 0}
 					<div class="flex flex-wrap gap-1">
 						{#each tags(current) as tag, i (`${i}:${tag}`)}
-							<Tag label={tag} removable onremove={() => removeTag(field.key, i)} />
+							<Tag
+								label={tag}
+								tone={fillsFields(field.key) && fillProblem(schemas, value[SCHEMA_KEY], tag) ? 'danger' : undefined}
+								removable
+								onremove={() => removeTag(field.key, i)}
+							/>
 						{/each}
 					</div>
 				{/if}
+				{#each fillProblems(field.key) as problem, i (i)}
+					<p id="{id}-problem-{i}" class="text-xs text-danger">{problem}</p>
+				{/each}
 			</div>
 		{:else if widget === 'object'}
 			<div class="flex flex-col gap-2 rounded-md border border-line p-3">

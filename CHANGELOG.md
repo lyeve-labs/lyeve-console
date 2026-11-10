@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The schema builder no longer scrolls the whole page, which slid its toolbar under the top bar. The labels kept for screen readers stay inside the editor's own scrolling area.
 - The schema builder's field rows split by the width of the editor rather than the window, so a row in a narrow editor beside an open list no longer breaks apart.
 - The flow editor's inspector keeps its header readable at every width. The side effects badge moved beside the node type, so the node's name no longer wraps word by word at the inspector's narrowest and the header stays inside its box.
+- The flow editor offers only the fields the Fill fields with AI step can fill, so a flow no longer saves with a field the step refuses when it runs. A field an existing flow lists that the step cannot fill is marked as a problem, with a sentence that says why.
 
 ## [0.27.0] - 2026-11-11
 
