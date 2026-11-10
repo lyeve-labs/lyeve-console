@@ -3,9 +3,11 @@ import { cleanup, render } from '@testing-library/svelte';
 import { flushSync, tick } from 'svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import { activeAssistForm, type FormAssistController } from '@lyeve-labs/ui-kit';
-import type { Content, FieldType, SchemaField } from '@lyeve-labs/client';
+import type { Content, FieldType, HttpClient, SchemaField } from '@lyeve-labs/client';
 import ContentForm from './ContentForm.svelte';
 import { fieldKey } from '$lib/utils/content-form';
+import { formContext } from '$lib/assistant/request';
+import { readRelationChoices } from '$lib/server/relation-choices';
 
 afterEach(cleanup);
 
@@ -131,5 +133,45 @@ describe('ContentForm and the assistant', () => {
 		form().rejectAll();
 		await settle();
 		expect(formValues.title).toBe('Mine');
+	});
+
+	it('sends the assistant no value of a private field, and the value of an unmarked one', async () => {
+		const formValues = $state<Record<string, unknown>>({ diagnosis: 'Fractured left wrist', room: 'Room 4' });
+		render(ContentForm, {
+			props: { fields: [field('diagnosis', 'text', { private: true }), field('room', 'text')], formValues },
+		});
+		await settle();
+		const sent = JSON.stringify(formContext(form()));
+		expect(sent).not.toContain('Fractured left wrist');
+		expect(sent).toContain('Room 4');
+	});
+
+	const patients = '11111111-aaaa-4aaa-8aaa-111111111111';
+	// The second case falls back to a name field the type leaves unmarked.
+	it.each([
+		['title', { private: true }, 'ward', 'East', '11111111'],
+		['name', { no_ai: true }, 'label', 'Bed 12', 'Bed 12'],
+	] as const)('names a related entry to the assistant without its %s when the related type marks it', async (marked, mark, other, otherValue, expected) => {
+		const client = {
+			get: async (path: string) => {
+				if (path === '/api/admin/schemas/patients') {
+					return { name: 'patients', fields: [field(marked, 'text', mark), field(other, 'text')] };
+				}
+				return {
+					data: [{ id: patients, title: 'Jane Doe', slug: 'jane-doe-x7k2p1', body: { [marked]: 'Jane Doe', [other]: otherValue } }],
+					total_count: 1,
+				};
+			},
+		} as unknown as HttpClient;
+		const patient = field('patient', 'relation', { relation_type: 'belongs_to', relation_to: 'patients' });
+		const relations = await readRelationChoices(client, [patient]);
+		const formValues = $state<Record<string, unknown>>({ [fieldKey(patient)]: '' });
+		render(ContentForm, { props: { fields: [patient], formValues, relations } });
+		await settle();
+		// The person still reads the name in the picker.
+		expect(form().describe()[0]).toMatchObject({ options: [{ value: patients, label: 'Jane Doe' }] });
+		const sent = formContext(form());
+		expect(JSON.stringify(sent)).not.toMatch(/jane/i);
+		expect(sent?.fields[0].options).toEqual([{ value: patients, label: expected }]);
 	});
 });

@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - The Goroutine engine tab shows a super admin how the engine uses its CPU, memory and database: the CPU threads, the soft memory limit, the GC target and the database pool, each with where its value came from. Where tuning is enabled, the values can be changed, started from a one-server or several-replica preset, and checked against recommendations for the machine and the database. On an engine that does not serve these settings, the panel says they are not included in this build.
-- Each field in the schema builder takes help text and a No AI mark. The entry form shows a field's help text under it, and the assistant never reads or fills a field marked No AI.
+- Each field in the schema builder takes help text and a No AI mark. The entry form shows a field's help text under it, and the assistant never reads or fills a field marked No AI or private. A relation picker shows you each entry's name, and the assistant reads a name only from a field the related content type leaves unmarked, or a short id.
 - An assistant panel opens from the header on every console page, for every signed-in role. It reads the page and the open form, offers values for the form as suggestions you accept or reject, and shows any other change in full, which runs only when you run it, with your own session.
 - The AI settings page has the tenant's switch for the assistant, on by default.
 
