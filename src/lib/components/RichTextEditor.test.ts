@@ -37,6 +37,17 @@ describe('RichTextEditor', () => {
 		expect(classes).not.toContain('border-line-strong');
 	});
 
+	// The kit's fields draw focus as one 2px edge: the border and a 1px line
+	// inside it in the same color. The frame draws the inner line as an outline,
+	// because a ring would sit under the toolbar's fill.
+	it('draws a focused editor as one 2px edge in the focus color', () => {
+		const { getByLabelText } = render(RichTextEditor, { props: { value: '' } });
+		const classes = getByLabelText('Undo').parentElement!.parentElement!.className.split(/\s+/);
+		expect(classes).toContain('has-[.ProseMirror:focus-visible]:outline-1');
+		expect(classes).toContain('has-[.ProseMirror:focus-visible]:-outline-offset-2');
+		expect(classes).toContain('has-[.ProseMirror:focus-visible]:outline-focus');
+	});
+
 	it('renders undo and redo controls', () => {
 		const { getByLabelText } = render(RichTextEditor, { props: { value: '' } });
 		expect(getByLabelText('Undo')).toBeTruthy();

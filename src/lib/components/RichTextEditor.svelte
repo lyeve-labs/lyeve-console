@@ -215,8 +215,12 @@
 {/snippet}
 
 <AssistChoice field={assist} />
+<!-- The editable part takes focus inside the frame, so the frame draws the
+     second pixel of a focused field's edge as an outline just inside its
+     border. A ring would sit under the toolbar's fill, and the kit's fields
+     draw focus as one 2px edge of one color. -->
 <div
-	class="border rounded-lg overflow-hidden focus-within:border-focus transition-colors {assist.suggested ? 'border-violet' : 'border-line hover:not-focus-within:border-line-strong'}"
+	class="border rounded-lg overflow-hidden focus-within:border-focus transition-colors has-[.ProseMirror:focus-visible]:outline-1 has-[.ProseMirror:focus-visible]:-outline-offset-2 has-[.ProseMirror:focus-visible]:outline-focus {assist.suggested ? 'border-violet' : 'border-line hover:not-focus-within:border-line-strong'}"
 >
 	<div class="flex flex-wrap items-center gap-0.5 px-2 py-1.5 bg-surface border-b border-line select-none">
 

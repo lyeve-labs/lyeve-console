@@ -29,9 +29,19 @@ describe('CodeEditor', () => {
 		expect(classes).not.toContain('border-line-strong');
 	});
 
+	// The textarea draws a 1px ring inside its focused border, so the gutter
+	// repeats its own border just inside it and the edge stays 2px all round.
+	it('draws the gutter as a 2px edge in the focus color on focus', () => {
+		const classes = setup().getByTestId('code-gutter').className.split(/\s+/);
+		expect(classes).toContain('after:border');
+		expect(classes).toContain('after:border-r-0');
+		expect(classes).toContain('group-has-[textarea:focus-visible]:after:border-focus');
+	});
+
 	it('draws the gutter in the error color beside a field in error', () => {
 		const classes = setup('select 1', { error: 'Enter a query.' }).getByTestId('code-gutter').className.split(/\s+/);
 		expect(classes).toContain('border-danger');
+		expect(classes).toContain('group-has-[textarea:focus-visible]:after:border-danger');
 		expect(classes).not.toContain('border-line');
 	});
 
