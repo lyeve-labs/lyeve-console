@@ -37,6 +37,7 @@
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
 	import { plural } from '$lib/format';
 	import { tracked } from '$lib/forms.svelte';
+	import { liveFilter } from '$lib/live-filter.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -75,8 +76,9 @@
 	const importError = $derived(form && 'importError' in form ? String(form.importError ?? '') : '');
 	let uploadError = $state('');
 	let picker = $state<HTMLInputElement | undefined>(undefined);
-	// Derived, and still bound: typing overrides it until the next load.
-	let q = $derived(data.q ?? '');
+	// Re-read when a navigation changes the URL, so the back button puts the
+	// box where the list is.
+	const live = liveFilter(() => data.q ?? '');
 
 	const VIEWS = [
 		{ value: 'grid', label: 'Grid', icon: LayoutGrid },
@@ -208,16 +210,19 @@
 		<Alert tone="danger">{form.error}</Alert>
 	{/if}
 
-	<form method="GET" data-testid="media-filters">
+	<form method="GET" data-testid="media-filters" {@attach live.form}>
 		<ListToolbar label="Filter media">
 			{#snippet search()}
 				<div class="flex items-center gap-2">
 					<label for="media-search" class="sr-only">Search files</label>
-					<SearchInput id="media-search" name="q" bind:value={q} placeholder="File name" class="min-w-0 flex-1" />
-					<Button type="submit" variant="secondary">Search</Button>
-					{#if data.q}
-						<Button variant="ghost" href="/admin/media">Clear</Button>
-					{/if}
+					<SearchInput
+						id="media-search"
+						name="q"
+						bind:value={live.value}
+						oninput={live.input}
+						placeholder="File name"
+						class="min-w-0 flex-1"
+					/>
 				</div>
 			{/snippet}
 			{#snippet filters()}

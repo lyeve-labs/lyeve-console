@@ -29,6 +29,7 @@
 	import type { PageData, ActionData } from './$types';
 	import { pageNumber, pageOffset } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
+	import { liveFilter } from '$lib/live-filter.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -78,7 +79,7 @@
 
 	// Written by the controls, re-derived when a navigation changes the URL, so
 	// the back button puts the controls where the list is.
-	let q = $derived(data.filter.q);
+	const live = liveFilter(() => data.filter.q);
 	let action = $derived(data.filter.action);
 	let from = $derived(data.filter.from);
 	let to = $derived(data.filter.to);
@@ -169,7 +170,7 @@
 	<!-- A GET form: the filter lives in the URL, so a filtered view is a link
 	     someone can keep. The date pickers are buttons with popovers, so the
 	     chosen days reach the query through fields of their own. -->
-	<form method="GET">
+	<form method="GET" {@attach live.form}>
 		<ListToolbar label="Filter audit entries">
 			{#snippet search()}
 				<div class="flex items-center gap-2">
@@ -177,24 +178,21 @@
 					<SearchInput
 						id="audit-search"
 						name="q"
-						bind:value={q}
+						bind:value={live.value}
+						oninput={live.input}
 						placeholder="Action, resource type or user id"
 						class="min-w-0 flex-1"
 					/>
-					<Button type="submit" variant="secondary">Search</Button>
-					{#if filtered}
-						<Button variant="ghost" href="/admin/audit-log">Clear</Button>
-					{/if}
 				</div>
 			{/snippet}
 			{#snippet filters()}
 				<label for="audit-action" class="sr-only">Action</label>
-				<Select id="audit-action" name="action" options={actionOptions} bind:value={action} searchable class="w-44" />
+				<Select id="audit-action" name="action" options={actionOptions} bind:value={action} onvaluechange={live.apply} searchable class="w-44" />
 				<label for="audit-from" class="sr-only">From</label>
-				<DatePicker id="audit-from" placeholder="From" bind:value={from} class="w-36" />
+				<DatePicker id="audit-from" placeholder="From" bind:value={from} onchange={live.apply} class="w-36" />
 				<input type="hidden" name="from" value={from} />
 				<label for="audit-to" class="sr-only">To</label>
-				<DatePicker id="audit-to" placeholder="To" bind:value={to} class="w-36" />
+				<DatePicker id="audit-to" placeholder="To" bind:value={to} onchange={live.apply} class="w-36" />
 				<input type="hidden" name="to" value={to} />
 			{/snippet}
 		</ListToolbar>
@@ -229,7 +227,11 @@
 				iconSnippet={emptyIcon}
 				title="No audit entries match"
 				description="Search matches whole values only. Try the exact name, widen the dates or clear the action."
-			/>
+			>
+				{#snippet action()}
+					<Button variant="secondary" href="/admin/audit-log">Clear filters</Button>
+				{/snippet}
+			</EmptyState>
 		{:else if data.entries.value.length === 0}
 			<EmptyState
 				iconSnippet={emptyIcon}

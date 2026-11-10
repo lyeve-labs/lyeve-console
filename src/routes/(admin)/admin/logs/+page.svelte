@@ -20,8 +20,10 @@
 	import { FileText, AlertTriangle, BellRing } from '@lucide/svelte';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
 	import { ICON } from '$lib/icon';
+	import { liveFilter } from '$lib/live-filter.svelte';
 
 	let { data }: { data: PageData } = $props();
+	const live = liveFilter(() => data.q);
 
 	const volume = $derived(data.volume.ok ? data.volume.value : null);
 	const levels = $derived(data.levels.ok ? data.levels.value : null);
@@ -144,7 +146,7 @@
 
 			<!-- A GET form: the filter lives in the URL, so a filtered view is a link
 			     someone can keep and the results still render without hydration. -->
-			<form method="GET">
+			<form method="GET" {@attach live.form}>
 				<ListToolbar label="Filter log entries">
 					{#snippet search()}
 						<div class="flex items-center gap-2">
@@ -152,11 +154,11 @@
 							<SearchInput
 								id="log-search"
 								name="q"
-								value={data.q}
+								bind:value={live.value}
+								oninput={live.input}
 								placeholder="Message words, a request ID or a trace ID"
 								class="min-w-0 flex-1"
 							/>
-							<Button type="submit" variant="secondary">Search</Button>
 						</div>
 					{/snippet}
 					{#snippet filters()}
@@ -166,6 +168,7 @@
 							name="level"
 							options={[{ value: '', label: 'All levels' }, ...LOG_LEVELS.map((lv) => ({ value: lv, label: lv }))]}
 							value={data.level}
+							onvaluechange={live.apply}
 							class="w-40"
 						/>
 						<SegmentedControl
@@ -175,6 +178,7 @@
 							size="sm"
 							options={LOG_PAGE_SIZES.map((size) => ({ value: String(size), label: String(size) }))}
 							value={String(data.limit)}
+							onchange={live.apply}
 						/>
 					{/snippet}
 				</ListToolbar>
@@ -187,7 +191,11 @@
 					iconSnippet={emptyIcon}
 					title="No log entries match these filters"
 					description="Choose All levels or clear the search to see more."
-				/>
+				>
+					{#snippet action()}
+						<Button variant="secondary" href="/admin/logs">Clear filters</Button>
+					{/snippet}
+				</EmptyState>
 			{:else if entries.length === 0}
 				<EmptyState
 					iconSnippet={emptyIcon}

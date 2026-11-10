@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { render, cleanup } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { render, cleanup, fireEvent } from '@testing-library/svelte';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import LogsPage from './+page.svelte';
 
@@ -248,5 +248,26 @@ describe('page size', () => {
 
 		expect(container.querySelector('select[name="limit"]')).toBeNull();
 		expect(container.querySelector<HTMLInputElement>('input[name="limit"]')?.value).toBe('100');
+	});
+});
+
+describe('logs filter row', () => {
+	it('applies a filter as it changes, with no Search button', async () => {
+		const submit = vi.spyOn(HTMLFormElement.prototype, 'requestSubmit').mockImplementation(() => {});
+		try {
+			const { container, getByRole } = render(LogsPage, props([entry()]));
+			const form = container.querySelector('input[name="q"]')?.closest('form') as HTMLFormElement;
+			expect(form.querySelector('button[type="submit"]')).toBeNull();
+			await fireEvent.click(getByRole('radio', { name: '200' }));
+			await vi.waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+			expect((form.querySelector('input[name="limit"]:checked, input[name="limit"][type="hidden"]') as HTMLInputElement).value).toBe('200');
+		} finally {
+			submit.mockRestore();
+		}
+	});
+
+	it('offers to clear the filters when nothing matches them', () => {
+		const { getByRole } = render(LogsPage, props([], { q: 'nothing', level: 'ERROR' }));
+		expect(getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/logs');
 	});
 });

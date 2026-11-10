@@ -91,7 +91,17 @@ describe('admin/content/+page.server.ts load', () => {
 	it('opens a collection that a name resolves to on a later page', async () => {
 		const rows = [...schemas(300), { name: 'far_away', display_name: 'Far away', fields: [] }];
 
-		await expect(load(loadEvent(rows, '?q=far_away'))).rejects.toSatisfy(isRedirect);
+		await expect(load(loadEvent(rows, '?schema=far_away'))).rejects.toSatisfy(isRedirect);
+	});
+
+	// The search runs as the reader types, so a word on its way to another
+	// name must not open the one content type it matches so far.
+	it('narrows to a content type a search matches without opening it', async () => {
+		const rows = [...schemas(300), { name: 'far_away', display_name: 'Far away', fields: [] }];
+
+		const result = (await load(loadEvent(rows, '?q=far_away'))) as Loaded;
+
+		expect(loadedRows(result).map((schema: { name: string }) => schema.name)).toEqual(['far_away']);
 	});
 
 	// "This tenant has exactly one collection" is a fact about the set, not

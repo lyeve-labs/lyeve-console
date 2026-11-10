@@ -9,10 +9,12 @@
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { formatDateTime } from '$lib/format';
 	import { ICON } from '$lib/icon';
+	import { liveFilter } from '$lib/live-filter.svelte';
 
 	let { data }: { data: PageData } = $props();
 
 	const kindOptions = [{ value: '', label: 'Any kind' }, ...TRANSCRIPT_KINDS.map((k) => ({ value: k, label: k.replace('_', ' ') }))];
+	const live = liveFilter(() => data.subjectId ?? '', { name: 'subject_id' });
 	const filtered = $derived(!!(data.kind || data.subjectKind || data.subjectId));
 	const filterParams = $derived({
 		...(data.kind ? { kind: data.kind } : {}),
@@ -36,18 +38,22 @@
 
 		<!-- A GET form: the filters live in the URL so a page can be shared and the
 		     pager keeps them. -->
-		<form method="GET">
+		<form method="GET" {@attach live.form}>
 			<ListToolbar label="Filter transcripts">
 				{#snippet search()}
 					<div class="flex items-center gap-2">
 						<label for="f-subject-id" class="sr-only">Subject id</label>
-						<Input id="f-subject-id" name="subject_id" value={data.subjectId} placeholder="Flow or entry id" class="min-w-0 flex-1" />
+						<Input
+							id="f-subject-id"
+							name="subject_id"
+							bind:value={live.value}
+							oninput={(e) => live.input(e.currentTarget.value)}
+							placeholder="Flow or entry id"
+							class="min-w-0 flex-1"
+						/>
 						<Button variant="secondary" type="submit">
 							<Search size={ICON.sm} aria-hidden="true" /> Filter
 						</Button>
-						{#if filtered}
-							<Button variant="ghost" href="/admin/ai/transcripts">Clear</Button>
-						{/if}
 					</div>
 				{/snippet}
 				{#snippet filters()}
@@ -69,6 +75,11 @@
 			>
 				{#snippet iconSnippet()}
 					<MessagesSquare size={ICON.lg} />
+				{/snippet}
+				{#snippet action()}
+					{#if filtered}
+						<Button variant="secondary" href="/admin/ai/transcripts">Clear filters</Button>
+					{/if}
 				{/snippet}
 			</EmptyState>
 		{:else}

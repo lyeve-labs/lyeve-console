@@ -171,7 +171,7 @@
 		<form method="GET" action="/admin/content" class="max-w-sm">
 			<Autocomplete
 				id="collection-picker"
-				name="q"
+				name="schema"
 				label="Content type"
 				placeholder="Search content types"
 				value={data.activeSchema}

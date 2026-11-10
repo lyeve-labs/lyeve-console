@@ -25,6 +25,7 @@
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import { confirmed, submitter } from '$lib/forms.svelte';
+	import { liveFilter } from '$lib/live-filter.svelte';
 	import { slugify, statusTone, triggerLabel } from '$lib/flow/triggers';
 	import { blockedText } from '$lib/flow/blocked';
 	import { flowGrants } from '$lib/flow/permissions';
@@ -147,7 +148,7 @@
 	// link carrying the search, as the content index's chips are, so one click
 	// lands on it. A radio that submits from its change handler runs before the
 	// hidden status field re-renders and posts the status it is leaving. The
-	// search waits for Enter or the button so a half-typed word does not reload.
+	// search runs once typing pauses, so a half-typed word does not reload.
 	const STATUSES = [
 		{ value: '', label: 'All' },
 		{ value: 'draft', label: 'Draft' },
@@ -158,9 +159,9 @@
 	const statusOptions = $derived(
 		STATUSES.map((o) => ({ ...o, href: `/admin/flows${listQuery({ status: o.value, q: data.q })}` })),
 	);
-	// Re-derived when a navigation changes the URL, so Clear and the back
-	// button put the box where the list is.
-	let q = $derived(data.q);
+	// Re-read when a navigation changes the URL, so the back button puts the
+	// box where the list is.
+	const live = liveFilter(() => data.q);
 	const filtered = $derived(data.status !== '' || data.q !== '');
 	// A row link carries the filter it was found under, so the editor's back
 	// link returns to the same slice of the list.
@@ -249,17 +250,20 @@
 		{#if data.gate.state !== 'forbidden'}
 			<!-- The field's label is for the screen reader only, so nothing sits
 			     above the row to push its middle down. -->
-			<form method="GET" data-testid="flow-filters">
+			<form method="GET" data-testid="flow-filters" {@attach live.form}>
 				{#if data.status}<input type="hidden" name="status" value={data.status} />{/if}
 				<ListToolbar label="Filter flows">
 					{#snippet search()}
 						<div class="flex items-center gap-2">
 							<label for="flow-search" class="sr-only">Search flows</label>
-							<SearchInput id="flow-search" name="q" bind:value={q} placeholder="Name or slug" class="min-w-0 flex-1" />
-							<Button type="submit" variant="secondary">Search</Button>
-							{#if filtered}
-								<Button variant="ghost" href="/admin/flows">Clear</Button>
-							{/if}
+							<SearchInput
+								id="flow-search"
+								name="q"
+								bind:value={live.value}
+								oninput={live.input}
+								placeholder="Name or slug"
+								class="min-w-0 flex-1"
+							/>
 						</div>
 					{/snippet}
 					{#snippet filters()}
@@ -278,7 +282,11 @@
 		{#if data.gate.state !== 'ok'}
 			<!-- Nothing: the empty state would say there are none. -->
 		{:else if data.flows.length === 0 && filtered}
-			<EmptyState title="No flows match these filters" description="Clear the search or choose another status." />
+			<EmptyState title="No flows match these filters" description="Clear the search or choose another status.">
+				{#snippet action()}
+					<Button variant="secondary" href="/admin/flows">Clear filters</Button>
+				{/snippet}
+			</EmptyState>
 		{:else if data.flows.length === 0}
 			<EmptyState
 				title="No flows yet"
