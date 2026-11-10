@@ -216,7 +216,7 @@
 
 <AssistChoice field={assist} />
 <div
-	class="border rounded-lg overflow-hidden focus-within:border-focus transition-colors {assist.suggested ? 'border-violet' : 'border-line-strong'}"
+	class="border rounded-lg overflow-hidden focus-within:border-focus transition-colors {assist.suggested ? 'border-violet' : 'border-line hover:not-focus-within:border-line-strong'}"
 >
 	<div class="flex flex-wrap items-center gap-0.5 px-2 py-1.5 bg-surface border-b border-line select-none">
 

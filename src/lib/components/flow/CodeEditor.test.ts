@@ -21,6 +21,20 @@ describe('CodeEditor', () => {
 		expect(getByTestId('code-editor').textContent).toContain('sql');
 	});
 
+	it('draws the gutter with the field border at rest, under the pointer and on focus', () => {
+		const classes = setup().getByTestId('code-gutter').className.split(/\s+/);
+		expect(classes).toContain('border-line');
+		expect(classes).toContain('group-has-[textarea:hover:not(:focus)]:border-line-strong');
+		expect(classes).toContain('group-has-[textarea:focus]:border-focus');
+		expect(classes).not.toContain('border-line-strong');
+	});
+
+	it('draws the gutter in the error color beside a field in error', () => {
+		const classes = setup('select 1', { error: 'Enter a query.' }).getByTestId('code-gutter').className.split(/\s+/);
+		expect(classes).toContain('border-danger');
+		expect(classes).not.toContain('border-line');
+	});
+
 	it('grows the gutter with the content', () => {
 		const { getByTestId } = setup(Array.from({ length: 9 }, (_, i) => `line ${i}`).join('\n'));
 		expect(getByTestId('code-gutter').textContent).toContain('9');

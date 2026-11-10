@@ -26,6 +26,17 @@ describe('RichTextEditor', () => {
 		expect(getByLabelText('Underline')).toBeTruthy();
 	});
 
+	// The frame is focused through the editable part inside it, so its hover
+	// border yields to the focus border instead of repainting it gray.
+	it('rests the frame on the field border and keeps its focus border under the pointer', () => {
+		const { getByLabelText } = render(RichTextEditor, { props: { value: '' } });
+		const classes = getByLabelText('Undo').parentElement!.parentElement!.className.split(/\s+/);
+		expect(classes).toContain('border-line');
+		expect(classes).toContain('hover:not-focus-within:border-line-strong');
+		expect(classes).toContain('focus-within:border-focus');
+		expect(classes).not.toContain('border-line-strong');
+	});
+
 	it('renders undo and redo controls', () => {
 		const { getByLabelText } = render(RichTextEditor, { props: { value: '' } });
 		expect(getByLabelText('Undo')).toBeTruthy();
