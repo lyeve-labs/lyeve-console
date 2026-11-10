@@ -397,6 +397,25 @@ describe('the fields list of the Fill fields with AI node', () => {
 		expect(container.textContent).not.toContain('title is');
 	});
 
+	it('ties each reason to the picker, so a screen reader hears it', () => {
+		const { getByText, getByRole } = render(NodeConfigForm, {
+			props: { schema: fillSchema, value: { schema: 'posts', fields: ['body', 'Title'] }, schemas: posts, fillNode: true, onchange: vi.fn() },
+		});
+		const reason = getByText('Title is not a field of this content type, so this node cannot fill it. Remove it from the list.');
+		const ids = getByRole('combobox', { name: /fields/i }).getAttribute('aria-describedby')?.split(' ') ?? [];
+		expect(ids).toContain(reason.id);
+		expect(ids).toContain(getByText(/^body is marked No AI/).id);
+	});
+
+	it('says so when the content type has no field the node can fill', () => {
+		const locked: SchemaOption[] = [{ name: 'notes', display_name: 'Notes', fields: ['secret'], unfillable: { secret: 'is private' } }];
+		const { getByText, queryByText } = render(NodeConfigForm, {
+			props: { schema: fillSchema, value: { schema: 'notes' }, schemas: locked, fillNode: true, onchange: vi.fn() },
+		});
+		expect(getByText('No field of this content type can be filled with AI.')).toBeTruthy();
+		expect(queryByText(/^Pick a field/)).toBeNull();
+	});
+
 	it('leaves the same list on another node as it was', async () => {
 		const { container, queryByText } = render(NodeConfigForm, {
 			props: { schema: fillSchema, value: { schema: 'posts', fields: ['body'] }, schemas: posts, onchange: vi.fn() },

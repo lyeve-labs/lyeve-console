@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { fillRefusal, unfillableFields } from './fill';
+import { fillProblem, fillRefusal, unfillableFields, type FillField } from './fill';
+import type { SchemaOption } from './types';
 
 describe('fillRefusal', () => {
 	it.each([
@@ -11,6 +12,9 @@ describe('fillRefusal', () => {
 		[{ field_type: 'relation' }, 'is a relation field'],
 		[{ field_type: 'media' }, 'is a media field'],
 		[{ field_type: 'uid' }, 'is a uid field'],
+		[{ field_type: 'enumeration' }, 'is an enumeration field'],
+		[{ field_type: '' }, 'has no type'],
+		[{} as FillField, 'has no type'],
 	])('%o', (field, want) => {
 		expect(fillRefusal(field)).toBe(want);
 	});
@@ -24,5 +28,21 @@ describe('unfillableFields', () => {
 				{ name: 'body', field_type: 'rich_text', no_ai: true },
 			])
 		).toEqual({ body: 'is marked No AI' });
+	});
+});
+
+describe('fillProblem', () => {
+	const schemas: SchemaOption[] = [{ name: 'posts', display_name: 'Posts', fields: ['title'], unfillable: {} }];
+
+	it('names a saved field the content type does not have, whatever its case', () => {
+		expect(fillProblem(schemas, 'posts', 'Title')).toBe(
+			'Title is not a field of this content type, so this node cannot fill it. Remove it from the list.'
+		);
+		expect(fillProblem(schemas, 'posts', 'deleted_field')).toMatch(/^deleted_field is not a field of this content type/);
+	});
+
+	it('says nothing for a field it fills or a content type the list does not have', () => {
+		expect(fillProblem(schemas, 'posts', 'title')).toBeNull();
+		expect(fillProblem(schemas, 'missing', 'anything')).toBeNull();
 	});
 });

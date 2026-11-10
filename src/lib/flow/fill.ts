@@ -42,7 +42,10 @@ export function fillRefusal(field: FillField): string | null {
 	if (field.no_ai) return 'is marked No AI';
 	if (field.private) return 'is private';
 	if (field.system) return 'is set automatically';
-	if (!FILL_TYPES.has(field.field_type)) return `is a ${field.field_type} field`;
+	if (!field.field_type) return 'has no type';
+	// The type names that start with u (uid, url, uuid) are said with a
+	// consonant sound, so only a, e, i and o take "an".
+	if (!FILL_TYPES.has(field.field_type)) return `is ${/^[aeio]/i.test(field.field_type) ? 'an' : 'a'} ${field.field_type} field`;
 	return null;
 }
 
@@ -71,6 +74,12 @@ export function fillableFieldsOf(schemas: SchemaOption[], name: unknown): string
 export function fillProblem(schemas: SchemaOption[], name: unknown, field: string): string | null {
 	const found = typeof name === 'string' ? schemas.find((s) => s.name === name) : undefined;
 	if (!found) return null;
-	const why = found.unfillable?.[field] ?? (SYSTEM_FIELDS.includes(field) ? 'is set automatically' : null);
+	const why =
+		found.unfillable?.[field] ??
+		(SYSTEM_FIELDS.includes(field)
+			? 'is set automatically'
+			: found.fields.includes(field)
+				? null
+				: 'is not a field of this content type');
 	return why ? `${field} ${why}, so this node cannot fill it. Remove it from the list.` : null;
 }

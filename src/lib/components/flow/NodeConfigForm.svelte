@@ -470,8 +470,12 @@
 						options={fieldRows(field.key).filter((o) => !tags(current).includes(o.value))}
 						value={null}
 						placeholder="Add a field"
-						hint={hint ?? 'Pick a field, or type a custom one below and press Enter.'}
+						hint={hint ??
+							(fillsFields(field.key) && fieldRows(field.key).length === 0
+								? 'No field of this content type can be filled with AI.'
+								: 'Pick a field, or type a custom one below and press Enter.')}
 						{error}
+						describedBy={fillProblems(field.key).map((_, i) => `${id}-problem-${i}`).join(' ') || undefined}
 						onvaluechange={(v) => {
 							if (v) set(field.key, [...tags(current), v]);
 						}}
@@ -507,7 +511,7 @@
 					</div>
 				{/if}
 				{#each fillProblems(field.key) as problem, i (i)}
-					<p class="text-xs text-danger">{problem}</p>
+					<p id="{id}-problem-{i}" class="text-xs text-danger">{problem}</p>
 				{/each}
 			</div>
 		{:else if widget === 'object'}
