@@ -9,13 +9,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - The Goroutine engine tab shows a super admin how the engine uses its CPU, memory and database: the CPU threads, the soft memory limit, the GC target and the database pool, each with where its value came from. Where tuning is enabled, the values can be changed, started from a one-server or several-replica preset, and checked against recommendations for the machine and the database. On an engine that does not serve these settings, the panel says they are not included in this build.
+- Each field in the schema builder takes help text and a No AI mark. The entry form shows a field's help text under it, and the assistant never reads or fills a field marked No AI.
+- An assistant panel opens from the header on every console page, for every signed-in role. It reads the page and the open form, offers values for the form as suggestions you accept or reject, and shows any other change in full, which runs only when you run it, with your own session.
+- The AI settings page has the tenant's switch for the assistant, on by default.
 
 ### Changed
 
 - The Goroutine engine tab says tuning changes reach every replica and stay after a restart, as they do on an engine that serves the runtime settings.
 - A saved content type in the schema builder opens on tabs named Definition, API and History, with History for a super admin only. Its routes and its history sat in disclosures under the whole field list. A new content type has only its definition and shows no tabs. The History tab counts the changes waiting in its queue, and the history is read only while that tab is shown.
 - The API key drawers lay out the hourly, daily and monthly request limits as one captioned row once the drawer is wide enough, and stack them below that, under a hint that says 0 means no limit and that a key over a limit gets a 429 with a Retry-After header until its hour, day or month ends in UTC.
-- The console moves to ui-kit 0.55.0. Every button variant is one height at each size, and a medium button lines up with a text field. A list or calendar opened from a field stays inside the visible area and inside a panel's scrollbar, a segmented control in a narrow panel stacks its options instead of breaking a label across lines, and a number field's stepper at its bound keeps its frame.
+- The console moves to ui-kit 0.56.0. Every button variant is one height at each size, and a medium button lines up with a text field. A list or calendar opened from a field stays inside the visible area and inside a panel's scrollbar, a segmented control in a narrow panel stacks its options instead of breaking a label across lines, and a number field's stepper at its bound keeps its frame.
 
 ### Fixed
 
