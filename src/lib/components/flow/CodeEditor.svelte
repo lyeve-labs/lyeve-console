@@ -111,10 +111,11 @@
 		>
 			<!-- The gutter is the left part of the field's frame, so its border
 			     follows the textarea's at rest, under the pointer and on focus.
-			     On focus its ::after repeats the border just inside it, as the
-			     textarea's inset ring does, so the whole edge is 2px of one color. -->
+			     A textarea in error keeps its red border and marks focus with a
+			     1px ring inside it, so the gutter's ::after repeats that ring
+			     along its side. -->
 			<div
-				class="relative shrink-0 select-none overflow-hidden rounded-l-lg border border-r-0 bg-surface-2 py-2 pl-2 pr-1.5 text-right font-mono text-sm leading-5 text-faint tabular-nums transition-colors after:pointer-events-none after:absolute after:inset-0 after:rounded-l-[7px] after:border after:border-r-0 after:border-transparent {error ? 'border-danger group-has-[textarea:focus-visible]:after:border-danger' : 'border-line group-has-[textarea:hover:not(:focus)]:border-line-strong group-has-[textarea:focus]:border-focus group-has-[textarea:focus-visible]:after:border-focus'}"
+				class="relative shrink-0 select-none overflow-hidden rounded-l-lg border border-r-0 bg-surface-2 py-2 pl-2 pr-1.5 text-right font-mono text-sm leading-5 text-faint tabular-nums transition-colors after:pointer-events-none after:absolute after:inset-0 after:rounded-l-[7px] after:border after:border-r-0 after:border-transparent {error ? 'border-danger group-has-[textarea:focus-visible]:after:border-danger' : 'border-line group-has-[textarea:hover:not(:focus)]:border-line-strong group-has-[textarea:focus]:border-focus'}"
 				style="height:{rows * 20 + 18}px"
 				aria-hidden="true"
 				data-testid="code-gutter"
