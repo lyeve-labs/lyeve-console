@@ -29,18 +29,21 @@ describe('CodeEditor', () => {
 		expect(classes).not.toContain('border-line-strong');
 	});
 
-	// The textarea draws a 1px ring inside its focused border, so the gutter
-	// repeats its own border just inside it and the edge stays 2px all round.
-	it('draws the gutter as a 2px edge in the focus color on focus', () => {
+	// A focused textarea turns its border the focus color and draws no ring,
+	// so the gutter's border alone follows it.
+	it('draws the gutter on focus as its border alone in the focus color', () => {
 		const classes = setup().getByTestId('code-gutter').className.split(/\s+/);
-		expect(classes).toContain('after:border');
-		expect(classes).toContain('after:border-r-0');
-		expect(classes).toContain('group-has-[textarea:focus-visible]:after:border-focus');
+		expect(classes).toContain('group-has-[textarea:focus]:border-focus');
+		expect(classes.filter((c) => c.includes('focus-visible'))).toEqual([]);
 	});
 
+	// A textarea in error keeps its red border and marks focus with a 1px ring
+	// inside it, which the gutter repeats along its side.
 	it('draws the gutter in the error color beside a field in error', () => {
 		const classes = setup('select 1', { error: 'Enter a query.' }).getByTestId('code-gutter').className.split(/\s+/);
 		expect(classes).toContain('border-danger');
+		expect(classes).toContain('after:border');
+		expect(classes).toContain('after:border-r-0');
 		expect(classes).toContain('group-has-[textarea:focus-visible]:after:border-danger');
 		expect(classes).not.toContain('border-line');
 	});
