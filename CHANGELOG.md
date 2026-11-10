@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - The console moves to ui-kit 0.59.0 and then 0.60.0. Every text field, select, date and time field, number field and search box rests on the same soft border as a card, firms under the pointer and turns to the focus color when focused, and a field focused through a part inside it keeps its focus border under the pointer. The chosen option of a segmented control is a brand-tinted fill with brand text, on a soft track. The rich text field and the code editor's line numbers follow the same borders. With 0.60.0 a focused field draws its border and a thin inset ring in one color, an empty checkbox, radio or toggle rests on a softer border that firms under the pointer, and a selected option card keeps its tint without a brand border.
+- The flow canvas and the schema canvas draw a keyboard focus ring around a node, a table and the canvas itself in the same focus color as the rest of the console, in place of the brighter brand color. The zoom controls, the minimap, a selected connection's delete control and the schema canvas toolbar rest on the softer border that cards use.
 
 ## [0.28.0] - 2026-11-12
 
