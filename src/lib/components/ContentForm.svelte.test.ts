@@ -18,7 +18,6 @@ const field = (field_type: FieldType, extra: Partial<SchemaField> = {}): SchemaF
 
 const content = (id: string, data: Record<string, unknown>): Content => ({
 	id,
-	schema_name: 'posts',
 	data,
 	created_at: '',
 	updated_at: '',

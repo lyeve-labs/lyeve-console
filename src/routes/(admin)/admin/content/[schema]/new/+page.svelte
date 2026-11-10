@@ -120,6 +120,7 @@
 				relations={data.relations}
 				mediaChoices={data.mediaChoices}
 				error={form?.error}
+				label="New {schemaLabel} entry"
 			/>
 		</Card>
 

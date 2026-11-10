@@ -65,6 +65,17 @@ describe('admin/ai/settings actions', () => {
 		expect(sentBody(calls, '/api/admin/ai/settings')).toEqual({ transcripts_enabled: false });
 	});
 
+	it('sends the assistant switch alone', async () => {
+		const { event, calls } = actionEvent(
+			{ '/api/admin/ai/settings': () => json({ ...fixtureSettings, assistant_enabled: false }) },
+			formOf({ assistant_enabled: 'false' }),
+			{ path, roles: ['admin'] }
+		);
+		const out = await actions.save(event);
+		expect(out).toMatchObject({ scope: 'switch', settings: { assistant_enabled: false } });
+		expect(sentBody(calls, '/api/admin/ai/settings')).toEqual({ assistant_enabled: false });
+	});
+
 	it('turns the tenant switch on from the off panel', async () => {
 		const { event, calls } = actionEvent({ '/api/admin/ai/settings': () => json(fixtureSettings) }, formOf({ enabled: 'true' }), { path });
 		await actions.save(event);

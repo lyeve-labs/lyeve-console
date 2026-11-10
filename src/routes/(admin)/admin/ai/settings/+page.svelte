@@ -17,6 +17,9 @@
 
 	let enabledForm = $state<HTMLFormElement | null>(null);
 	let transcriptsForm = $state<HTMLFormElement | null>(null);
+	let assistantForm = $state<HTMLFormElement | null>(null);
+	// A plugin older than the switch sends none, and the assistant is on by default.
+	const assistantOn = $derived(settings?.assistant_enabled !== false);
 
 	const retention = $derived(data.instance.find((s) => s.key === 'ai_transcript_retention'));
 	const instanceTranscripts = $derived(data.instance.find((s) => s.key === 'ai_transcripts_enabled'));
@@ -65,6 +68,18 @@
 								checked={settings.transcripts_enabled}
 								disabled={!settings.enabled}
 								onchange={() => transcriptsForm?.requestSubmit()}
+							/>
+						</form>
+
+						<form bind:this={assistantForm} method="POST" action="?/save" use:enhance class="flex flex-col gap-3" data-testid="ai-assistant-form">
+							<input type="hidden" name="assistant_enabled" value={assistantOn ? 'false' : 'true'} />
+							<Toggle
+								id="ai-assistant"
+								label="Assistant"
+								hint="When on, everyone who signs in can ask the assistant, and it can do only what their role allows."
+								checked={assistantOn}
+								disabled={!settings.enabled}
+								onchange={() => assistantForm?.requestSubmit()}
 							/>
 						</form>
 

@@ -6,6 +6,7 @@ export const fixtureSettings: AiSettings = {
 	tenant_id: 'default',
 	enabled: true,
 	transcripts_enabled: true,
+	assistant_enabled: true,
 	updated_by: 'admin@example.com',
 	updated_at: '2026-09-15T08:00:00Z',
 };

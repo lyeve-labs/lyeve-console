@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { FormAssist } from '@lyeve-labs/ui-kit';
 	import type { SchemaField } from '@lyeve-labs/client';
 	import { fieldKey } from '$lib/utils/content-form';
 	import { humanizeFieldName } from '$lib/utils/entry-identity';
@@ -16,6 +17,7 @@
 		relations = {},
 		mediaChoices = [],
 		error,
+		label = 'Entry',
 	}: {
 		fields: SchemaField[];
 		/** The parent's state, which each FieldInput writes in place, so the parent never copies it back. */
@@ -28,6 +30,8 @@
 		/** Published library files a media field may point at. Null when the library could not be read. */
 		mediaChoices?: MediaChoice[] | null;
 		error?: string | null;
+		/** The form's name for an assistant that fills it, such as "New Articles entry". */
+		label?: string;
 	} = $props();
 
 	/**
@@ -101,6 +105,10 @@
 
 <!-- The failure is read before the fields, so a refused save is the first
      thing in the form rather than something below the last field. -->
+<!-- Every field registers with the FormAssist, so an assistant beside the
+     page can read the form and suggest values, and the page's own Save posts
+     them once the editor accepts each one. A No AI field is withheld there. -->
+<FormAssist {label} class="flex flex-col gap-5">
 <div bind:this={root} class="flex flex-col gap-5">
 <FormErrors message={error ?? undefined} fields={validationErrors} />
 
@@ -165,3 +173,4 @@
 	</div>
 {/if}
 </div>
+</FormAssist>

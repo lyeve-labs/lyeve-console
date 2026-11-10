@@ -60,9 +60,10 @@
 </script>
 
 <script lang="ts">
-	import { Button, Collapsible, Input, SegmentedControl, Textarea } from '@lyeve-labs/ui-kit';
+	import { Button, Collapsible, Input, SegmentedControl, Textarea, assistField } from '@lyeve-labs/ui-kit';
 	import { Plus, Trash2 } from '@lucide/svelte';
 	import { ICON } from '$lib/icon';
+	import AssistChoice from './AssistChoice.svelte';
 
 	type TextareaEv = Event & { currentTarget: HTMLTextAreaElement };
 	type InputEv = Event & { currentTarget: HTMLInputElement };
@@ -73,8 +74,17 @@
 		error = undefined,
 		errorKey = undefined,
 		required = false,
+		name = undefined,
+		hint = undefined,
+		noAI = false,
 	}: {
 		id?: string;
+		/** The key a FormAssist knows the field by. Without one the editor does not register. */
+		name?: string;
+		/** A sentence under the editor, which the assistant also follows. */
+		hint?: string;
+		/** Keeps the document from an assistant: it is never reported or filled. */
+		noAI?: boolean;
 		/** The document as JSON text, the form state's shape for a json field. */
 		value?: string;
 		error?: string;
@@ -113,6 +123,38 @@
 	const marked = $derived(error && errorKey ? pairs.findIndex((p) => p.key.trim() === errorKey) : -1);
 	const looseError = $derived(`${base}-error`);
 
+	// The editor registers as one field holding the document as text, so the
+	// rows and the text box inside it paint with it rather than registering
+	// on their own. A suggestion has to parse, and it reopens the editor in
+	// the mode that fits it.
+	const assist = assistField({
+		get name() {
+			return name;
+		},
+		get label() {
+			return name;
+		},
+		get hint() {
+			return hint;
+		},
+		kind: 'multiline',
+		get required() {
+			return required;
+		},
+		get noAI() {
+			return noAI;
+		},
+		accepts: (v) => typeof v === 'string' && parseError(v) === null,
+		get value() {
+			return value;
+		},
+		set value(v) {
+			value = v as string;
+			mode = pairsOf(value) === null ? 'json' : 'pairs';
+			pairs = openingPairs(value);
+		},
+	});
+
 	function syncFromPairs() {
 		value = textOf(pairs);
 	}
@@ -142,6 +184,7 @@
 </script>
 
 <div class="flex flex-col gap-3" data-testid="json-field">
+	<AssistChoice field={assist} />
 	<SegmentedControl
 		label="How to edit this value"
 		labelHidden
@@ -215,5 +258,8 @@
 		<Collapsible label="What is saved" open={mode === 'pairs'}>
 			<pre class="max-h-64 overflow-auto rounded-lg border border-line bg-surface-2 p-3 font-mono text-xs text-fg" data-testid="json-preview">{preview}</pre>
 		</Collapsible>
+	{/if}
+	{#if hint}
+		<p class="text-xs text-muted">{hint}</p>
 	{/if}
 </div>

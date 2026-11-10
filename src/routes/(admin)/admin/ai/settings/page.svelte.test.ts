@@ -44,6 +44,26 @@ describe('AI settings page', () => {
 		expect(transcripts.querySelector('input[name="enabled"]')).toBeNull();
 	});
 
+	it('shows the assistant switch on by default and posts its opposite alone', () => {
+		const { getByLabelText, getByTestId } = setup({ aiSettings: { ...fixtureSettings, assistant_enabled: undefined } });
+		expect(getByLabelText('Assistant').getAttribute('aria-checked')).toBe('true');
+		const form = getByTestId('ai-assistant-form');
+		expect((form.querySelector('input[name="assistant_enabled"]') as HTMLInputElement).value).toBe('false');
+		expect(form.querySelector('input[name="enabled"]')).toBeNull();
+		expect(form.querySelector('input[name="transcripts_enabled"]')).toBeNull();
+	});
+
+	it('shows the assistant switch off once the tenant turned it off, and offers to turn it on', () => {
+		const { getByLabelText, getByTestId } = setup({ aiSettings: { ...fixtureSettings, assistant_enabled: false } });
+		expect(getByLabelText('Assistant').getAttribute('aria-checked')).toBe('false');
+		expect((getByTestId('ai-assistant-form').querySelector('input[name="assistant_enabled"]') as HTMLInputElement).value).toBe('true');
+	});
+
+	it('disables the assistant switch while AI is off for the tenant', () => {
+		const { getByLabelText } = setup({ aiSettings: { ...fixtureSettings, enabled: false } });
+		expect(getByLabelText('Assistant').hasAttribute('disabled')).toBe(true);
+	});
+
 	it('stays reachable while the tenant is off and shows the switch off', () => {
 		const { getByLabelText, queryByText } = setup({ aiSettings: { ...fixtureSettings, enabled: false }, aiLayoutGate: { state: 'ok' } });
 		expect(getByLabelText('AI for this tenant').getAttribute('aria-checked')).toBe('false');
