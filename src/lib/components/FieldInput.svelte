@@ -16,6 +16,7 @@
 	import MediaPicker from './media/MediaPicker.svelte';
 	import type { MediaChoice } from '$lib/api/media';
 	import { formatCount } from '$lib/format';
+	import { registerOptionLabels } from '$lib/assistant/option-labels';
 
 	type TextareaEv = Event & { currentTarget: HTMLTextAreaElement };
 
@@ -25,6 +26,7 @@
 		relationItems = [],
 		relationTotal = undefined,
 		relationFailed = false,
+		relationAssistantLabels = undefined,
 		mediaChoices = [],
 		id,
 		error,
@@ -37,6 +39,8 @@
 		relationTotal?: number;
 		/** The related schema could not be read, so the picker has nothing to offer. */
 		relationFailed?: boolean;
+		/** The name an assistant reads for each related entry, by id, in place of the one shown. */
+		relationAssistantLabels?: Record<string, string>;
 		/** Published library files, offered by a media field's picker. Null when the library could not be read. */
 		mediaChoices?: MediaChoice[] | null;
 		/**
@@ -57,12 +61,12 @@
 
 	/*
 	 * Every control that posts a value carries the field's name, so the
-	 * FormAssist around the form can describe and fill it, and a No AI field
-	 * is withheld there. The help text is the control's hint: the editor
-	 * reads it under the field and the assistant follows it.
+	 * FormAssist around the form can describe and fill it, and a field marked
+	 * No AI or private is withheld there. The help text is the control's hint:
+	 * the editor reads it under the field and the assistant follows it.
 	 */
 	const name = $derived(field.name);
-	const noAI = $derived(field.no_ai === true);
+	const noAI = $derived(field.no_ai === true || field.private === true);
 	const help = $derived(field.help_text?.trim() || undefined);
 
 	/** The help text, then the hint the control has of its own. */
@@ -81,6 +85,13 @@
 	let relationOptions = $derived(
 		relationItems.map((item) => ({ value: item.id, label: entryLabel(item) })),
 	);
+
+	// The person reads each entry by its name. When that name may be a value
+	// the related type keeps from the assistant, the assistant reads another.
+	$effect(() => {
+		if (!relationAssistantLabels) return;
+		return registerOptionLabels(name, new Map(Object.entries(relationAssistantLabels)));
+	});
 
 	// The picker is one page of the related collection. Past that page it
 	// cannot find an entry, and it says so rather than reading as the whole set.

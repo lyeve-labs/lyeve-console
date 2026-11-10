@@ -143,6 +143,7 @@
 						relationItems={relationOf(field)?.items ?? []}
 						relationTotal={relationOf(field)?.total}
 						relationFailed={relationOf(field)?.failed ?? false}
+						relationAssistantLabels={relationOf(field)?.assistantLabels}
 						{mediaChoices}
 						error={validationErrors[field.name]}
 						errorKey={errorKeys[field.name]}
@@ -163,6 +164,7 @@
 					relationItems={relationOf(field)?.items ?? []}
 					relationTotal={relationOf(field)?.total}
 					relationFailed={relationOf(field)?.failed ?? false}
+					relationAssistantLabels={relationOf(field)?.assistantLabels}
 					{mediaChoices}
 					error={validationErrors[field.name]}
 					errorKey={errorKeys[field.name]}

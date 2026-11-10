@@ -6,6 +6,7 @@
  */
 
 import type { AssistFieldDescription, FormAssistController } from '@lyeve-labs/ui-kit';
+import { optionLabel } from './option-labels';
 
 export interface AssistantField {
 	name?: string;
@@ -39,7 +40,7 @@ function field(d: AssistFieldDescription): AssistantField {
 		...(d.hint ? { help: d.hint } : {}),
 		kind: d.kind,
 		...(d.required ? { required: true } : {}),
-		...(d.options ? { options: d.options.map((o) => ({ value: o.value, label: o.label, ...(o.disabled ? { disabled: true } : {}) })) } : {}),
+		...(d.options ? { options: d.options.map((o) => ({ value: o.value, label: optionLabel(d.name, o), ...(o.disabled ? { disabled: true } : {}) })) } : {}),
 		value: d.value,
 		...(d.edited ? { edited: true } : {}),
 	};
