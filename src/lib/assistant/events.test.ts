@@ -6,7 +6,7 @@ const frame = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.s
 describe('EventReader', () => {
 	it('reads every kind the plugin sends, across chunks split anywhere', () => {
 		const stream =
-			frame('step', { id: 'c1', title: 'Search the API', status: 'running' }) +
+			frame('step', { id: 'c1', title: 'Look up what the engine can do', status: 'running' }) +
 			frame('message', { text: 'Two new fields cover this.' }) +
 			frame('plan', { entries: [{ status: 'now', title: 'Add the fields', detail: 'The proposal below' }, { status: 'next', title: 'Fill them' }] }) +
 			frame('proposal', { id: 'c2', kind: 'api', operation_id: 'putSchema', method: 'put', path: '/api/admin/schemas/articles', query: { dry_run: true }, body: { name: 'articles' }, effect: 'write' }) +

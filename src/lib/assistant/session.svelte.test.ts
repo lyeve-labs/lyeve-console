@@ -68,8 +68,8 @@ describe('AssistantSession', () => {
 		const id = '7f0c4f53-8e0a-4a3c-9df4-6c2c2f1e3a10';
 		const { fn, sent } = fakeFetch(
 			sse(
-				frame('step', { id: 'c1', title: 'Search the API', status: 'running' }),
-				frame('step', { id: 'c1', title: 'Search the API', status: 'done' }),
+				frame('step', { id: 'c1', title: 'Look up what the engine can do', status: 'running' }),
+				frame('step', { id: 'c1', title: 'Look up what the engine can do', status: 'done' }),
 				frame('plan', { entries: [{ status: 'now', title: 'Add the field' }] }),
 				frame('message', { text: 'Here is the change.' }),
 				frame('proposal', { id: 'c2', kind: 'api', operation_id: 'putSchema', method: 'PUT', path: '/api/admin/schemas/articles', body: { a: 1 }, effect: 'write' }),
@@ -82,7 +82,7 @@ describe('AssistantSession', () => {
 		await session.ask('Add an author field', page);
 		expect(session.status).toBe('idle');
 		expect(session.turns.map((t) => t.kind)).toEqual(['person', 'message', 'proposal']);
-		expect(session.steps).toEqual([{ id: 'c1', title: 'Search the API', status: 'done' }]);
+		expect(session.steps).toEqual([{ id: 'c1', title: 'Look up what the engine can do', status: 'done' }]);
 		expect(session.plan).toEqual([{ status: 'now', title: 'Add the field' }]);
 		expect(session.usage?.tokens_out).toBe(4);
 		await session.ask('And make it required', page);
