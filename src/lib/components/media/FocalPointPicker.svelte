@@ -74,7 +74,7 @@
 	{/if}
 	<button
 		type="button"
-		class="flex w-full justify-center overflow-hidden rounded-lg bg-surface-2/50 outline-none focus-visible:ring-2 focus-visible:ring-brand"
+		class="flex w-full justify-center overflow-hidden rounded-lg bg-surface-2/50 outline-none focus-visible:ring-2 focus-visible:ring-focus"
 		aria-label={placeLabel}
 		onclick={place}
 		onkeydown={nudge}

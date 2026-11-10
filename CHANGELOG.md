@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - The console moves to ui-kit 0.57.0. Focus rings and a focused field's border draw in the deeper brand color, the row the keyboard is on in a menu fills like a hovered row, the lists and calendars opened from a field draw a softer border, and scroll bars take the theme's colors.
+- The focus rings the console draws itself, on the dashboard and settings tiles, the flow editor, the media library and the rich text field, use the kit's focus color, so they match the kit's controls and follow a tenant's accent color. The flow editor's problems list draws the same soft border as the kit's menus.
 
 ## [0.28.0] - 2026-11-11
 

@@ -95,7 +95,7 @@
 				aria-label={title}
 				data-testid={id}
 				transition:motion.popover
-				class="absolute start-0 top-full z-dropdown mt-1 w-96 max-w-[calc(100vw-2rem)] origin-top-left overflow-hidden rounded-xl border border-line-strong bg-surface text-fg shadow-popover inset-shadow-highlight"
+				class="absolute start-0 top-full z-dropdown mt-1 w-96 max-w-[calc(100vw-2rem)] origin-top-left overflow-hidden rounded-xl border border-line bg-surface text-fg shadow-popover inset-shadow-highlight"
 			>
 				<p class="px-3 pb-1 pt-2.5 text-xs font-medium text-muted">{title}</p>
 				<ul class="flex max-h-panel-max flex-col gap-0.5 overflow-y-auto overscroll-contain px-1 pb-1">
@@ -103,7 +103,7 @@
 						<li class="flex items-center gap-1">
 							<button
 								type="button"
-								class="group flex min-w-0 flex-1 items-start gap-2 rounded-lg px-2 py-2 text-start outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+								class="group flex min-w-0 flex-1 items-start gap-2 rounded-lg px-2 py-2 text-start outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
 								data-problem={p.key}
 								onclick={() => jump(p)}
 							>

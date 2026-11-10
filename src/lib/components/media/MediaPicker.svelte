@@ -61,7 +61,7 @@
 						<li>
 							<button
 								type="button"
-								class="flex w-full flex-col gap-1 rounded-md border border-line-strong p-2 text-left transition-colors hover:border-brand focus-visible:ring-2 focus-visible:ring-brand outline-none"
+								class="flex w-full flex-col gap-1 rounded-md border border-line-strong p-2 text-left transition-colors hover:border-brand focus-visible:ring-2 focus-visible:ring-focus outline-none"
 								onclick={() => pick(choice)}
 								aria-label="Choose {choice.filename}"
 							>
