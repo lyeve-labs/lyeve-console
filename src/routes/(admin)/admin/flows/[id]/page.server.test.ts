@@ -49,7 +49,7 @@ const everything: Record<string, Route> = {
 	'/api/admin/flows/datasources': () => json({ data: [{ id: 'd1', name: 'warehouse', kind: 'postgres' }] }),
 	'/api/admin/flows/variables': () => json({ data: [{ key: 'region', value: 'eu', is_secret: false }] }),
 	'/api/admin/schemas': () =>
-		json([{ name: 'orders', display_name: 'Orders', fields: [{ name: 'total', field_type: 'number' }] }]),
+		json([{ name: 'orders', display_name: 'Orders', fields: [{ name: 'total', field_type: 'number' }, { name: 'notes', field_type: 'text', no_ai: true }] }]),
 	'/api/admin/flows/f1/runs': () => json({ data: [fixtureRun], total: 1 }),
 	'/api/admin/flows/f1/versions': () => json({ data: [{ flow_id: 'f1', version: 1, checksum: 'x', created_by: 'u1', created_at: '2026-09-01T00:00:00Z' }] }),
 	'/api/admin/flows/f1/publish': () => json({ ...fixtureFlow, status: 'active', version: 2 }),
@@ -127,7 +127,7 @@ describe('admin/flows/[id] load', () => {
 		expect(result.catalog.map((s: NodeSpec) => s.type)).toContain('data.join');
 		expect(result.datasources).toEqual([{ id: 'd1', name: 'warehouse', kind: 'postgres' }]);
 		expect(result.variables).toEqual(['region']);
-		expect(result.schemas).toEqual([{ name: 'orders', display_name: 'Orders', fields: ['total'] }]);
+		expect(result.schemas).toEqual([{ name: 'orders', display_name: 'Orders', fields: ['total', 'notes'], unfillable: { notes: 'is marked No AI' } }]);
 		expect(result.flows.map((f: FlowOption) => f.slug)).toEqual([fixtureFlow.slug, 'send-receipt']);
 		expect(calls.find((c) => c.url.includes('/api/admin/flows?'))?.url).toContain('status=active');
 		expect(result.eventTypes).toEqual(fixtureEventTypes);

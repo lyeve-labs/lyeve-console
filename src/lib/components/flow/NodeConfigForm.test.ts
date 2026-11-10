@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import NodeConfigForm from './NodeConfigForm.svelte';
 import { fixtureCatalog, fixtureEventTypes, fixtureFlowOptions, fixtureGroupedEventTypes } from '$lib/flow/fixtures';
+import type { JsonSchema, SchemaOption } from '$lib/flow/types';
 
 afterEach(cleanup);
 
@@ -348,5 +349,61 @@ describe('the datasource picker when the list is empty', () => {
 
 	it('says none exists when the read answered with none', () => {
 		expect(hintOf({ state: 'ok' })).toContain('No datasource of this kind yet. Type the name.');
+	});
+});
+
+describe('the fields list of the Fill fields with AI node', () => {
+	const fillSchema: JsonSchema = {
+		type: 'object',
+		properties: {
+			schema: { type: 'string', 'x-source': 'content-schemas' },
+			fields: { type: 'array', items: { type: 'string' }, 'x-source': 'content-fields' },
+		},
+		required: ['schema'],
+	};
+	const posts: SchemaOption[] = [
+		{
+			name: 'posts',
+			display_name: 'Posts',
+			fields: ['title', 'body', 'notes', 'author', 'cover', 'slug', 'published'],
+			unfillable: {
+				body: 'is marked No AI',
+				notes: 'is private',
+				author: 'is a relation field',
+				cover: 'is a media field',
+				slug: 'is a uid field',
+			},
+		},
+	];
+
+	function offered(): string[] {
+		return [...document.querySelectorAll('[role="option"]')].map((o) => o.textContent?.trim() ?? '');
+	}
+
+	it('offers only the fields the node can fill', async () => {
+		const { container } = render(NodeConfigForm, {
+			props: { schema: fillSchema, value: { schema: 'posts' }, schemas: posts, fillNode: true, onchange: vi.fn() },
+		});
+		await fireEvent.click(container.querySelector('#cfg-fields') as HTMLElement);
+		expect(offered()).toEqual(['title', 'published']);
+	});
+
+	it('keeps a saved field the node cannot fill, with the reason', () => {
+		const { container, getByText } = render(NodeConfigForm, {
+			props: { schema: fillSchema, value: { schema: 'posts', fields: ['title', 'body', 'id'] }, schemas: posts, fillNode: true, onchange: vi.fn() },
+		});
+		expect(getByText('body is marked No AI, so this node cannot fill it. Remove it from the list.')).toBeTruthy();
+		expect(getByText('id is set automatically, so this node cannot fill it. Remove it from the list.')).toBeTruthy();
+		expect(container.textContent).not.toContain('title is');
+	});
+
+	it('leaves the same list on another node as it was', async () => {
+		const { container, queryByText } = render(NodeConfigForm, {
+			props: { schema: fillSchema, value: { schema: 'posts', fields: ['body'] }, schemas: posts, onchange: vi.fn() },
+		});
+		expect(queryByText(/so this node cannot fill it/)).toBeNull();
+		await fireEvent.click(container.querySelector('#cfg-fields') as HTMLElement);
+		expect(offered()).toContain('author');
+		expect(offered()).toContain('created_at');
 	});
 });

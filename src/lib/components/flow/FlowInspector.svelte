@@ -13,6 +13,7 @@
 	import { isInlineDataSchema } from '$lib/flow/inline';
 	import { isEventTriggerSchema } from '$lib/flow/events';
 	import { flowEndpoints, slugError, type FlowEndpoint } from '$lib/flow/endpoints';
+	import { FILL_NODE } from '$lib/flow/fill';
 	import { ICON } from '$lib/icon';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import { GATE_OK, type Gate } from '$lib/api/gate';
@@ -226,6 +227,7 @@
 				{events}
 				{tables}
 				{onintrospect}
+				fillNode={node.type === FILL_NODE}
 				onchange={(config) => onchange(updateNode(definition, node.id, { config }))}
 			/>
 		{:else}
