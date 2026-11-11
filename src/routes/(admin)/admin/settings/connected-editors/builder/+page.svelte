@@ -256,7 +256,7 @@
 			</form>
 		</Card>
 		<Card>
-			<div class="flex flex-col items-start gap-6">
+			<div id="forms" class="flex flex-col items-start gap-6">
 				<SectionHeading level={3}>Where forms can send</SectionHeading>
 				{#if answer.presetApplied}
 					<Alert tone="success" autoDismiss>

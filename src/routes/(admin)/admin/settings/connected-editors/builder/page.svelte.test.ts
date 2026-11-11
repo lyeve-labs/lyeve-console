@@ -314,6 +314,13 @@ describe('where forms can send', () => {
 		expect(said()).toContain('Forms cannot send to Blog posts any more.');
 	});
 
+	it('carries the forms anchor a builder links to, on the card that offers the preset', () => {
+		render(Page, { props: props({ settings: { ok: true, value: NONE_ALLOWED }, formsPreset: PRESET }) });
+		const anchor = document.getElementById('forms');
+		expect(anchor?.textContent).toContain('Where forms can send');
+		expect(anchor?.querySelector('[data-testid="forms-preset"]')).not.toBeNull();
+	});
+
 	it('offers the forms preset while its submissions type is absent', () => {
 		render(Page, { props: props({ settings: { ok: true, value: NONE_ALLOWED }, formsPreset: PRESET }) });
 		const preset = document.querySelector('[data-testid="forms-preset"]');
