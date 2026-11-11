@@ -68,6 +68,15 @@ describe('MCP settings load', () => {
 		expect(out.endpoints).toEqual({ content: 'https://cms.example.com/api/v1/mcp', admin: 'https://cms.example.com/api/admin/mcp' });
 	});
 
+	it('reads the agent roles and the keep-out switch when the plugin sends them', async () => {
+		const { event } = loadEvent({
+			...READS,
+			'/api/admin/mcp/settings': () => json({ enabled: true, agent_roles: ['admin', 'editor'], keep_disconnected_out: false }),
+		});
+		const out = (await load(event)) as Loaded;
+		expect(out.settings).toEqual({ ok: true, value: { enabled: true, agentRoles: ['admin', 'editor'], keepDisconnectedOut: false } });
+	});
+
 	it('reads a limit of 0 as no limit, as the AI license sends it', async () => {
 		const { event } = loadEvent({ ...READS, '/api/admin/mcp/settings/agents': () => json({ limit: 0, agents: [AGENT, AGENT] }) });
 		const out = (await load(event)) as Loaded;
@@ -114,6 +123,62 @@ describe('MCP settings writes', () => {
 	it('names the roles the engine admits when it refuses the reader', async () => {
 		const { event } = actionEvent({ enabled: 'false' }, { '/api/admin/mcp/settings': () => json({ error: 'insufficient permissions', code: 'forbidden' }, 403) });
 		expect(await actions.toggle(event)).toMatchObject({ data: { error: 'Only an admin or a super admin can change this.' } });
+	});
+
+	it('saves the keep-out switch alone', async () => {
+		const answer = { enabled: true, agent_roles: ['admin'], keep_disconnected_out: false };
+		const { event, calls } = actionEvent({ keep_disconnected_out: 'false' }, { '/api/admin/mcp/settings': () => json(answer) });
+		expect(await actions.keepOut(event)).toEqual({
+			action: 'keepOut',
+			settings: { enabled: true, agentRoles: ['admin'], keepDisconnectedOut: false },
+		});
+		expect(calls).toEqual([{ method: 'PUT', path: '/api/admin/mcp/settings', body: { keep_disconnected_out: false } }]);
+	});
+
+	it('sends no keep-out save without a value to set', async () => {
+		const { event, calls } = actionEvent({}, {});
+		expect(await actions.keepOut(event)).toMatchObject({ status: 400, data: { error: 'This form is missing its setting. Reload the page and try again.' } });
+		expect(calls).toEqual([]);
+	});
+
+	it('saves the ticked roles alone', async () => {
+		const answer = { enabled: true, agent_roles: ['editor', 'admin'], keep_disconnected_out: true };
+		const { event, calls } = actionEvent({}, { '/api/admin/mcp/settings': () => json(answer) });
+		const form = new FormData();
+		form.append('agent_roles', 'editor');
+		form.append('agent_roles', 'admin');
+		const url = new URL('https://cms.example.com/admin/settings/mcp');
+		(event as { request: Request }).request = new Request(url, { method: 'POST', body: form });
+		expect(await actions.roles(event)).toMatchObject({ action: 'roles', settings: { agentRoles: ['editor', 'admin'] } });
+		expect(calls).toEqual([{ method: 'PUT', path: '/api/admin/mcp/settings', body: { agent_roles: ['editor', 'admin'] } }]);
+	});
+
+	it('saves an empty role list when no box is ticked', async () => {
+		const { event, calls } = actionEvent({}, { '/api/admin/mcp/settings': () => json({ enabled: true, agent_roles: [], keep_disconnected_out: true }) });
+		expect(await actions.roles(event)).toMatchObject({ action: 'roles', settings: { agentRoles: [] } });
+		expect(calls).toEqual([{ method: 'PUT', path: '/api/admin/mcp/settings', body: { agent_roles: [] } }]);
+	});
+
+	it('gives a failed role save its own sentence and never the engine text', async () => {
+		const { event } = actionEvent({}, { '/api/admin/mcp/settings': () => json({ error: 'pq: deadlock' }, 503) });
+		expect(await actions.roles(event)).toMatchObject({ data: { error: 'Could not save the roles. Try again.' } });
+	});
+
+	it('allows the named agent again', async () => {
+		const { event, calls } = actionEvent({ kind: 'api_key', credential: 'k1' }, { '/api/admin/mcp/settings/agents/': () => json(null, 204) });
+		expect(await actions.allow(event)).toEqual({ action: 'allow', allowed: 'k1' });
+		expect(calls).toEqual([{ method: 'POST', path: '/api/admin/mcp/settings/agents/api_key/k1/allow', body: {} }]);
+	});
+
+	it('says an agent already allowed is no longer disconnected', async () => {
+		const { event } = actionEvent({ kind: 'api_key', credential: 'k1' }, {});
+		expect(await actions.allow(event)).toMatchObject({ status: 404, data: { error: 'This agent is no longer disconnected.' } });
+	});
+
+	it('sends no allow without its agent', async () => {
+		const { event, calls } = actionEvent({}, {});
+		expect(await actions.allow(event)).toMatchObject({ status: 400, data: { error: 'This form is missing its agent. Reload the page and try again.' } });
+		expect(calls).toEqual([]);
 	});
 
 	it('disconnects the named agent', async () => {

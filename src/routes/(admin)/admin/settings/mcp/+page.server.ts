@@ -11,6 +11,7 @@ import { type Gate, section, type Section } from '$lib/api/gate';
 import { couldNotLoad } from '$lib/outage';
 import {
 	ADMIN_ENDPOINT,
+	allowMcpAgent,
 	CONTENT_ENDPOINT,
 	disconnectMcpAgent,
 	getMcpSettings,
@@ -69,17 +70,61 @@ export const actions: Actions = {
 			return fail(400, { action: 'toggle', error: 'This form is missing its setting. Reload the page and try again.' });
 		}
 		try {
-			const settings = await putMcpSettings(authedClient(event), raw === 'true');
+			const settings = await putMcpSettings(authedClient(event), { enabled: raw === 'true' });
 			return { action: 'toggle', settings };
 		} catch (err) {
 			return fail(400, { action: 'toggle', error: writeError(err, 'Could not save the setting. Try again.') });
 		}
 	},
 
+	keepOut: async (event) => {
+		const form = await event.request.formData();
+		const raw = String(form.get('keep_disconnected_out') ?? '');
+		if (raw !== 'true' && raw !== 'false') {
+			return fail(400, { action: 'keepOut', error: 'This form is missing its setting. Reload the page and try again.' });
+		}
+		try {
+			const settings = await putMcpSettings(authedClient(event), { keep_disconnected_out: raw === 'true' });
+			return { action: 'keepOut', settings };
+		} catch (err) {
+			return fail(400, { action: 'keepOut', error: writeError(err, 'Could not save the setting. Try again.') });
+		}
+	},
+
+	roles: async (event) => {
+		const form = await event.request.formData();
+		// No box ticked posts no role, which leaves new agents to a super admin.
+		const roles = form.getAll('agent_roles').map(String);
+		try {
+			const settings = await putMcpSettings(authedClient(event), { agent_roles: roles });
+			return { action: 'roles', settings };
+		} catch (err) {
+			return fail(400, { action: 'roles', error: writeError(err, 'Could not save the roles. Try again.') });
+		}
+	},
+
+	allow: async (event) => {
+		const form = await event.request.formData();
+		const kind = String(form.get('kind') ?? '');
+		const credential = String(form.get('credential') ?? '');
+		if (!kind || !credential) {
+			return fail(400, { action: 'allow', error: 'This form is missing its agent. Reload the page and try again.' });
+		}
+		try {
+			await allowMcpAgent(authedClient(event), kind, credential);
+		} catch (err) {
+			if (err instanceof ApiError && err.status === 404) {
+				return fail(404, { action: 'allow', error: 'This agent is no longer disconnected.' });
+			}
+			return fail(400, { action: 'allow', error: writeError(err, 'Could not allow the agent. Try again.') });
+		}
+		return { action: 'allow', allowed: credential };
+	},
+
 	disconnect: asked(
 		{
 			question: 'Disconnect this agent?',
-			detail: 'Its key or account still works, and its next call connects it again if there is room.',
+			detail: 'Its key or account still works outside the MCP server.',
 			label: 'Disconnect',
 		},
 		async (event) => {

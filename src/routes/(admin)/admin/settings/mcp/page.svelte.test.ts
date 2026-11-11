@@ -49,6 +49,56 @@ describe('MCP settings page', () => {
 		expect((getByLabelText('Admin API') as HTMLInputElement).value).toBe('https://cms.example.com/api/admin/mcp');
 	});
 
+	it('shows neither newer setting when the plugin sends neither', () => {
+		const { queryByLabelText, queryByTestId, queryByText } = setup();
+		expect(queryByLabelText('Keep disconnected agents out')).toBeNull();
+		expect(queryByTestId('mcp-keep-out-form')).toBeNull();
+		expect(queryByTestId('mcp-roles-form')).toBeNull();
+		expect(queryByText('Roles that can connect an agent')).toBeNull();
+	});
+
+	it('shows the keep-out switch, posting the opposite of its value', () => {
+		const { getByLabelText, getByTestId } = setup({ settings: { ok: true, value: { enabled: true, keepDisconnectedOut: true } } });
+		expect(getByLabelText('Keep disconnected agents out').getAttribute('aria-checked')).toBe('true');
+		const form = getByTestId('mcp-keep-out-form');
+		expect(form.getAttribute('action')).toBe('?/keepOut');
+		expect((form.querySelector('input[name="keep_disconnected_out"]') as HTMLInputElement).value).toBe('false');
+	});
+
+	it('offers the roles below super admin and any other role the setting names, with the saved ones ticked', () => {
+		const { getByTestId, getByText } = setup({ settings: { ok: true, value: { enabled: true, agentRoles: ['admin', 'author'] } } });
+		const form = getByTestId('mcp-roles-form');
+		expect(form.getAttribute('action')).toBe('?/roles');
+		expect(getByText('Roles that can connect an agent')).toBeTruthy();
+		const boxes = [...form.querySelectorAll('input[name="agent_roles"]')] as HTMLInputElement[];
+		expect(boxes.map((b) => b.value)).toEqual(['viewer', 'editor', 'admin', 'author']);
+		expect(boxes.filter((b) => b.checked).map((b) => b.value)).toEqual(['admin', 'author']);
+		expect(said(form)).toContain('A super admin always can');
+	});
+
+	it('shows a disconnected agent with when it was disconnected and an Allow for it, outside the limit', () => {
+		const out = { ...KEY_AGENT, disconnected_at: '2026-11-11T10:00:00Z' };
+		const { container, getByLabelText, queryByLabelText, getByTestId, queryByText } = setup({
+			agents: { ok: true, value: { limit: 1, upgradeUrl: '', agents: [out] } },
+		});
+		const row = container.querySelector('tbody tr') as HTMLElement;
+		expect(said(row)).toContain('Disconnected');
+		const form = getByLabelText('Allow API key 0b7f6c2e').closest('form') as HTMLFormElement;
+		expect(form.getAttribute('action')).toBe('?/allow');
+		expect((form.querySelector('input[name="credential"]') as HTMLInputElement).value).toBe(KEY_AGENT.credential_id);
+		expect(queryByLabelText('Disconnect API key 0b7f6c2e')).toBeNull();
+		expect(queryByText(CEILING)).toBeNull();
+		expect(getByTestId('mcp-agent-limit').textContent).toContain('You can connect 1 agent.');
+	});
+
+	it('shows no Allow for a connected agent', () => {
+		const { queryByLabelText, getByLabelText } = setup({
+			agents: { ok: true, value: { limit: 0, upgradeUrl: '', agents: [{ ...SESSION_AGENT, disconnected_at: null }] } },
+		});
+		expect(queryByLabelText('Allow grace@example.com')).toBeNull();
+		expect(getByLabelText('Disconnect grace@example.com')).toBeTruthy();
+	});
+
 	it('says how many agents can connect on the free tier while there is room', () => {
 		const { getByTestId, getByText, queryByText } = setup();
 		expect(getByTestId('mcp-agent-limit').textContent).toContain('You can connect 1 agent.');
