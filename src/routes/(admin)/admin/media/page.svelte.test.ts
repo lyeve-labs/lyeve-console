@@ -110,10 +110,18 @@ describe('media library views', () => {
 		expect(search.getAttribute('name')).toBe('q');
 	});
 
-	it('offers to clear an active search, and says when nothing matched', () => {
+	it('says when nothing matched, and leaves clearing the search to the field', () => {
 		setup([], { q: 'nothing' });
-		expect(screen.getByRole('link', { name: 'Clear' }).getAttribute('href')).toBe('/admin/media');
+		expect(screen.queryByRole('link', { name: 'Clear' })).toBeNull();
+		expect(screen.getByRole('button', { name: 'Clear search' })).toBeTruthy();
 		expect(screen.getByText('No files match')).toBeTruthy();
+	});
+
+	it('searches as you type, with no Search button', () => {
+		setup([], { q: '' });
+		const form = screen.getByLabelText('Search files').closest('form') as HTMLFormElement;
+		expect(form.querySelector('button[type="submit"]')).toBeNull();
+		expect(form.hasAttribute('data-sveltekit-keepfocus')).toBe(true);
 	});
 });
 

@@ -157,6 +157,39 @@ describe('SchemaEditor', () => {
 		expect(props.schema.fields[1].private).toBeUndefined();
 	});
 
+	it('marks a field No AI, and offers no No AI box on a system field', async () => {
+		const { props } = setup();
+		expect(screen.queryByRole('checkbox', { name: 'No AI, id' })).toBeNull();
+		const box = screen.getByRole('checkbox', { name: 'No AI, title' });
+		await fireEvent.click(box);
+		expect(props.schema.fields[1].no_ai).toBe(true);
+		await fireEvent.click(box);
+		expect(props.schema.fields[1].no_ai).toBeUndefined();
+	});
+
+	it('writes help text into the field, capped at 500 characters, and stores none when it is emptied', async () => {
+		const { props } = setup();
+		expect(screen.queryByRole('button', { name: 'Help text, id' })).toBeNull();
+		const toggle = screen.getByRole('button', { name: 'Help text, title' });
+		expect(toggle.getAttribute('aria-expanded')).toBe('false');
+		await fireEvent.click(toggle);
+		expect(toggle.getAttribute('aria-expanded')).toBe('true');
+		const input = screen.getByLabelText('Help text') as HTMLInputElement;
+		expect(input.maxLength).toBe(500);
+		await fireEvent.input(input, { target: { value: 'One sentence a reader understands.' } });
+		expect(props.schema.fields[1].help_text).toBe('One sentence a reader understands.');
+		await fireEvent.input(input, { target: { value: '' } });
+		expect(props.schema.fields[1].help_text).toBeUndefined();
+	});
+
+	it('shows the help text a saved field already has', async () => {
+		const schema = posts();
+		schema.fields[1].help_text = 'At most 120 characters.';
+		setup({ schema });
+		await fireEvent.click(screen.getByRole('button', { name: 'Help text, title' }));
+		expect((screen.getByLabelText('Help text') as HTMLInputElement).value).toBe('At most 120 characters.');
+	});
+
 	it('says a relation into a schema that is not public is not served on public delivery', () => {
 		const note = 'Public delivery does not serve this relation until Authors is public too.';
 		const withRelation = (): Schema => {
@@ -311,18 +344,54 @@ describe('SchemaEditor', () => {
 
 	it('shows a saved table its API, and its history to a super admin only', () => {
 		setup();
-		expect(screen.getByRole('button', { name: /This collection's API/ })).toBeTruthy();
-		expect(screen.queryByRole('button', { name: /History/ })).toBeNull();
+		expect(screen.getByRole('tab', { name: 'API' })).toBeTruthy();
+		expect(screen.queryByRole('tab', { name: /History/ })).toBeNull();
 		cleanup();
 		setup({ isSuperAdmin: true });
-		expect(screen.getByRole('button', { name: /History/ })).toBeTruthy();
+		expect(screen.getByRole('tab', { name: /History/ })).toBeTruthy();
+	});
+
+	it('reads the history when its tab is first chosen', async () => {
+		const { props } = setup({ isSuperAdmin: true });
+		const submit = vi.fn();
+		props.ddl.form = { requestSubmit: submit } as unknown as HTMLFormElement;
+		expect(submit).not.toHaveBeenCalled();
+		await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
+		expect(submit).toHaveBeenCalledTimes(1);
+		expect(screen.getByTestId('schema-history')).toBeTruthy();
+	});
+
+	it('stops asking for the history once another tab is chosen', async () => {
+		// The page keeps one history reader for every type it opens, so a reader
+		// left open would fetch each later type's history on its definition.
+		const { props } = setup({ isSuperAdmin: true });
+		await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
+		expect(props.ddl.open).toBe(true);
+		await fireEvent.click(screen.getByRole('tab', { name: 'Definition' }));
+		expect(props.ddl.open).toBe(false);
+	});
+
+	it('keeps the relation help on the Definition tab and the routes on the API tab', async () => {
+		setup();
+		expect(screen.getByRole('button', { name: /How relations work/ })).toBeTruthy();
+		expect(screen.queryByText(/^\/api\/v1\/content\/posts/)).toBeNull();
+		await fireEvent.click(screen.getByRole('tab', { name: 'API' }));
+		expect(screen.queryByRole('button', { name: /How relations work/ })).toBeNull();
+		expect(screen.getAllByText(/^\/api\/v1\/content\/posts/).length).toBeGreaterThan(0);
+	});
+
+	it('draws no tabs for a table that is not saved yet', () => {
+		setup({ saved: null, isNewSchema: true });
+		expect(screen.queryByRole('tablist')).toBeNull();
+		expect(screen.getByRole('button', { name: /How relations work/ })).toBeTruthy();
 	});
 
 	// The row shows a route and the button copies a curl command built from
 	// it, so the button's own words say what it copies, and its description
 	// names the route that sets it apart from the other rows.
-	it('says on each route row that its copy button copies a curl command', () => {
+	it('says on each route row that its copy button copies a curl command', async () => {
 		setup();
+		await fireEvent.click(screen.getByRole('tab', { name: 'API' }));
 		const copies = screen.getAllByRole('button', { name: 'curl' });
 		expect(copies.length).toBeGreaterThan(1);
 		for (const b of copies) expect(b.textContent).toContain('curl');
@@ -361,10 +430,10 @@ describe('SchemaEditor column headings', () => {
 		return [...row.children];
 	}
 
-	it('names every column a field row has, the translation and private boxes included', () => {
+	it('names every column a field row has, the translation, private and No AI boxes included', () => {
 		setup();
 		const names = [...header().children].map((c) => c.textContent?.trim()).filter(Boolean);
-		expect(names).toEqual(['Field', 'Type', 'Req', 'Idx', 'i18n', 'Private']);
+		expect(names).toEqual(['Field', 'Type', 'Req', 'Idx', 'i18n', 'Private', 'No AI']);
 	});
 
 	it('gives the headings, a system row and a field row the same columns', () => {

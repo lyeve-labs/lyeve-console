@@ -181,7 +181,11 @@ export const load: PageServerLoad = async (event) => {
 	}
 	const client = authedClient(event);
 	const read: Section<Schema[]> = await section(getSchemas(client), LIST_FAILED);
-	const typed = (url.searchParams.get('schema') ?? url.searchParams.get('q') ?? '').trim();
+	// The content type picker posts schema, and the index's search posts q.
+	// Only a pick opens a content type: the search runs as the reader types,
+	// so a half-typed word that matches one name must not open it.
+	const picked = (url.searchParams.get('schema') ?? '').trim();
+	const typed = (picked || url.searchParams.get('q') || '').trim();
 	const { sort, dir } = sortFromParams(url.searchParams);
 	const filter = filterFromParams(url.searchParams);
 	const { limit, offset } = pageWindow(url, DEFAULT_LIMIT, MAX_LIMIT);
@@ -210,7 +214,7 @@ export const load: PageServerLoad = async (event) => {
 	 * and "this tenant has exactly one collection" is a fact about the set and
 	 * not about the page on screen. Only the list that renders is bounded.
 	 */
-	const target = resolveSchema(all, typed);
+	const target = resolveSchema(all, picked);
 	if (target) {
 		redirect(302, `/admin/content/${encodeURIComponent(target.name)}`);
 	}

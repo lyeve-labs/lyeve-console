@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import FlowInspector from './FlowInspector.svelte';
 import { fixtureCatalog, fixtureEventTypes, fixtureGroupedEventTypes, fixtureSchemas, joinFlow, withLocked } from '$lib/flow/fixtures';
 import type { ValidationError } from '$lib/api/flows';
-import type { Selection } from '$lib/flow/types';
+import type { NodeSpec, SchemaOption, Selection } from '$lib/flow/types';
 
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/flows/f1') } }));
 
@@ -404,5 +404,42 @@ describe('FlowInspector names that could not be read', () => {
 	it('draws no variables row beside the datasources when the variables were refused', () => {
 		const { container } = flowView({ datasources: [{ id: 'd1', name: 'warehouse', kind: 'postgres' }], variablesGate: { state: 'forbidden' } });
 		expect(Array.from(container.querySelectorAll('dt')).map((dt) => dt.textContent)).toEqual(['Datasources']);
+	});
+});
+
+describe('FlowInspector and the Fill fields with AI node', () => {
+	it('offers the node only the fields it can fill', async () => {
+		const fill: NodeSpec = {
+			type: 'content.fill',
+			category: 'data',
+			label: 'Fill fields with AI',
+			description: 'Fills the fields of a content type from the source.',
+			inputs: [{ name: 'in' }],
+			outputs: [{ name: 'out' }],
+			config_schema: {
+				type: 'object',
+				properties: {
+					schema: { type: 'string', 'x-source': 'content-schemas' },
+					fields: { type: 'array', items: { type: 'string' }, 'x-source': 'content-fields' },
+				},
+				required: ['schema'],
+			},
+			example: { schema: 'posts' },
+			side_effects: false,
+			trigger: false,
+		};
+		const definition = {
+			...joinFlow,
+			nodes: [...joinFlow.nodes, { id: 'fill', type: 'content.fill', name: 'Fill', position: { x: 0, y: 0 }, config: { schema: 'posts' } }],
+		};
+		const schemas: SchemaOption[] = [
+			{ name: 'posts', display_name: 'Posts', fields: ['title', 'body', 'author'], unfillable: { body: 'is marked No AI', author: 'is a relation field' } },
+		];
+		const { container } = render(FlowInspector, {
+			props: { definition, catalog: [...fixtureCatalog, fill], selected: { kind: 'node', id: 'fill' }, schemas, onchange: vi.fn(), onselect: vi.fn() },
+		});
+		await fireEvent.click(container.querySelector('#node-fill-fields') as HTMLElement);
+		const offered = [...document.querySelectorAll('[role="option"]')].map((o) => o.textContent?.trim());
+		expect(offered).toEqual(['title']);
 	});
 });

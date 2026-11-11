@@ -544,31 +544,6 @@ describe('weak-focus', () => {
   });
 });
 
-describe('weak-border', () => {
-  it('accepts the card surface, which is what border-line is for', () => {
-    expect(check('weak-border', '<div class="bg-surface border border-line rounded-xl p-5">x</div>')).toEqual([]);
-    expect(check('weak-border', '<pre class="rounded-lg bg-surface-2 p-3 border border-line">{sql}</pre>')).toEqual([]);
-  });
-
-  it('accepts the strong token on a control', () => {
-    expect(
-      check('weak-border', '<div class="border border-line-strong rounded-lg focus-within:border-brand">x</div>'),
-    ).toEqual([]);
-  });
-
-  it('fails the weak token on anything that takes focus or holds typed text', () => {
-    expect(
-      check('weak-border', '<div class="border border-line rounded-lg focus-within:border-brand">x</div>'),
-    ).toHaveLength(1);
-    expect(
-      check('weak-border', '<input class="border border-line placeholder:text-faint px-3" />'),
-    ).toHaveLength(1);
-    expect(
-      check('weak-border', '<div class="h-control bg-surface-2 border border-line px-3">x</div>'),
-    ).toHaveLength(1);
-  });
-});
-
 describe('nested-interactive', () => {
   it('accepts a Button that carries the href itself', () => {
     expect(

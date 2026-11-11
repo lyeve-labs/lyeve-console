@@ -4,6 +4,34 @@ All notable changes to this project are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Versions are listed newest first.
 
+## [0.28.0] - 2026-11-11
+
+### Added
+
+- The Goroutine engine tab shows a super admin how the engine uses its CPU, memory and database: the CPU threads, the soft memory limit, the GC target and the database pool, each with where its value came from. Where tuning is enabled, the values can be changed, started from a one-server or several-replica preset, and checked against recommendations for the machine and the database. On an engine that does not serve these settings, the panel says they are not included in this build.
+- Each field in the schema builder takes help text and a No AI mark. The entry form shows a field's help text under it, and the assistant never reads or fills a field marked No AI or private. A relation picker shows you each entry's name, and the assistant reads a name only from a field the related content type leaves unmarked, or a short id.
+- An assistant panel opens from the header on every console page, for every signed-in role. It reads the page and the open form, offers values for the form as suggestions you accept or reject, and shows any other change in full, which runs only when you run it, with your own session.
+- The AI settings page has the tenant's switch for the assistant, on by default.
+
+### Changed
+
+- The Goroutine engine tab says tuning changes reach every replica and stay after a restart, as they do on an engine that serves the runtime settings.
+- A saved content type in the schema builder opens on tabs named Definition, API and History, with History for a super admin only. Its routes and its history sat in disclosures under the whole field list. A new content type has only its definition and shows no tabs. The History tab counts the changes waiting in its queue, and the history is read only while that tab is shown.
+- The API key drawers lay out the hourly, daily and monthly request limits as one captioned row once the drawer is wide enough, and stack them below that, under a hint that says 0 means no limit and that a key over a limit gets a 429 with a Retry-After header until its hour, day or month ends in UTC.
+- The console moves to ui-kit 0.58.0. Every button variant is one height at each size, and a medium button lines up with a text field. A list or calendar opened from a field stays inside the visible area and inside a panel's scrollbar, a segmented control in a narrow panel stacks its options instead of breaking a label across lines, and a number field's stepper at its bound keeps its frame. Focus rings and a focused field's border draw in the deeper brand color, the row the keyboard is on in a menu fills like a hovered row, the lists and calendars opened from a field draw a softer border, and scroll bars take the theme's colors. Secondary and outline buttons and select fields draw the same soft border as cards, and a select's border firms under the pointer.
+- The focus rings the console draws itself, on the dashboard and settings tiles, the flow editor, the media library and the rich text field, use the kit's focus color, so they match the kit's controls and follow a tenant's accent color. The flow editor's problems list draws the same soft border as the kit's menus.
+- The searches on the flows, flow variables, media, logs, content types and audit log lists, and the subject filter on AI transcripts, run as you type once you pause, and Enter still searches at once. The field keeps focus while the list changes, and its own clear button shows every row again. The Search buttons and the Clear links beside the field are gone. Where a list has filters beside the search, each one applies as you change it, and a list that matches nothing offers Clear filters.
+- Searching the content types list narrows it and no longer opens a content type whose name the search matches. The content type picker on an entry list still opens one by name.
+- The console moves to ui-kit 0.59.0, then 0.60.0 and 0.60.1. Every text field, select, date and time field, number field and search box rests on the same soft border as a card, firms under the pointer and turns to the focus color when focused, and a field focused through a part inside it keeps its focus border under the pointer. The chosen option of a segmented control is a brand-tinted fill with brand text, on a soft track. The rich text field and the code editor's line numbers follow the same borders. An empty checkbox, radio or toggle rests on a softer border that firms under the pointer, and a selected option card keeps its tint without a brand border. A focused field shows focus by its border alone in the focus color, with no second line inside it, and the rich text field and the code editor do the same. A field in error keeps its red border and marks focus with a red line inside it.
+- The flow canvas and the schema canvas draw a keyboard focus ring around a node, a table and the canvas itself in the same focus color as the rest of the console, in place of the brighter brand color. The zoom controls, the minimap, a selected connection's delete control and the schema canvas toolbar rest on the softer border that cards use.
+
+### Fixed
+
+- The schema builder no longer scrolls the whole page, which slid its toolbar under the top bar. The labels kept for screen readers stay inside the editor's own scrolling area.
+- The schema builder's field rows split by the width of the editor rather than the window, so a row in a narrow editor beside an open list no longer breaks apart.
+- The flow editor's inspector keeps its header readable at every width. The side effects badge moved beside the node type, so the node's name no longer wraps word by word at the inspector's narrowest and the header stays inside its box.
+- The flow editor offers only the fields the Fill fields with AI step can fill, so a flow no longer saves with a field the step refuses when it runs. A field an existing flow lists that the step cannot fill is marked as a problem, with a sentence that says why.
+
 ## [0.27.0] - 2026-11-11
 
 ### Added

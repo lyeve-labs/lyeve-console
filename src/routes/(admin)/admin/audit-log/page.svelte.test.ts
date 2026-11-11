@@ -362,3 +362,27 @@ describe('Audit log empty page under a count', () => {
 		expect(container.textContent).toContain('No audit entries yet');
 	});
 });
+
+// The search runs as it is typed and each filter applies as it changes, so the
+// row holds no button. A reset beside the field would narrow it when it
+// appeared, so clearing every filter is offered where nothing matched.
+describe('Audit log filter row', () => {
+	it('has no Search button and no Clear beside the search', () => {
+		const { container, queryByRole } = render(AuditLogPage, {
+			props: { data: data({ filter: { q: 'admin', action: 'create.content', from: '', to: '' } }) as never, form: null as never },
+		});
+		const form = container.querySelector('#audit-search')?.closest('form') as HTMLFormElement;
+		expect(form.querySelector('button[type="submit"]')).toBeNull();
+		expect(queryByRole('link', { name: 'Clear' })).toBeNull();
+	});
+
+	it('offers to clear the filters when nothing matches them', () => {
+		const { getByRole } = render(AuditLogPage, {
+			props: {
+				data: data({ entries: [], total: 0, filter: { q: 'admin', action: '', from: '', to: '' } }) as never,
+				form: null as never,
+			},
+		});
+		expect(getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/audit-log');
+	});
+});

@@ -282,7 +282,7 @@
 								<td data-cell="nowrap">
 									<button
 										type="button"
-										class="relative -my-1 py-1 flex w-full items-center gap-2 hit-area text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+										class="relative -my-1 py-1 flex w-full items-center gap-2 hit-area text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
 										aria-expanded={open}
 										aria-controls="rules-{role}"
 										onclick={() => toggleRole(role)}

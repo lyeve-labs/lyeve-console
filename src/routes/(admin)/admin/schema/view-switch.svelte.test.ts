@@ -50,12 +50,16 @@ async function pickType(field: string, type: string) {
 	await fireEvent.click(screen.getByRole('option', { name: type }));
 }
 
-function survived() {
+// The History tab is left chosen, so each side checks it first, then reads
+// the edits on the Definition tab and goes back to History for the next.
+async function survived() {
+	expect(screen.getByRole('tab', { name: /History/ }).getAttribute('aria-selected')).toBe('true');
+	await fireEvent.click(screen.getByRole('tab', { name: 'Definition' }));
 	expect((screen.getByLabelText('Display name') as HTMLInputElement).value).toBe('Articles');
 	expect(screen.getByText(/No longer translated per locale\./)).toBeTruthy();
 	expect((screen.getByRole('button', { name: 'Undo' }) as HTMLButtonElement).disabled).toBe(false);
 	expect(screen.getByTestId('schema-status').textContent).toContain('Unsaved changes');
-	expect(screen.getByRole('button', { name: /History/ }).getAttribute('aria-expanded')).toBe('true');
+	await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
 }
 
 describe('schema builder view switch', () => {
@@ -65,22 +69,22 @@ describe('schema builder view switch', () => {
 
 		await fireEvent.input(screen.getByLabelText('Display name'), { target: { value: 'Articles' } });
 		await pickType('title', 'number');
-		await fireEvent.click(screen.getByRole('button', { name: /History/ }));
-		survived();
+		await fireEvent.click(screen.getByRole('tab', { name: /History/ }));
+		await survived();
 
 		// The editor is drawn again inside the canvas panel.
 		await fireEvent.click(screen.getByRole('radio', { name: 'Canvas' }));
 		expect(screen.getByTestId('schema-canvas-panel')).toBeTruthy();
-		survived();
+		await survived();
 
 		await fireEvent.click(screen.getByRole('radio', { name: 'List' }));
 		expect(screen.queryByTestId('schema-canvas-panel')).toBeNull();
-		survived();
+		await survived();
 
 		// A load that reruns, as after a preset, replaces the list and not the edit.
 		await rerender({ data: data([{ name: 'tags', display_name: 'Tags', fields: [] }]), form: null });
 		expect(screen.getByRole('button', { name: 'Tags' })).toBeTruthy();
-		survived();
+		await survived();
 		// One case walks the whole round trip, so it gets more than the default
 		// five seconds. Alone it takes under one, but a full suite on a loaded
 		// machine has pushed it past the default.

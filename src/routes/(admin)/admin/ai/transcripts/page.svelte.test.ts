@@ -45,12 +45,18 @@ describe('AI transcripts page', () => {
 		expect(row.querySelector('a')?.getAttribute('href')).toBe(`/admin/ai/transcripts/${fixtureTranscript.id}`);
 	});
 
-	it('keeps the filters in the form and offers Clear once one is set', () => {
-		const { container, getByText } = setup({ kind: 'node', subjectId: 'flow-1' });
+	it('keeps the filters in the form and offers to clear them when nothing matches', () => {
+		const { container, getByText, getByRole } = setup({ kind: 'node', subjectId: 'flow-1' });
 		expect((container.querySelector('input[name="subject_id"]') as HTMLInputElement).value).toBe('flow-1');
 		expect((container.querySelector('input[name="kind"]') as HTMLInputElement).value).toBe('node');
-		expect(getByText('Clear').closest('a')?.getAttribute('href')).toBe('/admin/ai/transcripts');
+		expect(getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/ai/transcripts');
 		expect(getByText('No transcripts match')).toBeTruthy();
+	});
+
+	it('leaves the subject field one width whether or not a filter is set', () => {
+		const { container } = setup({ kind: 'node', subjectId: 'flow-1' });
+		const row = container.querySelector('input[name="subject_id"]')?.closest('[data-slot="search"]');
+		expect(row?.querySelector('a')).toBeNull();
 	});
 
 	it('warns when transcript storage is off for the tenant', () => {

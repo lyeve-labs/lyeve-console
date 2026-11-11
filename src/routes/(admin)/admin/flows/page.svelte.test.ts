@@ -188,7 +188,18 @@ describe('flows list page', () => {
 		expect((form.querySelector('input[name="status"]') as HTMLInputElement).value).toBe('active');
 		expect((form.querySelector('input[name="q"]') as HTMLInputElement).value).toBe('orders');
 		expect(getByRole('link', { name: 'Active' }).getAttribute('aria-current')).toBe('page');
-		expect((getByRole('link', { name: 'Clear' }) as HTMLAnchorElement).getAttribute('href')).toBe('/admin/flows');
+	});
+
+	it('has no Search button and no Clear link beside the search', () => {
+		const { getByTestId, queryByRole } = setup({ status: 'active', q: 'orders', flows: [fixtureFlow] });
+		const form = getByTestId('flow-filters');
+		expect(form.querySelector('button[type="submit"]')).toBeNull();
+		expect(queryByRole('link', { name: 'Clear' })).toBeNull();
+	});
+
+	it('offers to clear the filters when nothing matches', () => {
+		const { getByRole } = setup({ status: 'active', q: 'orders' });
+		expect(getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/flows');
 	});
 
 	it('links each status with the search kept, so one click lands on it', () => {
@@ -371,4 +382,78 @@ describe('flow name link', () => {
 		expect(link.className).toContain('relative');
 		expect(link.className).toContain('hit-area');
 	});
+
+	describe('search as you type', () => {
+		let submit: ReturnType<typeof vi.spyOn>;
+		beforeEach(() => {
+			vi.useFakeTimers();
+			submit = vi.spyOn(HTMLFormElement.prototype, 'requestSubmit').mockImplementation(function (this: HTMLFormElement) {
+				this.dispatchEvent(new Event('submit', { cancelable: true }));
+			});
+		});
+		afterEach(() => {
+			submit.mockRestore();
+			vi.useRealTimers();
+		});
+
+		const field = (container: HTMLElement) => container.querySelector('input[name="q"]') as HTMLInputElement;
+		const type = async (input: HTMLInputElement, value: string) => {
+			input.value = value;
+			await fireEvent.input(input);
+		};
+
+		it('loads once typing pauses, keeping focus, the history entry and the scroll', async () => {
+			const { container, getByTestId } = setup({ flows: [fixtureFlow] });
+			const form = getByTestId('flow-filters');
+			expect(form.hasAttribute('data-sveltekit-keepfocus')).toBe(true);
+			expect(form.hasAttribute('data-sveltekit-replacestate')).toBe(true);
+			expect(form.hasAttribute('data-sveltekit-noscroll')).toBe(true);
+			await type(field(container), 'o');
+			await type(field(container), 'or');
+			await vi.advanceTimersByTimeAsync(299);
+			expect(submit).not.toHaveBeenCalled();
+			await vi.advanceTimersByTimeAsync(1);
+			expect(submit).toHaveBeenCalledTimes(1);
+		});
+
+		it('loads nothing for the query already on screen', async () => {
+			const { container } = setup({ q: 'orders', flows: [fixtureFlow] });
+			await type(field(container), 'orders ');
+			await vi.advanceTimersByTimeAsync(300);
+			expect(submit).not.toHaveBeenCalled();
+		});
+
+		it('loads the empty query at once when the field is cleared, and keeps focus in it', async () => {
+			const { container, getByRole } = setup({ q: 'orders', flows: [fixtureFlow] });
+			await fireEvent.click(getByRole('button', { name: 'Clear search' }));
+			await vi.advanceTimersByTimeAsync(0);
+			expect(submit).toHaveBeenCalledTimes(1);
+			expect(field(container).value).toBe('');
+			expect(document.activeElement).toBe(field(container));
+		});
+
+		it('drops the wait when Enter submits', async () => {
+			const { container, getByTestId } = setup({ flows: [fixtureFlow] });
+			await type(field(container), 'ord');
+			await fireEvent.submit(getByTestId('flow-filters'));
+			await vi.advanceTimersByTimeAsync(300);
+			expect(submit).not.toHaveBeenCalled();
+		});
+
+		it('keeps what was typed while its own load ran, and follows a load from elsewhere', async () => {
+			const view = setup({ flows: [fixtureFlow] });
+			await type(field(view.container), 'ord');
+			await vi.advanceTimersByTimeAsync(300);
+			await type(field(view.container), 'orde');
+			const data = (q: string) => ({
+				flows: [fixtureFlow], limit: 50, offset: 0, total: null, hasMore: false, status: '', q,
+				locked: false, gate: { state: 'ok' }, user: { roles: ['admin'] }, entitlements: licensed,
+			});
+			await view.rerender({ data: data('ord'), form: null } as never);
+			expect(field(view.container).value).toBe('orde');
+			await view.rerender({ data: data('sync'), form: null } as never);
+			expect(field(view.container).value).toBe('sync');
+		});
+	});
 });
+

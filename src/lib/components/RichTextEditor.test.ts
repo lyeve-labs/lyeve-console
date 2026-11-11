@@ -26,6 +26,27 @@ describe('RichTextEditor', () => {
 		expect(getByLabelText('Underline')).toBeTruthy();
 	});
 
+	// The frame is focused through the editable part inside it, so its hover
+	// border yields to the focus border instead of repainting it gray.
+	it('rests the frame on the field border and keeps its focus border under the pointer', () => {
+		const { getByLabelText } = render(RichTextEditor, { props: { value: '' } });
+		const classes = getByLabelText('Undo').parentElement!.parentElement!.className.split(/\s+/);
+		expect(classes).toContain('border-line');
+		expect(classes).toContain('hover:not-focus-within:border-line-strong');
+		expect(classes).toContain('focus-within:border-focus');
+		expect(classes).not.toContain('border-line-strong');
+	});
+
+	// A kit field shows focus by its border alone, in the focus color. The
+	// frame does the same for the editable part inside it, with no outline or
+	// ring beside the border.
+	it('draws a focused editor as its border alone in the focus color', () => {
+		const { getByLabelText } = render(RichTextEditor, { props: { value: '' } });
+		const classes = getByLabelText('Undo').parentElement!.parentElement!.className.split(/\s+/);
+		expect(classes).toContain('focus-within:border-focus');
+		expect(classes.filter((c) => /outline|ring/.test(c))).toEqual([]);
+	});
+
 	it('renders undo and redo controls', () => {
 		const { getByLabelText } = render(RichTextEditor, { props: { value: '' } });
 		expect(getByLabelText('Undo')).toBeTruthy();

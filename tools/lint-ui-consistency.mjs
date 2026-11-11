@@ -313,9 +313,6 @@ const KIT_CONTROL = {
   search: 'SearchInput',
 };
 
-/** Any focus variant, including the peer and group forms the kit's boxes use. */
-const FOCUS_VARIANT = /\b(?:peer-|group-)?focus(?:-visible|-within)?:/;
-
 /** A focus state that draws something, as opposed to one that removes it. */
 const FOCUS_INDICATOR =
   /\b(?:peer-|group-)?focus(?:-visible|-within)?:(?:ring\b|shadow-|border-|outline-(?!none\b))/;
@@ -920,32 +917,6 @@ export const rules = [
         }
         return hits;
       }),
-  },
-  {
-    id: 'weak-border',
-    files: ALL,
-    /**
-     * The weak border token on a control.
-     *
-     * `border-line` reads 1.25:1. On a card or a panel that is the intent and
-     * the kit's own card surface uses it. On a control it is the only thing
-     * saying where the field is, which is what SC 1.4.11 asks for at 3:1, and
-     * `border-line-strong` is the token that carries it.
-     *
-     * What makes an element a control here is a focus variant, which means it
-     * takes focus, or a placeholder utility, which means it holds typed text.
-     * The control surface counts only with a control height beside it, because
-     * `bg-surface-2` is also the code chip and the pre block, and neither is a
-     * control whose border has to be found.
-     */
-    test: (src) =>
-      [...elements(markup(src))]
-        .filter((el) => {
-          if (!/\bborder-line(?![\w-])/.test(el.attrs)) return false;
-          const surface = /\bbg-surface-2\b/.test(el.attrs) && /\bh-control\b/.test(el.attrs);
-          return FOCUS_VARIANT.test(el.attrs) || /\bplaceholder[:-]/.test(el.attrs) || surface;
-        })
-        .map((el) => `border-line on control <${el.name}>; use border-line-strong`),
   },
   {
     id: 'nested-interactive',

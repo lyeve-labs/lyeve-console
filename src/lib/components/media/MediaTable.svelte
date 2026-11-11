@@ -36,7 +36,7 @@
 					     the touch hit area drawn around it too. -->
 					<button
 						type="button"
-						class="relative hit-area max-w-full text-left text-fg outline-none transition-colors hover:text-brand focus-visible:ring-2 focus-visible:ring-brand"
+						class="relative hit-area max-w-full text-left text-fg outline-none transition-colors hover:text-brand focus-visible:ring-2 focus-visible:ring-focus"
 						onclick={() => onselect(item)}
 					>
 						<span class="block truncate">{item.filename}</span>

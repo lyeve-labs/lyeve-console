@@ -16,10 +16,10 @@ export type HistorySource = {
 
 /**
  * The table's history: what each save ran and what it queued. Read when
- * the section is opened, so opening a schema costs no extra request.
+ * the History tab is first shown, so opening a schema costs no extra request.
  *
  * The page owns the two hidden forms that read and apply it, and the editor
- * draws the section. Both hold this one object, so the section keeps its
+ * draws the tab. Both hold this one object, so the section keeps its
  * state when the editor moves between the list and the canvas.
  *
  * Construct it while a component initializes: it registers its effects there.

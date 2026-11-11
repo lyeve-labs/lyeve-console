@@ -16,8 +16,8 @@
 	import MediaPicker from './media/MediaPicker.svelte';
 	import type { MediaChoice } from '$lib/api/media';
 	import { formatCount } from '$lib/format';
+	import { registerOptionLabels } from '$lib/assistant/option-labels';
 
-	type InputEv = Event & { currentTarget: HTMLInputElement };
 	type TextareaEv = Event & { currentTarget: HTMLTextAreaElement };
 
 	let {
@@ -26,6 +26,7 @@
 		relationItems = [],
 		relationTotal = undefined,
 		relationFailed = false,
+		relationAssistantLabels = undefined,
 		mediaChoices = [],
 		id,
 		error,
@@ -38,6 +39,8 @@
 		relationTotal?: number;
 		/** The related schema could not be read, so the picker has nothing to offer. */
 		relationFailed?: boolean;
+		/** The name an assistant reads for each related entry, by id, in place of the one shown. */
+		relationAssistantLabels?: Record<string, string>;
 		/** Published library files, offered by a media field's picker. Null when the library could not be read. */
 		mediaChoices?: MediaChoice[] | null;
 		/**
@@ -56,10 +59,39 @@
 		errorKey?: string;
 	} = $props();
 
+	/*
+	 * Every control that posts a value carries the field's name, so the
+	 * FormAssist around the form can describe and fill it, and a field marked
+	 * No AI or private is withheld there. The help text is the control's hint:
+	 * the editor reads it under the field and the assistant follows it.
+	 */
+	const name = $derived(field.name);
+	const noAI = $derived(field.no_ai === true || field.private === true);
+	const help = $derived(field.help_text?.trim() || undefined);
+
+	/** The help text, then the hint the control has of its own. */
+	function withHelp(own?: string): string | undefined {
+		return [help, own].filter(Boolean).join(' ') || undefined;
+	}
+
+	const text = {
+		get: () => String(value ?? ''),
+		set: (next: string) => {
+			value = next;
+		},
+	};
+
 	// A relation option's name, resolved the same way a listing row's is.
 	let relationOptions = $derived(
 		relationItems.map((item) => ({ value: item.id, label: entryLabel(item) })),
 	);
+
+	// The person reads each entry by its name. When that name may be a value
+	// the related type keeps from the assistant, the assistant reads another.
+	$effect(() => {
+		if (!relationAssistantLabels) return;
+		return registerOptionLabels(name, new Map(Object.entries(relationAssistantLabels)));
+	});
 
 	// The picker is one page of the related collection. Past that page it
 	// cannot find an entry, and it says so rather than reading as the whole set.
@@ -118,7 +150,7 @@
 </script>
 
 {#if field.field_type === 'rich_text'}
-	<RichTextEditor bind:value={value as string} required={field.required} {id} label={field.name} />
+	<RichTextEditor bind:value={value as string} required={field.required} {id} label={field.name} {name} hint={help} {noAI} />
 	{#if error}
 		<!-- TipTap edits a contenteditable div and takes no describedby of its
 		     own, so this paragraph carries the id the control would point at. -->
@@ -133,11 +165,13 @@
 	<Checkbox
 		{id}
 		{error}
-		checked={Boolean(value)}
+		{name}
+		{noAI}
+		hint={help}
+		bind:checked={() => Boolean(value), (checked: boolean) => { value = checked; }}
 		label={field.name}
 		labelHidden
 		required={field.required}
-		onchange={(checked: boolean) => { value = checked; }}
 	/>
 
 {:else if field.field_type === 'json'}
@@ -145,6 +179,9 @@
 		{id}
 		{error}
 		{errorKey}
+		{name}
+		hint={help}
+		{noAI}
 		bind:value={() => jsonText, (next: string) => { value = next; }}
 		required={field.required}
 	/>
@@ -179,13 +216,14 @@
 			<MultiSelect
 				{id}
 				{error}
-				value={selectedIds}
+				{name}
+				{noAI}
+				bind:value={() => selectedIds, (ids: string[]) => { value = ids; }}
 				options={relationOptions}
 				placeholder="Select {field.relation_to ?? 'entries'}"
-				hint={relationCutNote}
+				hint={withHelp(relationCutNote)}
 				searchable
 				required={field.required}
-				onchange={(ids: string[]) => { value = ids; }}
 			/>
 		{:else if relationTotal === 0}
 			<p class="text-xs text-faint">
@@ -202,26 +240,28 @@
 		<Autocomplete
 			{id}
 			{error}
-			value={String(value ?? '')}
+			{name}
+			{noAI}
+			bind:value={() => String(value ?? ''), (next: string) => { value = next || null; }}
 			options={relationOptions}
 			placeholder="Search {field.relation_to ?? 'entries'}"
-			hint={relationCutNote}
+			hint={withHelp(relationCutNote)}
 			required={field.required}
-			onchange={(next: string) => { value = next || null; }}
 		/>
 	{:else}
 		<Input
 			{id}
 			{error}
+			{name}
+			{noAI}
 			type="text"
-			value={String(value ?? '')}
-			oninput={(e: InputEv) => { value = e.currentTarget.value; }}
+			bind:value={text.get, text.set}
 			placeholder="UUID"
-			hint={relationFailed
+			hint={withHelp(relationFailed
 				? `Could not load the entries in ${field.relation_to}. Enter an ID by hand, or reload the page to try again.`
 				: relationTotal === 0
 					? `${field.relation_to} has no entries yet. Enter an ID by hand.`
-					: `Enter the ID of an entry in ${field.relation_to}.`}
+					: `Enter the ID of an entry in ${field.relation_to}.`)}
 			required={field.required}
 		/>
 	{/if}
@@ -230,9 +270,11 @@
 	<NumberInput
 		{id}
 		{error}
-		value={numberValue}
+		{name}
+		{noAI}
+		hint={help}
+		bind:value={() => numberValue, (next: number) => { value = next; }}
 		required={field.required}
-		onchange={(next: number) => { value = next; }}
 	/>
 
 {:else if field.field_type === 'integer'}
@@ -244,8 +286,10 @@
 		{error}
 		type="text"
 		inputmode="numeric"
-		value={String(value ?? '')}
-		oninput={(e: InputEv) => { value = e.currentTarget.value; }}
+		{name}
+		{noAI}
+		hint={help}
+		bind:value={text.get, text.set}
 		required={field.required}
 		autocomplete="off"
 	/>
@@ -259,8 +303,10 @@
 		{error}
 		type="text"
 		inputmode="decimal"
-		value={String(value ?? '')}
-		oninput={(e: InputEv) => { value = e.currentTarget.value; }}
+		{name}
+		{noAI}
+		hint={help}
+		bind:value={text.get, text.set}
 		placeholder={decimalExample(field)}
 		required={field.required}
 		autocomplete="off"
@@ -270,19 +316,23 @@
 	<DatePicker
 		{id}
 		{error}
-		value={String(value ?? '')}
+		{name}
+		{noAI}
+		hint={help}
+		bind:value={() => String(value ?? ''), (next: string) => { value = next || null; }}
 		required={field.required}
-		onchange={(next: string) => { value = next || null; }}
 	/>
 
 {:else if field.field_type === 'datetime'}
 	<DateTimePicker
 		{id}
 		{error}
-		value={dateTimeValue}
+		{name}
+		{noAI}
+		hint={help}
+		bind:value={() => dateTimeValue, (next: string) => { value = next || null; }}
 		seconds={dateTimeSeconds}
 		required={field.required}
-		onchange={(next: string) => { value = next || null; }}
 	/>
 
 {:else if field.field_type === 'email'}
@@ -290,8 +340,10 @@
 		{id}
 		{error}
 		type="email"
-		value={String(value ?? '')}
-		oninput={(e: InputEv) => { value = e.currentTarget.value; }}
+		{name}
+		{noAI}
+		hint={help}
+		bind:value={text.get, text.set}
 		placeholder="user@example.com"
 		required={field.required}
 		autocomplete="off"
@@ -302,8 +354,10 @@
 		{id}
 		{error}
 		type="url"
-		value={String(value ?? '')}
-		oninput={(e: InputEv) => { value = e.currentTarget.value; }}
+		{name}
+		{noAI}
+		hint={help}
+		bind:value={text.get, text.set}
 		placeholder="https://"
 		required={field.required}
 		autocomplete="off"
@@ -316,10 +370,11 @@
 		<Input
 			{id}
 			{error}
-			value={String(value ?? '')}
-			oninput={(e: InputEv) => { value = e.currentTarget.value; }}
+			{name}
+			{noAI}
+			bind:value={text.get, text.set}
 			placeholder="/api/v1/media/... or https://example.com/image.jpg"
-			hint="Choose a published file from the library, or enter the URL of a file hosted elsewhere."
+			hint={withHelp('Choose a published file from the library, or enter the URL of a file hosted elsewhere.')}
 			required={field.required}
 			autocomplete="off"
 		/>
@@ -349,8 +404,10 @@
 		{id}
 		{error}
 		type="text"
-		value={String(value ?? '')}
-		oninput={(e: InputEv) => { value = e.currentTarget.value; }}
+		{name}
+		{noAI}
+		hint={help}
+		bind:value={text.get, text.set}
 		required={field.required}
 		autocomplete="off"
 	/>

@@ -94,7 +94,7 @@
 							<li>
 								<Tooltip text={hint(s)} position="right" class="w-full">
 									<div
-										class="flex w-full cursor-grab items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+										class="flex w-full cursor-grab items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
 										draggable="true"
 										role="button"
 										tabindex="0"

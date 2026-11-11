@@ -105,12 +105,17 @@
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
 			bind:this={wrapper}
-			class="flex min-w-64 flex-1 basis-64 items-start rounded-lg"
+			class="group flex min-w-64 flex-1 basis-64 items-start rounded-lg"
 			onkeydowncapture={onKeyDown}
 			onscrollcapture={onScroll}
 		>
+			<!-- The gutter is the left part of the field's frame, so its border
+			     follows the textarea's at rest, under the pointer and on focus.
+			     A textarea in error keeps its red border and marks focus with a
+			     1px ring inside it, so the gutter's ::after repeats that ring
+			     along its side. -->
 			<div
-				class="shrink-0 select-none overflow-hidden rounded-l-lg border border-r-0 border-line-strong bg-surface-2 py-2 pl-2 pr-1.5 text-right font-mono text-sm leading-5 text-faint tabular-nums"
+				class="relative shrink-0 select-none overflow-hidden rounded-l-lg border border-r-0 bg-surface-2 py-2 pl-2 pr-1.5 text-right font-mono text-sm leading-5 text-faint tabular-nums transition-colors after:pointer-events-none after:absolute after:inset-0 after:rounded-l-[7px] after:border after:border-r-0 after:border-transparent {error ? 'border-danger group-has-[textarea:focus-visible]:after:border-danger' : 'border-line group-has-[textarea:hover:not(:focus)]:border-line-strong group-has-[textarea:focus]:border-focus'}"
 				style="height:{rows * 20 + 18}px"
 				aria-hidden="true"
 				data-testid="code-gutter"

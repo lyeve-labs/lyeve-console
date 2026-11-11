@@ -17,7 +17,9 @@ import {
 } from '$lib/api/goroutine-engine';
 import { forbiddenText } from '$lib/api/gate';
 import { refusalOf } from '$lib/api/refusal';
-import { actionError } from '$lib/server/action-error';
+import { RUNTIME_FORBIDDEN, parseRuntimeForm, positiveInt, putRuntimeSettings, readRuntime } from '$lib/api/runtime-settings';
+import { conflictText, invalidText } from '$lib/api/runtime-words';
+import { actionError, actionFailure } from '$lib/server/action-error';
 import { authedClient, requireRole } from '$lib/server/authz';
 
 const READERS = ['admin', 'super_admin'];
@@ -43,13 +45,28 @@ export const load: PageServerLoad = async (event) => {
 		error(403, forbiddenText('this page', READERS));
 	}
 
-	const views = await readGoroutineEngine(authedClient(event));
+	const client = authedClient(event);
+	const superAdmin = user.roles.includes('super_admin');
+
+	// The replica count and the database cores a reader typed refine the
+	// recommendations, and as query parameters they survive a reload.
+	const inputs = {
+		replicas: positiveInt(event.url.searchParams.get('replicas')),
+		database_cores: positiveInt(event.url.searchParams.get('database_cores')),
+	};
+
+	const [views, runtimeRead] = await Promise.all([
+		readGoroutineEngine(client),
+		// Both runtime reads are for a super admin alone, so no other role makes them.
+		superAdmin ? readRuntime(client, inputs) : RUNTIME_FORBIDDEN,
+	]);
 	const goroutineEngine: GoroutineEnginePanel = {
 		...views,
 		byOwner: byOwnerRows(views.snapshot),
-		superAdmin: user.roles.includes('super_admin'),
+		superAdmin,
 	};
-	return { goroutineEngine };
+	const runtime = { ...runtimeRead, inputs, superAdmin };
+	return { goroutineEngine, runtime };
 };
 
 /**
@@ -80,7 +97,50 @@ async function saveTunable<T>(
 	}
 }
 
+/**
+ * A refused runtime write. A 409, a 422 and a 400 naming an unknown field
+ * are worded from their code and params, never from the route's English.
+ * Everything else goes through actionFailure: a 402 travels as the license
+ * refusal, another 4xx relays the engine's own sentence only when it carries
+ * an error code, and anything past a 4xx makes no claim about whether the
+ * change landed.
+ */
+function runtimeFailure(err: unknown) {
+	const form = 'runtime' as const;
+	if (err instanceof ApiError && err.status === 409) {
+		return fail(409, { form, error: conflictText(err.body) });
+	}
+	if (err instanceof ApiError) {
+		const invalid = invalidText(err.status, err.body);
+		if (invalid !== null) return fail(err.status, { form, error: invalid });
+	}
+	const failed =
+		err instanceof ApiError && err.status >= 400 && err.status < 500
+			? actionFailure(err, 'Could not save the runtime settings. Try again.', err.status)
+			: actionFailure(err, 'Check whether your change was saved, then try again.');
+	return fail(failed.status, { ...failed.data, form });
+}
+
 export const actions: Actions = {
+	runtime: async (event) => {
+		await requireRole(event, ['super_admin']);
+		const parsed = parseRuntimeForm(await event.request.formData());
+		if ('error' in parsed) {
+			// A value the form refuses is shown on its own field.
+			if (parsed.field) return fail(422, { form: 'runtime' as const, fields: { [parsed.field]: parsed.error } });
+			return fail(422, { form: 'runtime' as const, error: parsed.error });
+		}
+		try {
+			const view = await putRuntimeSettings(authedClient(event), parsed.body);
+			// The engine's warning is a caution about the pool's share of the
+			// database's connections. Only whether it came travels, so the
+			// panel words it in the console's own sentence.
+			return { form: 'runtime' as const, saved: true, stored: view.stored !== false, poolWarning: Boolean(view.warning) };
+		} catch (err) {
+			return runtimeFailure(err);
+		}
+	},
+
 	pool: async (event) => {
 		await requireRole(event, ['super_admin']);
 		const parsed = parsePoolForm(await event.request.formData());

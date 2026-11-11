@@ -1,10 +1,14 @@
+<script lang="ts" module>
+	export type EditorTab = 'definition' | 'api' | 'history';
+</script>
+
 <script lang="ts">
-	import { Alert, Badge, Button, Checkbox, Collapsible, CopyButton, Input, NumberInput, SectionHeading, SegmentedControl, Select, type SelectOption } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Button, Checkbox, Collapsible, CopyButton, Input, NumberInput, SectionHeading, SegmentedControl, Select, Tabs, type SelectOption } from '@lyeve-labs/ui-kit';
 	import type { FieldType, Schema, SchemaField, TransportMode, TransportName } from '@lyeve-labs/client';
 	import { dndzone, type DndEvent } from 'svelte-dnd-action';
 	import { tick } from 'svelte';
 	import type { Action } from 'svelte/action';
-	import { BookOpen, Code, GripVertical, Link2, Pencil, Plus, RefreshCw, Trash2, TriangleAlert } from '@lucide/svelte';
+	import { BookOpen, ChevronDown, GripVertical, Link2, Pencil, Plus, RefreshCw, Trash2, TriangleAlert } from '@lucide/svelte';
 	import { collectionRoutes } from '$lib/api/collection-api';
 	import { curlFor } from '$lib/api/request-preview';
 	import { RELATION_KINDS, planRelation, planSchemaRelations, tableName, type RelationType } from '$lib/relations';
@@ -38,6 +42,7 @@
 		isSuperAdmin,
 		ddl,
 		onrename,
+		tab = $bindable('definition'),
 	}: {
 		schema: Schema;
 		localizedCleared: Record<string, string>;
@@ -54,7 +59,33 @@
 		isSuperAdmin: boolean;
 		ddl: DdlHistory;
 		onrename: () => void;
+		/** The tab on screen. The page holds it, so it outlives a switch between the list and the canvas. */
+		tab?: EditorTab;
 	} = $props();
+
+	/**
+	 * A saved table has an API and, for a super admin, a history, each a tab
+	 * beside its definition. A new one has only the definition, so it draws no
+	 * strip. A tab that is not offered falls back to the definition.
+	 */
+	const tabItems = $derived<{ id: EditorTab; label: string; count?: number }[]>(
+		saved
+			? [
+					{ id: 'definition', label: 'Definition' },
+					{ id: 'api', label: 'API' },
+					...(isSuperAdmin ? [{ id: 'history' as const, label: 'History', count: ddl.view?.pending || undefined }] : []),
+				]
+			: []
+	);
+	const activeTab = $derived<EditorTab>(tabItems.some((t) => t.id === tab) ? tab : 'definition');
+	const tabbed = $derived(tabItems.length > 0);
+
+	function chooseTab(id: string) {
+		tab = id as EditorTab;
+		// The history is read while its tab is shown, not when the table opens,
+		// so a type opened later on its definition costs no request.
+		ddl.open = tab === 'history';
+	}
 
 	type SystemColumn = 'with_created_at' | 'with_updated_at' | 'with_soft_delete' | 'with_localization';
 
@@ -294,6 +325,12 @@
 		return target.display_name || target.name;
 	}
 
+	/** The schema plugin refuses longer help text. */
+	const HELP_TEXT_MAX = 500;
+
+	/** Which rows show their help text band, by row id. */
+	let helpOpen = $state<Record<string, boolean>>({});
+
 	let topSysFields = $derived(schema.fields.filter((f) => f.system && !isTimestamp(f)));
 	let userFields = $derived(schema.fields.filter((f) => !f.system));
 	let bottomSysFields = $derived(schema.fields.filter((f) => f.system && isTimestamp(f)));
@@ -314,6 +351,8 @@
 		<span class="hidden w-10 shrink-0 @xl:block"></span>
 		<span class="hidden w-10 shrink-0 @xl:block"></span>
 		<span class="hidden w-14 shrink-0 @xl:block"></span>
+		<span class="hidden w-12 shrink-0 @xl:block"></span>
+		<span class="hidden w-8 shrink-0 @xl:block"></span>
 		<span class="hidden w-8 shrink-0 @xl:block"></span>
 	</div>
 {/snippet}
@@ -332,12 +371,19 @@
 		<span class="hidden w-10 shrink-0 @xl:block"></span>
 		<span class="hidden w-10 shrink-0 @xl:block"></span>
 		<span class="hidden w-14 shrink-0 @xl:block"></span>
+		<span class="hidden w-12 shrink-0 @xl:block"></span>
+		<span class="hidden w-8 shrink-0 @xl:block"></span>
 		<span class="hidden w-8 shrink-0 @xl:block"></span>
 	</div>
 {/snippet}
 
-<div class="min-h-0 min-w-0 flex-1 overflow-auto p-6">
-<div class="flex flex-col gap-4">
+<!-- Positioned, so the absolutely placed sr-only labels inside it scroll here
+     instead of stretching the shell's scroll range below the editor. -->
+<div class="relative min-h-0 min-w-0 flex-1 overflow-auto p-6">
+<!-- The editor sits beside the list in a wide column and in a panel as narrow
+     as 420px on the canvas, so its rows split by its own width, not the
+     window's. -->
+<div class="@container flex flex-col gap-4">
 	<!-- The live region is mounted whether or not there is a message in
 	     it. Alert carries role="alert", but an element inserted into the
 	     page at the moment of the failure is announced inconsistently.
@@ -360,9 +406,17 @@
 	</div>
 
 
+	<!-- Under the live region, so a failed save shows whichever tab is open. -->
+	{#if tabbed}
+		<Tabs items={tabItems} active={activeTab} onchange={chooseTab} />
+	{/if}
+
+	{#if activeTab === 'definition'}
+	<!-- The kit's tabs carry no ids, so each panel names itself. -->
+	<div class="flex min-w-0 flex-col gap-4" role={tabbed ? 'tabpanel' : undefined} aria-label={tabbed ? 'Definition' : undefined}>
 	<fieldset disabled={!canWrite} class="flex min-w-0 flex-col gap-4">
 	<legend class="sr-only">Definition of {schema.display_name || schema.name || 'the new schema'}</legend>
-	<div class="grid min-w-0 gap-3 sm:grid-cols-2">
+	<div class="grid min-w-0 gap-3 @xl:grid-cols-2">
 		<Input
 			id="schema-display-name"
 			label="Display name"
@@ -529,6 +583,8 @@
 		<span class="w-10 shrink-0 text-center">Idx</span>
 		<span class="w-10 shrink-0 text-center" title="Translated per locale">i18n</span>
 		<span class="w-14 shrink-0 text-center" title="Never served on public delivery">Private</span>
+		<span class="w-12 shrink-0 text-center" title="Never read or filled by the assistant">No AI</span>
+		<span class="w-8 shrink-0"></span>
 		<span class="w-8 shrink-0"></span>
 	</div>
 
@@ -631,6 +687,28 @@
 							onchange={(checked) => (field.private = checked || undefined)}
 						/>
 					</div>
+					<!-- Kept from the assistant. Unchecked stores no mark, as Private does. -->
+					<div class="flex shrink-0 items-center gap-1.5 @xl:w-12 @xl:justify-center" title="Never read or filled by the assistant">
+						<span class="text-xs text-faint @xl:hidden" aria-hidden="true">No AI</span>
+						<Checkbox
+							size="sm"
+							label="No AI, {fieldLabel(field)}"
+							labelHidden
+							checked={field.no_ai === true}
+							onchange={(checked) => (field.no_ai = checked || undefined)}
+						/>
+					</div>
+					<button
+						type="button"
+						onclick={() => (helpOpen[rowId] = !helpOpen[rowId])}
+						aria-expanded={helpOpen[rowId] === true}
+						aria-controls="help-band-{rowId}"
+						aria-label="Help text, {fieldLabel(field)}"
+						title={field.help_text ? 'Help text set' : 'Add help text'}
+						class="relative hit-area flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-surface-2 hover:text-fg {field.help_text ? 'text-brand' : 'text-faint'}"
+					>
+						<ChevronDown size={ICON.sm} class="transition-transform duration-base {helpOpen[rowId] ? 'rotate-180' : ''}" />
+					</button>
 					{#if canWrite}
 					<button
 						type="button"
@@ -646,6 +724,23 @@
 					{/if}
 				</div>
 			</div>
+
+			{#if helpOpen[rowId]}
+				<!-- Its own band under the row, as the relation's is: on the row's
+				     line a sentence-long input has no room to be read. -->
+				<div id="help-band-{rowId}" class="border-t border-line/60 bg-surface/60 p-3" use:keysStayInRow>
+					<Input
+						id="help-text-{rowId}"
+						name="help-text-{rowId}"
+						label="Help text"
+						hint="Shown under the field to editors and followed by the assistant, up to 500 characters."
+						maxlength={HELP_TEXT_MAX}
+						autocomplete="off"
+						value={field.help_text ?? ''}
+						oninput={(e: Event & { currentTarget: HTMLInputElement }) => (field.help_text = e.currentTarget.value || undefined)}
+					/>
+				</div>
+			{/if}
 
 			{#if localizedCleared[rowId] && localizableProblem(field) !== null}
 				<p id="localized-note-{rowId}" class="px-3 pb-3 text-xs text-muted">
@@ -680,7 +775,7 @@
 							error={problemAt(`relation-type-${rowId}`)}
 						/>
 					</div>
-					<div class="grid gap-3 sm:grid-cols-2">
+					<div class="grid gap-3 @xl:grid-cols-2">
 						<Select
 							id="relation-target-{rowId}"
 							label="Target schema"
@@ -755,7 +850,7 @@
 				     under the row, as a relation's settings do. An absent value
 				     is the engine's default, which is what each box shows. -->
 				<div
-					class="grid gap-3 border-t border-line/60 bg-surface/60 p-3 sm:grid-cols-2"
+					class="grid gap-3 border-t border-line/60 bg-surface/60 p-3 @xl:grid-cols-2"
 					data-testid="decimal-panel-{rowId}"
 					use:keysStayInRow
 				>
@@ -882,42 +977,41 @@
 	</div>
 </Collapsible>
 
-{#if saved}
-	<Collapsible label="This collection's API" icon={Code}>
-		<div class="space-y-3 text-sm text-muted">
-			<p>
-				The content API serves this collection at its machine name. Reads need a
-				bearer token. Writes need the editor, admin or super_admin role. See the
-				<a href="/admin/api-reference" class="text-brand hover:underline">API reference</a>
-				for every parameter.
-			</p>
-			<ul class="space-y-2">
-				{#each collectionRoutes(schema.name) as route (route.method + route.path)}
-					{@const preview = curlFor(route)}
-					<li class="rounded-lg border border-line bg-surface p-3">
-						<div class="flex flex-wrap items-center gap-2">
-							<Badge tone={methodTone(route.method)} class="font-mono">{route.method}</Badge>
-							<code class="min-w-0 flex-1 truncate font-mono text-xs text-fg">{route.path}</code>
-							<span class="text-xs text-faint">{route.summary}</span>
-							<!-- The words say what is copied. Every row's button reads the same,
-							     so the tooltip names the route and becomes its description. -->
-							<CopyButton
-								value={preview}
-								text="curl"
-								title="Copy a curl request for {route.method} {route.path}"
-								size={ICON.xs}
-								class="shrink-0"
-							/>
-						</div>
-					</li>
-				{/each}
-			</ul>
-		</div>
-	</Collapsible>
-
-	{#if isSuperAdmin}
+	</div>
+	{:else if activeTab === 'api' && saved}
+	<div class="flex min-w-0 flex-col gap-3 text-sm text-muted" role="tabpanel" aria-label="API">
+		<p>
+			Read and write this content type's entries through these routes. Reads need a bearer token. Writes need the
+			editor, admin or super admin role. See the
+			<a href="/admin/api-reference" class="text-brand hover:underline">API reference</a>
+			for every parameter.
+		</p>
+		<ul class="space-y-2">
+			{#each collectionRoutes(schema.name) as route (route.method + route.path)}
+				{@const preview = curlFor(route)}
+				<li class="rounded-lg border border-line bg-surface p-3">
+					<div class="flex flex-wrap items-center gap-2">
+						<Badge tone={methodTone(route.method)} class="font-mono">{route.method}</Badge>
+						<code class="min-w-0 flex-1 truncate font-mono text-xs text-fg">{route.path}</code>
+						<span class="text-xs text-faint">{route.summary}</span>
+						<!-- The words say what is copied. Every row's button reads the same,
+						     so the tooltip names the route and becomes its description. -->
+						<CopyButton
+							value={preview}
+							text="curl"
+							title="Copy a curl request for {route.method} {route.path}"
+							size={ICON.xs}
+							class="shrink-0"
+						/>
+					</div>
+				</li>
+			{/each}
+		</ul>
+	</div>
+	{:else if activeTab === 'history' && saved && isSuperAdmin}
+	<div class="min-w-0" role="tabpanel" aria-label="History">
 		<SchemaHistory {ddl} />
+	</div>
 	{/if}
-{/if}
 </div>
 </div>

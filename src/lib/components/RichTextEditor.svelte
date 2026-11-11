@@ -9,14 +9,18 @@
 		Link, Unlink,
 		Undo2, Redo2,
 	} from '@lucide/svelte';
-	import { Button, Input, closeDialog, dismissDialog, openDialog } from '@lyeve-labs/ui-kit';
+	import { Button, Input, assistField, closeDialog, dismissDialog, openDialog } from '@lyeve-labs/ui-kit';
 	import { ICON } from '$lib/icon';
+	import AssistChoice from './AssistChoice.svelte';
 
 	let {
 		value = $bindable(''),
 		required = false,
 		id,
 		label,
+		name,
+		hint,
+		noAI = false,
 	}: {
 		value?: string;
 		required?: boolean;
@@ -27,7 +31,42 @@
 		 * control. The name is carried here instead.
 		 */
 		label?: string;
+		/** The key a FormAssist knows the field by. Without one the editor does not register. */
+		name?: string;
+		/** A sentence under the editor, which the assistant also follows. */
+		hint?: string;
+		/** Keeps the document from an assistant: it is never reported or filled. */
+		noAI?: boolean;
 	} = $props();
+
+	// The kit's controls register themselves, and this editor is not one of
+	// them. A suggestion is HTML, written into `value`, which the effect
+	// below hands to the editor.
+	const assist = assistField({
+		get name() {
+			return name;
+		},
+		get label() {
+			return label;
+		},
+		get hint() {
+			return hint;
+		},
+		kind: 'multiline',
+		get required() {
+			return required;
+		},
+		get noAI() {
+			return noAI;
+		},
+		get value() {
+			return value ?? '';
+		},
+		set value(v) {
+			value = v as string;
+		},
+	});
+	const hintId = $derived(id ? `${id}-hint` : undefined);
 
 	let editorEl: HTMLDivElement;
 	let editor = $state<Editor | null>(null);
@@ -175,8 +214,12 @@
 	<Button size="sm" onclick={() => closeDialog(true)}>Save</Button>
 {/snippet}
 
+<AssistChoice field={assist} />
+<!-- The editable part takes focus inside the frame, so the frame's border
+     turns the focus color through focus-within, the 1px edge a kit field
+     draws on focus. -->
 <div
-	class="border border-line-strong rounded-lg overflow-hidden focus-within:border-brand transition-colors"
+	class="border rounded-lg overflow-hidden focus-within:border-focus transition-colors {assist.suggested ? 'border-violet' : 'border-line hover:not-focus-within:border-line-strong'}"
 >
 	<div class="flex flex-wrap items-center gap-0.5 px-2 py-1.5 bg-surface border-b border-line select-none">
 
@@ -292,6 +335,10 @@
 		aria-multiline="true"
 		aria-label={label}
 		aria-required={required ? 'true' : undefined}
+		aria-describedby={hint ? hintId : undefined}
 		class="rte bg-surface-2 text-fg text-sm min-h-40"
 	></div>
 </div>
+{#if hint}
+	<p id={hintId} class="text-xs text-muted">{hint}</p>
+{/if}

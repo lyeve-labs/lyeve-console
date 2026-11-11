@@ -15,9 +15,11 @@
 	import { relativeTime, formatDateTime } from '$lib/format';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
+	import { liveFilter } from '$lib/live-filter.svelte';
 	
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+	const live = liveFilter(() => data.q);
 
 	// The shell shows why the page is unavailable while the flow plugin does
 	// not run. A plugin that runs and refuses its routes is said here.
@@ -113,17 +115,20 @@
 		{#if data.gate.state === 'ok' && (data.total > 0 || data.q)}
 			<!-- A GET form, so the search lives in the address and the pager
 			     keeps it. -->
-			<form method="GET" data-testid="variable-filters">
+			<form method="GET" data-testid="variable-filters" {@attach live.form}>
 				{#if fromFlow}<input type="hidden" name="flow" value={fromFlow} />{/if}
 				<ListToolbar label="Filter variables">
 					{#snippet search()}
 						<div class="flex items-center gap-2">
 							<label for="variable-search" class="sr-only">Search variables</label>
-							<SearchInput id="variable-search" name="q" value={data.q} placeholder="Key or value" class="min-w-0 flex-1" />
-							<Button type="submit" variant="secondary">Search</Button>
-							{#if data.q}
-								<Button variant="ghost" href="/admin/flows/variables">Clear</Button>
-							{/if}
+							<SearchInput
+								id="variable-search"
+								name="q"
+								bind:value={live.value}
+								oninput={live.input}
+								placeholder="Key or value"
+								class="min-w-0 flex-1"
+							/>
 						</div>
 					{/snippet}
 				</ListToolbar>

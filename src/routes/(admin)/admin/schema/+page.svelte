@@ -57,7 +57,7 @@
 	import ImportDrawer from './parts/ImportDrawer.svelte';
 	import PresetsDrawer from './parts/PresetsDrawer.svelte';
 	import RenameModal from './parts/RenameModal.svelte';
-	import SchemaEditor from './parts/SchemaEditor.svelte';
+	import SchemaEditor, { type EditorTab } from './parts/SchemaEditor.svelte';
 	import SchemaRail from './parts/SchemaRail.svelte';
 	import { DdlHistory } from './parts/ddl-history.svelte';
 	import { addField, addRelation } from './parts/schema-fields';
@@ -154,6 +154,8 @@
 	const dirty = $derived(selected !== null && (saved === null || canonical(selected) !== canonical(saved)));
 
 	let view = $state<'list' | 'canvas'>('list');
+	/** The editor's tab, held here so a switch between the list and the canvas keeps it. */
+	let editorTab = $state<EditorTab>('definition');
 
 	/**
 	 * Below lg the list sits above the editor, so once a schema is open it
@@ -216,6 +218,9 @@
 
 	/** Opens a schema, and a saved copy of it for dirty and for what a save changes. */
 	function open(s: Schema | null, asSaved = true) {
+		// Another type, or a new one once it is saved, opens on its definition.
+		// The same type opened again after a save keeps the tab it was on.
+		if (s?.name !== saved?.name) editorTab = 'definition';
 		selected = s ? cloneSchema(s) : null;
 		saved = s && asSaved ? JSON.parse(JSON.stringify(selected)) : null;
 		saveError = '';
@@ -261,8 +266,13 @@
 	 * Takes the reader to the control that fixes a problem. On the canvas the
 	 * editor is the panel beside the diagram, which may be folded to its
 	 * strip, so it is opened first and the schema's node brought into view.
+	 * Every problem sits on the editor's Definition tab, so that tab is shown.
 	 */
 	async function focusProblem(target: string) {
+		if (editorTab !== 'definition') {
+			editorTab = 'definition';
+			await tick();
+		}
 		if (view === 'canvas') {
 			canvasPanelOpen = true;
 			if (saved?.name) schemaCanvas?.reveal(saved.name);
@@ -565,6 +575,7 @@
 			{problems}
 			{isSuperAdmin}
 			{ddl}
+			bind:tab={editorTab}
 			onrename={() => renameModal?.show()}
 		/>
 	{/if}
@@ -804,7 +815,10 @@
 										const s = schemas.find((x) => x.name === name);
 										if (!s) return;
 										await selectSchema(s);
-										if (saved?.name === name && selected) addField(selected);
+										if (saved?.name === name && selected) {
+											addField(selected);
+											editorTab = 'definition';
+										}
 									}
 								: undefined}
 							onrelate={canWrite
@@ -812,7 +826,10 @@
 										const s = schemas.find((x) => x.name === from);
 										if (!s) return;
 										await selectSchema(s);
-										if (saved?.name === from && selected) addRelation(selected, to ?? undefined);
+										if (saved?.name === from && selected) {
+											addRelation(selected, to ?? undefined);
+											editorTab = 'definition';
+										}
 									}
 								: undefined}
 						/>

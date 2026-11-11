@@ -280,6 +280,7 @@
 							relations={data.relations}
 							mediaChoices={data.mediaChoices}
 							error={translationError || reviewError || commentError || releaseError || revisionError ? null : form?.error}
+							label="{schemaLabel} entry"
 						/>
 					</div>
 				</Card>
@@ -341,7 +342,7 @@
 								<button
 									type="button"
 									class="w-full rounded text-left outline-none focus-visible:ring-2
-										focus-visible:ring-brand"
+										focus-visible:ring-focus"
 									onclick={() => (selectedRev = selectedRev === rev.id ? null : rev.id)}
 								>
 									<span class="block text-xs text-fg">{formatDateTime(rev.created_at)}</span>
