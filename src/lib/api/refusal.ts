@@ -82,13 +82,24 @@ export function refusalOf(err: unknown): Refusal | null {
 }
 
 /**
+ * The caps whose last segment alone would not name the thing the reader
+ * manages on the screen that meets them.
+ */
+const CAP_NOUNS: Readonly<Record<string, string>> = {
+	[ADMIN_SEATS_CAP]: 'admin seats',
+	'ai.providers': 'AI providers',
+	'mcp.agents': 'connected agents',
+};
+
+/**
  * What a cap counts, in the words of a sentence. The engine names a cap as
  * dotted segments ending in what it counts, so the last segment is the noun
  * and any cap renders without the admin knowing it in advance. A cap with no
  * usable segment reads as "items".
  */
 export function capNoun(cap: string): string {
-	if (cap === ADMIN_SEATS_CAP) return 'admin seats';
+	const named = CAP_NOUNS[cap];
+	if (named) return named;
 	const last = cap.split('.').pop() ?? '';
 	const noun = last.replace(/[_-]+/g, ' ').trim().replace(/\s+/g, ' ');
 	return noun || 'items';

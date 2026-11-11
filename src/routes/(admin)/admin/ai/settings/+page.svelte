@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { Alert, Badge, Card, DescriptionList, PageShell, Panel, SectionHeading, Toggle } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Card, DescriptionList, Input, PageShell, Panel, SectionHeading, Toggle } from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import AiSection from '$lib/components/ai/AiSection.svelte';
 	import SettingRow from '$lib/components/SettingRow.svelte';
 	import { GATE_OK } from '$lib/api/gate';
+	import { retentionDays } from '$lib/api/ai';
 	import { formatDateTime } from '$lib/format';
 	import { couldNotLoad } from '$lib/outage';
 
@@ -22,6 +23,11 @@
 	const assistantOn = $derived(settings?.assistant_enabled !== false);
 
 	const retention = $derived(data.instance.find((s) => s.key === 'ai_transcript_retention'));
+	// The window the plugin applies now. Without the AI license it is fixed,
+	// whatever the configuration says, so the configuration is not offered.
+	const fixedRetention = $derived(
+		settings?.transcript_retention && !settings.transcript_retention.editable ? settings.transcript_retention : null,
+	);
 	const instanceTranscripts = $derived(data.instance.find((s) => s.key === 'ai_transcripts_enabled'));
 </script>
 
@@ -100,40 +106,53 @@
 			<section class="flex flex-col gap-4">
 				<SectionHeading level={2}>Retention</SectionHeading>
 				<Card>
-					<div class="flex flex-col gap-4">
-						<p class="text-sm text-muted">
-							Retention applies to the whole engine, not one tenant. Every hour, transcripts older than the retention
-							window are deleted on every tenant. The minimum is 1h and the default is 720h (30 days).
-						</p>
-						{#if data.instanceReadable && retention && instanceTranscripts}
-							<DescriptionList
-								items={[
-									{ term: 'Retention', value: `${retention.value} (${retention.source})` },
-									{ term: 'Engine transcript switch', value: `${instanceTranscripts.value} (${instanceTranscripts.source})` },
-								]}
-							/>
-						{/if}
-						{#if data.isSuperAdmin && retention?.editable}
-							<SettingRow
-								id="retention"
-								name="ai_transcript_retention"
+					{#if fixedRetention}
+						<div data-testid="retention-fixed">
+							<Input
+								id="retention-fixed"
 								label="Retention"
-								value={retention.value}
-								action="?/config"
-								saved="Retention saved. It applies from the next hourly cleanup."
-								result={configResult}
+								value={retentionDays(fixedRetention.value)}
+								hint="On the free tier, transcripts are kept for {retentionDays(fixedRetention.value)}, and the AI license lets you choose how long."
+								disabled
+								class="sm:max-w-xs"
 							/>
-						{:else if data.isSuperAdmin && data.instanceReadable}
-							<p class="text-xs text-faint">
-								<Badge tone="neutral" size="sm">{retention?.source ?? 'default'}</Badge>
-								This setting comes from the engine's configuration and cannot be changed here.
+						</div>
+					{:else}
+						<div class="flex flex-col gap-4">
+							<p class="text-sm text-muted">
+								Retention applies to the whole engine, not one tenant. Every hour, transcripts older than the retention
+								window are deleted on every tenant. The minimum is 1h and the default is 720h (30 days).
 							</p>
-						{:else if !data.isSuperAdmin}
-							<p class="text-xs text-faint">Only a super admin can see and change the retention window.</p>
-						{:else}
-							<p class="text-xs text-faint">{couldNotLoad('the retention window', { reload: true })}</p>
-						{/if}
-					</div>
+							{#if data.instanceReadable && retention && instanceTranscripts}
+								<DescriptionList
+									items={[
+										{ term: 'Retention', value: `${retention.value} (${retention.source})` },
+										{ term: 'Engine transcript switch', value: `${instanceTranscripts.value} (${instanceTranscripts.source})` },
+									]}
+								/>
+							{/if}
+							{#if data.isSuperAdmin && retention?.editable}
+								<SettingRow
+									id="retention"
+									name="ai_transcript_retention"
+									label="Retention"
+									value={retention.value}
+									action="?/config"
+									saved="Retention saved. It applies from the next hourly cleanup."
+									result={configResult}
+								/>
+							{:else if data.isSuperAdmin && data.instanceReadable}
+								<p class="text-xs text-faint">
+									<Badge tone="neutral" size="sm">{retention?.source ?? 'default'}</Badge>
+									This setting comes from the engine's configuration and cannot be changed here.
+								</p>
+							{:else if !data.isSuperAdmin}
+								<p class="text-xs text-faint">Only a super admin can see and change the retention window.</p>
+							{:else}
+								<p class="text-xs text-faint">{couldNotLoad('the retention window', { reload: true })}</p>
+							{/if}
+						</div>
+					{/if}
 				</Card>
 			</section>
 		{/if}

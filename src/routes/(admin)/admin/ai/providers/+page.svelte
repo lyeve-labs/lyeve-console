@@ -7,7 +7,9 @@
 	import type { ActionData, PageData } from './$types';
 	import AiSection from '$lib/components/ai/AiSection.svelte';
 	import ProviderForm from '$lib/components/ai/ProviderForm.svelte';
-	import { effectiveGate, providerKindLabel } from '$lib/api/ai';
+	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
+	import { effectiveGate, PROVIDERS_CAP, providerKindLabel } from '$lib/api/ai';
+	import { formRefusal, type Refusal } from '$lib/api/refusal';
 	import { formatCount } from '$lib/format';
 	import { pageHref, pageNumber } from '$lib/api/list';
 	import { ICON } from '$lib/icon';
@@ -18,18 +20,32 @@
 	const canWrite = $derived(data.isSuperAdmin && effectiveGate(data.gate, data.aiLayoutGate).state === 'ok');
 
 	const create = submitter(() => (open = false));
+
+	// On the free tier a tenant holds one provider, disabled ones included, so
+	// the page says so before a create would be refused. The total is the
+	// engine's count, and an unknown total says nothing.
+	const ceiling = $derived<Refusal | null>(
+		data.ceiling.limit > 0 && data.total !== null && data.total >= data.ceiling.limit
+			? { kind: 'cap', cap: PROVIDERS_CAP, limit: data.ceiling.limit, current: data.total, upgradeUrl: data.ceiling.upgradeUrl }
+			: null,
+	);
+	const refused = $derived(formRefusal(form));
 </script>
 
 <PageShell title="AI providers" description="Set up the models this tenant can call and the keys used to call them." width="wide">
 	{#snippet actions()}
 		{#if canWrite}
-			<Button variant="primary" size="sm" onclick={() => (open = true)}>
+			<Button variant="primary" size="sm" onclick={() => (open = true)} disabled={ceiling !== null}>
 				<Plus size={ICON.sm} aria-hidden="true" /> New provider
 			</Button>
 		{/if}
 	{/snippet}
 
 	<AiSection level={2} tab="providers" gate={data.gate} layoutGate={data.aiLayoutGate} noun="providers">
+		{#if ceiling && canWrite}
+			<RefusalNotice refusal={ceiling} />
+		{/if}
+
 		{#if data.dashboard}
 			<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
 				<Stat size="sm" mono label="Providers" value="{data.dashboard.enabled_providers}/{data.dashboard.total_providers}" sub="enabled" />
@@ -133,7 +149,7 @@
 {#if data.isSuperAdmin}
 	<Drawer bind:open title="New provider" description="A key is encrypted at rest and never shown again." onclose={() => (open = false)}>
 		<form id="provider-create" method="POST" action="?/create" use:enhance={create.enhance} class="flex flex-col gap-4">
-			<FormErrors message={form?.error} />
+			<FormErrors message={form?.error} {refused} />
 			<ProviderForm id="new" superAdmin={data.isSuperAdmin} />
 		</form>
 		{#snippet footer()}

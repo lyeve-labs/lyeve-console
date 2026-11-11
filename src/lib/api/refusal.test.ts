@@ -99,6 +99,8 @@ describe('helpers', () => {
 		expect(capNoun('gadgets.spare-parts')).toBe('spare parts');
 		expect(capNoun('widgets')).toBe('widgets');
 		expect(capNoun('admin.seats')).toBe('admin seats');
+		expect(capNoun('ai.providers')).toBe('AI providers');
+		expect(capNoun('mcp.agents')).toBe('connected agents');
 	});
 
 	it('falls back to a neutral noun for a cap with no usable segment', () => {

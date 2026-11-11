@@ -13,6 +13,9 @@ export const PLUGIN = {
 	media: 'media',
 	// Providers, prompts, transcripts and the assists that call them.
 	ai: 'ai',
+	// The Model Context Protocol server outside agents connect to, its tenant
+	// switch and the agents that connected.
+	mcp: 'mcp',
 	flow: 'flow',
 	review: 'review',
 	search: 'search',

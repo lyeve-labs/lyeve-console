@@ -5,7 +5,17 @@ import { aiActionError, aiGate } from '$lib/server/ai-load';
 import { GATE_OK, section } from '$lib/api/gate';
 import { readProviderForm } from '$lib/server/ai-provider-form';
 import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { createProvider, getAiDashboard, listProviders, type AiDashboard, type AiProvider } from '$lib/api/ai';
+import {
+	aiFreeTier,
+	createProvider,
+	FREE_PROVIDERS,
+	getAiDashboard,
+	listProviders,
+	type AiDashboard,
+	type AiProvider,
+	type ProviderCeiling,
+} from '$lib/api/ai';
+import { refusalOf } from '$lib/api/refusal';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -26,7 +36,18 @@ export const load: PageServerLoad = async (event) => {
 	// The spend row is a courtesy. A page of providers stands without it.
 	const dashboard: AiDashboard | null = gate.state === 'ok' ? await getAiDashboard(client).catch(() => null) : null;
 
-	return { gate, providers, total, limit, offset, hasMore, dashboard };
+	// The ceiling the list answers, 0 meaning none. A plugin older than that
+	// answer states none, so the free tier is read from the settings answer
+	// the layout already holds and from what the entitlements withhold.
+	let ceiling: ProviderCeiling = { limit: 0, upgradeUrl: '' };
+	if (page.ok && page.value.ceiling) {
+		ceiling = page.value.ceiling;
+	} else {
+		const { aiSettings, entitlements } = await event.parent();
+		if (aiFreeTier(aiSettings, entitlements?.withheld)) ceiling = { limit: FREE_PROVIDERS, upgradeUrl: '' };
+	}
+
+	return { gate, providers, total, limit, offset, hasMore, dashboard, ceiling };
 };
 
 export const actions: Actions = {
@@ -40,7 +61,12 @@ export const actions: Actions = {
 		try {
 			created = await createProvider(client, read.input);
 		} catch (err) {
-			return fail(400, { error: aiActionError(err, 'Could not create the provider. Try again.', 'super_admin') });
+			// A ceiling returns the refusal beside its sentence, so the drawer
+			// shows the engine's numbers and its link.
+			const refused = refusalOf(err);
+			const error = aiActionError(err, 'Could not create the provider. Try again.', 'super_admin');
+			if (refused?.kind === 'cap') return fail(402, { error, refused });
+			return fail(400, { error });
 		}
 		redirect(303, `/admin/ai/providers/${encodeURIComponent(created.id)}`);
 	},

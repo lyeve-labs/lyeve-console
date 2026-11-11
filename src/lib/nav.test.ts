@@ -102,8 +102,8 @@ describe('adminNav role gate', () => {
 		expect(ids(find(tree, 'operations').children ?? [])).toEqual(['plugins', 'ai', 'tenant-usage', 'tenant-costs']);
 		// Customizing the tenant's admin, its captcha, how its provider
 		// accounts sign in, its own rate limits, its content history and its
-		// privacy settings are the tenant admin's, so they are the settings
-		// entries an admin reaches.
+		// privacy settings and its MCP server are the tenant admin's, so they
+		// are the settings entries an admin reaches.
 		expect(ids(find(tree, 'settings').children ?? [])).toEqual([
 			'customization',
 			'captcha',
@@ -111,10 +111,11 @@ describe('adminNav role gate', () => {
 			'tenant-rate-limits',
 			'content-history',
 			'privacy',
+			'mcp',
 		]);
 	});
 
-	it('gives a super admin every section and all seventy-one destinations', () => {
+	it('gives a super admin every section and all seventy-two destinations', () => {
 		const tree = adminNav(SUPER);
 		expect(ids(tree)).toEqual([
 			'dashboard',
@@ -130,7 +131,7 @@ describe('adminNav role gate', () => {
 			'insight',
 			'settings',
 		]);
-		expect(labels(tree)).toHaveLength(71);
+		expect(labels(tree)).toHaveLength(72);
 		expect(ids(find(tree, 'settings').children ?? [])).toEqual([
 			'email',
 			'recommendations',
@@ -150,6 +151,7 @@ describe('adminNav role gate', () => {
 			'sign-in',
 			'content-history',
 			'privacy',
+			'mcp',
 		]);
 		expect(ids(find(tree, 'access').children ?? [])).toEqual([
 			'users',

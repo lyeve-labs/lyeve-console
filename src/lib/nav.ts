@@ -64,6 +64,7 @@ import {
 	BookOpen,
 	Bot,
 	Braces,
+	Cable,
 	Bug,
 	Building2,
 	CalendarClock,
@@ -162,6 +163,7 @@ const PAGE_PLUGIN: Readonly<Record<string, PluginName>> = {
 	permissions: PLUGIN.permissions,
 	jobs: PLUGIN.cron,
 	ai: PLUGIN.ai,
+	mcp: PLUGIN.mcp,
 	tenants: PLUGIN.multitenant,
 	'tenant-costs': PLUGIN.multitenant,
 	'audit-log': PLUGIN.audit,
@@ -599,6 +601,14 @@ export function adminNav(roles: readonly string[], inputs: NavInputs = {}): NavT
 		href: '/admin/settings/privacy',
 		icon: UserLock,
 	};
+	// Whether outside agents may reach this tenant, and which ones did. The
+	// plugin serves its settings to an admin and a super admin.
+	const mcp: NavNode = {
+		id: 'mcp',
+		label: 'MCP server',
+		href: '/admin/settings/mcp',
+		icon: Cable,
+	};
 	const settings: NavNode[] = superAdmin
 		? [
 				// One entry, because there is one place mail is configured: the
@@ -674,9 +684,10 @@ export function adminNav(roles: readonly string[], inputs: NavInputs = {}): NavT
 				signIn,
 				contentHistory,
 				privacy,
+				mcp,
 		  ]
 		: operator
-			? [customization, captcha, signIn, tenantRateLimits, contentHistory, privacy]
+			? [customization, captcha, signIn, tenantRateLimits, contentHistory, privacy, mcp]
 			: [];
 
 	const tree: NavTree = [
