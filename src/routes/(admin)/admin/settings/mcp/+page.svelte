@@ -29,11 +29,13 @@
 
 	const agents = $derived(data.agents.ok ? data.agents.value.agents : []);
 	const limit = $derived(data.agents.ok ? data.agents.value.limit : 0);
+	const upgradeUrl = $derived(data.agents.ok ? data.agents.value.upgradeUrl : '');
 	// The limit is the plugin's, 0 meaning none, so a lifted limit never
-	// reads as a stale one here.
+	// reads as a stale one here. A plugin older than the link sends none, and
+	// the notice then points at the license page.
 	const ceiling = $derived<Refusal | null>(
 		limit > 0 && agents.length >= limit
-			? { kind: 'cap', cap: AGENTS_CAP, limit, current: agents.length, upgradeUrl: '' }
+			? { kind: 'cap', cap: AGENTS_CAP, limit, current: agents.length, upgradeUrl }
 			: null,
 	);
 

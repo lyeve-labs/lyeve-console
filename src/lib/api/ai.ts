@@ -101,10 +101,18 @@ export const PROVIDERS_CAP = 'ai.providers';
 
 /**
  * How many providers a tenant holds on the free tier. The provider list
- * states no limit, so the notice shown before a create reads it from here,
- * and a refused create brings the engine's own numbers.
+ * states the ceiling itself, so this is read only for a plugin older than
+ * that answer.
  */
 export const FREE_PROVIDERS = 1;
+
+/** The provider ceiling as the list answers it. */
+export interface ProviderCeiling {
+	/** How many providers the tenant may hold, 0 meaning no limit. */
+	limit: number;
+	/** The link that lifts the ceiling, empty when the answer carries none. */
+	upgradeUrl: string;
+}
 
 /**
  * Whether this tenant is on the AI free tier, from what the engine reports.
@@ -297,12 +305,25 @@ export function putAiSettings(
 	return client.put<AiSettings>(`${BASE}/settings`, body);
 }
 
+/** A page of providers, with the ceiling when the plugin states one. */
+export interface ProviderPage extends Page<AiProvider> {
+	/** Null from a plugin older than the ceiling in the list answer. */
+	ceiling: ProviderCeiling | null;
+}
+
 export async function listProviders(
 	client: HttpClient,
 	params: { limit?: number; offset?: number } = {}
-): Promise<Page<AiProvider>> {
-	const res = await client.get<ListEnvelope<AiProvider> | AiProvider[]>(`${BASE}/providers${query(params)}`);
-	return { rows: rowsOf(res), total: statedTotal(res) };
+): Promise<ProviderPage> {
+	const res = await client.get<(ListEnvelope<AiProvider> & { provider_limit?: unknown; upgrade_url?: unknown }) | AiProvider[]>(
+		`${BASE}/providers${query(params)}`,
+	);
+	const stated = Array.isArray(res) ? undefined : res?.provider_limit;
+	const ceiling =
+		typeof stated === 'number' && Number.isInteger(stated) && stated >= 0
+			? { limit: stated, upgradeUrl: !Array.isArray(res) && typeof res?.upgrade_url === 'string' ? res.upgrade_url : '' }
+			: null;
+	return { rows: rowsOf(res), total: statedTotal(res), ceiling };
 }
 
 export function getProvider(client: HttpClient, id: string): Promise<AiProvider> {

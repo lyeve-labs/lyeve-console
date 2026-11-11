@@ -5,7 +5,16 @@ import { aiActionError, aiGate } from '$lib/server/ai-load';
 import { GATE_OK, section } from '$lib/api/gate';
 import { readProviderForm } from '$lib/server/ai-provider-form';
 import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { aiFreeTier, createProvider, getAiDashboard, listProviders, type AiDashboard, type AiProvider } from '$lib/api/ai';
+import {
+	aiFreeTier,
+	createProvider,
+	FREE_PROVIDERS,
+	getAiDashboard,
+	listProviders,
+	type AiDashboard,
+	type AiProvider,
+	type ProviderCeiling,
+} from '$lib/api/ai';
 import { refusalOf } from '$lib/api/refusal';
 
 const DEFAULT_LIMIT = 50;
@@ -27,12 +36,18 @@ export const load: PageServerLoad = async (event) => {
 	// The spend row is a courtesy. A page of providers stands without it.
 	const dashboard: AiDashboard | null = gate.state === 'ok' ? await getAiDashboard(client).catch(() => null) : null;
 
-	// Whether the free tier's ceiling applies, read from the settings answer
+	// The ceiling the list answers, 0 meaning none. A plugin older than that
+	// answer states none, so the free tier is read from the settings answer
 	// the layout already holds and from what the entitlements withhold.
-	const { aiSettings, entitlements } = await event.parent();
-	const freeTier = aiFreeTier(aiSettings, entitlements?.withheld);
+	let ceiling: ProviderCeiling = { limit: 0, upgradeUrl: '' };
+	if (page.ok && page.value.ceiling) {
+		ceiling = page.value.ceiling;
+	} else {
+		const { aiSettings, entitlements } = await event.parent();
+		if (aiFreeTier(aiSettings, entitlements?.withheld)) ceiling = { limit: FREE_PROVIDERS, upgradeUrl: '' };
+	}
 
-	return { gate, providers, total, limit, offset, hasMore, dashboard, freeTier };
+	return { gate, providers, total, limit, offset, hasMore, dashboard, ceiling };
 };
 
 export const actions: Actions = {

@@ -8,7 +8,7 @@
 	import AiSection from '$lib/components/ai/AiSection.svelte';
 	import ProviderForm from '$lib/components/ai/ProviderForm.svelte';
 	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { effectiveGate, FREE_PROVIDERS, PROVIDERS_CAP, providerKindLabel } from '$lib/api/ai';
+	import { effectiveGate, PROVIDERS_CAP, providerKindLabel } from '$lib/api/ai';
 	import { formRefusal, type Refusal } from '$lib/api/refusal';
 	import { formatCount } from '$lib/format';
 	import { pageHref, pageNumber } from '$lib/api/list';
@@ -25,8 +25,8 @@
 	// the page says so before a create would be refused. The total is the
 	// engine's count, and an unknown total says nothing.
 	const ceiling = $derived<Refusal | null>(
-		data.freeTier && data.total !== null && data.total >= FREE_PROVIDERS
-			? { kind: 'cap', cap: PROVIDERS_CAP, limit: FREE_PROVIDERS, current: data.total, upgradeUrl: '' }
+		data.ceiling.limit > 0 && data.total !== null && data.total >= data.ceiling.limit
+			? { kind: 'cap', cap: PROVIDERS_CAP, limit: data.ceiling.limit, current: data.total, upgradeUrl: data.ceiling.upgradeUrl }
 			: null,
 	);
 	const refused = $derived(formRefusal(form));

@@ -31,7 +31,7 @@ function setup(over: Record<string, unknown> = {}, form: unknown = null) {
 			data: {
 				endpoints: { content: 'https://cms.example.com/api/v1/mcp', admin: 'https://cms.example.com/api/admin/mcp' },
 				settings: { ok: true, value: { enabled: true } },
-				agents: { ok: true, value: { limit: 1, agents: [] } },
+				agents: { ok: true, value: { limit: 1, upgradeUrl: '', agents: [] } },
 				people: { u1: 'ada@example.com', u2: 'grace@example.com' },
 				...over,
 			},
@@ -57,22 +57,29 @@ describe('MCP settings page', () => {
 	});
 
 	it('shows the ceiling and the license link once the one agent is connected', () => {
-		const { getByText, queryByTestId, container } = setup({ agents: { ok: true, value: { limit: 1, agents: [KEY_AGENT] } } });
+		const { getByText, queryByTestId, container } = setup({ agents: { ok: true, value: { limit: 1, upgradeUrl: '', agents: [KEY_AGENT] } } });
 		expect(getByText(CEILING)).toBeTruthy();
 		expect(said(container)).toContain("You're using 1 of 1 connected agents, the most this engine allows.");
 		expect(container.querySelector('a[href="/admin/settings/license"]')).toBeTruthy();
 		expect(queryByTestId('mcp-agent-limit')).toBeNull();
 	});
 
+	it('links the ceiling to the plan the agents answer names', () => {
+		const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro';
+		const { getByText, container } = setup({ agents: { ok: true, value: { limit: 1, upgradeUrl: url, agents: [KEY_AGENT] } } });
+		expect(getByText(CEILING)).toBeTruthy();
+		expect(container.querySelector(`a[href="${url}"]`)?.textContent).toContain('View the add-on');
+	});
+
 	it('shows no limit under the AI license, whatever the count', () => {
-		const { queryByText, queryByTestId, container } = setup({ agents: { ok: true, value: { limit: 0, agents: [KEY_AGENT, SESSION_AGENT] } } });
+		const { queryByText, queryByTestId, container } = setup({ agents: { ok: true, value: { limit: 0, upgradeUrl: '', agents: [KEY_AGENT, SESSION_AGENT] } } });
 		expect(queryByText(CEILING)).toBeNull();
 		expect(queryByTestId('mcp-agent-limit')).toBeNull();
 		expect(container.querySelectorAll('tbody tr')).toHaveLength(2);
 	});
 
 	it('lists each agent with its first and last use and a Disconnect for it', () => {
-		const { container, getByLabelText } = setup({ agents: { ok: true, value: { limit: 0, agents: [KEY_AGENT, SESSION_AGENT] } } });
+		const { container, getByLabelText } = setup({ agents: { ok: true, value: { limit: 0, upgradeUrl: '', agents: [KEY_AGENT, SESSION_AGENT] } } });
 		const rows = container.querySelectorAll('tbody tr');
 		expect(rows[0].textContent).toContain('API key 0b7f6c2e');
 		expect(rows[0].textContent).toContain('ada@example.com');
@@ -108,7 +115,7 @@ describe('MCP settings page', () => {
 		const toggled = setup({}, { action: 'toggle', error: 'Could not save the setting. Try again.' });
 		expect(said(toggled.container)).toContain('Could not save the setting. Try again.');
 		cleanup();
-		const gone = setup({ agents: { ok: true, value: { limit: 0, agents: [KEY_AGENT] } } }, { action: 'disconnect', error: 'This agent is no longer connected.' });
+		const gone = setup({ agents: { ok: true, value: { limit: 0, upgradeUrl: '', agents: [KEY_AGENT] } } }, { action: 'disconnect', error: 'This agent is no longer connected.' });
 		expect(said(gone.container)).toContain('This agent is no longer connected.');
 	});
 });

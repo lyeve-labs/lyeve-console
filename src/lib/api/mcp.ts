@@ -40,6 +40,8 @@ export interface McpAgent {
 export interface McpAgents {
 	/** How many agents the tenant may hold, 0 meaning no limit. */
 	limit: number;
+	/** The link that lifts the limit, empty when the answer carries none. */
+	upgradeUrl: string;
 	agents: McpAgent[];
 }
 
@@ -52,9 +54,10 @@ export function putMcpSettings(client: HttpClient, enabled: boolean): Promise<Mc
 }
 
 export async function listMcpAgents(client: HttpClient): Promise<McpAgents> {
-	const res = await client.get<Partial<McpAgents> | null>(AGENTS_URL);
+	const res = await client.get<{ limit?: unknown; upgrade_url?: unknown; agents?: unknown } | null>(AGENTS_URL);
 	const limit = typeof res?.limit === 'number' && Number.isFinite(res.limit) && res.limit > 0 ? res.limit : 0;
-	return { limit, agents: Array.isArray(res?.agents) ? res.agents : [] };
+	const upgradeUrl = limit > 0 && typeof res?.upgrade_url === 'string' ? res.upgrade_url : '';
+	return { limit, upgradeUrl, agents: Array.isArray(res?.agents) ? (res.agents as McpAgent[]) : [] };
 }
 
 export async function disconnectMcpAgent(client: HttpClient, kind: string, credential: string): Promise<void> {

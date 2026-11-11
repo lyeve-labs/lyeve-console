@@ -63,7 +63,7 @@ describe('MCP settings load', () => {
 		const { event } = loadEvent(READS);
 		const out = (await load(event)) as Loaded;
 		expect(out.settings).toEqual({ ok: true, value: { enabled: true } });
-		expect(out.agents).toEqual({ ok: true, value: { limit: 1, agents: [AGENT] } });
+		expect(out.agents).toEqual({ ok: true, value: { limit: 1, upgradeUrl: '', agents: [AGENT] } });
 		expect(out.people).toEqual({ u1: 'ada@example.com' });
 		expect(out.endpoints).toEqual({ content: 'https://cms.example.com/api/v1/mcp', admin: 'https://cms.example.com/api/admin/mcp' });
 	});
@@ -72,6 +72,13 @@ describe('MCP settings load', () => {
 		const { event } = loadEvent({ ...READS, '/api/admin/mcp/settings/agents': () => json({ limit: 0, agents: [AGENT, AGENT] }) });
 		const out = (await load(event)) as Loaded;
 		expect(out.agents).toMatchObject({ ok: true, value: { limit: 0 } });
+	});
+
+	it('reads the upgrade link the agents answer carries while the limit holds', async () => {
+		const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro';
+		const { event } = loadEvent({ ...READS, '/api/admin/mcp/settings/agents': () => json({ limit: 1, upgrade_url: url, agents: [AGENT] }) });
+		const out = (await load(event)) as Loaded;
+		expect(out.agents).toEqual({ ok: true, value: { limit: 1, upgradeUrl: url, agents: [AGENT] } });
 	});
 
 	it('asks nothing of an engine that does not run the plugin', async () => {

@@ -12,11 +12,23 @@ function client(answer: unknown) {
 describe('ai api paths', () => {
 	it('reads an envelope or a bare array as one page', async () => {
 		const enveloped = client({ data: [fixtureProvider], total: 7 });
-		expect(await listProviders(enveloped.client, { limit: 10, offset: 20 })).toEqual({ rows: [fixtureProvider], total: 7 });
+		expect(await listProviders(enveloped.client, { limit: 10, offset: 20 })).toEqual({ rows: [fixtureProvider], total: 7, ceiling: null });
 		expect(enveloped.get).toHaveBeenCalledWith('/api/admin/ai/providers?limit=10&offset=20');
 		const bare = client([fixtureTranscript]);
 		expect(await listTranscripts(bare.client, { kind: 'node', subject_id: '' })).toEqual({ rows: [fixtureTranscript], total: null });
 		expect(bare.get).toHaveBeenCalledWith('/api/admin/ai/transcripts?kind=node');
+	});
+
+	it('reads the provider ceiling the list states, and none from an older plugin', async () => {
+		const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro';
+		const free = client({ data: [], total_count: 0, limit: 10, offset: 0, provider_limit: 1, upgrade_url: url });
+		expect((await listProviders(free.client)).ceiling).toEqual({ limit: 1, upgradeUrl: url });
+		const pro = client({ data: [], total_count: 0, limit: 10, offset: 0, provider_limit: 0 });
+		expect((await listProviders(pro.client)).ceiling).toEqual({ limit: 0, upgradeUrl: '' });
+		const older = client({ data: [], total_count: 0, limit: 10, offset: 0 });
+		expect((await listProviders(older.client)).ceiling).toBeNull();
+		const odd = client({ data: [], provider_limit: 'one' });
+		expect((await listProviders(odd.client)).ceiling).toBeNull();
 	});
 
 	it('encodes the id and the model in a path', async () => {
