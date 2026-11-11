@@ -52,6 +52,7 @@ const DESCRIBE: Readonly<Record<string, string>> = {
 	grpc: 'See where the gRPC listener runs and which services it serves.',
 	graphql: 'See the schema generated from your content types, its endpoint and the allowed queries.',
 	'message-broker': 'Choose where content events are published, and check that they arrive.',
+	mcp: 'Let AI agents connect to this tenant, and disconnect the ones you no longer use.',
 	storage: 'Choose where uploads are stored and which provider receives them.',
 	'content-history': 'Choose which content types keep versions and for how long, and see who changed what.',
 	residency: "See the regions this engine runs in and which tenant's data is stored in each.",
@@ -81,7 +82,7 @@ const GROUPS: readonly { id: string; label: string; description: string; ids: re
 		id: 'apis',
 		label: 'APIs and delivery',
 		description: 'Connect other systems to your content and its change events.',
-		ids: ['api-access', 'api-keys', 'admin-tokens', 'grpc', 'graphql', 'message-broker'],
+		ids: ['api-access', 'api-keys', 'admin-tokens', 'grpc', 'graphql', 'message-broker', 'mcp'],
 	},
 	{
 		id: 'data',

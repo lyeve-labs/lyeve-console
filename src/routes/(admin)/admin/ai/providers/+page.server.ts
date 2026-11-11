@@ -5,7 +5,8 @@ import { aiActionError, aiGate } from '$lib/server/ai-load';
 import { GATE_OK, section } from '$lib/api/gate';
 import { readProviderForm } from '$lib/server/ai-provider-form';
 import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { createProvider, getAiDashboard, listProviders, type AiDashboard, type AiProvider } from '$lib/api/ai';
+import { aiFreeTier, createProvider, getAiDashboard, listProviders, type AiDashboard, type AiProvider } from '$lib/api/ai';
+import { refusalOf } from '$lib/api/refusal';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -26,7 +27,12 @@ export const load: PageServerLoad = async (event) => {
 	// The spend row is a courtesy. A page of providers stands without it.
 	const dashboard: AiDashboard | null = gate.state === 'ok' ? await getAiDashboard(client).catch(() => null) : null;
 
-	return { gate, providers, total, limit, offset, hasMore, dashboard };
+	// Whether the free tier's ceiling applies, read from the settings answer
+	// the layout already holds and from what the entitlements withhold.
+	const { aiSettings, entitlements } = await event.parent();
+	const freeTier = aiFreeTier(aiSettings, entitlements?.withheld);
+
+	return { gate, providers, total, limit, offset, hasMore, dashboard, freeTier };
 };
 
 export const actions: Actions = {
@@ -40,7 +46,12 @@ export const actions: Actions = {
 		try {
 			created = await createProvider(client, read.input);
 		} catch (err) {
-			return fail(400, { error: aiActionError(err, 'Could not create the provider. Try again.', 'super_admin') });
+			// A ceiling returns the refusal beside its sentence, so the drawer
+			// shows the engine's numbers and its link.
+			const refused = refusalOf(err);
+			const error = aiActionError(err, 'Could not create the provider. Try again.', 'super_admin');
+			if (refused?.kind === 'cap') return fail(402, { error, refused });
+			return fail(400, { error });
 		}
 		redirect(303, `/admin/ai/providers/${encodeURIComponent(created.id)}`);
 	},

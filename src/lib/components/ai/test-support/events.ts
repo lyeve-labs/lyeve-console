@@ -46,7 +46,7 @@ export function fetchFor(routes: Record<string, Route>, roles: string[] = ['supe
 
 export function loadEvent(
 	routes: Record<string, Route>,
-	opts: { path?: string; params?: Record<string, string>; roles?: string[]; settings?: unknown } = {}
+	opts: { path?: string; params?: Record<string, string>; roles?: string[]; settings?: unknown; withheld?: string[] } = {}
 ) {
 	const { fetch, calls } = fetchFor(routes, opts.roles);
 	const roles = opts.roles ?? ['super_admin'];
@@ -62,6 +62,7 @@ export function loadEvent(
 				aiSettings: opts.settings === undefined ? fixtureSettings : opts.settings,
 				aiLayoutGate: { state: 'ok' },
 				isSuperAdmin: roles.includes('super_admin'),
+				entitlements: { plan: '', state: '', features: [], tenant_quota: 0, withheld: opts.withheld ?? [] },
 			}),
 		} as never,
 	};

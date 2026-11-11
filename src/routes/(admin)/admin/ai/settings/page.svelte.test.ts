@@ -99,4 +99,26 @@ describe('AI settings page', () => {
 		const absent = setup({ aiSettings: null, aiLayoutGate: { state: 'absent' } });
 		expect(absent.getByText('AI is not included in this build')).toBeTruthy();
 	});
+
+	it('fixes retention at 30 days on the free tier and says why, for every reader', () => {
+		const free = { ...fixtureSettings, transcript_retention: { value: '720h', source: 'free_tier', editable: false } };
+		for (const isSuperAdmin of [true, false]) {
+			const { getByLabelText, getByTestId, queryByText } = setup({ aiSettings: free, isSuperAdmin });
+			const field = getByLabelText('Retention') as HTMLInputElement;
+			expect(field.value).toBe('30 days');
+			expect(field.hasAttribute('disabled')).toBe(true);
+			expect(getByTestId('retention-fixed').textContent).toContain(
+				'On the free tier, transcripts are kept for 30 days, and the AI license lets you choose how long.',
+			);
+			expect(queryByText(/Only a super admin can see and change the retention window/)).toBeNull();
+			cleanup();
+		}
+	});
+
+	it('keeps the configurable retention under the AI license', () => {
+		const licensed = { ...fixtureSettings, transcript_retention: { value: '720h', source: 'config', editable: true } };
+		const { getByLabelText, queryByTestId } = setup({ aiSettings: licensed });
+		expect((getByLabelText('Retention') as HTMLInputElement).value).toBe('720h');
+		expect(queryByTestId('retention-fixed')).toBeNull();
+	});
 });

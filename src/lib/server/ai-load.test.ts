@@ -54,13 +54,15 @@ describe('aiActionError', () => {
 		expect(aiActionError(tenant, 'f')).toBe('AI calls are paused for this tenant');
 	});
 
-	it('says the budget is spent only when the 402 names the budget', () => {
+	it('says the budget is spent only when the 402 names the budget, and a ceiling as a ceiling', () => {
 		const budget = new ApiError(402, 'ai budget exhausted for this billing period', { error: 'ai budget exhausted for this billing period', code: 'http_402' });
 		expect(aiActionError(budget, 'f')).toBe(AI_BUDGET_TEXT);
 		const other = new ApiError(402, 'this request needs a paid plan', { error: 'this request needs a paid plan', code: 'http_402' });
 		expect(aiActionError(other, 'f')).toBe('AI is not enabled on this engine.');
 		const ceiling = new ApiError(402, 'cap_exceeded', { error: 'cap_exceeded', cap: 'ai.providers', limit: 2, current: 2, upgrade_url: '' });
-		expect(aiActionError(ceiling, 'f')).toBe('AI is not enabled on this engine.');
+		expect(aiActionError(ceiling, 'f')).toBe(
+			"You're using 2 of 2 AI providers, the most this engine allows. A license that allows more lifts the limit. Removing one also makes room.",
+		);
 		const license = new ApiError(402, 'payment_required', { error: 'payment_required', plugin: 'ai', feature: 'feature:ai', upgrade_url: '' });
 		expect(aiActionError(license, 'f')).toBe('AI is not enabled on this engine.');
 	});

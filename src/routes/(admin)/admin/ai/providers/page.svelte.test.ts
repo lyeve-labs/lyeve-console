@@ -89,4 +89,44 @@ describe('AI providers page', () => {
 		expect(getByText(words)).toBeTruthy();
 		expect(container.querySelector('table')).toBeNull();
 	});
+
+	// Without the AI license a tenant holds one provider. The page says so
+	// before a create would be refused, and the create control waits.
+	describe('the free tier', () => {
+		const CEILING = "You're using 1 of 1 AI providers, the most this engine allows.";
+
+		it('shows the ceiling and holds the create control once the one provider exists', () => {
+			const { getByText, getAllByRole } = setup({ freeTier: true, providers: [fixtureProvider], total: 1 });
+			expect(getByText('No more AI providers on this engine')).toBeTruthy();
+			expect(getByText(new RegExp(CEILING))).toBeTruthy();
+			const create = getAllByRole('button').find((b) => b.textContent?.includes('New provider'));
+			expect(create?.hasAttribute('disabled')).toBe(true);
+		});
+
+		it('offers the create control with room left', () => {
+			const { queryByText, getAllByText } = setup({ freeTier: true, providers: [], total: 0 });
+			expect(queryByText('No more AI providers on this engine')).toBeNull();
+			expect(getAllByText('New provider').length).toBeGreaterThan(0);
+		});
+
+		it('shows no ceiling under the AI license', () => {
+			const { queryByText } = setup({ freeTier: false, providers: [fixtureProvider, fixtureLocalProvider], total: 2 });
+			expect(queryByText('No more AI providers on this engine')).toBeNull();
+		});
+
+		it('shows no ceiling to a reader who cannot create a provider', () => {
+			const { queryByText } = setup({ freeTier: true, isSuperAdmin: false, providers: [fixtureProvider], total: 1 });
+			expect(queryByText('No more AI providers on this engine')).toBeNull();
+		});
+
+		it('draws a refused create as the ceiling, with the link from the refusal', async () => {
+			const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro';
+			const refused = { kind: 'cap', cap: 'ai.providers', limit: 1, current: 1, upgradeUrl: url };
+			const { container, getAllByText } = setup({ freeTier: false }, { error: 'x', refused });
+			await fireEvent.click(getAllByText('New provider')[0]);
+			const drawer = container.ownerDocument.querySelector('#provider-create') as HTMLFormElement;
+			expect(drawer.textContent).toContain('No more AI providers on this engine');
+			expect(drawer.querySelector(`a[href="${url}"]`)?.textContent).toContain('View the add-on');
+		});
+	});
 });

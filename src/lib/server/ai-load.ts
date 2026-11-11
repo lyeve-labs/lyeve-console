@@ -19,6 +19,7 @@ import type { AiGate } from '$lib/api/ai';
 import { gateOf } from '$lib/api/gate';
 import { couldNotLoad } from '$lib/outage';
 import { actionError } from './action-error';
+import { refusalOf, refusalText } from '$lib/api/refusal';
 
 export type { AiGate };
 
@@ -65,8 +66,8 @@ export const AI_BUDGET_TEXT =
  * Whether a 402 is the spent budget rather than the license. The plugin
  * answers both with 402. The budget refusal is the one sentence that names
  * the budget ("ai budget exhausted for this billing period"), so that word
- * decides. Every other 402, a ceiling included, is read as the license, the
- * state a 402 always meant here.
+ * decides. A ceiling says `cap_exceeded`, and every other 402 is read as the
+ * license, the state a 402 always meant here.
  */
 export function aiBudgetSpent(err: unknown): boolean {
 	if (!(err instanceof ApiError) || err.status !== 402) return false;
@@ -90,6 +91,8 @@ const ROLE_TEXT: Record<AiWriteRole, string> = {
 export function aiActionError(err: unknown, fallback: string, lowest: AiWriteRole = 'admin'): string {
 	if (err instanceof ApiError) {
 		if (aiBudgetSpent(err)) return AI_BUDGET_TEXT;
+		const refused = refusalOf(err);
+		if (refused?.kind === 'cap') return refusalText(refused);
 		if (err.status === 402) return 'AI is not enabled on this engine.';
 		if (err.status === 403) {
 			// The engine's role gate answers a bare "insufficient permissions".

@@ -77,8 +77,60 @@ export interface AiSettings {
 	transcripts_enabled: boolean;
 	/** Whether signed-in people may ask the assistant. Absent from a plugin older than the switch, and on by default. */
 	assistant_enabled?: boolean;
+	/** The transcript window the hourly cleanup applies. Absent from a plugin older than the free tier. */
+	transcript_retention?: TranscriptRetention;
 	updated_by?: string;
 	updated_at: string;
+}
+
+/** The transcript window as the settings answer reports it. */
+export interface TranscriptRetention {
+	/** A duration such as 720h. */
+	value: string;
+	/** `free_tier` while the free tier fixes the window, `config` while the engine's configuration sets it. */
+	source: string;
+	editable: boolean;
+	reason?: string;
+}
+
+/** The capability that lifts the AI free tier's ceilings. */
+export const AI_PRO = 'ai-pro';
+
+/** The cap a provider create past the free tier's ceiling is refused under. */
+export const PROVIDERS_CAP = 'ai.providers';
+
+/**
+ * How many providers a tenant holds on the free tier. The provider list
+ * states no limit, so the notice shown before a create reads it from here,
+ * and a refused create brings the engine's own numbers.
+ */
+export const FREE_PROVIDERS = 1;
+
+/**
+ * Whether this tenant is on the AI free tier, from what the engine reports.
+ * A plugin that knows the free tier reports the transcript window, and while
+ * the engine holds no AI license that window's source is the free tier. An
+ * engine that holds the license and withholds it from this tenant says so in
+ * the entitlements. A plugin older than the free tier reports no window, so
+ * an engine that gates AI as a whole reads as no free tier at all.
+ */
+export function aiFreeTier(settings: AiSettings | null | undefined, withheld: readonly string[] | null | undefined): boolean {
+	const retention = settings?.transcript_retention;
+	if (!retention) return false;
+	return retention.source === 'free_tier' || (withheld ?? []).includes(AI_PRO);
+}
+
+/**
+ * A retention window in days, such as "30 days" for 720h, or the duration as
+ * written when it is not a whole number of days.
+ */
+export function retentionDays(value: string): string {
+	const m = /^(\d+)h$/.exec(value.trim());
+	if (!m) return value;
+	const hours = Number(m[1]);
+	if (hours % 24 !== 0) return value;
+	const days = hours / 24;
+	return `${days} ${days === 1 ? 'day' : 'days'}`;
 }
 
 export interface AiProvider {

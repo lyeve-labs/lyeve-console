@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { actions, load } from './+page.server';
-import { fixtureLocalProvider, fixtureProvider } from '$lib/components/ai/test-support/fixtures';
+import { fixtureLocalProvider, fixtureProvider, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
 import type { AiProvider } from '$lib/api/ai';
 import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '$lib/components/ai/test-support/events';
 
@@ -43,6 +43,20 @@ describe('admin/ai/providers load', () => {
 		expect(calls.some((c) => c.url.includes('/dashboard'))).toBe(false);
 	});
 
+	it.each([
+		['an unlicensed engine', { value: '720h', source: 'free_tier', editable: false }, [], true],
+		['a licensed engine', { value: '720h', source: 'config', editable: true }, [], false],
+		['a license withheld from this tenant', { value: '720h', source: 'config', editable: true }, ['ai-pro'], true],
+		['a plugin older than the free tier', undefined, [], false],
+	])('reads the free tier on %s', async (_name, retention, withheld, free) => {
+		const { event } = loadEvent(
+			{ '/api/admin/ai/providers': () => json({ data: [fixtureProvider], total: 1 }), '/api/admin/ai/dashboard': () => refused(500, 'boom') },
+			{ settings: { ...fixtureSettings, transcript_retention: retention }, withheld: withheld as string[] },
+		);
+		const out = (await load(event)) as Loaded;
+		expect(out.freeTier).toBe(free);
+	});
+
 	it('keeps the engine banner for a 500 and never its text', async () => {
 		const { event } = loadEvent({ '/api/admin/ai/providers': () => refused(500, 'pq: connection refused') });
 		const out = (await load(event)) as Loaded;
@@ -74,6 +88,21 @@ describe('admin/ai/providers create', () => {
 		);
 		const out = await actions.create(event);
 		expect(out).toMatchObject({ status: 400, data: { error: expect.stringContaining('allow_private is required') } });
+	});
+
+	it('returns the ceiling with the link the refusal carries', async () => {
+		const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro&utm_campaign=ai.providers';
+		const { event } = actionEvent(
+			{ '/api/admin/ai/providers': () => json({ error: 'cap_exceeded', cap: 'ai.providers', limit: 1, current: 1, upgrade_url: url }, 402) },
+			formOf({ name: 'x', kind: 'openai', api_key: 'k', modalities: 'text' })
+		);
+		expect(await actions.create(event)).toMatchObject({
+			status: 402,
+			data: {
+				error: expect.stringContaining("You're using 1 of 1 AI providers"),
+				refused: { kind: 'cap', cap: 'ai.providers', limit: 1, current: 1, upgradeUrl: url },
+			},
+		});
 	});
 
 	it('says the feature is not enabled on a 402', async () => {

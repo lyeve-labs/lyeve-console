@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { HttpClient } from '@lyeve-labs/client';
-import { getCapabilities, listProviders, listTranscripts, providerKindLabel, savePromptVersion, transcriptExportPath, transcriptTotals } from './ai';
-import { fixtureProvider, fixtureTranscript } from '$lib/components/ai/test-support/fixtures';
+import { aiFreeTier, getCapabilities, listProviders, retentionDays, listTranscripts, providerKindLabel, savePromptVersion, transcriptExportPath, transcriptTotals } from './ai';
+import { fixtureProvider, fixtureSettings, fixtureTranscript } from '$lib/components/ai/test-support/fixtures';
 
 function client(answer: unknown) {
 	const get = vi.fn(async () => answer);
@@ -36,5 +36,34 @@ describe('ai api paths', () => {
 
 	it('names the four kinds', () => {
 		expect(['openai', 'anthropic', 'openai_compatible', 'anthropic_compatible', 'other'].map(providerKindLabel)).toEqual(['OpenAI', 'Anthropic', 'OpenAI-compatible', 'Anthropic-compatible', 'other']);
+	});
+});
+
+describe('the AI free tier', () => {
+	const free = { ...fixtureSettings, transcript_retention: { value: '720h', source: 'free_tier', editable: false, reason: 'r' } };
+	const licensed = { ...fixtureSettings, transcript_retention: { value: '2160h', source: 'config', editable: true } };
+
+	it('reads the free tier from the transcript window a plugin that knows it reports', () => {
+		expect(aiFreeTier(free, [])).toBe(true);
+		expect(aiFreeTier(licensed, [])).toBe(false);
+	});
+
+	// An engine that holds the AI license can still withhold it from one tenant.
+	it('reads a license withheld from this tenant as the free tier', () => {
+		expect(aiFreeTier(licensed, ['ai-pro'])).toBe(true);
+	});
+
+	// An engine that gates AI as a whole runs a plugin with no window to
+	// report, and its tenants meet no ceiling.
+	it('reads no free tier from a plugin older than it, or from no settings at all', () => {
+		expect(aiFreeTier(fixtureSettings, ['ai-pro'])).toBe(false);
+		expect(aiFreeTier(null, [])).toBe(false);
+	});
+
+	it('writes a window of whole days in days', () => {
+		expect(retentionDays('720h')).toBe('30 days');
+		expect(retentionDays('24h')).toBe('1 day');
+		expect(retentionDays('36h')).toBe('36h');
+		expect(retentionDays('1h30m0s')).toBe('1h30m0s');
 	});
 });
