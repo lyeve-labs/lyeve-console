@@ -153,7 +153,7 @@
 								bind:value={chosenRoles}
 								options={roleOptions}
 								orientation="horizontal"
-								hint="Without the AI license, only these roles can connect a new agent. A super admin always can, and agents already connected keep working."
+								hint="Without the AI license, a person who connects a new agent with their own sign-in needs one of these roles. API keys and super admins always can. Connected agents keep working."
 							/>
 							{#if rolesError}
 								<Alert tone="danger">{rolesError}</Alert>

@@ -74,7 +74,7 @@ describe('MCP settings page', () => {
 		const boxes = [...form.querySelectorAll('input[name="agent_roles"]')] as HTMLInputElement[];
 		expect(boxes.map((b) => b.value)).toEqual(['viewer', 'editor', 'admin', 'author']);
 		expect(boxes.filter((b) => b.checked).map((b) => b.value)).toEqual(['admin', 'author']);
-		expect(said(form)).toContain('A super admin always can');
+		expect(said(form)).toContain('API keys and super admins always can.');
 	});
 
 	it('keeps the ticked roles after a save, so the next save posts them again', async () => {
