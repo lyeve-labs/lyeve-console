@@ -13,6 +13,7 @@ import { ApiError, type HttpClient } from '@lyeve-labs/client';
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import { gateOf, type Gate } from './gate';
 import { errorCodeOf } from './limits';
+import { totalOf, type ListEnvelope } from './list';
 import { couldNotLoad } from '../outage';
 
 const CONNECTIONS_URL = '/api/admin/builder/connections';
@@ -75,14 +76,43 @@ export interface Settings {
 	form_schemas: string[];
 	/** The slugs of the flows forms may start. Only the shape of each is checked when saved. */
 	form_flows: string[];
+	/** The ids of the sites whose forms post without a signature, from static files with no server. */
+	form_static_sites?: string[];
 	/** Set when a save shortened the lifetime. */
 	note?: string;
 }
 
 /** A settings change names only what it changes, so two owners editing different fields both keep theirs. */
 export type SettingsPatch = Partial<
-	Pick<Settings, 'allowed' | 'lifetime_days' | 'show_schemas' | 'writes_per_minute' | 'form_schemas' | 'form_flows'>
+	Pick<Settings, 'allowed' | 'lifetime_days' | 'show_schemas' | 'writes_per_minute' | 'form_schemas' | 'form_flows' | 'form_static_sites'>
 >;
+
+/** A site of the tenant, as the static sites list offers it. */
+export interface SiteOption {
+	id: string;
+	name: string;
+}
+
+/** The most sites the admin content list answers in one page. */
+const SITES_PAGE = 500;
+
+/**
+ * The tenant's sites, read from the admin content list of the type the
+ * builder keeps them in, sorted by name. A list cut short is refused rather
+ * than offered, because a save sends every site it does not tick as off.
+ */
+export async function listSites(client: HttpClient): Promise<SiteOption[]> {
+	const query = new URLSearchParams({ schema: 'lyeve_builder_sites', limit: String(SITES_PAGE), offset: '0' });
+	const res = await client.get<ListEnvelope<{ id: string; title?: string; body?: { name?: unknown } }>>(`/api/admin/content?${query}`);
+	const rows = res.data ?? [];
+	if (totalOf(res) > rows.length) throw new Error('site list cut short');
+	return rows
+		.map((r) => ({ id: r.id, name: (typeof r.body?.name === 'string' && r.body.name.trim()) || r.title || r.id }))
+		.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** What the static sites field says when the engine refuses the list. */
+export const STATIC_SITES_REFUSED = 'Choose up to 50 sites whose last production build does not sign its forms.';
 
 const code = (c: string) => `${CONNECTIONS_URL}/requests/${encodeURIComponent(c)}`;
 

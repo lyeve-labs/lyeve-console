@@ -146,6 +146,8 @@ export interface FormSchemaRow {
 	name: string;
 	label: string;
 	publicDelivery: boolean;
+	/** A field takes each value once, so a post repeating one would be refused. */
+	hasUnique?: boolean;
 }
 
 export function submissionsState(rows: readonly FormSchemaRow[]): SubmissionsState {

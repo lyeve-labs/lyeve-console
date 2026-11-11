@@ -7,6 +7,7 @@ vi.mock('$lib/server/authz', async () => {
 
 import { actions, load } from './+page.server';
 import { FORMS_TYPE_TAKEN, SUBMISSIONS_PUBLIC } from '$lib/api/form-destinations';
+import { STATIC_SITES_REFUSED } from '$lib/api/connected-editors';
 
 const BASE = '/api/admin/builder';
 const RUNNING = { state: 'named', running: ['builder'], withheld: [] };
@@ -319,9 +320,104 @@ describe('where forms can send', () => {
 		expect(calls.some((c) => c.method !== 'GET')).toBe(false);
 	});
 
+	it('never offers a type with a unique field, which the engine refuses, and reads past the id every type has', async () => {
+		const unique = { name: 'email', field_type: 'text', required: true, unique: true, indexed: true };
+		const id = { name: 'id', field_type: 'uid', required: true, unique: true, indexed: true, system: true };
+		const { event } = loadEvent(
+			{
+				...FORMS_ROUTES,
+				'GET /api/admin/schemas': json([
+					{ name: 'contact_messages', display_name: 'Contact messages', fields: [id] },
+					{ name: 'subscribers', display_name: 'Subscribers', fields: [unique] },
+				]),
+			},
+			{ plugins: FULL },
+		);
+		const out = (await load(event)) as Record<string, unknown>;
+		expect(out.formSchemas).toEqual([{ name: 'contact_messages', label: 'Contact messages' }]);
+	});
+
+	it('drops an allowed type that gained a unique field when it applies the forms preset', async () => {
+		const unique = { name: 'email', field_type: 'text', required: true, unique: true, indexed: true };
+		const { event, calls } = act(
+			{},
+			{
+				'GET /api/admin/schemas': json([{ name: 'contact_messages' }, { name: 'subscribers', fields: [unique] }, { name: 'form_submissions' }]),
+				[`GET ${BASE}/settings`]: json({ ...SETTINGS, form_schemas: ['contact_messages', 'subscribers'] }),
+				[`PUT ${BASE}/settings`]: json({ ...SETTINGS, form_schemas: ['contact_messages', 'form_submissions'] }),
+			},
+		);
+		expect(await actions.formsPreset(event)).toMatchObject({ presetApplied: { created: false } });
+		expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({ form_schemas: ['contact_messages', 'form_submissions'] });
+	});
+
 	it('says the preset is missing on a 404 and saves nothing', async () => {
 		const { event, calls } = act({}, { 'GET /api/admin/schemas': json([]), [`GET ${BASE}/settings`]: json({ ...SETTINGS, form_schemas: [] }) });
 		expect(await actions.formsPreset(event)).toMatchObject({ status: 404, data: { presetMissing: true } });
 		expect(calls.some((c) => c.method === 'PUT')).toBe(false);
+	});
+});
+
+describe('static sites', () => {
+	const SITES = 'GET /api/admin/content';
+	const A = '0a9e2c4e-1d4b-4c9a-9f3e-5b1c2d3e4f50';
+	const B = '7f1b2a3c-4d5e-4f60-8a9b-0c1d2e3f4a5b';
+	const siteRows = (rows: unknown[], total = rows.length) => json({ data: rows, total_count: total });
+
+	it('lists the tenant\'s sites by name from the admin content list', async () => {
+		const { event, calls } = loadEvent({
+			...LISTED,
+			[SITES]: siteRows([
+				{ id: B, title: '', body: { name: 'Shop' } },
+				{ id: A, title: '', body: { name: 'Agency' } },
+			]),
+		});
+		const out = (await load(event)) as Record<string, unknown>;
+		expect(out.sites).toEqual({
+			ok: true,
+			value: [
+				{ id: A, name: 'Agency' },
+				{ id: B, name: 'Shop' },
+			],
+		});
+		const read = calls.find((c) => c.path.startsWith('/api/admin/content'));
+		expect(new URL(read?.path ?? '', 'http://x').searchParams.get('schema')).toBe('lyeve_builder_sites');
+	});
+
+	it('says the site list failed rather than offering no sites', async () => {
+		const { event } = loadEvent({ ...LISTED, [SITES]: refusal(500, 'internal') });
+		const out = (await load(event)) as Record<string, unknown>;
+		expect(out.sites).toEqual({ ok: false, gate: { state: 'error', message: 'Could not load sites. The static sites saved before stay as they are.' } });
+	});
+
+	it('treats a list cut short as not loaded, so a save cannot clear the sites it left out', async () => {
+		const { event } = loadEvent({ ...LISTED, [SITES]: siteRows([{ id: A, body: { name: 'Agency' } }], 501) });
+		const out = (await load(event)) as Record<string, unknown>;
+		expect(out.sites).toEqual({ ok: false, gate: { state: 'error', message: 'Could not load sites. The static sites saved before stay as they are.' } });
+	});
+
+	it.each([
+		[{ field: 'forms', form_schemas_offered: '1', form_static_sites_offered: '1', form_static_sites: [A, B] }, { form_schemas: [], form_static_sites: [A, B] }],
+		[{ field: 'forms', form_schemas_offered: '1', form_static_sites_offered: '1' }, { form_schemas: [], form_static_sites: [] }],
+		// A site list that failed to load leaves the static sites as they are.
+		[{ field: 'forms', form_schemas_offered: '1' }, { form_schemas: [] }],
+	])('sends the static sites only when the list loaded', async (fields, body) => {
+		const { event, calls } = act(fields, { [`PUT ${BASE}/settings`]: json(SETTINGS) });
+		expect(await actions.setting(event)).toMatchObject({ saved: { field: 'forms' } });
+		expect(calls).toEqual([{ method: 'PUT', path: `${BASE}/settings`, body }]);
+	});
+
+	it('lands a refused site list on its field in the console\'s own words', async () => {
+		const { event } = act(
+			{ field: 'forms', form_static_sites_offered: '1', form_static_sites: [A] },
+			{
+				[`PUT ${BASE}/settings`]: refusal(422, 'settings_invalid', 'Forms on Agency cannot post from static files, because its last production build signs them with a key.', {
+					field: 'form_static_sites',
+				}),
+			},
+		);
+		const out = (await actions.setting(event)) as Failure;
+		expect(out.status).toBe(422);
+		expect(out.data.settingError).toEqual({ field: 'form_static_sites', message: STATIC_SITES_REFUSED });
 	});
 });
