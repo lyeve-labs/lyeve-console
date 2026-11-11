@@ -75,6 +75,7 @@ const LABELS: Record<string, string> = {
 	graphql: 'GraphQL',
 	grpc: 'gRPC',
 	ai: 'AI',
+	mcp: 'MCP',
 	'openapi.json': 'API reference',
 };
 

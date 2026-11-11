@@ -45,6 +45,14 @@ describe('groupCatalog', () => {
 		expect(groups[3].nameParam).toBeNull();
 	});
 
+	it('names the MCP server as an acronym', () => {
+		const groups = groupCatalog({
+			actions: ['create'],
+			routes: [{ method: 'POST', path: '/api/v1/mcp', resource: 'mcp', action: 'create', scope: 'mcp:create', owner: 'mcp' }],
+		});
+		expect(groups.find((g) => g.resource === 'mcp')?.label).toBe('MCP');
+	});
+
 	// The catalog lists only /api/v1 routes, and an AI agent's tool index
 	// reads the OpenAPI document under /api/admin.
 	it('offers reading the API reference, which the catalog does not list', () => {
