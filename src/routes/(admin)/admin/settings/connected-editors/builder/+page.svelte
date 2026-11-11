@@ -117,6 +117,9 @@
 			? { state: 'error' as const, message: 'Could not load content types. Forms keep sending to the content types saved before.' }
 			: data.schemasGate,
 	);
+	// A site chosen earlier and deleted since is not offered, so the next save drops it.
+	const siteOptions = $derived(data.sites?.ok ? data.sites.value.map((s) => ({ value: s.id, label: s.name })) : []);
+	let staticSites = $derived((settings?.form_static_sites ?? []).filter((id) => siteOptions.some((o) => o.value === id)));
 	const saveForms = tracked(() => {});
 	// When the preset created its types but the save after it failed, the page reloads its data so it offers to allow them.
 	const applyPreset = tracked(() => async ({ result, update }) => {
@@ -248,7 +251,7 @@
 					error={errorOn('writes_per_minute')}
 				/>
 
-				{#if settingError && !['allowed', 'lifetime_days', 'show_schemas', 'writes_per_minute', 'forms', 'form_schemas', 'form_flows'].includes(settingError.field)}
+				{#if settingError && !['allowed', 'lifetime_days', 'show_schemas', 'writes_per_minute', 'forms', 'form_schemas', 'form_flows', 'form_static_sites'].includes(settingError.field)}
 					<Alert tone="danger">{settingError.message}</Alert>
 				{/if}
 
@@ -384,6 +387,28 @@
 									</li>
 								{/each}
 							</ul>
+						{/if}
+					{/if}
+
+					{#if data.sites && !data.sites.ok}
+						<GateNotice gate={data.sites.gate} title="Sites" absent="Sites are not included in this build." />
+					{:else if data.sites}
+						<input type="hidden" name="form_static_sites_offered" value="1" />
+						{#if siteOptions.length === 0}
+							<p class="text-sm text-muted">No sites yet. Create a site in the builder to choose it here.</p>
+						{:else}
+							<MultiSelect
+								id="form-static-sites"
+								label="Static sites"
+								bind:value={staticSites}
+								options={siteOptions}
+								searchable
+								hint="Forms on the sites you choose post without a signature, for sites published as static files with no server."
+								error={errorOn('form_static_sites')}
+							/>
+							{#each staticSites as id (id)}
+								<input type="hidden" name="form_static_sites" value={id} />
+							{/each}
 						{/if}
 					{/if}
 

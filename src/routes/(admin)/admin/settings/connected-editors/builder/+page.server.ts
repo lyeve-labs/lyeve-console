@@ -27,12 +27,15 @@ import {
 	LIFETIMES,
 	SAID,
 	WITHHELD,
+	STATIC_SITES_REFUSED,
 	getSettings,
+	listSites,
 	saveSettings,
 	showable,
 	type ConnectionsGate,
 	type Settings,
 	type SettingsPatch,
+	type SiteOption,
 } from '$lib/api/connected-editors';
 import { OWNER_ROLES, isOwner, refusalSentence } from '../shared.server';
 
@@ -45,16 +48,20 @@ async function formSchemaRows(client: HttpClient): Promise<FormSchemaRow[]> {
 			name: s.name,
 			label: s.display_name || s.name,
 			publicDelivery: (s as { public_delivery?: unknown }).public_delivery === true,
+			// Every type's id is unique, and no post writes one.
+			hasUnique: (s.fields ?? []).some((f) => f.unique && !f.system),
 		}));
 }
 
 /**
- * Whether forms may send to a type: it is not the builder's own, and the
+ * Whether forms may send to a type: it is not the builder's own, the
  * delivery API does not serve it, because anyone could read a visitor's post
- * there. The builder plugin refuses a save that names any other type.
+ * there, and no field of it is unique, because a refused repeat would tell a
+ * visitor the value is stored. The builder plugin refuses a save that names
+ * any other type.
  */
 function formsMaySendTo(row: FormSchemaRow): boolean {
-	return !row.publicDelivery && showable([row.name]).length > 0;
+	return !row.publicDelivery && !row.hasUnique && showable([row.name]).length > 0;
 }
 
 /** What a refused settings read means. A tenant the plugin is withheld from gets the area's own notice. */
@@ -81,6 +88,7 @@ export const load: PageServerLoad = async (event) => {
 			formsTypeTaken: false,
 			flows: null as Section<FlowTargets> | null,
 			formsPreset: null as Section<boolean> | null,
+			sites: null as Section<SiteOption[]> | null,
 		};
 	}
 
@@ -95,6 +103,7 @@ export const load: PageServerLoad = async (event) => {
 				'Could not load the content type presets.',
 			)
 		: null;
+	const sites = section(listSites(client), 'Could not load sites. The static sites saved before stay as they are.');
 	const read = await section(getSettings(client), settingsGate);
 	const schemaList = await schemas;
 	// A tenant the plugin is withheld from is the page's gate, and every other
@@ -111,6 +120,7 @@ export const load: PageServerLoad = async (event) => {
 			formsTypeTaken: false,
 			flows: null,
 			formsPreset: null,
+			sites: null,
 		};
 	}
 	const rows = schemaList.ok ? schemaList.value : [];
@@ -125,6 +135,7 @@ export const load: PageServerLoad = async (event) => {
 		formsTypeTaken: rows.some((r) => r.name === FORMS_TYPE),
 		flows: flows ? await flows : null,
 		formsPreset: formsPreset ? await formsPreset : null,
+		sites: await sites,
 	};
 };
 
@@ -157,6 +168,9 @@ function setting(form: FormData): { field: string; patch?: SettingsPatch; error?
 			const patch: SettingsPatch = {};
 			if (form.get('form_schemas_offered')) patch.form_schemas = form.getAll('form_schemas').map(String).filter(Boolean);
 			if (form.get('form_flows_offered')) patch.form_flows = form.getAll('form_flows').map(String).filter(Boolean);
+			if (form.get('form_static_sites_offered')) {
+				patch.form_static_sites = form.getAll('form_static_sites').map(String).filter(Boolean);
+			}
 			if (Object.keys(patch).length === 0) {
 				return { field, error: 'This form is missing its setting. Reload the page and try again.' };
 			}
@@ -219,7 +233,10 @@ export const actions: Actions = {
 			return { saved: { field, settings: await saveSettings(authedClient(event), patch) } };
 		} catch (e) {
 			if (errorCodeOf(e) === 'settings_invalid') {
-				return fail(422, { settingError: { field: bodyString(e, 'field') || field, message: (e as ApiError).message } });
+				const at = bodyString(e, 'field') || field;
+				// The engine's sentences speak of site ids and signing keys, which this list never shows.
+				const message = at === 'form_static_sites' ? STATIC_SITES_REFUSED : (e as ApiError).message;
+				return fail(422, { settingError: { field: at, message } });
 			}
 			if (isOutage(e)) return fail(503, { settingError: { field, message: SAID.settingOutage } });
 			return fail(e instanceof ApiError ? e.status : 400, {

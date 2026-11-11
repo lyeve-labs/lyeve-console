@@ -26,7 +26,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 
 import Page from './+page.svelte';
 import { invalidateAll } from '$app/navigation';
-import { SAID } from '$lib/api/connected-editors';
+import { SAID, STATIC_SITES_REFUSED } from '$lib/api/connected-editors';
 import { FORMS_TYPE_TAKEN, SUBMISSIONS_PUBLIC } from '$lib/api/form-destinations';
 
 afterEach(cleanup);
@@ -56,6 +56,7 @@ function props(over: Record<string, unknown> = {}, form: unknown = null) {
 			formsTypeTaken: false,
 			flows: null,
 			formsPreset: null,
+			sites: null,
 			...over,
 		} as never,
 		form: form as never,
@@ -388,5 +389,57 @@ describe('where forms can send', () => {
 	it('offers no preset once its submissions type is allowed', () => {
 		render(Page, { props: props({ settings: { ok: true, value: FORM_SETTINGS }, formSchemas: FORM_SCHEMAS, formsPreset: PRESET }) });
 		expect(document.querySelector('[data-testid="forms-preset"]')).toBeNull();
+	});
+});
+
+describe('static sites', () => {
+	const A = '0a9e2c4e-1d4b-4c9a-9f3e-5b1c2d3e4f50';
+	const B = '7f1b2a3c-4d5e-4f60-8a9b-0c1d2e3f4a5b';
+	const GONE = '11111111-2222-4333-8444-555555555555';
+	const STATIC = { ...SETTINGS, form_schemas: [], form_flows: [], form_static_sites: [A, GONE] };
+	const SITES = { ok: true, value: [{ id: A, name: 'Agency' }, { id: B, name: 'Shop' }] };
+
+	function formsCard(): HTMLFormElement {
+		return document.querySelector('form[action="?/setting"] input[name="field"][value="forms"]')?.closest('form') as HTMLFormElement;
+	}
+
+	function chosen(): string[] {
+		return [...formsCard().querySelectorAll('input[name="form_static_sites"]')].map((i) => (i as HTMLInputElement).value);
+	}
+
+	it('offers the tenant\'s sites in the forms card and saves the list it offered', () => {
+		render(Page, { props: props({ settings: { ok: true, value: STATIC }, sites: SITES }) });
+		const card = formsCard();
+		expect(card.querySelector('#form-static-sites')).not.toBeNull();
+		expect(card.textContent).toContain('Static sites');
+		expect(card.querySelector('input[name="form_static_sites_offered"]')).not.toBeNull();
+		// A site deleted since it was chosen is not offered, so the next save drops it.
+		expect(chosen()).toEqual([A]);
+	});
+
+	it('says how to get a site when the tenant has none', () => {
+		render(Page, { props: props({ settings: { ok: true, value: STATIC }, sites: { ok: true, value: [] } }) });
+		expect(formsCard().textContent).toContain('No sites yet. Create a site in the builder to choose it here.');
+		expect(formsCard().querySelector('#form-static-sites')).toBeNull();
+	});
+
+	it('draws a failed site list as a failure with a way to try again, and saves no site list', () => {
+		const message = 'Could not load sites. The static sites saved before stay as they are.';
+		render(Page, { props: props({ settings: { ok: true, value: STATIC }, sites: { ok: false, gate: { state: 'error', message } } }) });
+		expect(formsCard().textContent).toContain(message);
+		expect(said()).toContain('Try again');
+		expect(formsCard().querySelector('input[name="form_static_sites_offered"]')).toBeNull();
+		expect(chosen()).toEqual([]);
+	});
+
+	it('lands a refused site list on its field, once', () => {
+		render(Page, {
+			props: props(
+				{ settings: { ok: true, value: STATIC }, sites: SITES },
+				{ settingError: { field: 'form_static_sites', message: STATIC_SITES_REFUSED } },
+			),
+		});
+		expect(said().split(STATIC_SITES_REFUSED)).toHaveLength(2);
+		expect(formsCard().textContent).toContain(STATIC_SITES_REFUSED);
 	});
 });
