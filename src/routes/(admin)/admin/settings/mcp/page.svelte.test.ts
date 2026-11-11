@@ -24,7 +24,7 @@ const KEY_AGENT = {
 };
 const SESSION_AGENT = { ...KEY_AGENT, kind: 'session', credential_id: 'u2', person_id: 'u2' };
 
-const CEILING = 'No more connected agents on this engine';
+const CEILING = 'No more connected agents';
 
 function setup(over: Record<string, unknown> = {}, form: unknown = null) {
 	return render(Page, {
@@ -121,7 +121,7 @@ describe('MCP settings page', () => {
 	it('shows the ceiling and the license link once the one agent is connected', () => {
 		const { getByText, queryByTestId, container } = setup({ agents: { ok: true, value: { limit: 1, upgradeUrl: '', agents: [KEY_AGENT] } } });
 		expect(getByText(CEILING)).toBeTruthy();
-		expect(said(container)).toContain("You're using 1 of 1 connected agents, the most this engine allows.");
+		expect(said(container)).toContain("You're using 1 of 1 connected agents.");
 		expect(container.querySelector('a[href="/admin/settings/license"]')).toBeTruthy();
 		expect(queryByTestId('mcp-agent-limit')).toBeNull();
 	});

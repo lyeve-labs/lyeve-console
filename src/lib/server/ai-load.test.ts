@@ -61,7 +61,7 @@ describe('aiActionError', () => {
 		expect(aiActionError(other, 'f')).toBe('AI is not enabled on this engine.');
 		const ceiling = new ApiError(402, 'cap_exceeded', { error: 'cap_exceeded', cap: 'ai.providers', limit: 2, current: 2, upgrade_url: '' });
 		expect(aiActionError(ceiling, 'f')).toBe(
-			"You're using 2 of 2 AI providers, the most this engine allows. A license that allows more lifts the limit. Removing one also makes room.",
+			"You're using 2 of 2 AI providers. A license that allows more lifts the limit. Removing one also makes room.",
 		);
 		const license = new ApiError(402, 'payment_required', { error: 'payment_required', plugin: 'ai', feature: 'feature:ai', upgrade_url: '' });
 		expect(aiActionError(license, 'f')).toBe('AI is not enabled on this engine.');

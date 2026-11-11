@@ -120,11 +120,13 @@ export async function section<T, G>(read: Promise<T>, failed: string | ((err: un
 
 /** The sentence a page shows for a gate at a ceiling. */
 export function fullText(gate: Extract<Gate, { state: 'full' }>): string {
+	// A limit can count inside one tenant or across the engine, and the gate
+	// does not say which, so the sentence names neither.
 	if (gate.limit !== null && gate.current !== null) {
-		return `You're using ${gate.current} of ${gate.limit}, the most this engine allows.`;
+		return `You're using ${gate.current} of ${gate.limit}.`;
 	}
-	if (gate.limit !== null) return `This engine allows at most ${gate.limit}.`;
-	return 'This engine is at its limit.';
+	if (gate.limit !== null) return `You can have up to ${gate.limit}.`;
+	return "You've reached the limit.";
 }
 
 /**
