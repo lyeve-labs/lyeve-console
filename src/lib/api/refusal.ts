@@ -109,7 +109,7 @@ export function capNoun(cap: string): string {
 export function refusalTitle(r: Refusal): string {
 	if (r.kind === 'cap') {
 		const noun = capNoun(r.cap);
-		return `No more ${noun} on this engine`;
+		return `No more ${noun}`;
 	}
 	return NOT_ENABLED;
 }
@@ -124,18 +124,28 @@ export function refusalTitle(r: Refusal): string {
 export function refusalText(r: Refusal): string {
 	if (r.kind === 'cap') {
 		const noun = capNoun(r.cap);
+		if (r.cap === ADMIN_SEATS_CAP) {
+			// Admin seats are counted across the engine, so this line names it.
+			// The heading already names the seats, so the count stands alone.
+			let held: string;
+			if (r.limit !== null && r.current !== null) {
+				held = `You're using ${r.current} of ${r.limit}, the most this engine allows.`;
+			} else if (r.limit !== null) {
+				held = `This engine allows at most ${r.limit} ${noun}.`;
+			} else {
+				held = `This engine is at its limit for ${noun}.`;
+			}
+			return `Every admin seat is taken. ${held} ${LIFTS} Removing the admin role from an account also frees a seat. Editors and viewers take no seat.`;
+		}
+		// Most limits count inside one tenant and some across the engine, and
+		// the refusal does not say which, so the sentence names neither.
 		let line: string;
 		if (r.limit !== null && r.current !== null) {
-			line = `You're using ${r.current} of ${r.limit} ${noun}, the most this engine allows.`;
+			line = `You're using ${r.current} of ${r.limit} ${noun}.`;
 		} else if (r.limit !== null) {
-			line = `This engine allows at most ${r.limit} ${noun}.`;
+			line = `You can have up to ${r.limit} ${noun}.`;
 		} else {
-			line = `This engine is at its limit for ${noun}.`;
-		}
-		if (r.cap === ADMIN_SEATS_CAP) {
-			// The heading already names the seats, so the count stands alone.
-			const held = line.replace(` ${noun},`, ',');
-			return `Every admin seat is taken. ${held} ${LIFTS} Removing the admin role from an account also frees a seat. Editors and viewers take no seat.`;
+			line = `You've reached the limit for ${noun}.`;
 		}
 		return `${line} ${LIFTS} Removing one also makes room.`;
 	}

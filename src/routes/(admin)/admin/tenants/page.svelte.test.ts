@@ -340,8 +340,8 @@ describe('Tenants refusals', () => {
 		const drawer = await refusedCreate({ kind: 'cap', cap: 'tenants', limit: null, current: null, upgradeUrl: PLAN });
 
 		const notice = drawer.querySelector('[data-testid="refusal-notice"]') as HTMLElement;
-		expect(notice.textContent).toContain('No more tenants on this engine');
-		expect(notice.textContent).toContain('This engine is at its limit for tenants. A license that allows more lifts the limit.');
+		expect(notice.textContent).toContain('No more tenants');
+		expect(notice.textContent).toContain("You've reached the limit for tenants. A license that allows more lifts the limit.");
 		expect(notice.textContent).not.toContain('This is not enabled on this engine');
 		expect(notice.querySelector(`a[href="${PLAN}"]`)?.textContent?.trim()).toBe('View the plan');
 	});
@@ -350,7 +350,7 @@ describe('Tenants refusals', () => {
 		const drawer = await refusedCreate({ kind: 'cap', cap: 'tenants', limit: null, current: null, upgradeUrl: '' });
 
 		const notice = drawer.querySelector('[data-testid="refusal-notice"]') as HTMLElement;
-		expect(notice.textContent).toContain('No more tenants on this engine');
+		expect(notice.textContent).toContain('No more tenants');
 		expect(notice.textContent).not.toContain('View the plan');
 	});
 });

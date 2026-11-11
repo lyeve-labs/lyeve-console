@@ -94,11 +94,11 @@ describe('AI providers page', () => {
 	// Without the AI license a tenant holds one provider. The page says so
 	// before a create would be refused, and the create control waits.
 	describe('the free tier', () => {
-		const CEILING = "You're using 1 of 1 AI providers, the most this engine allows.";
+		const CEILING = "You're using 1 of 1 AI providers.";
 
 		it('shows the ceiling and holds the create control once the one provider exists', () => {
 			const { getByText, getAllByRole } = setup({ ceiling: { limit: 1, upgradeUrl: '' }, providers: [fixtureProvider], total: 1 });
-			expect(getByText('No more AI providers on this engine')).toBeTruthy();
+			expect(getByText('No more AI providers')).toBeTruthy();
 			expect(getByText(new RegExp(CEILING))).toBeTruthy();
 			const create = getAllByRole('button').find((b) => b.textContent?.includes('New provider'));
 			expect(create?.hasAttribute('disabled')).toBe(true);
@@ -112,7 +112,7 @@ describe('AI providers page', () => {
 
 		it('holds the create control at the limit the list states', () => {
 			const room = setup({ ceiling: { limit: 2, upgradeUrl: '' }, providers: [fixtureProvider], total: 1 });
-			expect(room.queryByText('No more AI providers on this engine')).toBeNull();
+			expect(room.queryByText('No more AI providers')).toBeNull();
 			cleanup();
 			const full = setup({ ceiling: { limit: 2, upgradeUrl: '' }, providers: [fixtureProvider, fixtureLocalProvider], total: 2 });
 			expect(full.getByText(/You're using 2 of 2 AI providers/)).toBeTruthy();
@@ -120,18 +120,18 @@ describe('AI providers page', () => {
 
 		it('offers the create control with room left', () => {
 			const { queryByText, getAllByText } = setup({ ceiling: { limit: 1, upgradeUrl: '' }, providers: [], total: 0 });
-			expect(queryByText('No more AI providers on this engine')).toBeNull();
+			expect(queryByText('No more AI providers')).toBeNull();
 			expect(getAllByText('New provider').length).toBeGreaterThan(0);
 		});
 
 		it('shows no ceiling under the AI license', () => {
 			const { queryByText } = setup({ ceiling: { limit: 0, upgradeUrl: '' }, providers: [fixtureProvider, fixtureLocalProvider], total: 2 });
-			expect(queryByText('No more AI providers on this engine')).toBeNull();
+			expect(queryByText('No more AI providers')).toBeNull();
 		});
 
 		it('shows no ceiling to a reader who cannot create a provider', () => {
 			const { queryByText } = setup({ ceiling: { limit: 1, upgradeUrl: '' }, isSuperAdmin: false, providers: [fixtureProvider], total: 1 });
-			expect(queryByText('No more AI providers on this engine')).toBeNull();
+			expect(queryByText('No more AI providers')).toBeNull();
 		});
 
 		it('draws a refused create as the ceiling, with the link from the refusal', async () => {
@@ -140,7 +140,7 @@ describe('AI providers page', () => {
 			const { container, getAllByText } = setup({ ceiling: { limit: 0, upgradeUrl: '' } }, { error: 'x', refused });
 			await fireEvent.click(getAllByText('New provider')[0]);
 			const drawer = container.ownerDocument.querySelector('#provider-create') as HTMLFormElement;
-			expect(drawer.textContent).toContain('No more AI providers on this engine');
+			expect(drawer.textContent).toContain('No more AI providers');
 			expect(drawer.querySelector(`a[href="${url}"]`)?.textContent).toContain('View the add-on');
 		});
 	});

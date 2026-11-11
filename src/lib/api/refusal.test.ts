@@ -39,13 +39,13 @@ describe('refusalOf', () => {
 describe('refusalText', () => {
 	it('says the count against the ceiling in the words of the cap', () => {
 		expect(refusalText({ kind: 'cap', cap: 'example.items', limit: 4, current: 4, upgradeUrl: '' })).toBe(
-			"You're using 4 of 4 items, the most this engine allows. A license that allows more lifts the limit. Removing one also makes room.",
+			"You're using 4 of 4 items. A license that allows more lifts the limit. Removing one also makes room.",
 		);
 	});
 
 	it('says only the ceiling when the count is missing', () => {
 		expect(refusalText({ kind: 'cap', cap: 'example.widget_slots', limit: 9, current: null, upgradeUrl: '' })).toContain(
-			'This engine allows at most 9 widget slots.',
+			'You can have up to 9 widget slots.',
 		);
 	});
 
@@ -57,7 +57,7 @@ describe('refusalText', () => {
 
 	it('names a license as the way forward before removing one', () => {
 		const text = refusalText({ kind: 'cap', cap: 'example.items', limit: null, current: null, upgradeUrl: '' });
-		expect(text).toBe('This engine is at its limit for items. A license that allows more lifts the limit. Removing one also makes room.');
+		expect(text).toBe('You\'ve reached the limit for items. A license that allows more lifts the limit. Removing one also makes room.');
 		expect(text.indexOf('license')).toBeLessThan(text.indexOf('Removing'));
 	});
 

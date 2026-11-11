@@ -276,7 +276,7 @@ describe('admin/tenants/+page.server.ts actions.create', () => {
 			status: 402,
 			data: { refused: { kind: 'cap', cap: 'tenants', limit: null, current: null, upgradeUrl: link } },
 		});
-		expect((result as { data: { error: string } }).data.error).toContain('This engine is at its limit for tenants.');
+		expect((result as { data: { error: string } }).data.error).toContain("You've reached the limit for tenants.");
 	});
 
 	it('sends the plan as typed', async () => {
