@@ -35,14 +35,31 @@ function access(over: Partial<KeyAccess>): KeyAccess {
 describe('groupCatalog', () => {
 	it('groups the routes by resource, leaving out what the drawer handles itself', () => {
 		const groups = groupCatalog(catalog);
-		expect(groups.map((g) => g.resource)).toEqual(['flows', 'graphql', 'recommendations']);
-		const flows = groups[0];
+		expect(groups.map((g) => g.resource)).toEqual(['openapi.json', 'flows', 'graphql', 'recommendations']);
+		const flows = groups[1];
 		expect(flows.label).toBe('Flows');
 		expect(flows.actions).toEqual(['read', 'create']);
 		expect(flows.nameParam).toBe('{slug}');
-		expect(groups[1].label).toBe('GraphQL');
-		expect(groups[1].nameParam).toBeNull();
+		expect(groups[2].label).toBe('GraphQL');
 		expect(groups[2].nameParam).toBeNull();
+		expect(groups[3].nameParam).toBeNull();
+	});
+
+	// The catalog lists only /api/v1 routes, and an AI agent's tool index
+	// reads the OpenAPI document under /api/admin.
+	it('offers reading the API reference, which the catalog does not list', () => {
+		const [ref] = groupCatalog(catalog);
+		expect(ref).toMatchObject({ resource: 'openapi.json', label: 'API reference', actions: ['read'], nameParam: null });
+		expect(accessScopes(access({ resources: { 'openapi.json': { actions: ['read'], names: '' } } }))).toEqual([
+			'content:read',
+			'openapi.json:read',
+		]);
+	});
+
+	it('lists the API reference once when the catalog already has it', () => {
+		const route = { method: 'GET', path: '/api/admin/openapi.json', resource: 'openapi.json', action: 'read', scope: 'openapi.json:read', owner: 'engine' };
+		const groups = groupCatalog({ ...catalog, routes: [...catalog.routes, route] });
+		expect(groups.find((g) => g.resource === 'openapi.json')?.routes).toHaveLength(1);
 	});
 
 	it('answers nothing for an engine with no catalog', () => {

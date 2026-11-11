@@ -162,6 +162,15 @@ describe('API keys page', () => {
 		expect(document.body.querySelector('#key-names-flows')).toBeTruthy();
 	});
 
+	it('grants reading the API reference, so an AI agent can read the OpenAPI document', async () => {
+		const { getAllByRole, getByRole } = setup([key({})]);
+		await fireEvent.click(getAllByRole('button', { name: /New key/ })[0]);
+		await fireEvent.click(getByRole('button', { name: /API reference/ }));
+		expect(document.body.textContent).toContain('/api/admin/openapi.json');
+		await fireEvent.click(within(getByRole('group', { name: 'Actions on API reference' })).getByLabelText('Read'));
+		expect(sent('scopes')).toEqual(['content:read', 'openapi.json:read']);
+	});
+
 	it('warns that GraphQL reads every schema when the key is held to some', async () => {
 		const { getAllByRole, getByRole } = setup([key({})]);
 		await fireEvent.click(getAllByRole('button', { name: /New key/ })[0]);
