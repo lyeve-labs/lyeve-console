@@ -69,8 +69,29 @@ export interface ResourceGroup {
 /** The resources the drawer handles on its own rather than from the catalog. */
 const BUILT_IN = new Set(['content', 'schemas', '*']);
 
-/** Names a plain capitalization would misspell. */
-const LABELS: Record<string, string> = { gdpr: 'GDPR', graphql: 'GraphQL', grpc: 'gRPC', ai: 'AI' };
+/** Names a plain capitalization would misspell, and names a reader would not know. */
+const LABELS: Record<string, string> = {
+	gdpr: 'GDPR',
+	graphql: 'GraphQL',
+	grpc: 'gRPC',
+	ai: 'AI',
+	mcp: 'MCP',
+	'openapi.json': 'API reference',
+};
+
+/**
+ * The engine's OpenAPI document, which an AI agent's tool index reads. The
+ * catalog lists only routes under /api/v1, and this one is under /api/admin,
+ * so the drawer adds it here or a key could never be granted its scope.
+ */
+const API_REFERENCE_ROUTE: KeyScopeRoute = {
+	method: 'GET',
+	path: '/api/admin/openapi.json',
+	resource: 'openapi.json',
+	action: 'read',
+	scope: 'openapi.json:read',
+	owner: 'engine',
+};
 
 function titleOf(resource: string): string {
 	if (LABELS[resource]) return LABELS[resource];
@@ -86,25 +107,26 @@ function orderActions(actions: Iterable<string>): string[] {
 	});
 }
 
-/** The catalog's routes grouped by resource, content and schemas left out. */
+/** The catalog's routes grouped by resource in label order, content and schemas left out. */
 export function groupCatalog(catalog: KeyScopeCatalog | null): ResourceGroup[] {
 	if (!catalog) return [];
 	const byResource = new Map<string, KeyScopeRoute[]>();
-	for (const r of catalog.routes) {
+	const listed = catalog.routes.some((r) => r.scope === API_REFERENCE_ROUTE.scope);
+	for (const r of listed ? catalog.routes : [...catalog.routes, API_REFERENCE_ROUTE]) {
 		if (BUILT_IN.has(r.resource)) continue;
 		const list = byResource.get(r.resource) ?? [];
 		list.push(r);
 		byResource.set(r.resource, list);
 	}
 	return [...byResource.entries()]
-		.sort(([a], [b]) => a.localeCompare(b))
 		.map(([resource, routes]) => ({
 			resource,
 			label: titleOf(resource),
 			actions: orderActions(routes.map((r) => r.action)),
 			routes,
 			nameParam: routes.find((r) => !r.declared && r.name?.startsWith('{'))?.name ?? null,
-		}));
+		}))
+		.sort((a, b) => a.label.localeCompare(b.label));
 }
 
 /** The access a key is being given, as the drawer holds it. */

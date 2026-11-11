@@ -36,6 +36,11 @@ describe('a new key carries the scopes the form chose', () => {
 		);
 	});
 
+	it('sends the scope that reads the API reference as the engine spells it', async () => {
+		await actions.create(event({ name: 'agent', roles: 'viewer', scopes: ['mcp:create', 'openapi.json:read'] }));
+		expect(engine.post.mock.calls[0][1]).toMatchObject({ scopes: ['mcp:create', 'openapi.json:read'] });
+	});
+
 	it('sends no scope the picker does not offer', async () => {
 		await actions.create(event({ name: 'svc', roles: 'editor', scopes: ['*:*', 'content:write'] }));
 		expect(engine.post.mock.calls[0][1]).toMatchObject({ scopes: ['content:write'] });
