@@ -2,7 +2,8 @@
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+const forms = vi.hoisted(() => ({ enhance: vi.fn((_node: HTMLFormElement, _submit?: unknown) => ({ destroy() {} })) }));
+vi.mock('$app/forms', () => forms);
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/settings/mcp') } }));
 vi.mock('$app/state', () => state);
 
@@ -74,6 +75,17 @@ describe('MCP settings page', () => {
 		expect(boxes.map((b) => b.value)).toEqual(['viewer', 'editor', 'admin', 'author']);
 		expect(boxes.filter((b) => b.checked).map((b) => b.value)).toEqual(['admin', 'author']);
 		expect(said(form)).toContain('A super admin always can');
+	});
+
+	it('keeps the ticked roles after a save, so the next save posts them again', async () => {
+		const { getByTestId } = setup({ settings: { ok: true, value: { enabled: true, agentRoles: ['admin', 'viewer'] } } });
+		const form = getByTestId('mcp-roles-form');
+		const submit = forms.enhance.mock.calls.find(([node]) => node === form)?.[1];
+		expect(submit, 'the roles form passes its own submit function to enhance').toBeTypeOf('function');
+		const after = await (submit as () => Promise<(o: { update: (o?: { reset?: boolean }) => Promise<void> }) => Promise<void>>)();
+		const update = vi.fn(async () => {});
+		await after({ update });
+		expect(update).toHaveBeenCalledWith({ reset: false });
 	});
 
 	it('shows a disconnected agent with when it was disconnected and an Allow for it, outside the limit', () => {

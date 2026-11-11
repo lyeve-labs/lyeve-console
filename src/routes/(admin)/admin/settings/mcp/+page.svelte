@@ -51,6 +51,9 @@
 		return names.map((r) => ({ value: r, label: r }));
 	});
 	let chosenRoles = $derived([...(settings?.agentRoles ?? [])]);
+	// The default enhance resets a form after a successful save, which unticks
+	// every box, so a second save would post no roles at all.
+	const keepRoles: SubmitFunction = () => async ({ update }) => update({ reset: false });
 
 	let toggleForm = $state<HTMLFormElement | null>(null);
 	let keepOutForm = $state<HTMLFormElement | null>(null);
@@ -140,7 +143,7 @@
 						<form
 							method="POST"
 							action="?/roles"
-							use:enhance
+							use:enhance={keepRoles}
 							class="mt-4 flex flex-col gap-3 border-t border-line pt-4"
 							data-testid="mcp-roles-form"
 						>
@@ -150,7 +153,7 @@
 								bind:value={chosenRoles}
 								options={roleOptions}
 								orientation="horizontal"
-								hint="Without the AI add-on, only these roles can connect a new agent. A super admin always can, and agents already connected keep working."
+								hint="Without the AI license, only these roles can connect a new agent. A super admin always can, and agents already connected keep working."
 							/>
 							{#if rolesError}
 								<Alert tone="danger">{rolesError}</Alert>
