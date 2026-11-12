@@ -45,8 +45,8 @@
 <!-- The filter sits on the list it narrows. -->
 {#if schemas.length > 1}
 	<div class="px-3 pt-3">
-		<label for="schema-filter" class="sr-only">Filter schemas</label>
-		<SearchInput id="schema-filter" bind:value={schemaFilter} placeholder="Filter schemas" />
+		<label for="schema-filter" class="sr-only">Filter content types</label>
+		<SearchInput id="schema-filter" bind:value={schemaFilter} placeholder="Filter content types" />
 	</div>
 {/if}
 <div class="space-y-1 p-3">
@@ -84,7 +84,7 @@
 		</button>
 	{/each}
 	{#if visibleSchemas.length === 0 && schemas.length > 0}
-		<p class="px-3 py-2 text-sm text-muted">No schemas match this filter.</p>
+		<p class="px-3 py-2 text-sm text-muted">No content types match this filter.</p>
 	{/if}
 	{#if visibleSchemas.length > shown}
 		<Button variant="ghost" size="sm" class="w-full" onclick={() => (shown += PAGE)}>

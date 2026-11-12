@@ -13,9 +13,9 @@ export const EVENT_KINDS: EventKind[] = ['content', 'system'];
 const KIND_KEY = 'kind';
 
 /** What the schema field is called under a system event, and what it does there. */
-export const SCOPE_LABEL = 'Scope (schema or publisher key)';
+export const SCOPE_LABEL = 'Scope (content type or publisher key)';
 export const SCOPE_HINT =
-	"Optional. The publisher's key, such as the flow slug for a run hook or the schema of a record. Leave blank for all.";
+	"Optional. The publisher's key, such as the flow slug for a run hook or the content type of a record. Leave blank for all.";
 
 /**
  * The keys each kind reads, in the order the form draws them. A system

@@ -63,11 +63,11 @@ describe('schema confirmations with a row count nobody read', () => {
 	it('says the count is unknown when deleting rather than calling the table empty', async () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
-		await fireEvent.click(screen.getByRole('button', { name: 'Delete schema posts' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete content type posts' }));
 
 		await waitFor(() => expect(kit.confirm).toHaveBeenCalled());
 		const [title, body] = kit.confirm.mock.calls[0] ?? [];
-		expect(title).toBe('Delete schema posts?');
+		expect(title).toBe('Delete content type posts?');
 		expect(body).toContain('every row in it');
 		expect(body).toContain('Could not count the rows');
 		expect(body).toContain('cannot be undone');
@@ -77,7 +77,7 @@ describe('schema confirmations with a row count nobody read', () => {
 		render(SchemaPage, { props: { data: data({ rowCounts: { posts: 7 } }), form: null } });
 		await new Promise((r) => setTimeout(r, 0));
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
-		await fireEvent.click(screen.getByRole('button', { name: 'Delete schema posts' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete content type posts' }));
 
 		await waitFor(() => expect(kit.confirm).toHaveBeenCalled());
 		expect(kit.confirm.mock.calls[0]?.[1]).toContain('all 7 rows');
@@ -214,7 +214,7 @@ describe('a content type that changed since it was opened', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
 		expect(sentVersion()).toBe('v1');
 
-		await play('?/save', { type: 'failure', data: { error: 'Could not save the schema. Try again.', renamed: [{ from: 'title', to: 'headline' }], version: 'v2' } });
+		await play('?/save', { type: 'failure', data: { error: 'Could not save the content type. Try again.', renamed: [{ from: 'title', to: 'headline' }], version: 'v2' } });
 
 		await waitFor(() => expect(sentVersion()).toBe('v2'));
 		expect(screen.queryByRole('button', { name: 'Reload' })).toBeNull();
@@ -227,8 +227,8 @@ describe('a content type that changed since it was opened', () => {
 			await view.rerender({ data: data({ schemas: [versioned('v2', [{ name: 'title' }, { name: 'summary' }])] }), form: null });
 		});
 
-		await play('?/save', { type: 'failure', data: { error: 'Someone changed this schema after you opened it. Reload it to see the latest version, then make your change again.', stale: true, renamed: [] } });
-		expect(await screen.findByText('Someone changed this schema after you opened it. Reload it to see the latest version, then make your change again.')).toBeTruthy();
+		await play('?/save', { type: 'failure', data: { error: 'Someone changed this content type after you opened it. Reload it to see the latest version, then make your change again.', stale: true, renamed: [] } });
+		expect(await screen.findByText('Someone changed this content type after you opened it. Reload it to see the latest version, then make your change again.')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
 
 		await waitFor(() => expect(sentVersion()).toBe('v2'));

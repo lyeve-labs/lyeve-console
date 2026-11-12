@@ -20,7 +20,7 @@ describe('EventTriggerForm', () => {
 	it('reads a config that names no kind as a content event', () => {
 		const { container } = setup({ schema: 'customers', event: 'after_create' });
 		expect(screen.getByRole('radio', { name: 'Content' }).getAttribute('aria-checked')).toBe('true');
-		expect(container.textContent).toContain('A record of a content schema was created, updated or deleted.');
+		expect(container.textContent).toContain('A record of a content type was created, updated or deleted.');
 		expect(container.textContent).not.toContain('Hook');
 	});
 
@@ -46,7 +46,7 @@ describe('EventTriggerForm', () => {
 	it('names the schema field as the publisher key under a system event', () => {
 		const { container } = setup({ kind: 'system', name: 'flow.run.failed' });
 		expect(container.textContent).toContain('A hook a plugin publishes');
-		expect(container.textContent).toContain('Scope (schema or publisher key)');
+		expect(container.textContent).toContain('Scope (content type or publisher key)');
 		expect(container.textContent).toContain('Hook');
 	});
 });

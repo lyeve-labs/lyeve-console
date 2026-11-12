@@ -336,7 +336,7 @@ describe('admin/schema save action', () => {
 		expect(out.status).toBe(412);
 		expect(out.data.stale).toBe(true);
 		expect(out.data.error).toBe(
-			'Someone changed this schema after you opened it. Reload it to see the latest version, then make your change again. These fields were renamed: title to headline.',
+			'Someone changed this content type after you opened it. Reload it to see the latest version, then make your change again. These fields were renamed: title to headline.',
 		);
 		expect(out.data.version).toBe('v2');
 		expect(out.data.renamed).toEqual([{ from: 'title', to: 'headline' }]);
@@ -353,7 +353,7 @@ describe('admin/schema save action', () => {
 		const out = (await actions.save(event)) as { status: number; data: { error: string; stale: boolean } };
 		expect(out.status).toBe(412);
 		expect(out.data.stale).toBe(true);
-		expect(out.data.error).toBe('Someone changed this schema after you opened it. Reload it to see the latest version, then make your change again.');
+		expect(out.data.error).toBe('Someone changed this content type after you opened it. Reload it to see the latest version, then make your change again.');
 		expect(calls.filter((c) => c.init?.method === 'POST')).toEqual([]);
 	});
 
@@ -373,7 +373,7 @@ describe('admin/schema save action', () => {
 		);
 		const out = (await actions.save(event)) as { status: number; data: { error: string; stale: boolean } };
 		expect(out.status).toBe(412);
-		expect(out.data.error).toBe('A schema named posts already exists. Open it from the list, or give this one another machine name.');
+		expect(out.data.error).toBe('A content type named posts already exists. Open it from the list, or give this one another machine name.');
 		expect(out.data.stale).toBe(false);
 	});
 
@@ -425,7 +425,7 @@ describe('admin/schema preview, delete and rename actions', () => {
 	it('hides a server failure behind a sentence', async () => {
 		const { event } = formEvent({ '/api/admin/schemas/posts': () => json({ error: 'pq: relation missing' }, 500) }, { name: 'posts' });
 		const out = (await actions.delete(event)) as { data: { error: string } };
-		expect(out.data.error).toBe('Could not delete the schema. Try again.');
+		expect(out.data.error).toBe('Could not delete the content type. Try again.');
 	});
 
 	it('moves the table through the rename route', async () => {
@@ -459,7 +459,7 @@ describe('admin/schema history and queued changes', () => {
 		const { event } = formEvent({ '/posts/history': () => json({ error: 'not found' }, 404) }, { name: 'posts' });
 		const out = (await actions.history(event)) as { status: number; data: { error: string } };
 		expect(out.status).toBe(404);
-		expect(out.data.error).toBe('There is no saved schema named posts, so it has no history.');
+		expect(out.data.error).toBe('There is no saved content type named posts, so it has no history.');
 	});
 
 	it('applies the queue for that schema only', async () => {

@@ -44,14 +44,14 @@
 				toast.success(`Renamed ${from} to ${stored.name}`);
 				await invalidateAll();
 			} else if (result.type === 'failure') {
-				renameError = String((result.data as { error?: string })?.error ?? 'Could not rename the schema. Try again.');
+				renameError = String((result.data as { error?: string })?.error ?? 'Could not rename the content type. Try again.');
 			}
 		};
 	};
 </script>
 
 <!-- A one-field prompt: the new machine name. -->
-<Modal bind:open title="Rename {name ?? 'schema'}">
+<Modal bind:open title="Rename {name ?? 'content type'}">
 	<form method="POST" action="?/rename" use:enhance={submitRename} id="schema-rename" class="flex flex-col gap-3">
 		<input type="hidden" name="from" value={name ?? ''} />
 		<Input

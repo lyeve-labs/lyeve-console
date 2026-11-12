@@ -82,7 +82,7 @@ export const load: PageServerLoad = async (event) => {
 	// A failed read is said as one, not drawn as an instance with no schemas:
 	// the empty state offers to create the first one, and a table the engine
 	// could not list is not a table that is not there.
-	const read = await section(getSchemas(client), 'Could not load schemas.');
+	const read = await section(getSchemas(client), 'Could not load content types.');
 	if (!read.ok) {
 		return {
 			schemas: [] as Schema[],
@@ -191,7 +191,7 @@ const refusedAs = (err: unknown, code: string) =>
 	err instanceof ApiError && err.status === 412 && (err.body as { code?: unknown } | undefined)?.code === code;
 
 /** What the builder says when the schema changed after the reader opened it. */
-const CHANGED_SINCE_OPENED = 'Someone changed this schema after you opened it. Reload it to see the latest version, then make your change again.';
+const CHANGED_SINCE_OPENED = 'Someone changed this content type after you opened it. Reload it to see the latest version, then make your change again.';
 
 /** The condition a write is sent on: only the definition at `version`. None when the read named no version. */
 const onlyAt = (version: string): RequestInit | undefined => (version ? { headers: { 'If-Match': `"${version}"` } } : undefined);
@@ -215,10 +215,10 @@ export const actions: Actions = {
 		await requireRole(event, WRITERS);
 		const data = await event.request.formData();
 		const schema = parseSchema(data.get('schema'));
-		if (!schema) return fail(400, { scope: 'save' as const, error: 'This form is missing its schema. Reload the page and try again.' });
+		if (!schema) return fail(400, { scope: 'save' as const, error: 'This form is missing its content type. Reload the page and try again.' });
 		const original = String(data.get('original') ?? '');
 		if (original && original !== schema.name) {
-			return fail(400, { scope: 'save' as const, error: 'To change the machine name of a saved schema, use Rename.' });
+			return fail(400, { scope: 'save' as const, error: 'To change the machine name of a saved content type, use Rename.' });
 		}
 		const client = authedClient(event);
 
@@ -258,10 +258,10 @@ export const actions: Actions = {
 			const done = renamed.length ? ` These fields were renamed: ${said()}.` : '';
 			const stale = refusedAs(err, VERSION_MISMATCH);
 			const message = refusedAs(err, ALREADY_EXISTS)
-				? `A schema named ${schema.name} already exists. Open it from the list, or give this one another machine name.`
+				? `A content type named ${schema.name} already exists. Open it from the list, or give this one another machine name.`
 				: stale
 					? CHANGED_SINCE_OPENED
-					: actionError(err, 'Could not save the schema. Try again.');
+					: actionError(err, 'Could not save the content type. Try again.');
 			return fail(statusOf(err), {
 				scope: 'save' as const,
 				error: `${message}${done}`,
@@ -300,12 +300,12 @@ export const actions: Actions = {
 	delete: async (event) => {
 		await requireRole(event, WRITERS);
 		const name = String((await event.request.formData()).get('name') ?? '');
-		if (!name) return fail(400, { scope: 'delete' as const, error: 'Choose a schema first.' });
+		if (!name) return fail(400, { scope: 'delete' as const, error: 'Choose a content type first.' });
 		try {
 			await retryBusy(() => authedClient(event).delete(`/api/admin/schemas/${path(name)}`));
 			return { scope: 'delete' as const, deleted: name };
 		} catch (err) {
-			return fail(statusOf(err), { scope: 'delete' as const, error: actionError(err, 'Could not delete the schema. Try again.') });
+			return fail(statusOf(err), { scope: 'delete' as const, error: actionError(err, 'Could not delete the content type. Try again.') });
 		}
 	},
 
@@ -322,7 +322,7 @@ export const actions: Actions = {
 			);
 			return { scope: 'rename' as const, from, saved };
 		} catch (err) {
-			return fail(statusOf(err), { scope: 'rename' as const, error: actionError(err, 'Could not rename the schema. Try again.') });
+			return fail(statusOf(err), { scope: 'rename' as const, error: actionError(err, 'Could not rename the content type. Try again.') });
 		}
 	},
 
@@ -332,7 +332,7 @@ export const actions: Actions = {
 		// by every tenant that defines it, so its history is theirs too.
 		await requireRole(event, ['super_admin']);
 		const name = String((await event.request.formData()).get('name') ?? '');
-		if (!name) return fail(400, { scope: 'history' as const, error: 'Choose a schema first.' });
+		if (!name) return fail(400, { scope: 'history' as const, error: 'Choose a content type first.' });
 		try {
 			const r = await authedClient(event).get<{ entries: HistoryEntry[]; pending: number; limit: number }>(
 				`/api/admin/schemas/${path(name)}/history`,
@@ -340,7 +340,7 @@ export const actions: Actions = {
 			return { scope: 'history' as const, name, entries: r.entries ?? [], pending: r.pending ?? 0, limit: r.limit ?? 200 };
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 404) {
-				return fail(404, { scope: 'history' as const, name, error: `There is no saved schema named ${name}, so it has no history.` });
+				return fail(404, { scope: 'history' as const, name, error: `There is no saved content type named ${name}, so it has no history.` });
 			}
 			return fail(statusOf(err), { scope: 'history' as const, name, error: actionError(err, 'Try again in a moment.') });
 		}
@@ -350,7 +350,7 @@ export const actions: Actions = {
 	applyPending: async (event) => {
 		await requireRole(event, ['super_admin']);
 		const name = String((await event.request.formData()).get('name') ?? '');
-		if (!name) return fail(400, { scope: 'applyPending' as const, error: 'Choose a schema first.' });
+		if (!name) return fail(400, { scope: 'applyPending' as const, error: 'Choose a content type first.' });
 		try {
 			const r = await retryBusy(() =>
 				authedClient(event).post<{ applied: number; canceled?: number }>(`/api/admin/schemas/${path(name)}/apply-pending`, {}),
@@ -431,12 +431,12 @@ export const actions: Actions = {
 			// on: a schema of that name is already here. The plugin's sentence
 			// says which, so it is relayed beside the preset it belongs to.
 			if (err instanceof ApiError && err.status === 409) {
-				return fail(409, { action: 'preset' as const, error: actionError(err, 'A schema this preset creates already exists.'), preset: id });
+				return fail(409, { action: 'preset' as const, error: actionError(err, 'A content type this preset creates already exists.'), preset: id });
 			}
 			if (err instanceof ApiError && err.status === 404) {
 				return fail(404, { action: 'preset' as const, error: 'This preset is not included in this build.', preset: id });
 			}
-			return fail(400, { action: 'preset' as const, error: actionError(err, 'Could not create the schemas from this preset. Try again.'), preset: id });
+			return fail(400, { action: 'preset' as const, error: actionError(err, 'Could not create the content types from this preset. Try again.'), preset: id });
 		}
 	},
 

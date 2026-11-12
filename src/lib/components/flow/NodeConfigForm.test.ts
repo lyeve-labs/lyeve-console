@@ -23,7 +23,7 @@ describe('NodeConfigForm', () => {
 		// A picker with nothing loaded is a plain field that says why.
 		const sort = getByLabelText('sort') as HTMLInputElement;
 		expect(sort.tagName).toBe('INPUT');
-		expect(container.textContent).toContain('This schema is not in the list');
+		expect(container.textContent).toContain('This content type is not in the list');
 		// A free map renders as a key and value editor.
 		expect(getByLabelText('New key')).toBeTruthy();
 	});

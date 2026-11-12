@@ -239,7 +239,7 @@
 	async function mayDiscard(): Promise<boolean> {
 		if (!dirty || !selected) return true;
 		return confirm(
-			`Discard the changes to ${selected.display_name || selected.name || 'the new schema'}?`,
+			`Discard the changes to ${selected.display_name || selected.name || 'the new content type'}?`,
 			'They have not been saved. Save first to keep them.',
 			{ confirmLabel: 'Discard' },
 		);
@@ -361,7 +361,7 @@
 				void invalidate(MIGRATIONS_DEPENDENCY);
 			} else if (result.type === 'failure') {
 				const d = (result.data ?? {}) as { error?: string; renamed?: { from: string; to: string }[]; version?: string; stale?: boolean };
-				saveError = d.error ?? 'Could not save the schema. Try again.';
+				saveError = d.error ?? 'Could not save the content type. Try again.';
 				stale = d.stale === true;
 				// A rename the engine already ran is part of the saved side now, or
 				// the next save would ask it to rename a column that has moved. The
@@ -374,7 +374,7 @@
 					if (d.version) saved.version = d.version;
 				}
 			} else if (result.type === 'error') {
-				saveError = 'Could not save the schema. Try again.';
+				saveError = 'Could not save the content type. Try again.';
 			}
 		};
 	};
@@ -399,7 +399,7 @@
 			open(fresh);
 			return;
 		}
-		saveError = data.loadGate ? 'Could not reload the schema. Try again.' : `The schema ${name} no longer exists.`;
+		saveError = data.loadGate ? 'Could not reload the schema. Try again.' : `The content type ${name} no longer exists.`;
 	}
 
 	// The preview result, for the read-only dialog and for the save that asked.
@@ -437,7 +437,7 @@
 		const name = saved.name;
 		const rows = rowCounts[name];
 		const ok = await confirm(
-			`Delete schema ${name}?`,
+			`Delete content type ${name}?`,
 			rows === undefined
 				? 'This deletes the definition, its table and every row in it. Could not count the rows. This cannot be undone.'
 				: rows > 0
@@ -458,7 +458,7 @@
 				// The last definition's delete clears its table's queued rows from the log.
 				void invalidate(MIGRATIONS_DEPENDENCY);
 			} else if (result.type === 'failure') {
-				saveError = String((result.data as { error?: string })?.error ?? 'Could not delete the schema. Try again.');
+				saveError = String((result.data as { error?: string })?.error ?? 'Could not delete the content type. Try again.');
 			}
 		};
 	};
@@ -631,7 +631,7 @@
 					     not be read offers no create beside it. -->
 					{#if !data.loadGate}
 						<Button variant="secondary" size="sm" onclick={newSchema}>
-							<Plus size={ICON.sm} /> New schema
+							<Plus size={ICON.sm} /> New content type
 						</Button>
 					{/if}
 					{#if hasPresets && !data.loadGate}
@@ -652,7 +652,7 @@
 				{#if selected}
 					<span class="flex min-w-0 items-baseline gap-2" data-testid="schema-status">
 						<span class="truncate text-sm font-medium text-fg">
-							{selected.display_name || selected.name || 'New schema'}
+							{selected.display_name || selected.name || 'New content type'}
 						</span>
 						{#if selected.name}
 							<code class="truncate font-mono text-xs text-faint">{tableName(selected.name)}</code>
@@ -695,7 +695,7 @@
 							<Eye size={ICON.sm} /> Preview DDL
 						</Button>
 						{#if saved}
-							<Button variant="ghost" size="sm" class="text-danger" onclick={deleteSchema} aria-label="Delete schema {saved.name}" hint="Delete the schema and its table">
+							<Button variant="ghost" size="sm" class="text-danger" onclick={deleteSchema} aria-label="Delete content type {saved.name}" hint="Delete the content type and its table">
 								<Trash2 size={ICON.sm} />
 							</Button>
 						{/if}
@@ -719,21 +719,21 @@
 				<GateNotice
 					level={2}
 					gate={data.loadGate}
-					title="Schemas"
-					absent="Schemas are not included in this build."
+					title="Content types"
+					absent="Content types are not included in this build."
 				/>
 			</div>
 		{/if}
 		{#if !canWrite && !data.loadGate}
 			<div class="shrink-0 px-3 pt-3">
-				<Alert tone="brand">Your role can view schemas but not change them. Changing one needs the admin or super_admin role.</Alert>
+				<Alert tone="brand">Your role can view content types but not change them. Changing one needs the admin or super_admin role.</Alert>
 			</div>
 		{/if}
 		{#if presetCreated}
 			<div class="shrink-0 px-3 pt-3">
 				<Alert tone="success" title="Preset created" autoDismiss>
 					{#snippet children()}
-						{presetCreated.length === 1 ? 'Created one schema' : `Created ${presetCreated.length} schemas`}: {presetCreated.join(', ')}. {presetCreated.length === 1 ? 'Select it' : 'Select one'} to see its fields.
+						{presetCreated.length === 1 ? 'Created one content type' : `Created ${presetCreated.length} content types`}: {presetCreated.join(', ')}. {presetCreated.length === 1 ? 'Select it' : 'Select one'} to see its fields.
 					{/snippet}
 				</Alert>
 			</div>
@@ -838,7 +838,7 @@
 						<ResizableAside
 							storageKey="lyeve-schema-canvas-panel"
 							bind:open={canvasPanelOpen}
-							label="Schema"
+							label="Content type"
 							side="end"
 							width={600}
 							min={420}
@@ -867,11 +867,11 @@
 						     the engine ships. New schema in the toolbar stays the other door. -->
 						<div class="flex h-full items-center justify-center">
 							<EmptyState
-								title="No schemas yet"
+								title="No content types yet"
 								description={canWrite
 									? hasPresets
-										? 'Start one with New schema in the toolbar, or create a ready-made set from a preset.'
-										: 'Start one with New schema in the toolbar.'
+										? 'Start one with New content type in the toolbar, or create a ready-made set from a preset.'
+										: 'Start one with New content type in the toolbar.'
 									: 'Ask an admin to create one.'}
 							>
 								{#snippet iconSnippet()}
@@ -890,8 +890,8 @@
 					{:else if schemas.length > 0}
 						<div class="flex h-full items-center justify-center">
 							<EmptyState
-								title="No schema selected"
-								description={canWrite ? 'Pick one from the list, or start one with New schema in the toolbar.' : 'Pick one from the list.'}
+								title="No content type selected"
+								description={canWrite ? 'Pick one from the list, or start one with New content type in the toolbar.' : 'Pick one from the list.'}
 							>
 								{#snippet iconSnippet()}
 									<Table2 size={ICON.lg} />

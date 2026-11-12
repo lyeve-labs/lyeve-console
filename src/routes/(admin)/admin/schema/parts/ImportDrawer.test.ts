@@ -79,7 +79,7 @@ describe('ImportDrawer', () => {
 	it('offers no import while a content type points at one that is not here', async () => {
 		setup();
 		await answer({ type: 'success', data: { ...plan, plan: { schemas: [{ name: 'articles', action: 'create', missing: ['authors'] }] } } });
-		expect(screen.getByText(/articles depends on a schema that is in neither the file nor this instance/)).toBeTruthy();
+		expect(screen.getByText(/articles depends on a content type that is in neither the file nor this instance/)).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Import' })).toBeNull();
 	});
 

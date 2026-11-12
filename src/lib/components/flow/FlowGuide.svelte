@@ -24,7 +24,7 @@
 		'nightly-sheet-export':
 			'A cron trigger at 02:00, a content query and a sheets.append. It needs a google_sheets datasource named in the node. Start here for a scheduled export.',
 		'enrich-on-create':
-			'An event trigger on a schema, an HTTP lookup and a content.upsert that writes the answer back. Start here when a new record should be completed from an outside service.',
+			'An event trigger on a content type, an HTTP lookup and a content.upsert that writes the answer back. Start here when a new record should be completed from an outside service.',
 	};
 </script>
 

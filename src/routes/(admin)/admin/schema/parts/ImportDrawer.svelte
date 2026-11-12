@@ -153,7 +153,7 @@
 				{#if importBlocked.length > 0}
 					<Alert tone="danger" title="Some content types point at ones that are not here">
 						{#snippet children()}
-							{importBlocked.join(', ')} {importBlocked.length === 1 ? 'depends' : 'depend'} on a schema that is in neither the file nor this instance. Add it to the file, or create it first.
+							{importBlocked.join(', ')} {importBlocked.length === 1 ? 'depends' : 'depend'} on a content type that is in neither the file nor this instance. Add it to the file, or create it first.
 						{/snippet}
 					</Alert>
 				{/if}

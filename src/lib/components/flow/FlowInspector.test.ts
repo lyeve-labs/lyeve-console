@@ -197,7 +197,7 @@ describe('FlowInspector event trigger', () => {
 		expect(queryByRole('combobox', { name: /event/i })).toBeNull();
 		expect(getByRole('combobox', { name: /hook/i })).toBeTruthy();
 		// The schema stays as an optional narrowing: a flow slug for a run hook.
-		expect((getByLabelText(/^Scope \(schema or publisher key\)/) as HTMLInputElement).required).toBe(false);
+		expect((getByLabelText(/^Scope \(content type or publisher key\)/) as HTMLInputElement).required).toBe(false);
 		expect(container.textContent).toContain('A flow run ended failed.');
 		await fireEvent.click(container.querySelector('#trigger-name') as HTMLElement);
 		expect([...document.querySelectorAll('[role="group"]')].map((g) => g.getAttribute('aria-label'))).toEqual(['example', 'flow']);

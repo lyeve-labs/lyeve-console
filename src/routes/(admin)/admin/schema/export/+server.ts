@@ -20,8 +20,8 @@ export const GET: RequestHandler = async ({ cookies, url, fetch }) => {
 		error(502, 'Could not reach the engine. Try again in a moment.');
 	}
 	if (!res.ok) {
-		if (res.status === 403) error(403, 'Only an admin or a super admin can export schemas.');
-		error(502, 'Could not export the schemas. Try again.');
+		if (res.status === 403) error(403, 'Only an admin or a super admin can export content types.');
+		error(502, 'Could not export the content types. Try again.');
 	}
 	const headers = new Headers();
 	headers.set('Content-Type', res.headers.get('content-type') ?? (json ? 'application/json; charset=utf-8' : 'application/yaml; charset=utf-8'));

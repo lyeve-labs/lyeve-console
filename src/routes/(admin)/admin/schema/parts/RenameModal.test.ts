@@ -49,7 +49,7 @@ describe('RenameModal', () => {
 	it('opens for nothing that has not been saved', () => {
 		const { show } = setup(undefined);
 		show();
-		expect(screen.queryByRole('dialog', { name: 'Rename schema' })).toBeNull();
+		expect(screen.queryByRole('dialog', { name: 'Rename content type' })).toBeNull();
 	});
 
 	it('enables Rename once the name changes', async () => {

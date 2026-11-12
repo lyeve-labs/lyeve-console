@@ -125,7 +125,7 @@ export function problemsOf(schema: Schema, others: Schema[], isNew: boolean): Pr
 	const tableWhere = 'Machine name';
 	if (nameProblem) out.push({ fieldId: null, target: 'schema-name', where: tableWhere, message: nameProblem });
 	else if (isNew && others.some((s) => s.name.toLowerCase() === schema.name.toLowerCase())) {
-		out.push({ fieldId: null, target: 'schema-name', where: tableWhere, message: `A schema named ${schema.name} already exists.` });
+		out.push({ fieldId: null, target: 'schema-name', where: tableWhere, message: `A content type named ${schema.name} already exists.` });
 	}
 
 	const seen = new Map<string, number>();
@@ -158,9 +158,9 @@ export function problemsOf(schema: Schema, others: Schema[], isNew: boolean): Pr
 		}
 		if (f.field_type === 'relation') {
 			if (!f.relation_to) {
-				out.push({ fieldId: id, target: `relation-target-${id}`, where, message: 'Pick the schema this relation points at.' });
+				out.push({ fieldId: id, target: `relation-target-${id}`, where, message: 'Pick the content type this relation points at.' });
 			} else if (f.relation_to === schema.name && f.relation_type !== 'has_many') {
-				out.push({ fieldId: id, target: `relation-type-${id}`, where, message: 'A relation to its own schema has to be Has many.' });
+				out.push({ fieldId: id, target: `relation-type-${id}`, where, message: 'A relation to its own content type has to be Has many.' });
 			}
 		}
 	}
@@ -256,7 +256,7 @@ export function canonical(s: Schema | null): string {
 export function appliedMessage(applied: number, canceled: number): string {
 	const ran = applied === 1 ? 'Applied one queued change' : `Applied ${applied} queued changes`;
 	if (canceled === 0) return ran;
-	const kept = canceled === 1 ? 'One was canceled because a schema still uses its column.' : `${canceled} were canceled because a schema still uses their columns.`;
+	const kept = canceled === 1 ? 'One was canceled because a content type still uses its column.' : `${canceled} were canceled because a content type still uses their columns.`;
 	return `${ran}. ${kept}`;
 }
 
