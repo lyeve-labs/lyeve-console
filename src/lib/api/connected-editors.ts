@@ -111,6 +111,30 @@ export async function listSites(client: HttpClient): Promise<SiteOption[]> {
 		.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/**
+ * Revokes the form signing key a site's last production build replaced,
+ * which the engine otherwise keeps for an hour so forms on pages opened
+ * before the build still post. The answer is `revoked`, or `none` when no
+ * replaced key is in its hour.
+ */
+export function revokePreviousFormKey(client: HttpClient, site: string): Promise<{ status: string }> {
+	return client.post(`/api/admin/builder/sites/${encodeURIComponent(site)}/form-key/revoke`, {});
+}
+
+/** The code the builder plugin answers for a site the tenant does not hold. Any other 404 is the engine's, for a route the plugin lacks. */
+export const SITE_NOT_FOUND = 'entry_not_found';
+
+/** What the previous form key card says. */
+export const FORM_KEY_SAID = {
+	tooOld: 'Revoking a previous form signing key needs a newer version of the builder plugin.',
+	siteGone: 'This site no longer exists.',
+	chooseSite: 'Choose a site first.',
+	unconfirmed: 'Could not confirm the previous key was revoked. Try again.',
+	failed: 'Could not revoke the previous form signing key. Try again.',
+	detail: "Forms on pages opened before the site's last production build stop working. This cannot be undone.",
+	label: 'Revoke previous key',
+} as const;
+
 /** What the static sites field says when the engine refuses the list. */
 export const STATIC_SITES_REFUSED = 'Choose up to 50 sites whose last production build does not sign its forms.';
 

@@ -13,6 +13,7 @@
 		PageShell,
 		SectionHeading,
 		SegmentedControl,
+		Select,
 		Skeleton,
 		Toggle,
 		confirm,
@@ -20,8 +21,8 @@
 	import BuilderConnectionTabs from '$lib/components/BuilderConnectionTabs.svelte';
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import { tracked } from '$lib/forms.svelte';
-	import { SAID, type Settings } from '$lib/api/connected-editors';
+	import { confirmed, tracked } from '$lib/forms.svelte';
+	import { FORM_KEY_SAID, SAID, type Settings } from '$lib/api/connected-editors';
 	import { invalidateAll } from '$app/navigation';
 	import { FORMS_TYPE_TAKEN, FORM_SUBMISSIONS, SUBMISSIONS_PUBLIC, flowNotes, flowOptions } from '$lib/api/form-destinations';
 	import type { ActionData, PageData } from './$types';
@@ -38,6 +39,8 @@
 		presetMissing?: boolean;
 		presetError?: string;
 		presetCreated?: boolean;
+		formKeyRevoked?: { site: string; status: 'revoked' | 'none' };
+		formKeyError?: string;
 	}
 
 	const answer = $derived((form ?? {}) as Answer);
@@ -121,6 +124,25 @@
 	const siteOptions = $derived(data.sites?.ok ? data.sites.value.map((s) => ({ value: s.id, label: s.name })) : []);
 	let staticSites = $derived((settings?.form_static_sites ?? []).filter((id) => siteOptions.some((o) => o.value === id)));
 	const saveForms = tracked(() => {});
+
+	// The previous form signing key of one site, revoked after the reader confirms.
+	const sitesGate = $derived(
+		data.sites && !data.sites.ok && data.sites.gate.state === 'error'
+			? { state: 'error' as const, message: 'Could not load sites.' }
+			: data.sites && !data.sites.ok
+				? data.sites.gate
+				: null,
+	);
+	let keySite = $state<string | null>(null);
+	const siteName = (id: string | null | undefined) => siteOptions.find((o) => o.value === id)?.label ?? 'the site';
+	const revokeFormKey = tracked((input) => {
+		// With no site chosen the action answers what to do, so nothing is asked.
+		const site = String(input.formData.get('site') ?? '');
+		if (!site) return;
+		return confirmed(`Revoke the previous form signing key of ${siteName(site)}?`, FORM_KEY_SAID.detail, {
+			confirmLabel: FORM_KEY_SAID.label,
+		})(input);
+	});
 	// When the preset created its types but the save after it failed, the page reloads its data so it offers to allow them.
 	const applyPreset = tracked(() => async ({ result, update }) => {
 		await update();
@@ -420,5 +442,51 @@
 				</form>
 			</div>
 		</Card>
+		{#if data.sites}
+			<Card>
+				<form
+					id="form-key"
+					method="POST"
+					action="?/revokeFormKey"
+					use:enhance={revokeFormKey.enhance}
+					class="flex flex-col items-start gap-6"
+				>
+					<SectionHeading level={3}>Previous form signing key</SectionHeading>
+					<p class="text-sm text-muted">
+						After a production build replaces a site's form signing key, forms on pages opened before it keep working for an hour. If
+						the previous key leaked, revoke it now.
+					</p>
+					{#if answer.formKeyRevoked?.status === 'none'}
+						<Alert tone="neutral" autoDismiss>
+							{siteName(answer.formKeyRevoked.site)} has no previous form signing key to revoke. A previous key lasts an hour after a production
+							build replaces it.
+						</Alert>
+					{:else if answer.formKeyRevoked}
+						<Alert tone="success" autoDismiss>Previous form signing key of {siteName(answer.formKeyRevoked.site)} revoked.</Alert>
+					{/if}
+					{#if sitesGate}
+						<GateNotice gate={sitesGate} title="Sites" absent="Sites are not included in this build." />
+					{:else if siteOptions.length === 0}
+						<p class="text-sm text-muted">No sites yet. Create a site in the builder to choose it here.</p>
+					{:else}
+						<Select
+							id="form-key-site"
+							name="site"
+							label="Site"
+							placeholder="Choose a site"
+							bind:value={keySite}
+							options={siteOptions}
+							searchable={siteOptions.length > 10}
+							class="w-full max-w-sm"
+							error={answer.formKeyError === FORM_KEY_SAID.chooseSite ? answer.formKeyError : undefined}
+						/>
+						{#if answer.formKeyError && answer.formKeyError !== FORM_KEY_SAID.chooseSite}
+							<Alert tone="danger">{answer.formKeyError}</Alert>
+						{/if}
+						<Button variant="danger" type="submit" loading={revokeFormKey.pending} disabled={!online}>{FORM_KEY_SAID.label}</Button>
+					{/if}
+				</form>
+			</Card>
+		{/if}
 	{/if}
 </PageShell>

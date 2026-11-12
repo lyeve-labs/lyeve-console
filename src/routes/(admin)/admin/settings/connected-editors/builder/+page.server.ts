@@ -28,6 +28,9 @@ import {
 	SAID,
 	WITHHELD,
 	STATIC_SITES_REFUSED,
+	FORM_KEY_SAID,
+	SITE_NOT_FOUND,
+	revokePreviousFormKey,
 	getSettings,
 	listSites,
 	saveSettings,
@@ -38,6 +41,7 @@ import {
 	type SiteOption,
 } from '$lib/api/connected-editors';
 import { OWNER_ROLES, isOwner, refusalSentence } from '../shared.server';
+import { asked } from '$lib/server/asked';
 
 /** Every content type with what the form settings need of it. */
 async function formSchemaRows(client: HttpClient): Promise<FormSchemaRow[]> {
@@ -224,6 +228,32 @@ export const actions: Actions = {
 			return fail(status, { presetError: why });
 		}
 	},
+
+	// Revokes the key a site's last production build replaced. A site the tenant
+	// does not hold is the plugin's own 404, and any other 404 or a 405 is
+	// the engine's answer for a route a plugin from before this one lacks.
+	revokeFormKey: asked(
+		{ question: "Revoke this site's previous form signing key?", detail: FORM_KEY_SAID.detail, label: FORM_KEY_SAID.label },
+		async (event) => {
+			const site = String((await event.request.formData()).get('site') ?? '').trim();
+			if (!site) return fail(400, { formKeyError: FORM_KEY_SAID.chooseSite });
+			try {
+				const { status } = await revokePreviousFormKey(authedClient(event), site);
+				// A plugin from before `none` answers `revoked` even when no previous key was in its hour.
+				if (status === 'revoked' || status === 'none') return { formKeyRevoked: { site, status } };
+				return fail(502, { formKeyError: FORM_KEY_SAID.failed });
+			} catch (e) {
+				if (e instanceof ApiError && e.status === 404) {
+					const gone = errorCodeOf(e) === SITE_NOT_FOUND;
+					return fail(404, { formKeyError: gone ? FORM_KEY_SAID.siteGone : FORM_KEY_SAID.tooOld });
+				}
+				if (e instanceof ApiError && e.status === 405) return fail(405, { formKeyError: FORM_KEY_SAID.tooOld });
+				if (isOutage(e)) return fail(503, { formKeyError: FORM_KEY_SAID.unconfirmed });
+				return fail(e instanceof ApiError ? e.status : 400, { formKeyError: refusalSentence(e, FORM_KEY_SAID.failed) });
+			}
+		},
+		(form) => !!String(form.get('site') ?? '').trim(),
+	),
 
 	setting: async (event) => {
 		const form = await event.request.formData();

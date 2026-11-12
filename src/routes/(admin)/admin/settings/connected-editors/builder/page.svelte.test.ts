@@ -26,7 +26,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 
 import Page from './+page.svelte';
 import { invalidateAll } from '$app/navigation';
-import { SAID, STATIC_SITES_REFUSED } from '$lib/api/connected-editors';
+import { FORM_KEY_SAID, SAID, STATIC_SITES_REFUSED } from '$lib/api/connected-editors';
 import { FORMS_TYPE_TAKEN, SUBMISSIONS_PUBLIC } from '$lib/api/form-destinations';
 
 afterEach(cleanup);
@@ -441,5 +441,91 @@ describe('static sites', () => {
 		});
 		expect(said().split(STATIC_SITES_REFUSED)).toHaveLength(2);
 		expect(formsCard().textContent).toContain(STATIC_SITES_REFUSED);
+	});
+});
+
+describe('previous form signing key', () => {
+	const A = '0a9e2c4e-1d4b-4c9a-9f3e-5b1c2d3e4f50';
+	const SITES = { ok: true, value: [{ id: A, name: 'Agency' }] };
+	const card = () => document.querySelector('form[action="?/revokeFormKey"]') as HTMLFormElement;
+	const REVOKED = 'Previous form signing key of Agency revoked.';
+
+	/** Plays a post of the card through its submit handler, as enhance would. */
+	async function post(site: string) {
+		const formData = new FormData();
+		formData.set('site', site);
+		const cancel = vi.fn();
+		const after = await forms.submits.get('?/revokeFormKey')!({ formData, cancel, action: new URL('http://admin'), formElement: card(), controller: new AbortController(), submitter: null });
+		return { formData, cancel, after };
+	}
+
+	it('offers the sites in a Select with the specific verb on the button', () => {
+		render(Page, { props: props({ sites: SITES }) });
+		expect(card().textContent).toContain('Previous form signing key');
+		expect(card().querySelector('#form-key-site')).not.toBeNull();
+		expect(card().querySelector('select')).toBeNull();
+		const buttons = [...card().querySelectorAll('button[type="submit"]')].map((b) => b.textContent?.trim());
+		expect(buttons).toEqual([FORM_KEY_SAID.label]);
+	});
+
+	it('asks first, naming the site and what stops working, and sends nothing when the reader says no', async () => {
+		render(Page, { props: props({ sites: SITES }) });
+		const { cancel, formData } = await post(A);
+		expect(kit.confirm).toHaveBeenCalledWith(
+			'Revoke the previous form signing key of Agency?',
+			"Forms on pages opened before the site's last production build stop working. This cannot be undone.",
+			{ confirmLabel: 'Revoke previous key' },
+		);
+		expect(cancel).toHaveBeenCalled();
+		expect(formData.get('confirmed')).toBeNull();
+	});
+
+	it('sends the confirmed post when the reader agrees', async () => {
+		kit.confirm.mockResolvedValue(true);
+		render(Page, { props: props({ sites: SITES }) });
+		const { cancel, formData } = await post(A);
+		expect(cancel).not.toHaveBeenCalled();
+		expect(formData.get('confirmed')).toBe('yes');
+	});
+
+	it('asks nothing while no site is chosen, so the action says to choose one', async () => {
+		render(Page, { props: props({ sites: SITES }) });
+		const { cancel } = await post('');
+		expect(kit.confirm).not.toHaveBeenCalled();
+		expect(cancel).not.toHaveBeenCalled();
+	});
+
+	it('says the key was revoked in an alert that clears itself', async () => {
+		render(Page, { props: props({ sites: SITES }, { formKeyRevoked: { site: A, status: 'revoked' } }) });
+		await frames();
+		expect(card().textContent).toContain(REVOKED);
+	});
+
+	it('says so in a neutral alert when the site had no previous key, and claims no revoke', async () => {
+		const none = 'Agency has no previous form signing key to revoke. A previous key lasts an hour after a production build replaces it.';
+		render(Page, { props: props({ sites: SITES }, { formKeyRevoked: { site: A, status: 'none' } }) });
+		await frames();
+		expect(said()).toContain(none);
+		expect(card().textContent).not.toContain(REVOKED);
+	});
+
+	it('says how to get a site when the tenant has none', () => {
+		const words = 'No sites yet. Create a site in the builder to choose it here.';
+		render(Page, { props: props({ sites: { ok: true, value: [] } }) });
+		expect(card().textContent).toContain(words);
+		expect(card().querySelector('#form-key-site')).toBeNull();
+	});
+
+	it.each([[FORM_KEY_SAID.tooOld], [FORM_KEY_SAID.siteGone], [FORM_KEY_SAID.unconfirmed]])('shows a refusal once: %s', (words) => {
+		render(Page, { props: props({ sites: SITES }, { formKeyError: words }) });
+		expect(said().split(words)).toHaveLength(2);
+		expect(card().textContent).toContain(words);
+	});
+
+	it('draws a failed site list as a failure in its own words', () => {
+		render(Page, { props: props({ sites: { ok: false, gate: { state: 'error', message: 'Could not load sites. The static sites saved before stay as they are.' } } }) });
+		expect(card().textContent).toContain('Could not load sites.');
+		expect(card().textContent).not.toContain('static sites');
+		expect(card().querySelector('button[type="submit"]')).toBeNull();
 	});
 });
