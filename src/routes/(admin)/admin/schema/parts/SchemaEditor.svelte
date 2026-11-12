@@ -415,12 +415,12 @@
 	<!-- The kit's tabs carry no ids, so each panel names itself. -->
 	<div class="flex min-w-0 flex-col gap-4" role={tabbed ? 'tabpanel' : undefined} aria-label={tabbed ? 'Definition' : undefined}>
 	<fieldset disabled={!canWrite} class="flex min-w-0 flex-col gap-4">
-	<legend class="sr-only">Definition of {schema.display_name || schema.name || 'the new schema'}</legend>
+	<legend class="sr-only">Definition of {schema.display_name || schema.name || 'the new content type'}</legend>
 	<div class="grid min-w-0 gap-3 @xl:grid-cols-2">
 		<Input
 			id="schema-display-name"
 			label="Display name"
-			placeholder="Schema display name"
+			placeholder="Content type display name"
 			bind:value={schema.display_name}
 		/>
 		{#if saved}
@@ -502,7 +502,7 @@
 				<div class="mb-3">
 					<SectionHeading level={3}>Transports</SectionHeading>
 					<span class="mt-1 block text-xs text-faint">
-						Choose where this schema is served. A new schema is read and write on all
+						Choose where this content type is served. A new content type is read and write on all
 						three until you narrow it here.
 					</span>
 				</div>
@@ -528,13 +528,13 @@
 				<Checkbox
 					id="schema-public-delivery"
 					label="Serve on public delivery"
-					description="Anyone can read the published entries of this schema without a token, and a CDN can cache them. Fields you mark Private are left out."
+					description="Anyone can read the published entries of this content type without a token, and a CDN can cache them. Fields you mark Private are left out."
 					checked={schema.public_delivery === true}
 					onchange={(checked) => (schema.public_delivery = checked || undefined)}
 				/>
 				{#if schema.public_delivery && !schema.with_draft_publish}
 					<Alert tone="warn">
-						This schema has no draft and publish, so public delivery serves every entry.
+						This content type has no draft and publish, so public delivery serves every entry.
 					</Alert>
 				{/if}
 			</div>
@@ -548,9 +548,9 @@
 					<TriangleAlert size={ICON.sm} class="mt-0.5 shrink-0" />
 					<span>
 						{brokenRelations.length}
-						{brokenRelations.length === 1 ? 'relation' : 'relations'} on this schema
+						{brokenRelations.length === 1 ? 'relation' : 'relations'} on this content type
 						will not work as configured. An inverse relation depends on a field in
-						the other schema, which this row cannot show.
+						the other content type, which this row cannot show.
 						<span class="mt-1 block space-y-0.5">
 							{#each brokenRelations as r (r.field.id ?? r.field.name)}
 								<span class="block">
@@ -778,10 +778,10 @@
 					<div class="grid gap-3 @xl:grid-cols-2">
 						<Select
 							id="relation-target-{rowId}"
-							label="Target schema"
+							label="Target content type"
 							error={problemAt(`relation-target-${rowId}`)}
 							searchable
-							placeholder="Pick a schema"
+							placeholder="Pick a content type"
 							options={targetOptions(schema, field)}
 							value={field.relation_to ?? ''}
 							onvaluechange={(v) => {
@@ -823,7 +823,7 @@
 						{:else}
 							<p class="text-xs text-faint">
 								Saving adds nothing to this table. This side of the relation comes
-								from the other schema.
+								from the other content type.
 							</p>
 						{/if}
 
@@ -840,7 +840,7 @@
 						{/if}
 					{:else}
 						<p class="text-xs text-faint">
-							Pick a target schema to see which table stores this relation and
+							Pick a target content type to see which table stores this relation and
 							what saving creates.
 						</p>
 					{/if}
@@ -918,7 +918,7 @@
 		<p>
 			Add one with <span class="font-medium text-fg">Add relation</span>, or
 			set any field's type to <span class="font-mono">relation</span>. The row
-			then shows a panel where you choose the kind and the target schema, and
+			then shows a panel where you choose the kind and the target content type, and
 			it shows which table stores the relation and what saving creates. The kinds:
 		</p>
 
@@ -950,7 +950,7 @@
 
 		<p>
 			An inverse relation is read through a column named after
-			<em>this schema</em>, not after the field. An
+			<em>this content type</em>, not after the field. An
 			<span class="font-mono">author</span> with a
 			<span class="font-mono">has_many</span> field called
 			<span class="font-mono">articles</span> resolves through
@@ -958,13 +958,13 @@
 			<span class="font-mono">_article</span>, so the field can be called
 			anything and renaming it moves nothing in the database. It does need
 			a <span class="font-mono">belongs_to</span> field named
-			<span class="font-mono">author</span> on the other schema.
+			<span class="font-mono">author</span> on the other content type.
 		</p>
 
 		<p>
 			A relation is not a column you fill in. Only
 			<span class="font-mono">belongs_to</span> adds one here. The other
-			three are stored elsewhere, so a schema whose relations all point
+			three are stored elsewhere, so a content type whose relations all point
 			outward has no relation columns of its own. That is expected.
 		</p>
 

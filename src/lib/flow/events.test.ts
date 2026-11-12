@@ -27,7 +27,7 @@ describe('event trigger shape', () => {
 		const system = kindSchema(spec, 'system');
 		expect(Object.keys(system.properties!)).toEqual(['name', 'schema', 'filter']);
 		expect(system.required).toEqual(['name']);
-		expect(system.properties!.schema.title).toBe('Scope (schema or publisher key)');
+		expect(system.properties!.schema.title).toBe('Scope (content type or publisher key)');
 		expect(system.properties!.schema.description).toContain('flow slug');
 		expect(content.properties!.schema.title).toBe('Schema');
 	});

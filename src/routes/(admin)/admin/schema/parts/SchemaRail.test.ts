@@ -48,23 +48,23 @@ describe('SchemaRail', () => {
 
 	it('narrows by name or display name and says when nothing matches', async () => {
 		render(SchemaRail, { props: { schemas, rowCounts: {}, current: undefined, onselect: vi.fn() } });
-		const filter = screen.getByLabelText('Filter schemas');
+		const filter = screen.getByLabelText('Filter content types');
 		await fireEvent.input(filter, { target: { value: 'auth' } });
 		expect(screen.queryByRole('button', { name: 'Posts' })).toBeNull();
 		await fireEvent.input(filter, { target: { value: 'zzz' } });
-		expect(screen.getByText('No schemas match this filter.')).toBeTruthy();
+		expect(screen.getByText('No content types match this filter.')).toBeTruthy();
 	});
 
 	it('draws a hundred rows at a time and starts again from the top on a new filter', async () => {
 		render(SchemaRail, { props: { schemas: many(230), rowCounts: {}, current: undefined, onselect: vi.fn() } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Show 100 more of 130' }));
 		expect(screen.getByRole('button', { name: 'Show 30 more of 30' })).toBeTruthy();
-		await fireEvent.input(screen.getByLabelText('Filter schemas'), { target: { value: 's' } });
+		await fireEvent.input(screen.getByLabelText('Filter content types'), { target: { value: 's' } });
 		expect(screen.getByRole('button', { name: 'Show 100 more of 130' })).toBeTruthy();
 	});
 
 	it('offers no filter for a single schema', () => {
 		render(SchemaRail, { props: { schemas: schemas.slice(0, 1), rowCounts: {}, current: undefined, onselect: vi.fn() } });
-		expect(screen.queryByLabelText('Filter schemas')).toBeNull();
+		expect(screen.queryByLabelText('Filter content types')).toBeNull();
 	});
 });

@@ -109,8 +109,8 @@
 
 	const fieldsEmptyHint = $derived(
 		typeof value[SCHEMA_KEY] === 'string' && value[SCHEMA_KEY] && !schemaKnown
-			? 'This schema is not in the list, so its fields cannot be shown.'
-			: 'Choose a schema first to pick from its fields.'
+			? 'This content type is not in the list, so its fields cannot be shown.'
+			: 'Choose a content type first to pick from its fields.'
 	);
 
 	const datasourceId = $derived.by(() => {
@@ -381,7 +381,7 @@
 				value={str(current)}
 				{hint}
 				{error}
-				emptyHint="No content schemas to choose from. Type the name."
+				emptyHint="No content types to choose from. Type the name."
 				onchange={(v) => set(field.key, v)}
 			/>
 		{:else if widget === 'field'}

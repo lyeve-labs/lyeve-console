@@ -25,7 +25,7 @@ describe('problemsOf', () => {
 
 	it('refuses a new schema whose name is taken, whatever its case', () => {
 		const p = problemsOf(schema('Posts', []), [schema('posts', [])], true);
-		expect(p[0].message).toBe('A schema named Posts already exists.');
+		expect(p[0].message).toBe('A content type named Posts already exists.');
 	});
 
 	it('refuses a column the engine adds itself', () => {
@@ -58,7 +58,7 @@ describe('problemsOf', () => {
 		]);
 		expect(problemsOf(fresh, [], false)).toEqual([
 			{ fieldId: 'b', target: 'field-name-b', where: 'New relation field, row 2', message: 'Enter a field name.' },
-			{ fieldId: 'b', target: 'relation-target-b', where: 'New relation field, row 2', message: 'Pick the schema this relation points at.' },
+			{ fieldId: 'b', target: 'relation-target-b', where: 'New relation field, row 2', message: 'Pick the content type this relation points at.' },
 		]);
 	});
 
@@ -142,8 +142,8 @@ describe('appliedMessage', () => {
 		expect(appliedMessage(3, 0)).toBe('Applied 3 queued changes');
 	});
 	it('says which drops were kept and why', () => {
-		expect(appliedMessage(0, 1)).toBe('Applied 0 queued changes. One was canceled because a schema still uses its column.');
-		expect(appliedMessage(2, 2)).toBe('Applied 2 queued changes. 2 were canceled because a schema still uses their columns.');
+		expect(appliedMessage(0, 1)).toBe('Applied 0 queued changes. One was canceled because a content type still uses its column.');
+		expect(appliedMessage(2, 2)).toBe('Applied 2 queued changes. 2 were canceled because a content type still uses their columns.');
 	});
 });
 

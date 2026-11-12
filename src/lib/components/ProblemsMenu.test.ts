@@ -7,7 +7,7 @@ afterEach(cleanup);
 
 const problems = [
 	{ key: 'a', where: 'New relation field, row 3', what: 'Name the field.' },
-	{ key: 'b', where: 'New relation field, row 3', what: 'Pick the schema this relation points at.' },
+	{ key: 'b', where: 'New relation field, row 3', what: 'Pick the content type this relation points at.' },
 ];
 
 function setup(list = problems) {
@@ -32,13 +32,13 @@ describe('ProblemsMenu', () => {
 		const list = getByTestId('p-list');
 		expect(list.getAttribute('aria-label')).toBe('Fix these before saving');
 		expect(list.textContent).toContain('New relation field, row 3');
-		expect(list.textContent).toContain('Pick the schema this relation points at.');
+		expect(list.textContent).toContain('Pick the content type this relation points at.');
 	});
 
 	it('jumps to the problem picked and closes', async () => {
 		const { getByRole, queryByTestId, onjump } = setup();
 		await fireEvent.click(getByRole('button', { name: '2 problems' }));
-		await fireEvent.click(getByRole('button', { name: /Pick the schema/ }));
+		await fireEvent.click(getByRole('button', { name: /Pick the content type/ }));
 		expect(onjump).toHaveBeenCalledWith(problems[1]);
 		await new Promise((r) => setTimeout(r, 0));
 		expect(queryByTestId('p-list')).toBeNull();

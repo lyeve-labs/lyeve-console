@@ -126,14 +126,14 @@ describe('schema builder field rows', () => {
 	it('offers the relation pickers only for a relation field', async () => {
 		await openPosts();
 
-		expect(screen.queryByRole('combobox', { name: 'Target schema' })).toBeNull();
+		expect(screen.queryByRole('combobox', { name: 'Target content type' })).toBeNull();
 
 		await pickType('title', 'relation');
 
 		// A relation saved with no type is a relation to nothing, so the field
 		// takes the kind its picker already reads as.
 		expect(screen.getByRole('radio', { name: 'Belongs to one' }).getAttribute('aria-checked')).toBe('true');
-		expect(screen.getByRole('combobox', { name: 'Target schema' })).toBeTruthy();
+		expect(screen.getByRole('combobox', { name: 'Target content type' })).toBeTruthy();
 	});
 });
 
@@ -141,7 +141,7 @@ describe('schema builder relation panel', () => {
 	it('says which table the relation writes and what saving it creates', async () => {
 		await openPosts();
 		await pickType('title', 'relation');
-		await pickOption(screen.getByRole('combobox', { name: 'Target schema' }), 'Authors');
+		await pickOption(screen.getByRole('combobox', { name: 'Target content type' }), 'Authors');
 
 		// The engine derives the column from the field name and the table from
 		// the schema name, so the panel has to spell both or it is guidance the
@@ -158,7 +158,7 @@ describe('schema builder relation panel', () => {
 		await openPosts();
 		await pickType('title', 'relation');
 		await fireEvent.click(screen.getByRole('radio', { name: 'Has many' }));
-		await pickOption(screen.getByRole('combobox', { name: 'Target schema' }), 'Authors');
+		await pickOption(screen.getByRole('combobox', { name: 'Target content type' }), 'Authors');
 
 		expect(screen.getByTestId('relation-problems')).toBeTruthy();
 		expect(screen.getAllByText(/_authors\.posts_id does not exist/).length).toBeGreaterThan(0);
@@ -173,7 +173,7 @@ describe('schema builder relation panel', () => {
 		// The page header is where every page keeps its primary action, not
 		// beside the filter or in the canvas toolbar.
 		const { container } = render(SchemaPage, { props: { data: data(), form: null } });
-		const buttons = screen.getAllByRole('button', { name: 'New schema' });
+		const buttons = screen.getAllByRole('button', { name: 'New content type' });
 		expect(buttons).toHaveLength(1);
 		expect(container.querySelector('aside')?.contains(buttons[0])).toBe(false);
 	});
@@ -311,12 +311,12 @@ describe('schema builder relation panel', () => {
 		// One click has to land the operator in front of the target picker,
 		// without a trip through the type picker.
 		await openPosts();
-		expect(screen.queryByRole('combobox', { name: 'Target schema' })).toBeNull();
+		expect(screen.queryByRole('combobox', { name: 'Target content type' })).toBeNull();
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Add relation' }));
 
 		expect(screen.getByRole('radio', { name: 'Belongs to one' }).getAttribute('aria-checked')).toBe('true');
-		expect(screen.getByRole('combobox', { name: 'Target schema' })).toBeTruthy();
+		expect(screen.getByRole('combobox', { name: 'Target content type' })).toBeTruthy();
 	});
 
 	it('says how to add one before it says what the kinds do', async () => {
@@ -376,8 +376,8 @@ describe('schema builder saving', () => {
 		await fireEvent.click(screen.getByRole('button', { name: /2 problems/ }));
 		const list = screen.getByTestId('schema-problems');
 		expect(list.textContent).toContain('New relation field, row 2');
-		expect(list.textContent).toContain('Pick the schema this relation points at.');
-		await fireEvent.click(screen.getByRole('button', { name: /Pick the schema this relation points at/ }));
+		expect(list.textContent).toContain('Pick the content type this relation points at.');
+		await fireEvent.click(screen.getByRole('button', { name: /Pick the content type this relation points at/ }));
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.queryByTestId('schema-problems')).toBeNull();
 		expect(document.activeElement?.id).toMatch(/^relation-target-/);
@@ -390,7 +390,7 @@ describe('schema builder saving', () => {
 		await fireEvent.click(screen.getByRole('tab', { name: 'API' }));
 		expect(screen.queryByRole('button', { name: 'Add relation' })).toBeNull();
 		await fireEvent.click(screen.getByRole('button', { name: /2 problems/ }));
-		await fireEvent.click(screen.getByRole('button', { name: /Pick the schema this relation points at/ }));
+		await fireEvent.click(screen.getByRole('button', { name: /Pick the content type this relation points at/ }));
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.getByRole('tab', { name: 'Definition' }).getAttribute('aria-selected')).toBe('true');
 		expect(document.activeElement?.id).toMatch(/^relation-target-/);
@@ -423,7 +423,7 @@ describe('schema builder saving', () => {
 describe('schema builder for a role that cannot write', () => {
 	it('shows the definitions without a control that ends in a 403', async () => {
 		render(SchemaPage, { props: { data: data({ canWrite: false }), form: null } });
-		expect(screen.queryByRole('button', { name: /New schema/ })).toBeNull();
+		expect(screen.queryByRole('button', { name: /New content type/ })).toBeNull();
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
 		expect(screen.queryByRole('button', { name: /^Save/ })).toBeNull();
 		expect(screen.queryByRole('button', { name: 'Add field' })).toBeNull();
@@ -440,7 +440,7 @@ describe('schema builder localization flag', () => {
 
 	it('offers none for a new schema either', async () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
-		await fireEvent.click(screen.getByRole('button', { name: /New schema/ }));
+		await fireEvent.click(screen.getByRole('button', { name: /New content type/ }));
 		expect(screen.getByRole('checkbox', { name: 'created_at' })).toBeTruthy();
 		expect(screen.queryByRole('checkbox', { name: /localization/ })).toBeNull();
 	});
@@ -470,7 +470,7 @@ describe('schema builder rail', () => {
 	it('narrows the list to the schemas that match the filter', async () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
 
-		await fireEvent.input(screen.getByPlaceholderText('Filter schemas'), {
+		await fireEvent.input(screen.getByPlaceholderText('Filter content types'), {
 			target: { value: 'auth' },
 		});
 
@@ -481,11 +481,11 @@ describe('schema builder rail', () => {
 	it('offers a way out when the filter matches nothing', async () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
 
-		await fireEvent.input(screen.getByPlaceholderText('Filter schemas'), {
+		await fireEvent.input(screen.getByPlaceholderText('Filter content types'), {
 			target: { value: 'nothing' },
 		});
 
-		expect(screen.getByText('No schemas match this filter.')).toBeTruthy();
+		expect(screen.getByText('No content types match this filter.')).toBeTruthy();
 	});
 });
 
@@ -552,7 +552,7 @@ describe('the content type list beside the editor', () => {
 
 	it('keeps the filter on the list it narrows, and draws no view switch without a diagram', () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
-		expect(screen.getByTestId('schema-list').contains(screen.getByPlaceholderText('Filter schemas'))).toBe(true);
+		expect(screen.getByTestId('schema-list').contains(screen.getByPlaceholderText('Filter content types'))).toBe(true);
 		expect(screen.queryByRole('radio', { name: 'Canvas' })).toBeNull();
 	});
 
@@ -594,12 +594,12 @@ describe('schema builder presets', () => {
 	it('offers a preset from the empty state and lists what each one creates', async () => {
 		render(SchemaPage, { props: { data: data({ schemas: [], rowCounts: {}, presets }), form: null } });
 
-		expect(screen.getByText('No schemas yet')).toBeTruthy();
+		expect(screen.getByText('No content types yet')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Use a preset' }));
 
 		expect(screen.getByRole('heading', { name: 'Notes' })).toBeTruthy();
 		expect(screen.getByText('Short notes on any content, with tags.')).toBeTruthy();
-		const created = screen.getByRole('list', { name: 'Schemas Notes creates' });
+		const created = screen.getByRole('list', { name: 'Content types Notes creates' });
 		expect([...created.querySelectorAll('code')].map((c) => c.textContent)).toEqual(['notes', 'note_tags']);
 		expect(screen.getAllByRole('button', { name: 'Create' })).toHaveLength(2);
 		const form = screen.getAllByRole('button', { name: 'Create' })[1].closest('form');
@@ -610,7 +610,7 @@ describe('schema builder presets', () => {
 	it('keeps the offer out of an empty state when the engine ships no presets', () => {
 		render(SchemaPage, { props: { data: data({ schemas: [], rowCounts: {} }), form: null } });
 
-		expect(screen.getByText('No schemas yet')).toBeTruthy();
+		expect(screen.getByText('No content types yet')).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Use a preset' })).toBeNull();
 		expect(screen.queryByRole('button', { name: 'Presets' })).toBeNull();
 	});
@@ -671,7 +671,7 @@ describe('schema builder presets', () => {
 		});
 
 		expect(await screen.findByText('Preset created')).toBeTruthy();
-		expect(screen.getByText(/Created 2 schemas: notes, note_tags/)).toBeTruthy();
+		expect(screen.getByText(/Created 2 content types: notes, note_tags/)).toBeTruthy();
 	});
 });
 
@@ -799,9 +799,9 @@ describe('schema builder read failures', () => {
 		render(SchemaPage, {
 			props: { data: data({ schemas: [], loadGate: { state: 'unavailable' } }), form: null },
 		});
-		expect(screen.getByText(/so schemas did not load/)).toBeTruthy();
-		expect(screen.queryByRole('button', { name: 'New schema' })).toBeNull();
-		expect(screen.queryByText('No schemas yet')).toBeNull();
+		expect(screen.getByText(/so content types did not load/)).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'New content type' })).toBeNull();
+		expect(screen.queryByText('No content types yet')).toBeNull();
 	});
 });
 
@@ -809,7 +809,7 @@ describe('schema builder relation kind', () => {
 	it('names the cardinality the short label leaves out', async () => {
 		await openPosts();
 		await pickType('title', 'relation');
-		await pickOption(screen.getByRole('combobox', { name: 'Target schema' }), 'Authors');
+		await pickOption(screen.getByRole('combobox', { name: 'Target content type' }), 'Authors');
 		const facts = screen.getByTestId(/^relation-panel-/).querySelector('dl') as HTMLElement;
 		expect(facts.textContent).toContain('Cardinality');
 		expect(facts.textContent).toContain('many to one');
@@ -819,7 +819,7 @@ describe('schema builder relation kind', () => {
 		await openPosts();
 		await pickType('title', 'relation');
 		await fireEvent.click(screen.getByRole('radio', { name: 'Has many' }));
-		await pickOption(screen.getByRole('combobox', { name: 'Target schema' }), 'Posts');
+		await pickOption(screen.getByRole('combobox', { name: 'Target content type' }), 'Posts');
 		await fireEvent.click(screen.getByRole('radio', { name: 'Belongs to one' }));
 
 		const group = screen.getByRole('radiogroup', { name: 'Relation' });
@@ -850,8 +850,8 @@ describe('schema builder over a failed list read', () => {
 		render(SchemaPage, {
 			props: { data: data({ schemas: [], canWrite: false, loadGate: { state: 'forbidden' } }), form: null },
 		});
-		expect(screen.getByText(/Your role cannot open schemas/)).toBeTruthy();
-		expect(screen.queryByText(/Your role can view schemas/)).toBeNull();
+		expect(screen.getByText(/Your role cannot open content types/)).toBeTruthy();
+		expect(screen.queryByText(/Your role can view content types/)).toBeNull();
 	});
 });
 

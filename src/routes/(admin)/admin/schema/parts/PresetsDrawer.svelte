@@ -79,7 +79,7 @@
 	};
 
 	async function deletePreset(id: string, name: string) {
-		const ok = await confirm(`Delete the preset ${name}?`, 'Schemas it already created are kept. Only the saved preset is deleted.', { confirmLabel: 'Delete' });
+		const ok = await confirm(`Delete the preset ${name}?`, 'Content types it already created are kept. Only the saved preset is deleted.', { confirmLabel: 'Delete' });
 		if (!ok) return;
 		presetDeleteId = id;
 		await tick();
@@ -104,13 +104,13 @@
      is shown under the card it belongs to, with the drawer still open. -->
 <Drawer bind:open title="Use a preset" size="lg">
 	<div class="flex flex-col gap-4">
-		<p class="text-sm text-muted">A preset creates a set of content types with their fields and relations. After that, each one is an ordinary schema.</p>
+		<p class="text-sm text-muted">A preset creates a set of content types with their fields and relations. After that, each one is an ordinary content type.</p>
 		{#if canWrite}
 			{#if canSavePresets}
 				<Collapsible label="Save a preset from a URL or a file">
 					<form method="POST" action="?/savePreset" enctype="multipart/form-data" use:enhance={presetSave} class="flex flex-col gap-4 pt-2">
 						<FormErrors message={presetSaveError || undefined} />
-						<p class="text-sm text-muted">A preset document is JSON or YAML with an id, a name, a description and its schemas, each in the same shape as a new schema. Once saved, it appears here next to the built-in presets. Saving the same id again replaces it, so you can save the URL again to refresh it.</p>
+						<p class="text-sm text-muted">A preset document is JSON or YAML with an id, a name, a description and its content types, each in the same shape as a new content type. Once saved, it appears here next to the built-in presets. Saving the same id again replaces it, so you can save the URL again to refresh it.</p>
 						<Input id="preset-url" name="url" type="url" label="URL" placeholder="https://example.com/presets/blog.json" hint="An http or https address. Private and loopback addresses are refused." />
 						<FileInput id="preset-file" name="file" label="Or a file" accept=".json,.yaml,.yml,application/json,application/yaml" />
 						<Textarea id="preset-document" name="document" label="Or paste the document" rows={6} class="[&_textarea]:text-xs" mono />
@@ -130,9 +130,9 @@
 			<Alert tone="danger">{deleteFailure}</Alert>
 		{/if}
 		{#if presetsGate}
-			<GateNotice gate={presetsGate} title="Presets" absent="Presets are not included in this build. Start from New schema instead." />
+			<GateNotice gate={presetsGate} title="Presets" absent="Presets are not included in this build. Start from New content type instead." />
 		{:else if (presets ?? []).length === 0}
-			<EmptyState title="No presets" description="Start from New schema instead." />
+			<EmptyState title="No presets" description="Start from New content type instead." />
 		{:else}
 			<div class="grid gap-3 sm:grid-cols-2" data-testid="preset-gallery">
 				{#each presets ?? [] as preset (preset.id)}
@@ -150,7 +150,7 @@
 								{/if}
 							</div>
 						{/if}
-						<ul class="flex flex-wrap gap-1.5" aria-label="Schemas {preset.name} creates">
+						<ul class="flex flex-wrap gap-1.5" aria-label="Content types {preset.name} creates">
 							{#each preset.schemas as schema (schema.name)}
 								<li>
 									<code class="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-xs text-muted">{schema.name}</code>

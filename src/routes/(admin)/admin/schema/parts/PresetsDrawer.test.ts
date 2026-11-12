@@ -49,7 +49,7 @@ async function answer(action: string, result: unknown) {
 describe('PresetsDrawer', () => {
 	it('lists what each preset creates and posts its id from its own card', () => {
 		setup();
-		const created = screen.getByRole('list', { name: 'Schemas Notes creates' });
+		const created = screen.getByRole('list', { name: 'Content types Notes creates' });
 		expect([...created.querySelectorAll('code')].map((c) => c.textContent)).toEqual(['notes', 'note_tags']);
 		const form = screen.getAllByRole('button', { name: 'Create' })[0].closest('form') as HTMLFormElement;
 		expect(form.getAttribute('action')).toBe('?/preset');
