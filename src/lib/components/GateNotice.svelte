@@ -53,7 +53,7 @@
 {:else if gate.state === 'locked'}
 	<NotEnabled {title} {level} url={gate.upgradeUrl} />
 {:else if gate.state === 'full'}
-	<Alert tone="warn" title="{title} is at its limit">{fullText(gate)}</Alert>
+	<Alert tone="warn" title="Limit reached for {subject}">{fullText(gate)}</Alert>
 {:else if gate.state === 'forbidden'}
 	<!-- Trying again cannot change a role, so this one offers nothing to press. -->
 	<Alert tone="warn">{forbiddenText(subject)}</Alert>
