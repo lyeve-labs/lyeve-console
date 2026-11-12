@@ -7,7 +7,7 @@ vi.mock('$lib/server/authz', async () => {
 
 import { actions, load } from './+page.server';
 import { FORMS_TYPE_TAKEN, SUBMISSIONS_PUBLIC } from '$lib/api/form-destinations';
-import { STATIC_SITES_REFUSED } from '$lib/api/connected-editors';
+import { FORM_KEY_SAID, STATIC_SITES_REFUSED } from '$lib/api/connected-editors';
 
 const BASE = '/api/admin/builder';
 const RUNNING = { state: 'named', running: ['builder'], withheld: [] };
@@ -419,5 +419,57 @@ describe('static sites', () => {
 		const out = (await actions.setting(event)) as Failure;
 		expect(out.status).toBe(422);
 		expect(out.data.settingError).toEqual({ field: 'form_static_sites', message: STATIC_SITES_REFUSED });
+	});
+});
+
+describe('previous form signing key', () => {
+	const SITE = '0a9e2c4e-1d4b-4c9a-9f3e-5b1c2d3e4f50';
+	const REVOKE = `POST ${BASE}/sites/${SITE}/form-key/revoke`;
+	const revoked = (status: number, body: unknown) => ({ [REVOKE]: json(body, status) });
+
+	it('revokes the key once the reader confirmed, and says which site', async () => {
+		const { event, calls } = act({ site: SITE, confirmed: 'yes' }, revoked(200, { status: 'revoked' }));
+		expect(await actions.revokeFormKey(event)).toEqual({ formKeyRevoked: { site: SITE, status: 'revoked' } });
+		expect(calls).toEqual([{ method: 'POST', path: `${BASE}/sites/${SITE}/form-key/revoke`, body: {} }]);
+	});
+
+	it('asks instead of revoking the key when the post skipped the question', async () => {
+		const { event, calls } = act({ site: SITE }, revoked(200, { status: 'revoked' }));
+		expect(await actions.revokeFormKey(event)).toMatchObject({ unconfirmed: { label: FORM_KEY_SAID.label, fields: [['site', SITE]] } });
+		expect(calls).toEqual([]);
+	});
+
+	it('says when the site had no previous key in its hour', async () => {
+		const { event } = act({ site: SITE, confirmed: 'yes' }, revoked(200, { status: 'none' }));
+		expect(await actions.revokeFormKey(event)).toEqual({ formKeyRevoked: { site: SITE, status: 'none' } });
+	});
+
+	it('words an answer it does not know as a failure', async () => {
+		const { event } = act({ site: SITE, confirmed: 'yes' }, revoked(200, { status: 'later' }));
+		expect(await actions.revokeFormKey(event)).toMatchObject({ status: 502, data: { formKeyError: FORM_KEY_SAID.failed } });
+	});
+
+	it('asks for a site before it asks the engine', async () => {
+		const { event, calls } = act({ site: '' }, {});
+		expect(await actions.revokeFormKey(event)).toMatchObject({ status: 400, data: { formKeyError: FORM_KEY_SAID.chooseSite } });
+		expect(calls).toEqual([]);
+	});
+
+	it.each([
+		[403, { error: "Only an admin or a super admin can revoke a site's form keys.", code: 'permission_denied' }, "Only an admin or a super admin can revoke a site's form keys."],
+		[404, { error: 'The site was not found.', code: 'entry_not_found' }, FORM_KEY_SAID.siteGone],
+		[503, { error: 'pq: connection refused', code: 'store_unavailable' }, FORM_KEY_SAID.unconfirmed],
+		[500, { error: 'boom' }, FORM_KEY_SAID.failed],
+	])('words a refusal (%i) in the console\'s own sentence or the plugin\'s', async (status, body, words) => {
+		const { event } = act({ site: SITE, confirmed: 'yes' }, revoked(status, body));
+		expect(await actions.revokeFormKey(event)).toMatchObject({ status, data: { formKeyError: words } });
+	});
+
+	it.each([
+		[404, { error: 'The requested endpoint does not exist.', code: 'not_found' }],
+		[405, { error: 'That method is not allowed on this endpoint.', code: 'method_not_allowed' }],
+	])('tells a plugin from before the route apart from a missing site (%i)', async (status, body) => {
+		const { event } = act({ site: SITE, confirmed: 'yes' }, revoked(status, body));
+		expect(await actions.revokeFormKey(event)).toMatchObject({ status, data: { formKeyError: FORM_KEY_SAID.tooOld } });
 	});
 });
