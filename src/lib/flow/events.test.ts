@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { eventKindOf, isEventTriggerSchema, kindSchema, switchKind } from './events';
 import { fixtureCatalog } from './fixtures';
+import { labelFor } from './schema';
 
 const spec = fixtureCatalog.find((s) => s.type === 'trigger.event')!.config_schema;
 
@@ -29,7 +30,7 @@ describe('event trigger shape', () => {
 		expect(system.required).toEqual(['name']);
 		expect(system.properties!.schema.title).toBe('Scope (content type or publisher key)');
 		expect(system.properties!.schema.description).toContain('flow slug');
-		expect(content.properties!.schema.title).toBe('Schema');
+		expect(labelFor('schema', content.properties!.schema)).toBe('content type');
 	});
 
 	it('keeps a key no kind claims under both, with the schema\'s own required list', () => {

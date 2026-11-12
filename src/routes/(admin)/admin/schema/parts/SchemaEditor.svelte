@@ -135,7 +135,7 @@
 	const TRANSPORTS: { key: TransportName; label: string; hint: string }[] = [
 		{ key: 'rest', label: 'REST', hint: 'The content API.' },
 		{ key: 'graphql', label: 'GraphQL', hint: 'Queries, mutations, subscriptions.' },
-		{ key: 'grpc', label: 'gRPC', hint: 'The content and schema services.' },
+		{ key: 'grpc', label: 'gRPC', hint: 'The content and content type services.' },
 	];
 
 	const TRANSPORT_MODE_OPTIONS: { value: TransportMode; label: string }[] = [

@@ -106,9 +106,14 @@ export function isLockedOption(schema: JsonSchema): boolean {
 	return schema['x-enabled'] === false;
 }
 
-/** A label for a property: its title, else the key with underscores as spaces. */
+/**
+ * A label for a property: its title, else the key with underscores as spaces.
+ * A content type picker the plugin left untitled is keyed `schema`, the API's
+ * name, so it reads "content type" instead.
+ */
 export function labelFor(key: string, schema: JsonSchema): string {
 	if (typeof schema.title === 'string' && schema.title) return schema.title;
+	if (schema['x-source'] === 'content-schemas') return 'content type';
 	return key.replace(/_/g, ' ');
 }
 

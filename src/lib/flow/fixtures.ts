@@ -63,7 +63,7 @@ export const fixtureCatalog: NodeSpec[] = [
 			additionalProperties: false,
 			properties: {
 				kind: { type: 'string', enum: ['content', 'system'], default: 'content', description: 'A content change, or a hook a plugin publishes.' },
-				schema: { type: 'string', title: 'Schema', description: 'Content schema name, or * for every schema.', 'x-source': 'content-schemas' },
+				schema: { type: 'string', description: 'Content type name, or * for every content type.', 'x-source': 'content-schemas' },
 				event: { type: 'string', enum: ['after_create', 'after_update', 'after_delete'], description: 'Which change starts the flow.' },
 				name: { type: 'string', title: 'Hook', description: 'The hook name a plugin publishes.', 'x-source': 'event-types' },
 				filter: { type: 'string', description: 'Only start the run when this is true.', 'x-expression': true },
@@ -107,7 +107,7 @@ export const fixtureCatalog: NodeSpec[] = [
 			type: 'object',
 			additionalProperties: false,
 			properties: {
-				schema: { type: 'string', title: 'Schema', 'x-source': 'content-schemas' },
+				schema: { type: 'string', 'x-source': 'content-schemas' },
 				filters: {
 					type: 'object',
 					additionalProperties: { type: 'string' },
