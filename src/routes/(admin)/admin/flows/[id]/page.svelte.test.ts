@@ -578,7 +578,7 @@ describe('flow editor page', () => {
 		});
 		const header = container.querySelector('[data-node-id="orders"] button') as HTMLElement;
 		await fireEvent.click(header);
-		expect(getByRole('combobox', { name: /schema/i })).toBeTruthy();
+		expect(getByRole('combobox', { name: /content type/i })).toBeTruthy();
 	});
 
 	it('lists recent runs in the Runs tab', async () => {

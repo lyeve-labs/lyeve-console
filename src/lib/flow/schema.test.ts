@@ -76,6 +76,12 @@ describe('labelFor', () => {
 		expect(labelFor('left_key', {})).toBe('left key');
 		expect(labelFor('left_key', { title: '' })).toBe('left key');
 	});
+
+	it('names an untitled content type picker a content type, not by its key', () => {
+		expect(labelFor('schema', { type: 'string', 'x-source': 'content-schemas' })).toBe('content type');
+		expect(labelFor('schema', { type: 'string', title: 'Target', 'x-source': 'content-schemas' })).toBe('Target');
+		expect(labelFor('schema', { type: 'string' })).toBe('schema');
+	});
 });
 
 describe('parseNumber', () => {

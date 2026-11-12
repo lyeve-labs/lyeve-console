@@ -157,7 +157,7 @@ describe('FlowInspector event trigger', () => {
 		});
 		expect(getByTestId('event-trigger-form')).toBeTruthy();
 		expect(getByRole('radio', { name: 'Content' }).getAttribute('aria-checked')).toBe('true');
-		expect(getByRole('combobox', { name: /schema/i })).toBeTruthy();
+		expect(getByRole('combobox', { name: /content type/i })).toBeTruthy();
 		expect(getByRole('combobox', { name: /event/i })).toBeTruthy();
 		expect(queryByLabelText(/^Hook/)).toBeNull();
 		expect(queryByLabelText(/^filter/)).toBeNull();

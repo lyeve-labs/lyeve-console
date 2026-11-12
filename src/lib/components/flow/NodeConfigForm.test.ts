@@ -18,7 +18,7 @@ describe('NodeConfigForm', () => {
 		const { container, getByLabelText } = render(NodeConfigForm, {
 			props: { schema: query.config_schema, value: { schema: 'orders', limit: 100 }, onchange: vi.fn() },
 		});
-		expect((getByLabelText(/^Schema/) as HTMLInputElement).value).toBe('orders');
+		expect((getByLabelText(/^content type/) as HTMLInputElement).value).toBe('orders');
 		expect((getByLabelText('limit') as HTMLInputElement).value).toBe('100');
 		// A picker with nothing loaded is a plain field that says why.
 		const sort = getByLabelText('sort') as HTMLInputElement;
@@ -33,7 +33,7 @@ describe('NodeConfigForm', () => {
 		const { getByLabelText } = render(NodeConfigForm, {
 			props: { schema: query.config_schema, value: { schema: 'orders' }, onchange },
 		});
-		await fireEvent.input(getByLabelText(/^Schema/), { target: { value: 'customers' } });
+		await fireEvent.input(getByLabelText(/^content type/), { target: { value: 'customers' } });
 		expect(onchange).toHaveBeenLastCalledWith({ schema: 'customers' });
 	});
 
@@ -127,7 +127,7 @@ describe('NodeConfigForm pickers', () => {
 		const { container, getByRole } = render(NodeConfigForm, {
 			props: { schema: query.config_schema, value: { schema: 'orders' }, schemas: fixtureSchemas, onchange },
 		});
-		expect(getByRole('combobox', { name: /schema/i })).toBeTruthy();
+		expect(getByRole('combobox', { name: /content type/i })).toBeTruthy();
 		await pick(container, 'cfg-schema', 'Shipments');
 		expect(onchange).toHaveBeenLastCalledWith({ schema: 'shipments' });
 	});
@@ -137,13 +137,13 @@ describe('NodeConfigForm pickers', () => {
 		const { container, getByLabelText } = render(NodeConfigForm, {
 			props: { schema: query.config_schema, value: { schema: '{{ trigger.query.schema }}' }, schemas: fixtureSchemas, onchange },
 		});
-		const custom = getByLabelText('Schema value') as HTMLInputElement;
+		const custom = getByLabelText('content type value') as HTMLInputElement;
 		expect(custom.value).toBe('{{ trigger.query.schema }}');
 		await fireEvent.input(custom, { target: { value: '{{ vars.schema }}' } });
 		expect(onchange).toHaveBeenLastCalledWith({ schema: '{{ vars.schema }}' });
 		// The escape row is there for a value the list does know, too.
 		await pick(container, 'cfg-schema', 'Custom value');
-		expect(getByLabelText('Schema value')).toBeTruthy();
+		expect(getByLabelText('content type value')).toBeTruthy();
 	});
 
 	it('offers the fields of the sibling schema, with the system columns and both sort directions', async () => {

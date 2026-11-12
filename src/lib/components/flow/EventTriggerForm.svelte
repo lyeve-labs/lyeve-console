@@ -34,7 +34,7 @@
 	const KIND_HINTS: Record<EventKind, string> = {
 		content: 'A record of a content type was created, updated or deleted.',
 		system:
-			'A hook a plugin publishes, such as a flow run that failed. The schema narrows it to one publisher, such as a flow slug, and the filter must be true for the run to start.',
+			'A hook a plugin publishes, such as a flow run that failed. The scope narrows it to one publisher, such as a flow slug, and the filter must be true for the run to start.',
 	};
 
 	const kind = $derived(eventKindOf(value));
