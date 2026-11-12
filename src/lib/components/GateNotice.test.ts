@@ -33,8 +33,15 @@ describe('GateNotice', () => {
 
 	it('states a ceiling with the numbers the refusal carried', () => {
 		const { container } = mount({ state: 'full', limit: 7, current: 7, upgradeUrl: '' });
-		expect(container.textContent).toContain('Cache is at its limit');
+		expect(container.textContent).toContain('Limit reached for cache');
 		expect(container.textContent).toContain("You're using 7 of 7");
+	});
+
+	it('reads the limit heading the same for a plural title', () => {
+		const { container } = render(GateNotice, {
+			props: { gate: { state: 'full', limit: 3, current: 3, upgradeUrl: '' }, title: 'Content types', absent: ABSENT },
+		});
+		expect(container.textContent).toContain('Limit reached for content types');
 	});
 
 	it('reports a failed read as a failure', () => {
@@ -96,9 +103,9 @@ describe('GateNotice with a heading-only title', () => {
 		expect(container.textContent).toContain('The engine is unavailable, so the schema list did not load.');
 	});
 
-	it('keeps the title as the heading', () => {
+	it('names the subject in lower case inside the limit heading', () => {
 		const { container } = named({ state: 'full', limit: 3, current: 3, upgradeUrl: '' });
-		expect(container.textContent).toContain('The schema list is at its limit');
+		expect(container.textContent).toContain('Limit reached for the schema list');
 	});
 });
 
