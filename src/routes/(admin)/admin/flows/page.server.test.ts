@@ -386,6 +386,24 @@ describe('admin/flows import action', () => {
 		expect(((await actions.import(proxy.event)) as { data: { error: string } }).data.error).toBe('Could not import the flow. Try again.');
 	});
 
+	it('claims nothing about the flow after a 5xx or a dropped connection', async () => {
+		const uncertain = 'Could not import the flow. Check whether it appears in the list, then try again.';
+		const form = new FormData();
+		form.set('text', '{}');
+		const down = actionEvent({ '/api/admin/flows/import': () => json({ error: 'failed to import flow', code: 'internal' }, 500) }, form);
+		expect(await actions.import(down.event)).toMatchObject({ status: 502, data: { action: 'import', error: uncertain } });
+
+		const dropped = actionEvent(
+			{
+				'/api/admin/flows/import': () => {
+					throw new TypeError('fetch failed');
+				},
+			},
+			form
+		);
+		expect(await actions.import(dropped.event)).toMatchObject({ status: 502, data: { action: 'import', error: uncertain } });
+	});
+
 	it('refuses an empty import and a replace with no slug before calling the engine', async () => {
 		const empty = actionEvent({}, new FormData());
 		const refused = (await actions.import(empty.event)) as { status: number; data: { action: string } };
