@@ -43,6 +43,15 @@ export function applySchemaPreset(client: HttpClient, id: string): Promise<Prese
 	return client.post<PresetResult>(`${BASE}/${encodeURIComponent(id)}`, {});
 }
 
+/**
+ * Creates the content types a preset document names, once, without keeping
+ * the preset. The document is the text of a JSON or YAML file. The plugin
+ * refuses the whole document when one of its content types exists.
+ */
+export function importSchemaPreset(client: HttpClient, document: string): Promise<PresetResult> {
+	return client.post<PresetResult>(`${BASE}/import`, { document });
+}
+
 /** Keeps a preset read from a URL, or from a pasted JSON or YAML document. */
 export function saveSchemaPreset(client: HttpClient, from: { url: string } | { document: string }): Promise<SchemaPreset> {
 	return client.post<SchemaPreset>(BASE, from);

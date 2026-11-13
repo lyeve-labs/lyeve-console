@@ -118,3 +118,55 @@ describe('PresetsDrawer', () => {
 		expect(screen.queryByText('No presets')).toBeNull();
 	});
 });
+
+describe('PresetsDrawer import file', () => {
+	async function importAnswer(result: unknown, update = vi.fn(async () => {})) {
+		const submit = forms.handlers.get('?/importPreset') as SubmitFunction;
+		const after = (await submit({} as never)) as (a: unknown) => Promise<void>;
+		await after({ result, update, formElement: document.createElement('form') });
+		return update;
+	}
+
+	it('offers a file field and the Import file button to a writer only', () => {
+		setup();
+		const form = screen.getByTestId('preset-import');
+		expect(form.getAttribute('action')).toBe('?/importPreset');
+		expect(form.getAttribute('enctype')).toBe('multipart/form-data');
+		const input = form.querySelector('input[type="file"]') as HTMLInputElement;
+		expect(input.name).toBe('file');
+		expect(input.accept).toContain('.yaml');
+		expect(screen.getByRole('button', { name: 'Import file' })).toBeTruthy();
+		cleanup();
+		setup({ canWrite: false });
+		expect(screen.queryByTestId('preset-import')).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Import file' })).toBeNull();
+	});
+
+	it('says the preset was imported and reloads the content types', async () => {
+		setup();
+		const update = await importAnswer({ type: 'success', status: 200, data: { importedPreset: ['notes'] } });
+		expect(await screen.findByText('Preset imported.')).toBeTruthy();
+		expect(update).toHaveBeenCalled();
+	});
+
+	it('puts a refusal on the file field and reads nothing again', async () => {
+		setup();
+		const update = await importAnswer({
+			type: 'failure',
+			status: 409,
+			data: { importError: 'content type "notes" already exists', importField: 'file' },
+		});
+		const message = await screen.findByText('content type "notes" already exists');
+		expect(screen.getByTestId('preset-import').contains(message)).toBe(true);
+		expect(screen.queryByText('Preset imported.')).toBeNull();
+		expect(update).not.toHaveBeenCalled();
+	});
+
+	it('shows the uncertain sentence after a 5xx and reloads in case the write landed', async () => {
+		setup();
+		const uncertain = 'Could not import the preset. Check whether its content types were created, then try again.';
+		const update = await importAnswer({ type: 'failure', status: 502, data: { importError: uncertain, importField: '' } });
+		expect(await screen.findByText(uncertain)).toBeTruthy();
+		expect(update).toHaveBeenCalled();
+	});
+});

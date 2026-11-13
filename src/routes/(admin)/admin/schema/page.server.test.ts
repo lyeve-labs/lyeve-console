@@ -577,3 +577,68 @@ describe('admin/schema saved presets', () => {
 		expect(calls.find((c) => c.url.includes('/presets/blog'))?.init?.method).toBe('DELETE');
 	});
 });
+
+function fileEvent(routes: Record<string, Route>, file?: File) {
+	const { fetch, calls } = fetchFor(routes);
+	const form = new FormData();
+	if (file) form.set('file', file);
+	return {
+		calls,
+		event: {
+			fetch,
+			cookies: mockCookies(),
+			request: { formData: async () => form },
+			url: new URL('http://localhost/admin/schema'),
+			params: {},
+		} as never,
+	};
+}
+
+describe('admin/schema preset import', () => {
+	const IMPORT = '/api/admin/schemas/presets/import';
+	const yaml = new File(['id: notes\nschemas:\n  - name: notes\n'], 'notes.yaml', { type: 'application/yaml' });
+
+	it('sends the file text as the document and answers with what was created', async () => {
+		const { event, calls } = fileEvent({ [IMPORT]: () => json({ created: ['notes', 'note_tags'] }, 201) }, yaml);
+		expect(await actions.importPreset(event)).toEqual({ importedPreset: ['notes', 'note_tags'] });
+		const post = calls.find((c) => c.url.endsWith(IMPORT));
+		expect(post?.init?.method).toBe('POST');
+		expect(JSON.parse(String(post?.init?.body))).toEqual({ document: 'id: notes\nschemas:\n  - name: notes\n' });
+	});
+
+	it('puts a 409 and a 422 on the file field in the API words', async () => {
+		const clash = fileEvent({ [IMPORT]: () => json({ error: 'content type "notes" already exists', code: 'conflict' }, 409) }, yaml);
+		expect(await actions.importPreset(clash.event)).toMatchObject({
+			status: 409,
+			data: { importError: 'content type "notes" already exists', importField: 'file' },
+		});
+		const invalid = fileEvent({ [IMPORT]: () => json({ error: 'a preset creates at most 20 content types', code: 'validation_failed' }, 422) }, yaml);
+		expect(await actions.importPreset(invalid.event)).toMatchObject({
+			status: 422,
+			data: { importError: 'a preset creates at most 20 content types', importField: 'file' },
+		});
+	});
+
+	it('keeps a 5xx and a dropped connection in its own words and claims nothing', async () => {
+		const uncertain = 'Could not import the preset. Check whether its content types were created, then try again.';
+		const down = fileEvent({ [IMPORT]: () => new Response('<html>Bad Gateway</html>', { status: 502 }) }, yaml);
+		expect(await actions.importPreset(down.event)).toMatchObject({ status: 502, data: { importError: uncertain, importField: '' } });
+		const dropped = fileEvent(
+			{
+				[IMPORT]: () => {
+					throw new TypeError('fetch failed');
+				},
+			},
+			yaml,
+		);
+		expect(await actions.importPreset(dropped.event)).toMatchObject({ status: 502, data: { importError: uncertain } });
+	});
+
+	it('refuses no file and a file over 1 MB before asking the engine', async () => {
+		const none = fileEvent({});
+		expect(await actions.importPreset(none.event)).toMatchObject({ status: 400, data: { importError: 'Choose a file.', importField: 'file' } });
+		const big = fileEvent({}, new File([new Uint8Array(1024 * 1024 + 1)], 'big.json'));
+		expect(await actions.importPreset(big.event)).toMatchObject({ status: 413, data: { importField: 'file' } });
+		expect([...none.calls, ...big.calls].filter((c) => c.url.includes('/presets'))).toEqual([]);
+	});
+});
