@@ -44,6 +44,11 @@
 
 			<Button type="submit" variant="primary" full loading={verify.pending}>Verify</Button>
 		</form>
+	{:else if form && 'password' in form && form.password === true}
+		<div class="space-y-5">
+			<Alert tone="danger">{form.error}</Alert>
+			<Button href="/login" variant="primary" full>Sign in with password</Button>
+		</div>
 	{:else if data.token}
 		<form method="POST" action="?/verify" use:enhance={redeem.enhance} class="space-y-5">
 			{#if form?.error}

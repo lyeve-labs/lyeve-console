@@ -77,6 +77,25 @@ describe('auth/magic-link/verify actions', () => {
 		expect(result.data.error).toMatch(/no longer works/);
 	});
 
+	// The engine spends the link and answers 403 for an account the link can
+	// never sign in, such as a super admin outside every tenant. A new link
+	// ends the same way, so the reader is sent to the password form.
+	it('sends an account the link cannot sign in to the password form', async () => {
+		const fetch = vi.fn(async () => json({ error: 'authentication failed', code: 'forbidden' }, 403)) as unknown as typeof globalThis.fetch;
+		const result = (await actions.verify(event({ token: 'abc' }, fetch))) as { status: number; data: Record<string, unknown> };
+		expect(result.status).toBe(403);
+		expect(result.data).toEqual({
+			error: 'You cannot sign in to this account with an emailed link. Sign in with your password instead.',
+			password: true,
+		});
+	});
+
+	it('reads a 403 without the API error code as an expired link', async () => {
+		const fetch = vi.fn(async () => new Response('<html>Forbidden</html>', { status: 403 })) as unknown as typeof globalThis.fetch;
+		const result = (await actions.verify(event({ token: 'abc' }, fetch))) as { status: number; data: { error: string } };
+		expect(result.data.error).toMatch(/no longer works/);
+	});
+
 	it('finishes the second factor and opens the console', async () => {
 		const fetch = vi.fn(async (_url: string, _init: RequestInit) => json({ token: 'sess2', user: { id: 'u1' } })) as unknown as typeof globalThis.fetch;
 		const cookies = mockCookies();

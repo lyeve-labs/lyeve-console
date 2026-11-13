@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { createClient } from '@lyeve-labs/client';
+import { ApiError, createClient } from '@lyeve-labs/client';
 import { mfaVerify } from '@lyeve-labs/client-rest';
+import { errorCodeOf } from '$lib/api/limits';
 import { isMagicLinkMFAChallenge, verifyMagicLink } from '$lib/api/magic-link';
 import { recoveryRefusal } from '$lib/server/recovery';
 import { checkRateLimit } from '$lib/server/rate-limit';
@@ -10,6 +11,7 @@ import { LANDING } from '$lib/landing';
 import type { Actions, PageServerLoad } from './$types';
 
 const EXPIRED = 'This sign-in link no longer works. Request a new one.';
+const NO_EMAIL_SIGN_IN = 'You cannot sign in to this account with an emailed link. Sign in with your password instead.';
 
 // Opening the link only shows a button. Redeeming spends the token, and a mail
 // scanner that fetches every link in a message would spend it before the
@@ -37,6 +39,12 @@ export const actions: Actions = {
 		} catch (e) {
 			const refused = recoveryRefusal(e, 'Email sign-in');
 			if (refused) return fail(refused.status, { error: refused.error });
+			// A 403 is a refusal of the account, not of the link: one with no
+			// account in the link's tenant, or one that is disabled or expired.
+			// The link is spent, and every new one ends the same way.
+			if (e instanceof ApiError && e.status === 403 && errorCodeOf(e) === 'forbidden') {
+				return fail(403, { error: NO_EMAIL_SIGN_IN, password: true });
+			}
 			return fail(400, { error: EXPIRED });
 		}
 		redirect(303, LANDING);

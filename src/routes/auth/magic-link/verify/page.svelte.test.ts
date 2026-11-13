@@ -54,4 +54,14 @@ describe('Magic link verify page', () => {
 
 		expect(container.textContent).toContain('no longer works');
 	});
+
+	it('offers the password form instead of the spent link when the account cannot use one', () => {
+		const { getByRole, queryByRole } = render(VerifyPage, {
+			props: props('abc', { error: 'You cannot sign in to this account with an emailed link.', password: true }),
+		});
+
+		expect(getByRole('link', { name: /sign in with password/i }).getAttribute('href')).toBe('/login');
+		expect(queryByRole('button', { name: /continue/i })).toBeNull();
+		expect(queryByRole('link', { name: /request a new link/i })).toBeNull();
+	});
 });
