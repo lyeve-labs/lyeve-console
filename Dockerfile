@@ -61,7 +61,16 @@ RUN find build -name '*.map' -delete
 # to build that image.
 RUN node tools/check-server-bundle.mjs build
 
-# Stage 3: the runtime's root filesystem
+# Stage 3: the node binary without its symbol tables
+# The base image's node carries 24 MB of symbol tables that only a native
+# profiler reads. JavaScript stack traces do not use them, and the dynamic
+# symbols an addon links against stay. The strip tools stay in this stage.
+# node:26.12.1-alpine
+FROM node@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS node-stripped
+RUN apk add --no-cache binutils \
+ && strip /usr/local/bin/node
+
+# Stage 4: the runtime's root filesystem
 # The Node base image ships npm and npx in its own layers, and
 # deleting them in a layer above leaves their bytes in the image under
 # whiteouts, where a scanner that reads each layer still finds them. The
@@ -74,11 +83,9 @@ RUN apk upgrade --no-cache \
  && apk add --no-cache libatomic libstdc++ \
  && addgroup -g 1000 node \
  && adduser -u 1000 -G node -s /bin/sh -D node
-# node:26.12.1-alpine
-COPY --from=node@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 \
-     /usr/local/bin/node /usr/local/bin/docker-entrypoint.sh /usr/local/bin/
+COPY --from=node-stripped /usr/local/bin/node /usr/local/bin/docker-entrypoint.sh /usr/local/bin/
 
-# Stage 4: runtime
+# Stage 5: runtime
 # One layer holds the whole root filesystem, so the base packages the upgrade
 # replaced leave nothing behind either.
 FROM scratch AS runtime
