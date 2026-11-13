@@ -41,7 +41,8 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const submit1 = submitter(() => (showCreate = false));
-	const submit2 = submitter(() => (showImport = false));
+	// An import that met a 5xx may have created the flow, so the list is read again.
+	const submit2 = submitter(() => (showImport = false), { reloadAfterOutage: true });
 
 	// The shell shows why the page is unavailable while the flow plugin does
 	// not run. A plugin that runs and refuses its routes is said here.

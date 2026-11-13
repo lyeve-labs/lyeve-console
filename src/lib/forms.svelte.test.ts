@@ -6,6 +6,8 @@ const kit = vi.hoisted(() => ({
 	confirm: vi.fn(async () => true),
 	success: vi.fn(),
 }));
+const nav = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ invalidateAll: nav.invalidateAll }));
 vi.mock('@lyeve-labs/ui-kit', () => ({
 	confirm: kit.confirm,
 	toast: { success: kit.success },
@@ -75,6 +77,29 @@ describe('submitter', () => {
 		const s = submitter(undefined, { reset: false });
 		const o = await run(s.enhance);
 		expect(o.update).toHaveBeenCalledWith({ reset: false });
+	});
+});
+
+describe('submitter after an outage', () => {
+	async function fail(enhance: SubmitFunction, status: number) {
+		const o = { ...opts('failure'), result: { type: 'failure', status, data: {} } as never };
+		const after = await enhance({ ...o, cancel: vi.fn(), submitter: null, controller: new AbortController() } as never);
+		await (after as (a: unknown) => Promise<void>)(o);
+	}
+
+	beforeEach(() => nav.invalidateAll.mockClear());
+
+	it('reloads the page data after a 5xx when asked, and not after a refusal', async () => {
+		const s = submitter(undefined, { reloadAfterOutage: true });
+		await fail(s.enhance, 422);
+		expect(nav.invalidateAll).not.toHaveBeenCalled();
+		await fail(s.enhance, 502);
+		expect(nav.invalidateAll).toHaveBeenCalledTimes(1);
+	});
+
+	it('leaves the page data alone after a 5xx by default', async () => {
+		await fail(submitter().enhance, 502);
+		expect(nav.invalidateAll).not.toHaveBeenCalled();
 	});
 });
 

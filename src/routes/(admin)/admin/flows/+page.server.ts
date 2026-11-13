@@ -27,6 +27,9 @@ import { asked } from '$lib/server/asked';
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 199;
 
+/** The outcome of an import that met a 5xx or a dropped connection, which claims nothing about the flow. */
+const UNCERTAIN_IMPORT = 'Could not import the flow. Check whether it appears in the list, then try again.';
+
 /** The statuses the list filters by. Anything else in the address is no filter. */
 const STATUSES: readonly string[] = ['draft', 'active', 'disabled', 'blocked'];
 
@@ -162,11 +165,12 @@ export const actions: Actions = {
 			if (err instanceof ImportError && err.status === 402) {
 				return fail(402, { action: 'import', error: 'Flows are not enabled on this engine.', locked: true });
 			}
-			if (err instanceof ImportError) {
+			if (err instanceof ImportError && err.status < 500) {
 				if (err.status === 422) return tagged('import', validationFailure(err, 'Could not import the flow. Try again.'));
-				return fail(400, { action: 'import', error: err.status < 500 && err.code && err.message ? err.message : 'Could not import the flow. Try again.' });
+				return fail(400, { action: 'import', error: err.code && err.message ? err.message : 'Could not import the flow. Try again.' });
 			}
-			return fail(400, { action: 'import', error: 'Could not import the flow. Try again.' });
+			// A 5xx or a dropped connection may follow a create that landed.
+			return fail(502, { action: 'import', error: UNCERTAIN_IMPORT });
 		}
 		const unresolved = result.unresolved_datasources ?? [];
 		if (unresolved.length > 0) {

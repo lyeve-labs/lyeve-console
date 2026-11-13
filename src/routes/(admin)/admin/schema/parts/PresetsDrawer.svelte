@@ -17,6 +17,7 @@
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { tick } from 'svelte';
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import type { Gate } from '$lib/api/gate';
 	import type { SchemaPreset } from '$lib/api/schema-preset-catalog';
 	import FormErrors from '$lib/components/FormErrors.svelte';
@@ -78,6 +79,37 @@
 		};
 	};
 
+	// A preset file applied once and not kept: its content types are created
+	// and the list behind the drawer reloads. The outcome stays in the drawer
+	// beside the file it was about.
+	let importError = $state('');
+	let importField = $state('');
+	let importing = $state(false);
+	let imported = $state(false);
+
+	const presetImport: SubmitFunction = () => {
+		importing = true;
+		importError = '';
+		importField = '';
+		imported = false;
+		return async ({ result, update, formElement }) => {
+			importing = false;
+			if (result.type === 'failure') {
+				const data = result.data as { importError?: string; importField?: string } | undefined;
+				importError = String(data?.importError ?? 'Could not import the preset. Try again.');
+				importField = String(data?.importField ?? '');
+				// A 5xx may follow a write that landed. SvelteKit reloads the page
+				// data only on a success, so the list is read again here.
+				if (result.status >= 500) await invalidateAll();
+				return;
+			} else if (result.type === 'success') {
+				formElement.reset();
+				imported = true;
+			}
+			await update({ reset: false });
+		};
+	};
+
 	async function deletePreset(id: string, name: string) {
 		const ok = await confirm(`Delete the preset ${name}?`, 'Content types it already created are kept. Only the saved preset is deleted.', { confirmLabel: 'Delete' });
 		if (!ok) return;
@@ -106,6 +138,23 @@
 	<div class="flex flex-col gap-4">
 		<p class="text-sm text-muted">A preset creates a set of content types with their fields and relations. After that, each one is an ordinary content type.</p>
 		{#if canWrite}
+			<form method="POST" action="?/importPreset" enctype="multipart/form-data" use:enhance={presetImport} class="flex flex-col gap-3" data-testid="preset-import">
+				{#if imported}
+					<Alert tone="success" autoDismiss>Content types created.</Alert>
+				{/if}
+				<FormErrors message={importError && importField !== 'file' ? importError : undefined} />
+				<FileInput
+					id="preset-import-file"
+					name="file"
+					label="Preset file"
+					accept=".json,.yaml,.yml,application/json,application/yaml"
+					hint="A JSON or YAML file up to 1 MB, applied once without saving the preset."
+					error={importField === 'file' ? importError : undefined}
+				/>
+				<div class="flex justify-end">
+					<Button variant="secondary" type="submit" loading={importing}>Import file</Button>
+				</div>
+			</form>
 			{#if canSavePresets}
 				<Collapsible label="Save a preset from a URL or a file">
 					<form method="POST" action="?/savePreset" enctype="multipart/form-data" use:enhance={presetSave} class="flex flex-col gap-4 pt-2">

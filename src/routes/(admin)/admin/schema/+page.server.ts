@@ -7,7 +7,7 @@ import { actionError } from '$lib/server/action-error';
 import { retryBusy } from '$lib/server/retry-busy';
 import { bundleContentType, readImportForm } from '$lib/server/flow-import';
 import { IMPORT_SOURCES } from './import-sources';
-import { applySchemaPreset, deleteSchemaPreset, readSchemaPresets, saveSchemaPreset, type SchemaPreset } from '$lib/api/schema-preset-catalog';
+import { applySchemaPreset, deleteSchemaPreset, importSchemaPreset, readSchemaPresets, saveSchemaPreset, type SchemaPreset } from '$lib/api/schema-preset-catalog';
 import { NO_CANVAS, parsePositions, readCanvasLayout, saveCanvasLayout, type CanvasLayout } from '$lib/api/schema-canvas-layout';
 import { refusalOf, refusalText } from '$lib/api/refusal';
 import { section, type Gate } from '$lib/api/gate';
@@ -20,6 +20,9 @@ export const ssr = false;
 
 /** Every schema write the engine serves takes one of these. */
 const WRITERS = ['admin', 'super_admin'];
+
+/** The most a preset file may hold. The engine refuses a larger body. */
+const PRESET_FILE_LIMIT = 1024 * 1024;
 
 /**
  * One statement a save would run. `destructive` marks one the save queues
@@ -463,6 +466,29 @@ export const actions: Actions = {
 				return fail(502, { saveError: 'The URL did not return a preset document.' });
 			}
 			return fail(400, { saveError: actionError(err, 'Could not save the preset. Try again.') });
+		}
+	},
+
+	/**
+	 * Applies a preset file once without saving it. The file is read here and
+	 * sent as text, so the engine takes JSON and YAML alike. A refusal is
+	 * about the file and lands on its field. A 5xx or a dropped connection
+	 * may follow a write that landed, so that sentence claims nothing.
+	 */
+	importPreset: async (event) => {
+		await requireRole(event, WRITERS);
+		const client = authedClient(event);
+		const file = (await event.request.formData()).get('file');
+		if (!(file instanceof File) || file.size === 0) return fail(400, { importError: 'Choose a file.', importField: 'file' });
+		if (file.size > PRESET_FILE_LIMIT) return fail(413, { importError: 'Choose a file of 1 MB or less.', importField: 'file' });
+		try {
+			const result = await importSchemaPreset(client, await file.text());
+			return { importedPreset: result.created ?? [] };
+		} catch (err) {
+			if (err instanceof ApiError && err.status < 500) {
+				return fail(err.status, { importError: actionError(err, 'Could not import the preset. Try again.'), importField: 'file' });
+			}
+			return fail(502, { importError: 'Could not import the preset. Check whether its content types were created, then try again.', importField: '' });
 		}
 	},
 

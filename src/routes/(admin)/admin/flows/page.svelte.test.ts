@@ -16,6 +16,13 @@ vi.mock('$app/forms', () => ({
 	},
 }));
 
+// The import reads the list again after a 5xx, which a case observes here.
+const nav = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', async (importOriginal) => ({
+	...(await importOriginal<Record<string, unknown>>()),
+	invalidateAll: nav.invalidateAll,
+}));
+
 // Delete asks through the kit's confirm dialog, which renders through a
 // container the layout mounts and this test does not. The call is captured.
 const kit = vi.hoisted(() => ({ confirm: vi.fn(async () => false) }));
@@ -27,6 +34,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 import FlowsPage from './+page.svelte';
 
 beforeEach(() => {
+	nav.invalidateAll.mockClear();
 	kit.confirm.mockReset();
 	kit.confirm.mockResolvedValue(false);
 });
@@ -294,6 +302,16 @@ describe('flows list page', () => {
 	it('keeps a failed import out of the page behind the drawer', () => {
 		const { container } = setup({}, licensed, { action: 'import', error: 'Paste a definition or choose a file.' });
 		expect(container.textContent).not.toContain('Paste a definition or choose a file.');
+	});
+
+	it('reads the list again when an import meets a 5xx, since the flow may exist', async () => {
+		const { container, getByText } = setup();
+		await fireEvent.click(getByText('Import'));
+		const form = container.ownerDocument.querySelector('#flow-import-form') as HTMLFormElement;
+		const submit = forms.submits.get(form) as (input: unknown) => Promise<(a: unknown) => Promise<void>>;
+		const after = await submit({ formData: new FormData(), formElement: form, action: new URL('http://x/?/import'), cancel: vi.fn(), submitter: null, controller: new AbortController() });
+		await after({ result: { type: 'failure', status: 502, data: {} }, update: vi.fn(async () => {}) });
+		expect(nav.invalidateAll).toHaveBeenCalledTimes(1);
 	});
 });
 
