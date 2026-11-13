@@ -1,5 +1,6 @@
 import type { SubmitFunction } from '@sveltejs/kit';
 import { confirm, toast, type ConfirmOptions } from '@lyeve-labs/ui-kit';
+import { invalidateAll } from '$app/navigation';
 import { CONFIRM_FIELD, CONFIRMED } from './confirmation';
 
 /**
@@ -30,11 +31,16 @@ import { CONFIRM_FIELD, CONFIRMED } from './confirmation';
  * A form whose answer is computed from what it sent, such as a URL built from
  * a size and a format, passes `{ reset: false }`. Cleared, its fields no
  * longer say what the answer was built from.
+ *
+ * A form whose write may have landed before a 5xx passes
+ * `{ reloadAfterOutage: true }`. SvelteKit reloads the page data only on a
+ * success, so without it the list behind the panel cannot show what landed.
  */
-export function submitter(close?: () => void, { reset = true }: { reset?: boolean } = {}) {
+export function submitter(close?: () => void, { reset = true, reloadAfterOutage = false }: { reset?: boolean; reloadAfterOutage?: boolean } = {}) {
 	return tracked(() => async ({ result, update }) => {
 		if (result.type !== 'failure' && result.type !== 'error') close?.();
 		await update({ reset });
+		if (reloadAfterOutage && result.type === 'failure' && result.status >= 500) await invalidateAll();
 	});
 }
 
