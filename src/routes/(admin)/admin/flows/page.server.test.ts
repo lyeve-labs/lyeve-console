@@ -386,6 +386,31 @@ describe('admin/flows import action', () => {
 		expect(((await actions.import(proxy.event)) as { data: { error: string } }).data.error).toBe('Could not import the flow. Try again.');
 	});
 
+	it('puts a create onto a taken slug at the slug field', async () => {
+		const form = new FormData();
+		form.set('text', '{}');
+		form.set('mode', 'create');
+		const { event } = actionEvent(
+			{
+				'/api/admin/flows/import': () =>
+					json(
+						{
+							ok: false,
+							errors: [{ path: '/slug', message: 'another flow in this tenant already uses this slug' }],
+							error: 'another flow in this tenant already uses this slug',
+							code: 'conflict',
+						},
+						409
+					),
+			},
+			form
+		);
+		expect(await actions.import(event)).toMatchObject({
+			status: 409,
+			data: { action: 'import', field: 'slug', error: "Another flow already uses this slug. Enter another, or replace that flow's draft." },
+		});
+	});
+
 	it('claims nothing about the flow after a 5xx or a dropped connection', async () => {
 		const uncertain = 'Could not import the flow. Check whether it appears in the list, then try again.';
 		const form = new FormData();
