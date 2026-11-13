@@ -287,6 +287,27 @@ describe('flows list page', () => {
 		expect(described.join(' ')).toContain('Another flow already uses this slug');
 	});
 
+	it('puts a taken slug at the import slug field and offers to replace that flow', async () => {
+		const taken = "Another flow already uses this slug. Enter another, or replace that flow's draft.";
+		const data = { flows: [], limit: 50, offset: 0, total: null, hasMore: false, status: '', q: '', locked: false, gate: { state: 'ok' }, user: { roles: ['admin'] }, entitlements: licensed };
+		const { container, getByText, rerender } = render(FlowsPage, { props: { data, form: null } as never });
+		await fireEvent.click(getByText('Import'));
+		await rerender({ data, form: { action: 'import', error: taken, field: 'slug' } } as never);
+		const doc = container.ownerDocument;
+		const slug = doc.querySelector('#import-slug') as HTMLInputElement;
+		expect(slug.getAttribute('aria-invalid')).toBe('true');
+		const described = (slug.getAttribute('aria-describedby') ?? '').split(' ').map((id) => doc.getElementById(id)?.textContent ?? '');
+		expect(described.join(' ')).toContain(taken);
+		// The sentence sits at the field once, and the top of the form counts it.
+		const form = doc.querySelector('#flow-import-form') as HTMLElement;
+		expect(form.textContent?.split(taken)).toHaveLength(2);
+		expect(form.textContent).toContain('1 field needs attention.');
+
+		await fireEvent.click(getByText("Replace that flow's draft"));
+		expect((form.querySelector('input[name="mode"][value="replace"]') as HTMLInputElement).checked).toBe(true);
+		expect(form.textContent).toContain('Slug of the flow to replace');
+	});
+
 	// The drawers and the row's delete share one form result.
 	it('shows a failed delete on the page and not in a drawer opened after it', async () => {
 		const { container, getAllByText, getByText } = setup({ flows: [fixtureFlow] }, licensed, { action: 'delete', error: 'Could not delete the flow. Try again.' });

@@ -167,6 +167,11 @@ export const actions: Actions = {
 			}
 			if (err instanceof ImportError && err.status < 500) {
 				if (err.status === 422) return tagged('import', validationFailure(err, 'Could not import the flow. Try again.'));
+				// A create onto a slug another flow holds names /slug in the
+				// validation shape, and the drawer offers to replace that flow.
+				if (err.status === 409 && err.code === 'conflict' && validationErrors(err.body).some((e) => e.path === '/slug')) {
+					return fail(409, { action: 'import', error: "Another flow already uses this slug. Enter another, or replace that flow's draft.", field: 'slug' });
+				}
 				return fail(400, { action: 'import', error: err.code && err.message ? err.message : 'Could not import the flow. Try again.' });
 			}
 			// A 5xx or a dropped connection may follow a create that landed.

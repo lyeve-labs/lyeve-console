@@ -82,6 +82,9 @@
 
 	let showImport = $state(false);
 	let importMode = $state('create');
+	// Bound so the slug a create was refused on stays when the reader
+	// switches to replacing that flow.
+	let importSlug = $state('');
 
 	function openImport() {
 		cleared = form;
@@ -379,7 +382,9 @@
 	     feature is turned on when the plugin refused it, and each problem the
 	     plugin found in the definition. -->
 	{#snippet drawerFailure(f: Failure | null)}
-		<FormErrors message={f?.error} />
+		<!-- A failure that concerns one field is drawn at that field, and the top
+		     of the form counts it. -->
+		<FormErrors message={f?.field ? undefined : f?.error} fields={f?.field ? { [f.field]: f.error } : {}} />
 		{#if f?.refusal}
 			{@const link = instance.upgradeLink(f.refusal.upgradeUrl || null)}
 			{#if link}
@@ -455,7 +460,21 @@
 			/>
 			<RadioGroup name="mode" label="Mode" options={MODES} bind:value={importMode} />
 			{#if importMode === 'replace'}
-				<Input id="import-slug" name="slug" label="Slug of the flow to replace" required />
+				<Input id="import-slug" name="slug" label="Slug of the flow to replace" bind:value={importSlug} required />
+			{:else}
+				<Input
+					id="import-slug"
+					name="slug"
+					label="Slug"
+					hint="Leave empty to use the slug in the definition."
+					error={importFailure?.field === 'slug' ? importFailure.error : undefined}
+					bind:value={importSlug}
+				/>
+				{#if importFailure?.field === 'slug'}
+					<div>
+						<Button variant="secondary" size="sm" onclick={() => (importMode = 'replace')}>Replace that flow's draft</Button>
+					</div>
+				{/if}
 			{/if}
 		</form>
 		{#snippet footer()}
