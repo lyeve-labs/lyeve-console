@@ -17,6 +17,7 @@
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { tick } from 'svelte';
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import type { Gate } from '$lib/api/gate';
 	import type { SchemaPreset } from '$lib/api/schema-preset-catalog';
 	import FormErrors from '$lib/components/FormErrors.svelte';
@@ -97,8 +98,10 @@
 				const data = result.data as { importError?: string; importField?: string } | undefined;
 				importError = String(data?.importError ?? 'Could not import the preset. Try again.');
 				importField = String(data?.importField ?? '');
-				// A 5xx may follow a write that landed, so the list is read again.
-				if (result.status < 500) return;
+				// A 5xx may follow a write that landed. SvelteKit reloads the page
+				// data only on a success, so the list is read again here.
+				if (result.status >= 500) await invalidateAll();
+				return;
 			} else if (result.type === 'success') {
 				formElement.reset();
 				imported = true;
@@ -137,7 +140,7 @@
 		{#if canWrite}
 			<form method="POST" action="?/importPreset" enctype="multipart/form-data" use:enhance={presetImport} class="flex flex-col gap-3" data-testid="preset-import">
 				{#if imported}
-					<Alert tone="success" autoDismiss>Preset imported.</Alert>
+					<Alert tone="success" autoDismiss>Content types created.</Alert>
 				{/if}
 				<FormErrors message={importError && importField !== 'file' ? importError : undefined} />
 				<FileInput
@@ -145,7 +148,7 @@
 					name="file"
 					label="Preset file"
 					accept=".json,.yaml,.yml,application/json,application/yaml"
-					hint="JSON or YAML, up to 1 MB. The preset is applied once and not saved."
+					hint="A JSON or YAML file up to 1 MB, applied once without saving the preset."
 					error={importField === 'file' ? importError : undefined}
 				/>
 				<div class="flex justify-end">

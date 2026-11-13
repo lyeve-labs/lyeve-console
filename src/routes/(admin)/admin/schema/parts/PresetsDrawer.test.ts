@@ -14,6 +14,8 @@ vi.mock('$app/forms', () => ({
 		return { destroy() {} };
 	},
 }));
+const nav = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ invalidateAll: nav.invalidateAll }));
 const kit = vi.hoisted(() => ({ confirm: vi.fn(async (_title: string, _body: string, _opts?: unknown) => true) }));
 vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 	const actual = await importOriginal<Record<string, unknown>>();
@@ -25,6 +27,7 @@ import PresetsDrawer from './PresetsDrawer.svelte';
 afterEach(cleanup);
 beforeEach(() => {
 	forms.handlers.clear();
+	nav.invalidateAll.mockClear();
 	kit.confirm.mockClear();
 	HTMLFormElement.prototype.requestSubmit = vi.fn();
 });
@@ -142,10 +145,10 @@ describe('PresetsDrawer import file', () => {
 		expect(screen.queryByRole('button', { name: 'Import file' })).toBeNull();
 	});
 
-	it('says the preset was imported and reloads the content types', async () => {
+	it('says the content types were created and reloads them', async () => {
 		setup();
 		const update = await importAnswer({ type: 'success', status: 200, data: { importedPreset: ['notes'] } });
-		expect(await screen.findByText('Preset imported.')).toBeTruthy();
+		expect(await screen.findByText('Content types created.')).toBeTruthy();
 		expect(update).toHaveBeenCalled();
 	});
 
@@ -158,15 +161,16 @@ describe('PresetsDrawer import file', () => {
 		});
 		const message = await screen.findByText('content type "notes" already exists');
 		expect(screen.getByTestId('preset-import').contains(message)).toBe(true);
-		expect(screen.queryByText('Preset imported.')).toBeNull();
+		expect(screen.queryByText('Content types created.')).toBeNull();
 		expect(update).not.toHaveBeenCalled();
+		expect(nav.invalidateAll).not.toHaveBeenCalled();
 	});
 
 	it('shows the uncertain sentence after a 5xx and reloads in case the write landed', async () => {
 		setup();
 		const uncertain = 'Could not import the preset. Check whether its content types were created, then try again.';
-		const update = await importAnswer({ type: 'failure', status: 502, data: { importError: uncertain, importField: '' } });
+		await importAnswer({ type: 'failure', status: 502, data: { importError: uncertain, importField: '' } });
 		expect(await screen.findByText(uncertain)).toBeTruthy();
-		expect(update).toHaveBeenCalled();
+		expect(nav.invalidateAll).toHaveBeenCalledTimes(1);
 	});
 });
