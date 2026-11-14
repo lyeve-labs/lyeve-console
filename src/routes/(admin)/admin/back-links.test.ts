@@ -38,6 +38,7 @@ const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin')
 vi.mock('$app/state', () => state);
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 vi.mock('$app/navigation', () => ({
+	afterNavigate: vi.fn(),
 	beforeNavigate: vi.fn(),
 	goto: vi.fn(async () => {}),
 	invalidateAll: vi.fn(async () => {}),
@@ -93,7 +94,18 @@ const cases: Case[] = [
 	{
 		route: 'content/[schema]',
 		component: ContentCollection,
-		data: { schemas: { ok: true, value: [] }, schemaDef: posts, items: { ok: true, value: [] }, activeSchema: 'posts', status: null, limit: 100, offset: 0, total: 0 },
+		data: {
+			schemas: { ok: true, value: [] },
+			schemaDef: posts,
+			items: { ok: true, value: [] },
+			activeSchema: 'posts',
+			status: null,
+			limit: 100,
+			offset: 0,
+			total: 0,
+			q: '',
+			view: { filters: [], match: 'all', sort: '-updated_at', columns: ['created_at'], status: null, limit: 100 },
+		},
 		href: '/admin/content',
 		label: 'Content',
 	},

@@ -1,15 +1,23 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { type HttpClient, type Schema, type SchemaField } from '@lyeve-labs/client';
+import { ApiError, type HttpClient, type Schema, type SchemaField } from '@lyeve-labs/client';
 import { getSchemas, getSchema } from '@lyeve-labs/client-rest';
 import { authedClient, exactParse, requireUser, withExactIntegers } from '$lib/server/authz';
 import { actionFailure } from '$lib/server/action-error';
 import { couldNotLoad } from '$lib/outage';
 import { readError } from '$lib/server/read-error';
-import { section, type Section } from '$lib/api/gate';
+import { gateOf, section, type Gate, type Section } from '$lib/api/gate';
 import { pageWindow, pastEndOffset, totalOf, withOffset, type ListEnvelope } from '$lib/api/list';
 import { fieldKey } from '$lib/utils/content-form';
 import { asked } from '$lib/server/asked';
+import {
+	DEFAULT_LIMIT,
+	VIEW_COOKIE,
+	apiQuery,
+	hasViewParam,
+	readView,
+	viewQuery,
+} from '$lib/utils/entry-view';
 
 /** One row of the admin content listing, before it is reshaped for the table. */
 type EntryRow = {
@@ -19,9 +27,9 @@ type EntryRow = {
 	status?: string;
 	created_at: string;
 	updated_at: string;
+	/** The ids linked to the entry by each relation that is not belongs_to, by field name. */
+	links?: Record<string, unknown>;
 };
-
-const DEFAULT_LIMIT = 100;
 
 /**
  * The engine's own ceiling on a page size. It clamps anything larger instead of
@@ -33,40 +41,81 @@ const DEFAULT_LIMIT = 100;
  */
 const MAX_LIMIT = 500;
 
-/** The statuses the listing route filters on. Anything else lists every entry. */
-const ENTRY_STATUSES = ['draft', 'published', 'archived'] as const;
-type EntryStatus = (typeof ENTRY_STATUSES)[number];
-
-function statusFrom(url: URL): EntryStatus | null {
-	const asked = url.searchParams.get('status');
-	return (ENTRY_STATUSES as readonly string[]).includes(asked ?? '') ? (asked as EntryStatus) : null;
-}
-
 const ENTRIES_FAILED = couldNotLoad('entries');
 const SCHEMAS_FAILED = couldNotLoad('the other content types');
+
+/**
+ * The admin list refuses a filter it cannot apply with a 400. The load drops
+ * what the content type does not allow, so a refusal left over is one this
+ * console could not foresee, and the reader's way out is the filters.
+ */
+const FILTERS_REFUSED = 'Could not load entries with these filters. Change or clear the filters.';
+
+function entriesGate(err: unknown): Gate {
+	if (err instanceof ApiError && err.status === 400) return { state: 'error', message: FILTERS_REFUSED };
+	return gateOf(err, ENTRIES_FAILED);
+}
 
 /**
  * Entries are listed through the admin API, which holds every entry with its
  * status and history, those written in the console and those written through
  * the Content API alike. The load normalizes the admin rows into the shape the
  * page table expects (data.<field> plus data._status).
+ *
+ * The view (filters, order, columns, status and page size) comes from the URL.
+ * A URL that names none opens the view this browser last used on this list,
+ * by a redirect, so the address shows it and the page never draws the
+ * unfiltered list first. The page writes that cookie, never the load: hover
+ * preloading runs a load for links nobody opens.
  */
 export const load: PageServerLoad = async (event) => {
-	const { params, url } = event;
+	const { params, url, cookies } = event;
 	const client = authedClient(event);
 
 	const { limit, offset } = pageWindow(url, DEFAULT_LIMIT, MAX_LIMIT);
-	const status = statusFrom(url);
-	const query = new URLSearchParams({ schema: params.schema, limit: String(limit), offset: String(offset) });
-	if (status) query.set('status', status);
+	const q = (url.searchParams.get('q') ?? '').trim();
 
-	const [schemas, schemaDef, listed] = await Promise.all([
+	const [schemas, schemaDef] = await Promise.all([
 		section<Schema[]>(getSchemas(client), SCHEMAS_FAILED),
 		getSchema(params.schema, client).catch((err: unknown) => readError(err, `Content type "${params.schema}" not found`)),
-		section(client.get<ListEnvelope<EntryRow>>(`/api/admin/content?${query}`), ENTRIES_FAILED),
 	]);
 
-	const base = { schemas, schemaDef, activeSchema: params.schema, status, limit, offset };
+	if (!hasViewParam(url.searchParams)) {
+		const saved = cookies.get(VIEW_COOKIE);
+		// Only a page view opens the saved view. A form posted to this page
+		// without JavaScript runs its action and then this load, and a
+		// redirect there would send the browser to repeat the post at an
+		// address with no action.
+		if (saved && event.request.method === 'GET') {
+			const savedUrl = new URL(url);
+			savedUrl.search = saved;
+			const view = readView(savedUrl.searchParams, schemaDef, pageWindow(savedUrl, DEFAULT_LIMIT, MAX_LIMIT).limit);
+			// A saved view that is the default one, or that no longer applies to
+			// this content type, opens the plain list.
+			if (viewQuery(view, schemaDef)) {
+				const kept = Number(url.searchParams.get('offset')) || 0;
+				redirect(307, `${url.pathname}${viewQuery(view, schemaDef, { explicit: true, q, offset: kept })}`);
+			}
+		}
+	}
+
+	const view = readView(url.searchParams, schemaDef, limit);
+	const fields = schemaDef.fields ?? [];
+	const listed = await section(
+		client.get<ListEnvelope<EntryRow>>(`/api/admin/content?${apiQuery(params.schema, view, q, offset)}`),
+		entriesGate,
+	);
+
+	const base = {
+		schemas,
+		schemaDef,
+		activeSchema: params.schema,
+		status: view.status,
+		limit,
+		offset,
+		q,
+		view,
+	};
 	if (!listed.ok) {
 		return { ...base, items: listed as Section<ListedEntry[]>, total: 0 };
 	}
@@ -81,12 +130,13 @@ export const load: PageServerLoad = async (event) => {
 		updated_at: e.updated_at,
 		data: {
 			...(e.body && typeof e.body === 'object'
-				? withExactIntegers(schemaDef.fields ?? [], e.body as Record<string, unknown>, exactRows[i]?.body)
+				? withExactIntegers(fields, e.body as Record<string, unknown>, exactRows[i]?.body)
 				: {}),
 			...(e.title !== undefined ? { title: e.title } : {}),
 			_status: e.status ?? 'published',
 		} as Record<string, unknown>,
 	}));
+	for (const [i, entry] of entries.entries()) withLinks(fields, entry.data, rows[i].links);
 
 	// total_count counts the collection, while rows.length counts this page alone.
 	// totalOf falls back to the page length when a response carries no count,
@@ -96,7 +146,7 @@ export const load: PageServerLoad = async (event) => {
 	const back = pastEndOffset(entries.length, limit, offset, totalOf(listed.value));
 	if (back !== null) redirect(307, withOffset(url, back));
 
-	await nameRelatedEntries(client, schemaDef.fields ?? [], entries);
+	await nameRelatedEntries(client, fields, entries);
 
 	const items: Section<ListedEntry[]> = { ok: true, value: entries };
 	return { ...base, items, total };
@@ -111,6 +161,29 @@ type ListedEntry = {
 };
 
 type ListedItem = { data: Record<string, unknown> };
+
+/**
+ * A to-many relation made through the relationships endpoint lives beside
+ * the entry, never in its body, so the list sends those ids apart from the
+ * body. Each field's value becomes the union of the two, so a cell counts
+ * every link. A row from an engine that sends no links keeps its body.
+ */
+function withLinks(fields: SchemaField[], data: Record<string, unknown>, links: Record<string, unknown> | undefined): void {
+	if (!links) return;
+	const idOf = (v: unknown) => (v !== null && typeof v === 'object' ? (v as { id?: unknown }).id : v);
+	for (const f of fields) {
+		const linked = links[f.name];
+		if (f.field_type !== 'relation' || (f.relation_type ?? 'belongs_to') === 'belongs_to' || !Array.isArray(linked)) {
+			continue;
+		}
+		const held = Array.isArray(data[f.name]) ? (data[f.name] as unknown[]) : [];
+		const ids = new Set(held.map(idOf));
+		const merged = [...held, ...linked.filter((id) => !ids.has(id))];
+		// An entry with no links arrives with an empty list, and a cell draws an
+		// empty list as "0 items" where it draws a missing value as "Not set".
+		if (merged.length > 0 || Array.isArray(data[f.name])) data[f.name] = merged;
+	}
+}
 
 /**
  * A link to one entry of another content type is stored as that entry's id,

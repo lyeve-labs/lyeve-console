@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 
 // The real session client, so every read goes through the event's fetch with
@@ -171,12 +171,20 @@ describe('content listing reads its collection', () => {
 	});
 
 	it('asks the listing for the status the URL names, and ignores one it does not know', async () => {
+		rest.getSchema.mockResolvedValue({ name: 'posts', display_name: 'Posts', fields: [], with_draft_publish: true } as never);
 		const { fetch, result } = await runLoad('?status=draft', { data: [], total_count: 0 });
 		expect(new URL(String((fetch.mock.calls[0] as unknown[])[0]), 'http://localhost').searchParams.get('status')).toBe('draft');
 		expect((result as unknown as { status: string | null }).status).toBe('draft');
 
 		const other = await runLoad('?status=famous', { data: [], total_count: 0 });
 		expect(new URL(String((other.fetch.mock.calls[0] as unknown[])[0]), 'http://localhost').searchParams.has('status')).toBe(false);
+		rest.getSchema.mockResolvedValue({ name: 'posts', display_name: 'Posts', fields: [] });
+	});
+
+	it('sends no status for a content type without draft and publish', async () => {
+		const { fetch, result } = await runLoad('?status=draft', { data: [], total_count: 0 });
+		expect(new URL(String((fetch.mock.calls[0] as unknown[])[0]), 'http://localhost').searchParams.has('status')).toBe(false);
+		expect((result as unknown as { status: string | null }).status).toBeNull();
 	});
 
 	it('reads the listing as the session', async () => {
@@ -401,3 +409,280 @@ describe('deleting an entry', () => {
 	});
 });
 
+
+describe('content listing reads its view', () => {
+	const typed = {
+		name: 'posts',
+		display_name: 'Posts',
+		with_draft_publish: true,
+		fields: [
+			{ name: 'headline', field_type: 'text' },
+			{ name: 'price', field_type: 'decimal' },
+			{ name: 'featured', field_type: 'boolean' },
+			{ name: 'launch', field_type: 'date' },
+			{ name: 'author', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'author' },
+			{ name: 'cover', field_type: 'media' },
+		],
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		rest.getSchema.mockResolvedValue(typed as never);
+	});
+
+	afterEach(() => {
+		rest.getSchema.mockResolvedValue({ name: 'posts', display_name: 'Posts', fields: [] });
+	});
+
+	async function viewLoad(
+		query: string,
+		cookies: Record<string, string> = {},
+		answer?: () => Response,
+		method = 'GET',
+	) {
+		const fetch = vi.fn(
+			async (_input: string | URL | Request) =>
+				answer?.() ??
+				new Response(JSON.stringify({ data: rows(1), total_count: 1 }), {
+					status: 200,
+					headers: { 'content-type': 'application/json' },
+				}),
+		);
+		const pending = load({
+			fetch,
+			cookies: mockCookies({ '__Host-sys_session': 'tok', ...cookies }),
+			params: { schema: 'posts' },
+			url: new URL(`http://localhost/admin/content/posts${query}`),
+			request: new Request(`http://localhost/admin/content/posts${query}`, { method }),
+		} as never);
+		const outcome = await Promise.resolve(pending).catch((err: unknown) => err);
+		return { fetch, outcome };
+	}
+
+	/** The query of the one request that lists this content type's entries. */
+	function listing(fetch: { mock: { calls: unknown[][] } }): URLSearchParams {
+		const call = fetch.mock.calls
+			.map((c) => new URL(String(c[0]), 'http://localhost'))
+			.find((u) => u.searchParams.get('schema') === 'posts');
+		if (!call) throw new Error('the entries were not listed');
+		return call.searchParams;
+	}
+
+	it('forwards a condition of every operator family, the search, the match and the order', async () => {
+		const { fetch } = await viewLoad(
+			'?filters[headline][contains]=launch&filters[price][gte]=9.5&filters[featured]=true' +
+				'&filters[launch][lt]=2026-01-01&filters[created_at][gt]=2026-01-01T00:00:00Z' +
+				'&filters[author][in]=a1&filters[author][in]=a2&filters[cover][empty]=false' +
+				'&match=any&q=%20spring%20&sort=-price',
+		);
+		const sent = listing(fetch);
+		expect(sent.get('filters[headline][contains]')).toBe('launch');
+		expect(sent.get('filters[price][gte]')).toBe('9.5');
+		expect(sent.get('filters[featured][eq]')).toBe('true');
+		expect(sent.get('filters[launch][lt]')).toBe('2026-01-01');
+		expect(sent.get('filters[created_at][gt]')).toBe('2026-01-01T00:00:00Z');
+		expect(sent.getAll('filters[author][in]')).toEqual(['a1', 'a2']);
+		expect(sent.get('filters[cover][empty]')).toBe('false');
+		expect(sent.get('match')).toBe('any');
+		expect(sent.get('q')).toBe('spring');
+		expect(sent.get('sort')).toBe('-price');
+	});
+
+	it('drops a condition the content type no longer allows, and an order it cannot sort by', async () => {
+		const { fetch, outcome } = await viewLoad(
+			'?filters[removed]=x&filters[headline][gt]=x&filters[price][eq]=cheap&filters[featured][contains]=t' +
+				'&filters[headline][eq]=kept&sort=cover',
+		);
+		const sent = listing(fetch);
+		const filters = [...sent.keys()].filter((k) => k.startsWith('filters['));
+		expect(filters).toEqual(['filters[headline][eq]']);
+		expect(sent.has('sort')).toBe(false);
+		expect((outcome as { view: { filters: unknown[] } }).view.filters).toEqual([
+			{ key: 'headline', op: 'eq', values: ['kept'] },
+		]);
+	});
+
+	it('asks exactly what it asked before when no view is chosen', async () => {
+		const { fetch } = await viewLoad('');
+		expect([...listing(fetch).keys()].sort()).toEqual(['limit', 'offset', 'schema']);
+	});
+
+	it('draws a refused filter as a failure, never as an empty list', async () => {
+		const { outcome } = await viewLoad('?filters[headline][contains]=x', {}, () =>
+			new Response(JSON.stringify({ error: 'unknown filter', code: 'bad_request' }), {
+				status: 400,
+				headers: { 'content-type': 'application/json' },
+			}),
+		);
+		expect((outcome as Loaded).items).toEqual({
+			ok: false,
+			gate: { state: 'error', message: 'Could not load entries with these filters. Change or clear the filters.' },
+		});
+	});
+
+	it('opens the remembered view by a redirect, keeping the search and the page', async () => {
+		const { fetch, outcome } = await viewLoad('?q=spring&offset=200', {
+			lyeve_entry_view: 'filters[headline][contains]=launch&sort=-price&columns=headline',
+		});
+		expect(isRedirect(outcome)).toBe(true);
+		const target = new URL((outcome as { location: string }).location, 'http://localhost');
+		expect((outcome as { status: number }).status).toBe(307);
+		expect(target.pathname).toBe('/admin/content/posts');
+		expect(target.searchParams.get('filters[headline][contains]')).toBe('launch');
+		expect(target.searchParams.get('sort')).toBe('-price');
+		expect(target.searchParams.get('columns')).toBe('headline');
+		expect(target.searchParams.get('limit')).toBe('100');
+		expect(target.searchParams.get('q')).toBe('spring');
+		expect(target.searchParams.get('offset')).toBe('200');
+		// The entries are read once, on the page the redirect lands on.
+		expect(fetch).not.toHaveBeenCalled();
+	});
+
+	it('lets the URL win over the remembered view', async () => {
+		const { fetch, outcome } = await viewLoad('?sort=headline', {
+			lyeve_entry_view: 'filters[headline][contains]=launch',
+		});
+		expect(isRedirect(outcome)).toBe(false);
+		const sent = listing(fetch);
+		expect(sent.get('sort')).toBe('headline');
+		expect([...sent.keys()].some((k) => k.startsWith('filters['))).toBe(false);
+	});
+
+	it('leaves a posted form where it is, so the action it posted to runs', async () => {
+		const { outcome } = await viewLoad('', { lyeve_entry_view: 'sort=-price' }, undefined, 'POST');
+		expect(isRedirect(outcome)).toBe(false);
+		expect((outcome as Loaded).items.ok).toBe(true);
+	});
+
+	it('sends a text value as typed and refuses one that is only spaces', async () => {
+		const { fetch } = await viewLoad('?filters[headline][contains]=%20launch%20&filters[headline][ne]=%20%20');
+		const sent = listing(fetch);
+		expect(sent.get('filters[headline][contains]')).toBe(' launch ');
+		expect(sent.has('filters[headline][ne]')).toBe(false);
+	});
+
+	it('reads no relation choices while listing, however many relations the content type has', async () => {
+		rest.getSchema.mockResolvedValue({
+			...typed,
+			fields: [...typed.fields, { name: 'editor', field_type: 'relation', relation_type: 'has_many', relation_to: 'people' }],
+		} as never);
+		const { fetch } = await viewLoad('');
+		// rows(1) links nowhere, so only the listing itself is read.
+		expect(fetch).toHaveBeenCalledTimes(1);
+		expect(listing(fetch).get('schema')).toBe('posts');
+	});
+
+	it('opens the plain list when the remembered view names only what is gone', async () => {
+		const { outcome } = await viewLoad('', { lyeve_entry_view: 'filters[removed]=x&sort=removed' });
+		expect(isRedirect(outcome)).toBe(false);
+		expect((outcome as Loaded).items.ok).toBe(true);
+	});
+});
+
+describe('content listing resolves a key the way the admin list does', () => {
+	const named = {
+		name: 'orders',
+		display_name: 'Orders',
+		with_draft_publish: true,
+		fields: [
+			{ name: 'status', field_type: 'text' },
+			{ name: 'published_at', field_type: 'datetime' },
+			{ name: 'tags', field_type: 'relation', relation_type: 'many_to_many', relation_to: 'tag' },
+		],
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		rest.getSchema.mockResolvedValue(named as never);
+	});
+
+	afterEach(() => {
+		rest.getSchema.mockResolvedValue({ name: 'posts', display_name: 'Posts', fields: [] });
+	});
+
+	it('filters and sorts a field named status or published_at by its name, and a to-many relation by its ids', async () => {
+		const tags = { data: [{ id: 't1', title: 'Urgent', created_at: '', updated_at: '' }], total_count: 1 };
+		const fetch = vi.fn(async (input: string | URL | Request) => {
+			const u = new URL(String(input), 'http://localhost');
+			const body = u.searchParams.get('schema') === 'tag' ? tags : { data: rows(1), total_count: 1 };
+			return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+		});
+		const result = (await load({
+			fetch,
+			cookies: mockCookies({ '__Host-sys_session': 'tok' }),
+			params: { schema: 'orders' },
+			url: new URL(
+				'http://localhost/admin/content/orders?filters[status][eq]=open&filters[published_at][gte]=2026-01-01T00:00:00Z' +
+					'&filters[tags][in]=t1&sort=-status',
+			),
+		} as never)) as unknown as { related: Record<string, unknown[]> };
+
+		const sent = fetch.mock.calls
+			.map((c) => new URL(String(c[0]), 'http://localhost').searchParams)
+			.find((p) => p.get('schema') === 'orders');
+		expect(sent?.get('filters[status][eq]')).toBe('open');
+		expect(sent?.get('filters[published_at][gte]')).toBe('2026-01-01T00:00:00Z');
+		expect(sent?.getAll('filters[tags][in]')).toEqual(['t1']);
+		expect(sent?.get('sort')).toBe('-status');
+		expect(result).not.toHaveProperty('related');
+	});
+});
+
+// A to-many link made through the relationships endpoint is not in the body,
+// so the list sends it beside the body, and the cell counts both.
+describe('content listing counts the links a body does not hold', () => {
+	const linked = {
+		name: 'posts',
+		display_name: 'Posts',
+		fields: [
+			{ name: 'tags', field_type: 'relation', relation_type: 'has_many', relation_to: 'tag' },
+			{ name: 'author', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'people' },
+		],
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		rest.getSchema.mockResolvedValue(linked as never);
+	});
+
+	afterEach(() => {
+		rest.getSchema.mockResolvedValue({ name: 'posts', display_name: 'Posts', fields: [] });
+	});
+
+	it('joins the linked ids to the ids the body holds, once each', async () => {
+		const { result } = await runLoad('', {
+			data: [
+				{ ...rows(1)[0], body: {}, links: { tags: ['t1', 't2'], author: ['a9'] } },
+				{ ...rows(1, 1)[0], body: { tags: ['t1'] }, links: { tags: ['t1', 't2'] } },
+			],
+			total_count: 2,
+		});
+
+		if (!result.items.ok) throw new Error('the listing failed');
+		expect(result.items.value[0].data.tags).toEqual(['t1', 't2']);
+		expect(result.items.value[1].data.tags).toEqual(['t1', 't2']);
+		// A belongs_to link lives in the body, so a links entry for one is not read.
+		expect(result.items.value[0].data.author).toBeUndefined();
+	});
+
+	it('keeps the body as it is when the engine sends no links', async () => {
+		const { result } = await runLoad('', { data: [{ ...rows(1)[0], body: { tags: ['t1'] } }], total_count: 1 });
+
+		if (!result.items.ok) throw new Error('the listing failed');
+		expect(result.items.value[0].data.tags).toEqual(['t1']);
+	});
+
+	it('leaves a relation unset when the entry has no links and the body holds no list', async () => {
+		const { result } = await runLoad('', {
+			data: [
+				{ ...rows(1)[0], body: {}, links: { tags: [] } },
+				{ ...rows(1, 1)[0], body: { tags: [] }, links: { tags: [] } },
+			],
+			total_count: 2,
+		});
+
+		if (!result.items.ok) throw new Error('the listing failed');
+		expect(result.items.value[0].data).not.toHaveProperty('tags');
+		expect(result.items.value[1].data.tags).toEqual([]);
+	});
+});
