@@ -1,4 +1,5 @@
 import type { HttpClient } from '@lyeve-labs/client';
+import { listTenantMembers } from '$lib/api/tenant-access';
 
 /**
  * An account as a column names it and a picker offers it. The tenant is empty
@@ -33,4 +34,21 @@ export async function listPeople(client: HttpClient): Promise<Person[]> {
 		}
 	}
 	return out;
+}
+
+/** How many of one tenant's accounts one read asks for, the most the tenancy plugin answers. */
+export const TENANT_PEOPLE_LIMIT = 500;
+
+/**
+ * The accounts whose home is `tenant`, read from the tenancy plugin's member
+ * list, which holds that tenant's accounts alone. A membership lets an account
+ * act in another tenant, but the engine mentions only an account of the
+ * entry's own tenant, so members whose home is elsewhere are left out. A read
+ * that fails answers none, like the directory.
+ */
+export async function listTenantPeople(client: HttpClient, tenant: string): Promise<Person[]> {
+	const res = await listTenantMembers(client, tenant, TENANT_PEOPLE_LIMIT, 0).catch(() => null);
+	return (res?.members ?? [])
+		.filter((m) => m.home && m.id && m.email)
+		.map((m) => ({ id: m.id, email: m.email, tenant_id: tenant }));
 }

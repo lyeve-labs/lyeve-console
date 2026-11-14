@@ -219,7 +219,7 @@ export const load: PageServerLoad = async (event) => {
 		loadReview(client, params.id, runs(plugins, PLUGIN.review), user).then(async (r) =>
 			r ? { ...r, people: await people } : null,
 		),
-		loadComments(client, params.id, people, tenant).catch(() => null),
+		loadComments(client, params.id, people, tenant, runs(plugins, PLUGIN.multitenant)).catch(() => null),
 		loadReleases(client, params.id).catch(() => null),
 	]);
 

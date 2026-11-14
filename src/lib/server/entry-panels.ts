@@ -17,7 +17,7 @@ import {
 	type ReviewDefinition,
 	type StageSLA,
 } from '$lib/api/review';
-import type { Person } from '$lib/server/people';
+import { listTenantPeople, type Person } from '$lib/server/people';
 
 /**
  * What the Translations panel renders, or null when it does not render.
@@ -149,13 +149,20 @@ export async function loadComments(
 	entryId: string,
 	people: Promise<Person[]>,
 	tenant: Promise<string>,
+	tenancy: boolean,
 ): Promise<EntryComments | null> {
 	// Accounts to mention. A caller who may not list them comments without
 	// mentions. The engine mails only accounts of the entry's own tenant and
-	// refuses the comment for anyone else, so only those are offered.
+	// refuses the comment for anyone else, so only those are offered. The
+	// directory is one page of every tenant's accounts, so while the tenancy
+	// plugin runs the entry's tenant is read from it instead. Without the
+	// plugin the instance has one tenant, and the directory page is its own.
 	const directory = async () => {
 		const [all, own] = await Promise.all([people, tenant]);
-		return { people: all, mentionable: all.filter((p) => p.tenant_id === own) };
+		if (!tenancy) return { people: all, mentionable: all.filter((p) => p.tenant_id === own) };
+		const mentionable = own ? await listTenantPeople(client, own) : [];
+		const named = new Set(all.map((p) => p.id));
+		return { people: [...all, ...mentionable.filter((p) => !named.has(p.id))], mentionable };
 	};
 	try {
 		const threads = await listComments(client, entryId, 'all');

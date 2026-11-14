@@ -696,6 +696,38 @@ describe('content editor load, mentions', () => {
 		expect(out.comments.mentionable.map((p) => p.id)).toEqual(['ana']);
 		expect(out.comments.people.map((p) => p.id)).toEqual(['setup', 'ana', 'bo']);
 	});
+
+	// The directory is one page of every tenant's accounts, oldest first, so a
+	// tenant created after two hundred others has none of its people on it.
+	// The tenancy plugin lists the entry's tenant alone. A member whose home is
+	// another tenant may act here, but the engine refuses to mention them.
+	it('reads the entry\'s tenant from the tenancy plugin when the directory page holds none of it', async () => {
+		const others = Array.from({ length: 200 }, (_, i) => ({ id: `o${i}`, email: `o${i}@test.invalid`, tenant_id: 't1' }));
+		const fetchFn = vi.fn(async (path: string) => {
+			if (path.includes('/api/admin/users')) return json(others);
+			if (path.includes('/api/admin/tenant-members/late')) {
+				return json({
+					members: [
+						{ id: 'ana', email: 'ana@test.invalid', disabled: false, home: true, roles: ['editor'] },
+						{ id: 'guest', email: 'guest@test.invalid', disabled: false, home: false, roles: ['editor'] },
+					],
+					total: 2,
+				});
+			}
+			if (path.includes('/comments')) return json({ data: [] });
+			if (path.includes('/revisions')) return json([]);
+			if (path.includes('/api/admin/content?')) return json({ data: [] });
+			return json({ ...entry, tenant_id: 'late' });
+		}) as unknown as typeof globalThis.fetch;
+		const out = (await load({
+			fetch: fetchFn,
+			cookies: mockCookies(),
+			params: { schema: 'article', id: 'e1' },
+			parent: async () => ({ plugins: { state: 'named', running: ['multitenant'], withheld: [] } }),
+		} as never)) as { comments: { people: { id: string }[]; mentionable: { id: string }[] } };
+		expect(out.comments.mentionable.map((p) => p.id)).toEqual(['ana']);
+		expect(out.comments.people.map((p) => p.id)).toContain('ana');
+	});
 });
 
 describe('content editor, an integer past 2^53', () => {
