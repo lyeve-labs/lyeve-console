@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Where forms can send, on the Builder settings page, has a Static sites field. An administrator chooses up to 50 builder sites whose forms post from their static files, without a form signing key. A site whose last production build signs its forms cannot be chosen. A content type with a unique field of its own is not offered as a place forms can send.
 - The Builder settings page has a Previous form signing key card. After a production build replaces a site's form signing key, forms on pages opened before it keep working for an hour. An administrator chooses the site and revokes that previous key at once, for a key that leaked. The page says when a site has no previous key to revoke, and an engine whose builder plugin predates this says it needs a newer version of the plugin.
 
+### Changed
+
+- The console takes ui-kit 0.61.0. On the sidebar's icon rail each entry is a 40px square centered in the rail with a 20px icon, and the current page is the same square filled evenly. The rail draws no scroll bar, the mark is centered above the entries, and the column no longer runs under the sidebar's edge.
+
 ## [0.28.0] - 2026-11-11
 
 ### Added

@@ -186,8 +186,8 @@
 	panelStorageKey="lyeve-console-assistant"
 >
 	{#snippet brand({ rail })}
-		<!-- The rail is 56px and its row has the inline gutter: the 28px mark fits
-		     with no padding of its own, and with the wide row's 8px it clips. -->
+		<!-- On the rail the shell centers the mark in the brand row, so the link
+		     takes no padding there. The wide row's 8px would push it off center. -->
 		<!-- The mark alone is aria-hidden, so on the rail the link would have no
 		     name. One fixed name, rather than one per state, keeps it from changing
 		     under a reader as the rail opens on focus. -->
