@@ -8,7 +8,7 @@
 	import { page } from '$app/state';
 	import { Clock, Eye, EyeOff, History, RotateCcw } from '@lucide/svelte';
 	import { crumbsAfter } from '$lib/breadcrumb';
-	import { listBack } from '$lib/back';
+	import { listPath, listQueryFrom } from '$lib/utils/entry-view';
 	import { buildFromData, validate, serialize, extractM2MRelations } from '$lib/utils/content-form';
 	import { entryTitle, shortId } from '$lib/utils/entry-identity';
 	import { formatDateTime } from '$lib/format';
@@ -77,9 +77,9 @@
 
 	let schemaName = $derived(data.schemaDef?.name ?? '');
 	let schemaLabel = $derived(data.schemaDef?.display_name || schemaName);
-	// The list forwards its page on the row link, so the way back lands on
-	// the page the reader left rather than on the first.
-	let back = $derived(listBack(`/admin/content/${schemaName}`, schemaLabel, page.url, ['limit', 'offset']));
+	// The list forwards its view and page on the row link, so the way back
+	// lands on the list the reader left rather than on its first page.
+	let back = $derived({ href: `${listPath(schemaName)}${listQueryFrom(page.url)}`, label: schemaLabel });
 	let entryId = $derived(data.item?.id ?? '');
 
 	// The heading names the entry the author named, not the first eight

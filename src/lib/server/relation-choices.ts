@@ -40,12 +40,12 @@ function assistantLabel(row: ListedRow, fields: SchemaField[]): string {
 	return entryTitle({ id: row.id, data }, fields).label || shortId(row.id);
 }
 
-async function readOne(client: HttpClient, schema: string): Promise<RelationChoices> {
+async function readOne(client: HttpClient, schema: string, labels: boolean): Promise<RelationChoices> {
 	try {
 		const query = new URLSearchParams({ schema, limit: String(RELATION_PAGE), offset: '0' });
 		const [body, unmarked] = await Promise.all([
 			client.get<{ data?: ListedRow[]; total_count?: number }>(`/api/admin/content?${query}`),
-			unmarkedFields(client, schema),
+			labels ? unmarkedFields(client, schema) : null,
 		]);
 		const rows = body.data ?? [];
 		const items = rows.map((e) => ({
@@ -67,10 +67,15 @@ async function readOne(client: HttpClient, schema: string): Promise<RelationChoi
 	}
 }
 
-/** One read per related collection the fields point at, keyed by its name. */
+/**
+ * One read per related collection the fields point at, keyed by its name.
+ * `assistantLabels: false` skips the related type's definition, which only
+ * the labels need, for a screen with no assistant.
+ */
 export async function readRelationChoices(
 	client: HttpClient,
 	fields: SchemaField[],
+	{ assistantLabels = true }: { assistantLabels?: boolean } = {},
 ): Promise<Record<string, RelationChoices>> {
 	const names = [
 		...new Set(
@@ -79,6 +84,6 @@ export async function readRelationChoices(
 				.map((f) => f.relation_to as string),
 		),
 	];
-	const reads = await Promise.all(names.map((name) => readOne(client, name)));
+	const reads = await Promise.all(names.map((name) => readOne(client, name, assistantLabels)));
 	return Object.fromEntries(names.map((name, i) => [name, reads[i]]));
 }

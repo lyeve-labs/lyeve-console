@@ -3,7 +3,7 @@ import { render, cleanup } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SubmitFunction } from '@sveltejs/kit';
 
-vi.mock('$app/navigation', () => ({ goto: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ goto: vi.fn(async () => {}), afterNavigate: vi.fn(), beforeNavigate: vi.fn() }));
 
 const forms = vi.hoisted(() => ({ submits: [] as SubmitFunction[] }));
 vi.mock('$app/forms', () => ({
@@ -62,6 +62,8 @@ function data(overrides: Record<string, unknown> = {}): PageData {
 		limit: 100,
 		offset: 0,
 		total: 1,
+		q: '',
+		view: { filters: [], match: 'all', sort: '-updated_at', columns: ['created_at'], status: null, limit: 100 },
 		...rest,
 	} as unknown as PageData;
 }
