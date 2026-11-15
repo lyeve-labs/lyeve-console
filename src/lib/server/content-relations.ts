@@ -1,5 +1,11 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import type { HttpClient, SchemaField } from '@lyeve-labs/client';
+import { ApiError, type HttpClient, type Schema, type SchemaField } from '@lyeve-labs/client';
+import { getSchema } from '@lyeve-labs/client-rest';
+import type { InverseEntries } from '$lib/components/content/inverse-entries';
+import { inverseKey, isInverse } from '$lib/relations';
+import { totalOf, type ListEnvelope } from '$lib/api/list';
+import { entryLabel } from '$lib/utils/entry-identity';
+import { DEFAULT_LIMIT, apiQuery, listPath, readView, viewQuery } from '$lib/utils/entry-view';
 import { authedHeaders } from '$lib/server/authz';
 import { couldNotLoad } from '$lib/outage';
 import { plural } from '$lib/format';
@@ -171,4 +177,70 @@ export async function setEntryRelations(
 			: [`Could not save the links in ${fields[i]}. Try again.`];
 	});
 	return failures.length > 0 ? failures.join(' ') : null;
+}
+
+/** The most entries a has_one or has_many panel lists before it links to the rest. */
+export const INVERSE_PAGE = 20;
+
+type ListedRow = { id: string; title?: string; body?: Record<string, unknown> };
+
+/**
+ * The entries each has_one and has_many field of an entry resolves to, by
+ * field name. The key lives on the other content type, so each field reads
+ * that type's list filtered on the belongs_to the rule finds, the same request
+ * the list page makes for that filter. Each other content type is read once,
+ * however many fields point at it.
+ */
+export async function readInverseEntries(
+	client: HttpClient,
+	source: string,
+	entryID: string,
+	fields: readonly SchemaField[],
+): Promise<Record<string, InverseEntries>> {
+	const inverse = fields.filter((f) => !f.system && isInverse(f));
+	const targets = [...new Set(inverse.map((f) => f.relation_to).filter((t): t is string => !!t))];
+	// null when the content type is not there, undefined when it could not be read.
+	const defs = new Map<string, Schema | null | undefined>(
+		await Promise.all(
+			targets.map(async (name) => {
+				const def = await getSchema(name, client).then(
+					(d): Schema | null | undefined => d,
+					(err: unknown) => (err instanceof ApiError && err.status === 404 ? null : undefined),
+				);
+				return [name, def] as const;
+			}),
+		),
+	);
+	const read = await Promise.all(
+		inverse.map(async (f): Promise<[string, InverseEntries]> => {
+			const def = f.relation_to ? defs.get(f.relation_to) : null;
+			if (def === undefined) return [f.name, { state: 'failed' }];
+			const key = inverseKey(source, f, def ?? undefined);
+			if (!key.ok || !def) return [f.name, { state: 'unresolved' }];
+			const filter = new URLSearchParams({ [`filters[${key.field.name}][eq]`]: entryID });
+			// The list drops a filter its field cannot take, and an unfiltered
+			// read would show entries that do not point here.
+			const view = readView(filter, def, INVERSE_PAGE);
+			if (view.filters.length !== 1) return [f.name, { state: 'unresolved' }];
+			try {
+				const body = await client.get<ListEnvelope<ListedRow>>(`/api/admin/content?${apiQuery(def.name, view, '', 0)}`);
+				const rows = body.data ?? [];
+				const items = rows.map((row) => ({
+					id: row.id,
+					label: entryLabel({
+						id: row.id,
+						data: { ...(row.body ?? {}), ...(row.title !== undefined ? { title: row.title } : {}) },
+					}),
+					href: `${listPath(def.name)}/${encodeURIComponent(row.id)}`,
+				}));
+				const total = Math.max(totalOf(body), items.length);
+				const listHref =
+					total > items.length ? `${listPath(def.name)}${viewQuery({ ...view, limit: DEFAULT_LIMIT }, def)}` : null;
+				return [f.name, { state: 'read', items, total, listHref }];
+			} catch {
+				return [f.name, { state: 'failed' }];
+			}
+		}),
+	);
+	return Object.fromEntries(read);
 }

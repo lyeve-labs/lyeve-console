@@ -8,6 +8,7 @@
 	import FormErrors from './FormErrors.svelte';
 	import type { MediaChoice } from '$lib/api/media';
 	import type { RelationChoices } from './content/relation-choices';
+	import type { InverseEntries } from './content/inverse-entries';
 
 	let {
 		fields,
@@ -16,6 +17,7 @@
 		errorKeys = {},
 		relations = {},
 		linksFailed = [],
+		inverse,
 		mediaChoices = [],
 		error,
 		label = 'Entry',
@@ -30,6 +32,8 @@
 		relations?: Record<string, RelationChoices>;
 		/** The many_to_many fields whose links could not be read, by name. */
 		linksFailed?: readonly string[];
+		/** What each has_one and has_many field resolves to, by name. Absent while the entry is not created. */
+		inverse?: Record<string, InverseEntries>;
 		/** Published library files a media field may point at. Null when the library could not be read. */
 		mediaChoices?: MediaChoice[] | null;
 		error?: string | null;
@@ -147,6 +151,7 @@
 						relationTotal={relationOf(field)?.total}
 						relationFailed={relationOf(field)?.failed ?? false}
 						linksFailed={linksFailed.includes(field.name)}
+						inverse={inverse?.[field.name]}
 						relationAssistantLabels={relationOf(field)?.assistantLabels}
 						{mediaChoices}
 						error={validationErrors[field.name]}
@@ -169,6 +174,7 @@
 					relationTotal={relationOf(field)?.total}
 					relationFailed={relationOf(field)?.failed ?? false}
 					linksFailed={linksFailed.includes(field.name)}
+					inverse={inverse?.[field.name]}
 					relationAssistantLabels={relationOf(field)?.assistantLabels}
 					{mediaChoices}
 					error={validationErrors[field.name]}

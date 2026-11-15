@@ -6,7 +6,8 @@ import { authedClient, exactParse, requireUser, stripProtectedFields, withExactI
 import { actionError, actionFailure } from '$lib/server/action-error';
 import { readError } from '$lib/server/read-error';
 import { readRelationChoices } from '$lib/server/relation-choices';
-import { readEntryLinks, setEntryRelations } from '$lib/server/content-relations';
+import { readEntryLinks, readInverseEntries, setEntryRelations } from '$lib/server/content-relations';
+import { isInverse } from '$lib/relations';
 import { fieldRefusalOf } from '$lib/server/content-validation';
 import { PLUGIN } from '$lib/plugin-names';
 import { runs } from '$lib/plugins';
@@ -227,7 +228,12 @@ export const load: PageServerLoad = async (event) => {
 	// A many_to_many link is a row beside the entry, never a key in its body.
 	Object.assign(item.data, entryLinks.links);
 
-	const relations = await readRelationChoices(client, schemaDef.fields ?? []);
+	// A has_one or has_many shows the entries that point back, not a picker,
+	// so its other content type is read for those entries alone.
+	const [relations, inverse] = await Promise.all([
+		readRelationChoices(client, (schemaDef.fields ?? []).filter((f) => !isInverse(f))),
+		readInverseEntries(client, schemaDef.name || params.schema, params.id, schemaDef.fields ?? []),
+	]);
 
 	// Published library files, for a media field's picker. Read only when
 	// the schema has one. A read that fails is null, so the picker says the
@@ -242,6 +248,7 @@ export const load: PageServerLoad = async (event) => {
 		schemaDef,
 		item,
 		relations,
+		inverse,
 		linksFailed: entryLinks.failed,
 		revisions,
 		revisionTotal,

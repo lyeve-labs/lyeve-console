@@ -152,8 +152,8 @@ describe('schema builder relation panel', () => {
 	});
 
 	it('reports an inverse relation the other schema cannot answer', async () => {
-		// has_many is read through a column named after THIS schema on the other
-		// table. Nothing in the row that declares it can show whether that column
+		// has_many is read through a belongs_to on the other table that points
+		// back here. Nothing in the row that declares it can show whether one
 		// exists, which is the whole reason the check is here.
 		await openPosts();
 		await pickType('title', 'relation');
@@ -161,7 +161,55 @@ describe('schema builder relation panel', () => {
 		await pickOption(screen.getByRole('combobox', { name: 'Target content type' }), 'Authors');
 
 		expect(screen.getByTestId('relation-problems')).toBeTruthy();
-		expect(screen.getAllByText(/_authors\.posts_id does not exist/).length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/has no field that belongs to/).length).toBeGreaterThan(0);
+	});
+
+	const comments = (...pointing: string[]) => ({
+		name: 'comments',
+		display_name: 'Comments',
+		fields: pointing.map((name) => ({
+			id: `f-${name}`,
+			name,
+			field_type: 'relation',
+			relation_type: 'belongs_to',
+			relation_to: 'posts',
+			required: false,
+			unique: false,
+			indexed: true,
+		})),
+	});
+
+	async function hasManyComments(...pointing: string[]) {
+		const base = data();
+		const view = await openPosts({ schemas: [...(base.schemas as unknown[]), comments(...pointing)] });
+		await pickType('title', 'relation');
+		await fireEvent.click(screen.getByRole('radio', { name: 'Has many' }));
+		await pickOption(screen.getByRole('combobox', { name: 'Target content type' }), 'Comments');
+		return view;
+	}
+
+	it('asks which field to read when two on the target point back, and saves its key column', async () => {
+		const { container } = await hasManyComments('post', 'reply_to');
+		expect(screen.getAllByText(/Choose which one this relation reads/).length).toBeGreaterThan(0);
+
+		await pickOption(screen.getByRole('combobox', { name: 'Key field' }), 'reply_to');
+
+		const posted = JSON.parse((container.querySelector('input[name="schema"]') as HTMLInputElement).value);
+		const field = posted.fields.find((f: { relation_type?: string }) => f.relation_type === 'has_many');
+		expect(field.relation_fk_name).toBe('reply_to_id');
+		expect(screen.queryByTestId('relation-problems')).toBeNull();
+	});
+
+	it('picks the key itself when one field on the target points back', async () => {
+		await hasManyComments('post');
+		expect(screen.queryByRole('combobox', { name: 'Key field' })).toBeNull();
+		expect(screen.getAllByText('_comments.post_id').length).toBeGreaterThan(0);
+	});
+
+	it('never advises removing a field, which would drop its column', async () => {
+		const { container } = await hasManyComments('post', 'reply_to');
+		expect(container.textContent).not.toMatch(/Remove all but one|until one of them is removed/);
+		expect(container.textContent).toMatch(/choose which one this relation reads/i);
 	});
 
 	it('flags nothing while the schema has no relation field', async () => {

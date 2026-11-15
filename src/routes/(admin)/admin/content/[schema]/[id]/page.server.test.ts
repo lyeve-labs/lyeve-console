@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 
 // The session client is left real and runs over the event's fetch, so every
@@ -413,6 +413,94 @@ describe('content editor load, many_to_many links', () => {
 
 		expect(result.linksFailed).toEqual(['tags', 'topics']);
 		expect(result.item.data).not.toHaveProperty('tags');
+	});
+});
+
+describe('content editor load, has_one and has_many entries', () => {
+	const posts = {
+		name: 'posts',
+		fields: [
+			{ name: 'title', field_type: 'text' },
+			{ name: 'comments', field_type: 'relation', relation_type: 'has_many', relation_to: 'comments' },
+		],
+	};
+	const comments = {
+		name: 'comments',
+		fields: [{ name: 'post', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'posts' }],
+	};
+
+	type Inverse = Record<string, unknown>;
+
+	afterEach(() => {
+		vi.mocked(getSchema).mockImplementation(
+			async () => ({ name: 'article', with_draft_publish: true, fields: [] }) as never,
+		);
+	});
+
+	async function loadInverse(
+		target: unknown,
+		answer: (path: string) => Response,
+	): Promise<{ inverse: Inverse; paths: string[] }> {
+		vi.mocked(getSchema).mockImplementation((async (name: string) => {
+			if (name === 'posts') return posts;
+			if (target instanceof Error) throw target;
+			return target;
+		}) as never);
+		const fetchFn = vi.fn(async (path: string) => {
+			if (path.includes('schema=comments') && path.includes('filters')) return answer(path);
+			if (path.includes('/revisions')) return json({ data: [] });
+			if (path.includes('/api/admin/content?')) return json({ data: [] });
+			return json(entry);
+		});
+		const result = (await load({
+			fetch: fetchFn as unknown as typeof globalThis.fetch,
+			cookies: mockCookies(),
+			params: { schema: 'posts', id: 'p1' },
+			parent: async () => ({ plugins: none })
+		} as never)) as unknown as { inverse: Inverse };
+		return { inverse: result.inverse, paths: fetchFn.mock.calls.map((c) => decodeURIComponent(String(c[0]))) };
+	}
+
+	it('reads the first entries that point back, through the belongs_to the target declares', async () => {
+		const { inverse, paths } = await loadInverse(comments, () =>
+			json({ data: [{ id: 'c1', title: 'First' }, { id: 'c2', body: { name: 'Second' } }], total_count: 45 }),
+		);
+
+		const read = paths.find((p) => p.includes('schema=comments') && p.includes('filters'));
+		expect(read).toContain('filters[post][eq]=p1');
+		expect(read).toContain('limit=20');
+		expect(inverse.comments).toEqual({
+			state: 'read',
+			items: [
+				{ id: 'c1', label: 'First', href: '/admin/content/comments/c1' },
+				{ id: 'c2', label: 'Second', href: '/admin/content/comments/c2' },
+			],
+			total: 45,
+			listHref: '/admin/content/comments?filters%5Bpost%5D%5Beq%5D=p1',
+		});
+	});
+
+	it('links to the list only when there are more entries than it shows', async () => {
+		const { inverse } = await loadInverse(comments, () => json({ data: [{ id: 'c1', title: 'First' }], total_count: 1 }));
+		expect(inverse.comments).toMatchObject({ state: 'read', total: 1, listHref: null });
+	});
+
+	it('says a read that failed failed', async () => {
+		const { inverse } = await loadInverse(comments, () => json({ error: 'x' }, 503));
+		expect(inverse.comments).toEqual({ state: 'failed' });
+	});
+
+	it('says a target type that could not be read failed', async () => {
+		const { ApiError } = await import('@lyeve-labs/client');
+		const { inverse } = await loadInverse(new ApiError(503, 'down'), () => json({ data: [] }));
+		expect(inverse.comments).toEqual({ state: 'failed' });
+	});
+
+	it('reads nothing for a relation with no key to read', async () => {
+		const bare = { name: 'comments', fields: [{ name: 'title', field_type: 'text' }] };
+		const { inverse, paths } = await loadInverse(bare, () => json({ data: [] }));
+		expect(inverse.comments).toEqual({ state: 'unresolved' });
+		expect(paths.some((p) => p.includes('schema=comments') && p.includes('filters'))).toBe(false);
 	});
 });
 

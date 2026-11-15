@@ -347,18 +347,44 @@ describe('FieldInput', () => {
 	// here would either fail the save (has_one would go to the insert as a
 	// column that does not exist) or lose the selection (has_many never
 	// reaches the request), so there is nothing to offer but what points here.
-	it('renders a has_many read-only, naming the rows that point here', () => {
-		const items = [content('id-1', { title: 'One' }), content('id-2', { title: 'Two' })];
-		const { queryByRole, getByText, getByTestId } = render(FieldInput, {
+	it('renders a has_many read-only, each linked entry a link to its editor', () => {
+		const { queryByRole, getByRole, getByText } = render(FieldInput, {
 			props: {
-				field: field('relation', { relation_type: 'has_many', relation_to: 'posts' }),
-				value: ['id-2'],
-				relationItems: items,
+				field: field('relation', { relation_type: 'has_many', relation_to: 'comments' }),
+				value: undefined,
+				inverse: {
+					state: 'read',
+					items: [
+						{ id: 'c1', label: 'First', href: '/admin/content/comments/c1' },
+						{ id: 'c2', label: 'Second', href: '/admin/content/comments/c2' },
+					],
+					total: 2,
+					listHref: null,
+				},
 			},
 		});
 		expect(queryByRole('combobox')).toBeNull();
-		expect(getByTestId('inverse-relation').textContent).toContain('Two');
+		expect(getByRole('link', { name: 'Second' }).getAttribute('href')).toBe('/admin/content/comments/c2');
+		expect(queryByRole('link', { name: /View all/ })).toBeNull();
 		expect(getByText(/Change it there, not here/)).toBeTruthy();
+	});
+
+	it('counts the linked entries past the first page and links to them in the list', () => {
+		const { getByRole, getByText } = render(FieldInput, {
+			props: {
+				field: field('relation', { relation_type: 'has_many', relation_to: 'comments' }),
+				inverse: {
+					state: 'read',
+					items: [{ id: 'c1', label: 'First', href: '/admin/content/comments/c1' }],
+					total: 45,
+					listHref: '/admin/content/comments?filters%5Bpost%5D%5Beq%5D=p1',
+				},
+			},
+		});
+		expect(getByText('Showing the first 1 of 45 linked entries.')).toBeTruthy();
+		expect(getByRole('link', { name: 'View all 45' }).getAttribute('href')).toBe(
+			'/admin/content/comments?filters%5Bpost%5D%5Beq%5D=p1',
+		);
 	});
 
 	it('renders a has_one read-only with no control to type into', () => {
@@ -366,12 +392,46 @@ describe('FieldInput', () => {
 			props: {
 				field: field('relation', { relation_type: 'has_one', relation_to: 'posts' }),
 				value: '',
-				relationItems: [content('id-1', { title: 'One' })],
+				inverse: { state: 'read', items: [], total: 0, listHref: null },
 			},
 		});
 		expect(queryByRole('combobox')).toBeNull();
 		expect(queryByRole('textbox')).toBeNull();
 		expect(getByText('No linked entries yet.')).toBeTruthy();
+	});
+
+	it('says a read that failed failed, never that nothing is linked', () => {
+		const { getByText, queryByText } = render(FieldInput, {
+			props: {
+				field: field('relation', { relation_type: 'has_many', relation_to: 'comments' }),
+				inverse: { state: 'failed' },
+			},
+		});
+		expect(getByText('Could not load the linked entries. Reload the page to try again.')).toBeTruthy();
+		expect(queryByText('No linked entries yet.')).toBeNull();
+	});
+
+	it('says a relation with no key to read cannot be shown, and who can fix it', () => {
+		const { getByText, queryByText } = render(FieldInput, {
+			props: {
+				field: field('relation', { relation_type: 'has_many', relation_to: 'comments' }),
+				inverse: { state: 'unresolved' },
+			},
+		});
+		expect(
+			getByText(
+				'This relation is incomplete, so its linked entries cannot be shown. Ask an administrator to fix it in the schema builder.',
+			),
+		).toBeTruthy();
+		expect(queryByText('No linked entries yet.')).toBeNull();
+	});
+
+	it('says the linked entries show once a new entry is created', () => {
+		const { getByText, queryByText } = render(FieldInput, {
+			props: { field: field('relation', { relation_type: 'has_many', relation_to: 'comments' }) },
+		});
+		expect(getByText('Linked entries show here after you create this entry.')).toBeTruthy();
+		expect(queryByText('No linked entries yet.')).toBeNull();
 	});
 });
 

@@ -16,6 +16,7 @@ import { rolesInWords } from '$lib/roles';
 import { PLUGIN } from '$lib/plugin-names';
 import { runs } from '$lib/plugins';
 import { readRelationChoices } from '$lib/server/relation-choices';
+import { isInverse } from '$lib/relations';
 
 /** One locale the new entry can be written in. */
 type LocaleChoice = { code: string; name: string; is_default: boolean };
@@ -63,7 +64,8 @@ export const load: PageServerLoad = async (event) => {
 	// The pickers read the admin store, the one this form writes to. The
 	// public content routes read a different store, so an entry made here
 	// would not be in a picker fed from them.
-	const relations = await readRelationChoices(client, schemaDef.fields ?? []);
+	// A has_one or has_many has no entries to show before this one exists.
+	const relations = await readRelationChoices(client, (schemaDef.fields ?? []).filter((f) => !isInverse(f)));
 
 	// Published library files, for a media field's picker. Read only when
 	// the schema has one. A read that fails is null, so the picker says the
