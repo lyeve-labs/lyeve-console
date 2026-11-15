@@ -16,6 +16,8 @@ import {
 import { authedClient, loadUser } from '$lib/server/authz';
 import { couldNotLoad } from '$lib/outage';
 import { rolesInWords } from '$lib/roles';
+import { readContentAccess } from '$lib/api/content-access';
+import { UNKNOWN_ACCESS, type TypeAccess } from '$lib/utils/content-access';
 
 /**
  * Resolve typed text to exactly one collection.
@@ -82,7 +84,7 @@ const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 199;
 
 /** What the index says when the collections could not be read. */
-const LIST_FAILED = couldNotLoad('collections');
+const LIST_FAILED = couldNotLoad('content types');
 
 /**
  * The roles the content plugin serves. Every one of its routes refuses the
@@ -101,18 +103,38 @@ export interface CollectionStats {
 	last_updated?: string | null;
 }
 
-/** Stats by collection name, asked of the endpoint one collection at a time. */
-async function statsFor(
+/**
+ * What the access rules let the reader do with each content type, by name. A
+ * read that fails reports nothing, and the row then offers what it always did.
+ */
+async function accessFor(
 	schemas: Schema[],
 	client: Parameters<typeof getSchemaStats>[1]
+): Promise<Record<string, TypeAccess>> {
+	const read = await Promise.all(
+		schemas.map((s) => readContentAccess(client, s.name).catch(() => UNKNOWN_ACCESS))
+	);
+	return Object.fromEntries(schemas.map((s, i) => [s.name, read[i]]));
+}
+
+/**
+ * Stats by collection name, asked of the endpoint one collection at a time.
+ * A collection whose entries the reader may not read is not asked: a count
+ * of them is what the rules keep from the reader.
+ */
+async function statsFor(
+	schemas: Schema[],
+	client: Parameters<typeof getSchemaStats>[1],
+	access: Record<string, TypeAccess>
 ): Promise<Record<string, CollectionStats>> {
+	const readable = schemas.filter((s) => access[s.name]?.actions?.includes('read') ?? true);
 	const stats = await Promise.allSettled(
-		schemas.map((s) => getSchemaStats(s.name, client) as Promise<CollectionStats>)
+		readable.map((s) => getSchemaStats(s.name, client) as Promise<CollectionStats>)
 	);
 	const out: Record<string, CollectionStats> = {};
 	stats.forEach((result, i) => {
 		if (result.status === 'fulfilled') {
-			out[schemas[i].name] = { rows: result.value.rows, last_updated: result.value.last_updated };
+			out[readable[i].name] = { rows: result.value.rows, last_updated: result.value.last_updated };
 		}
 	});
 	return out;
@@ -196,6 +218,7 @@ export const load: PageServerLoad = async (event) => {
 		return {
 			schemas: read as Section<Schema[]>,
 			stats: {} as Record<string, CollectionStats>,
+			access: {} as Record<string, TypeAccess>,
 			query: typed,
 			sort,
 			dir,
@@ -240,7 +263,8 @@ export const load: PageServerLoad = async (event) => {
 	 * than showing zero.
 	 */
 	const countsTheSet = sort === 'rows' || sort === 'updated' || filterCountsRows(filter);
-	const setStats = countsTheSet ? await statsFor(searched, client) : {};
+	const setAccess = countsTheSet ? await accessFor(searched, client) : {};
+	const setStats = countsTheSet ? await statsFor(searched, client, setAccess) : {};
 	const matching = searched.filter((s) => passes(s, filter, setStats));
 	const sorted = ordered(matching, sort, dir, setStats);
 
@@ -254,12 +278,14 @@ export const load: PageServerLoad = async (event) => {
 	const back = pastEndOffset(page.rows.length, limit, offset, matching.length);
 	if (back !== null) redirect(307, withOffset(url, back));
 
-	const stats = countsTheSet ? setStats : await statsFor(page.rows, client);
+	const access = countsTheSet ? setAccess : await accessFor(page.rows, client);
+	const stats = countsTheSet ? setStats : await statsFor(page.rows, client, access);
 	const schemas: Section<Schema[]> = { ok: true, value: page.rows };
 
 	return {
 		schemas,
 		stats,
+		access,
 		query: typed,
 		sort,
 		dir,

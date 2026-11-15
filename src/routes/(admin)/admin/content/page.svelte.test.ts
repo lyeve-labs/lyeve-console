@@ -119,6 +119,49 @@ describe('content index read', () => {
 	});
 });
 
+/*
+ * The access rules decide what each row offers. A type the role cannot read
+ * shows no count and no date, since both describe entries the rules keep
+ * from the role, and a type the role cannot create in offers no New entry.
+ */
+describe('content index access rules', () => {
+	it('offers New entry only where the role may create, and hides what it may not read', () => {
+		const { container } = render(ContentIndex, {
+			props: {
+				data: data({
+					access: {
+						post: { hidden: [], actions: ['read'] },
+						tag: { hidden: [], actions: ['create'] },
+					},
+				}),
+			},
+		});
+
+		expect(container.querySelector('a[aria-label="New entry in Post"]')).toBeNull();
+		expect(container.querySelector('a[aria-label="New entry in Tag"]')).not.toBeNull();
+		const cells = (root: HTMLElement, name: string) =>
+			[...([...root.querySelectorAll('tbody tr')].find((tr) => tr.textContent?.includes(name))?.querySelectorAll('td') ?? [])].map(
+				(td) => td.textContent?.trim()
+			);
+		expect(cells(container, 'Post')).toContain('12');
+		const unread = cells(container, 'Tag');
+		cleanup();
+		const { container: readable } = render(ContentIndex, {
+			props: { data: data({ access: { tag: { hidden: [], actions: ['create', 'read'] } } }) },
+		});
+		const read = cells(readable, 'Tag');
+		const changed = read.flatMap((cell, i) => (cell === unread[i] ? [] : [[cell, unread[i]]]));
+		expect(changed).toEqual([['0', '-']]);
+	});
+
+	it('names content types in the pager', () => {
+		const { container } = render(ContentIndex, { props: { data: data({ total: 60, hasMore: true }) } });
+
+		expect(container.textContent).toContain('content types');
+		expect(container.textContent).not.toMatch(/collections/i);
+	});
+});
+
 describe('content index sort headers', () => {
 	it('grows the header row to the touch target height under a finger, and only there', () => {
 		const { container } = render(ContentIndex, { props: { data: data() } });

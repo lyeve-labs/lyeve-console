@@ -140,6 +140,35 @@ describe('admin/content/+page.server.ts load', () => {
 		});
 	});
 
+	it('asks no count of a type the reader cannot read, and reads a missing count as none', async () => {
+		const calls: string[] = [];
+		const fetch = vi.fn(async (input: string | URL | Request) => {
+			const url = String(input);
+			calls.push(url);
+			if (url.includes('/content/access?')) {
+				const actions = url.endsWith('=collection_1') ? ['create'] : ['create', 'read', 'update', 'delete'];
+				return json({ allowed_actions: actions, hidden_fields: [] });
+			}
+			if (url.endsWith('/stats')) {
+				if (url.includes('collection_2/')) return json({ error: 'not found' }, 404);
+				return json({ rows: 7, table: '_x' });
+			}
+			return json(schemas(3));
+		}) as unknown as typeof globalThis.fetch;
+		const event = {
+			fetch: signedIn(fetch, { roles: ['super_admin'] }),
+			cookies: mockCookies(),
+			url: new URL('http://localhost/admin/content'),
+		} as never;
+
+		const data = (await load(event)) as Loaded;
+
+		expect(calls.filter((u) => u.includes('/content/access?'))).toHaveLength(3);
+		expect(calls.some((u) => u.includes('collection_1/stats'))).toBe(false);
+		expect(data.stats).toEqual({ collection_0: { rows: 7, last_updated: undefined } });
+		expect(data.access.collection_1.actions).toEqual(['create']);
+	});
+
 	it.each([
 		[500, 'error'],
 		[503, 'unavailable'],
