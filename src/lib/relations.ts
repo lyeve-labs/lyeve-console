@@ -273,7 +273,7 @@ export function planRelation(
 		kind,
 		sentence: many
 			? `Each ${here} row has many ${there} rows.`
-			: `Each ${here} row has one ${there} row. The limit is not enforced, so if several ${there} rows point here, the first one is used.`,
+			: `Each ${here} row has one ${there} row. If several ${there} rows point here, the newest one is used.`,
 		creates: [],
 		reads: key.ok ? `${thatTable}.${key.column}` : `no key on ${thatTable}`,
 		flags: key.ok

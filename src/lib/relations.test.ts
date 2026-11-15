@@ -95,6 +95,12 @@ describe('planRelation', () => {
 		expect(plan.problem).toBeNull();
 	});
 
+	it('says a has_one uses the newest of several rows that point back', () => {
+		const withLatest = schema('author', [relation('latest', 'post', 'has_one')], 'Author');
+		const plan = planRelation(withLatest, withLatest.fields[0], [withLatest, post])!;
+		expect(plan.sentence).toBe('Each Author row has one Post row. If several Post rows point here, the newest one is used.');
+	});
+
 	it('reports an inverse relation the other schema cannot answer', () => {
 		const lonely = schema('author', [relation('posts', 'post', 'has_many')], 'Author');
 		const bare = schema('post', [{ name: 'title' }], 'Post');
