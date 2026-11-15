@@ -89,9 +89,13 @@ function props(over: Record<string, unknown> = {}, form: unknown = null) {
 	};
 }
 
-/** Lets an outcome alert take its text, which it does two frames after it mounts. */
+/**
+ * Lets an outcome alert take its text, which it does two frames after it mounts.
+ * A frame callback queued after the alert's runs after it in the same frame, so
+ * waiting on frames rather than a time holds however slow the runner draws them.
+ */
 async function frames() {
-	await new Promise((r) => setTimeout(r, 50));
+	await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 	await tick();
 }
 
