@@ -268,6 +268,7 @@ describe('opening the new entry form', () => {
 		expect(isHttpError(thrown) && thrown.body.message).toBe(
 			'Your role cannot create entries of Surveys. Ask a super admin if you need it.',
 		);
+		expect(isHttpError(thrown) && thrown.body.subject).toBe('Surveys');
 	});
 
 	it('refuses the form when the rules allow nothing on the type', async () => {

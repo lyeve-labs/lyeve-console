@@ -223,7 +223,8 @@ export const load: PageServerLoad = async (event) => {
 			// The rules refuse the entry's type, so the refusal names the type.
 			if (err instanceof ApiError && err.status === 403) {
 				const def = await schema.catch(() => null);
-				error(403, forbiddenText(`entries of ${def?.display_name || params.schema}`));
+				const subject = def?.display_name || params.schema;
+				error(403, { message: forbiddenText(`entries of ${subject}`), subject });
 			}
 			return readError(err, 'Entry not found');
 		}),

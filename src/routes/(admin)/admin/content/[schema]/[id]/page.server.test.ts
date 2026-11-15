@@ -218,6 +218,7 @@ describe('content editor load, the entry read', () => {
 		expect(isHttpError(thrown) && thrown.body.message).toBe(
 			'Your role cannot open entries of Articles. Ask a super admin if you need it.',
 		);
+		expect(isHttpError(thrown) && thrown.body.subject).toBe('Articles');
 	});
 
 	it('leaves the fields the rules hide out of the form, and keeps the actions they allow', async () => {

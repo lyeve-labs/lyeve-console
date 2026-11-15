@@ -49,7 +49,9 @@ export const load: PageServerLoad = async (event) => {
 	// Create is decided apart from read, so a role that may create entries
 	// it cannot read still gets the form.
 	const label = fullDef.display_name || params.schema;
-	if (!may(access, 'create')) error(403, `Your role cannot create entries of ${label}. Ask a super admin if you need it.`);
+	if (!may(access, 'create')) {
+		error(403, { message: `Your role cannot create entries of ${label}. Ask a super admin if you need it.`, subject: label });
+	}
 	// A field the reader's rules hide is no input, because the engine ignores
 	// what a create sends for it.
 	const schemaDef = withoutHidden(fullDef, access.hidden);
