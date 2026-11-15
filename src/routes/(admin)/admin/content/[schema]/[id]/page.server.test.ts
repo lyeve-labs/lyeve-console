@@ -440,9 +440,10 @@ describe('content editor load, has_one and has_many entries', () => {
 	async function loadInverse(
 		target: unknown,
 		answer: (path: string) => Response,
+		source: unknown = posts,
 	): Promise<{ inverse: Inverse; paths: string[] }> {
 		vi.mocked(getSchema).mockImplementation((async (name: string) => {
-			if (name === 'posts') return posts;
+			if (name === 'posts') return source;
 			if (target instanceof Error) throw target;
 			return target;
 		}) as never);
@@ -477,6 +478,29 @@ describe('content editor load, has_one and has_many entries', () => {
 			],
 			total: 45,
 			listHref: '/admin/content/comments?filters%5Bpost%5D%5Beq%5D=p1',
+		});
+	});
+
+	it('reads only the newest entry of a has_one, the one populate serves', async () => {
+		const withSummary = {
+			name: 'posts',
+			fields: [{ name: 'summary', field_type: 'relation', relation_type: 'has_one', relation_to: 'comments' }],
+		};
+		const { inverse, paths } = await loadInverse(
+			comments,
+			() => json({ data: [{ id: 'c2', title: 'New summary' }], total_count: 2 }),
+			withSummary,
+		);
+
+		const read = paths.find((p) => p.includes('schema=comments') && p.includes('filters'));
+		expect(read).toContain('filters[post][eq]=p1');
+		expect(read).toContain('limit=1');
+		expect(read).toContain('sort=-created_at');
+		expect(inverse.summary).toEqual({
+			state: 'read',
+			items: [{ id: 'c2', label: 'New summary', href: '/admin/content/comments/c2' }],
+			total: 1,
+			listHref: null,
 		});
 	});
 

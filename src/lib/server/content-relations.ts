@@ -179,7 +179,7 @@ export async function setEntryRelations(
 	return failures.length > 0 ? failures.join(' ') : null;
 }
 
-/** The most entries a has_one or has_many panel lists before it links to the rest. */
+/** The most entries a has_many panel lists before it links to the rest. */
 export const INVERSE_PAGE = 20;
 
 type ListedRow = { id: string; title?: string; body?: Record<string, unknown> };
@@ -218,9 +218,13 @@ export async function readInverseEntries(
 			const key = inverseKey(source, f, def ?? undefined);
 			if (!key.ok || !def) return [f.name, { state: 'unresolved' }];
 			const filter = new URLSearchParams({ [`filters[${key.field.name}][eq]`]: entryID });
+			// A has_one serves only its newest entry, by creation time with the id
+			// breaking a tie, and the list orders that way on this sort.
+			const hasOne = f.relation_type === 'has_one';
+			if (hasOne) filter.set('sort', '-created_at');
 			// The list drops a filter its field cannot take, and an unfiltered
 			// read would show entries that do not point here.
-			const view = readView(filter, def, INVERSE_PAGE);
+			const view = readView(filter, def, hasOne ? 1 : INVERSE_PAGE);
 			if (view.filters.length !== 1) return [f.name, { state: 'unresolved' }];
 			try {
 				const body = await client.get<ListEnvelope<ListedRow>>(`/api/admin/content?${apiQuery(def.name, view, '', 0)}`);
@@ -233,7 +237,7 @@ export async function readInverseEntries(
 					}),
 					href: `${listPath(def.name)}/${encodeURIComponent(row.id)}`,
 				}));
-				const total = Math.max(totalOf(body), items.length);
+				const total = hasOne ? items.length : Math.max(totalOf(body), items.length);
 				const listHref =
 					total > items.length ? `${listPath(def.name)}${viewQuery({ ...view, limit: DEFAULT_LIMIT }, def)}` : null;
 				return [f.name, { state: 'read', items, total, listHref }];
