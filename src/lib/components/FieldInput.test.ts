@@ -420,7 +420,7 @@ describe('FieldInput', () => {
 		});
 		expect(
 			getByText(
-				'The linked entries cannot be shown because this relation is incomplete. An administrator can fix it in the schema builder.',
+				'This relation is incomplete, so its linked entries cannot be shown. Ask an administrator to fix it in the schema builder.',
 			),
 		).toBeTruthy();
 		expect(queryByText('No linked entries yet.')).toBeNull();

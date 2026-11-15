@@ -192,7 +192,7 @@
 				<p class="text-danger">Could not load the linked entries. Reload the page to try again.</p>
 			{:else if inverse.state === 'unresolved'}
 				<p class="text-danger">
-					The linked entries cannot be shown because this relation is incomplete. An administrator can fix it in the schema builder.
+					This relation is incomplete, so its linked entries cannot be shown. Ask an administrator to fix it in the schema builder.
 				</p>
 			{:else if inverse.items.length > 0}
 				<ul class="space-y-0.5">
