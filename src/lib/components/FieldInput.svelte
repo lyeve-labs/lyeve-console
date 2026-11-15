@@ -17,6 +17,7 @@
 	import type { MediaChoice } from '$lib/api/media';
 	import { formatCount } from '$lib/format';
 	import { registerOptionLabels } from '$lib/assistant/option-labels';
+	import type { InverseEntries } from './content/inverse-entries';
 
 	type TextareaEv = Event & { currentTarget: HTMLTextAreaElement };
 
@@ -27,6 +28,7 @@
 		relationTotal = undefined,
 		relationFailed = false,
 		linksFailed = false,
+		inverse = undefined,
 		relationAssistantLabels = undefined,
 		mediaChoices = [],
 		id,
@@ -42,6 +44,8 @@
 		relationFailed?: boolean;
 		/** The entry's own links in this many_to_many field could not be read, so the picker cannot show them. */
 		linksFailed?: boolean;
+		/** The entries a has_one or has_many resolves to. Absent while the entry is not created. */
+		inverse?: InverseEntries;
 		/** The name an assistant reads for each related entry, by id, in place of the one shown. */
 		relationAssistantLabels?: Record<string, string>;
 		/** Published library files, offered by a media field's picker. Null when the library could not be read. */
@@ -107,20 +111,6 @@
 	let selectedIds = $derived(
 		Array.isArray(value) ? (value as unknown[]).map(String).filter(Boolean) : [],
 	);
-
-	/**
-	 * The rows an inverse relation resolves to, by label where the picker's
-	 * items know them and by id where they do not. A populated read hands the
-	 * rows themselves. The admin entry hands ids or nothing.
-	 */
-	let inverseLabels = $derived.by(() => {
-		const rows = Array.isArray(value) ? value : value ? [value] : [];
-		return rows.map((row) => {
-			if (row && typeof row === 'object') return entryLabel(row as Content);
-			const found = relationItems.find((item) => item.id === String(row));
-			return found ? entryLabel(found) : String(row);
-		});
-	});
 
 	/**
 	 * A number field holds a number or nothing, and NumberInput has no empty
@@ -196,12 +186,28 @@
 		     does not exist, and a has_many selection never reaches the
 		     request. What can be shown is what points here. -->
 		<div {id} class="rounded-md border border-line bg-surface-2 px-3 py-2 text-sm" data-testid="inverse-relation">
-			{#if inverseLabels.length > 0}
-				<ul class="space-y-0.5 text-fg">
-					{#each inverseLabels as label (label)}
-						<li>{label}</li>
+			{#if !inverse}
+				<p class="text-faint">Linked entries show here after you create this entry.</p>
+			{:else if inverse.state === 'failed'}
+				<p class="text-danger">Could not load the linked entries. Reload the page to try again.</p>
+			{:else if inverse.state === 'unresolved'}
+				<p class="text-danger">
+					The linked entries cannot be shown because this relation is incomplete. An administrator can fix it in the schema builder.
+				</p>
+			{:else if inverse.items.length > 0}
+				<ul class="space-y-0.5">
+					{#each inverse.items as item (item.id)}
+						<li><a href={item.href} class="text-brand underline-offset-2 hover:underline">{item.label}</a></li>
 					{/each}
 				</ul>
+				{#if inverse.total > inverse.items.length}
+					<p class="mt-1 text-xs text-muted">
+						<span>Showing the first {formatCount(inverse.items.length)} of {formatCount(inverse.total)} linked entries.</span>
+						{#if inverse.listHref}
+							<a href={inverse.listHref} class="text-brand underline-offset-2 hover:underline">View all {formatCount(inverse.total)}</a>
+						{/if}
+					</p>
+				{/if}
 			{:else}
 				<p class="text-faint">No linked entries yet.</p>
 			{/if}

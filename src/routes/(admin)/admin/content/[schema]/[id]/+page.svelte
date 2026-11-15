@@ -283,6 +283,7 @@
 							{errorKeys}
 							relations={data.relations}
 							linksFailed={data.linksFailed}
+							inverse={data.inverse}
 							mediaChoices={data.mediaChoices}
 							error={translationError || reviewError || commentError || releaseError || revisionError ? null : form?.error}
 							label="{schemaLabel} entry"
