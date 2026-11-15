@@ -243,6 +243,35 @@ describe('content editor load, the entry read', () => {
 		expect(out.schemaDef.fields.map((f) => f.name)).toEqual(['headline']);
 		expect(out.access).toEqual({ hidden: ['secret'], actions: ['read'] });
 	});
+
+	it('reads the type\'s access beside the entry, and lets the entry\'s report decide the actions', async () => {
+		vi.mocked(getSchema).mockResolvedValueOnce({
+			name: 'article',
+			fields: [
+				{ name: 'headline', field_type: 'text' },
+				{ name: 'secret', field_type: 'text' },
+			],
+		} as never);
+		const paths: string[] = [];
+		const fetchFn = vi.fn(async (path: string) => {
+			paths.push(path);
+			if (path.includes('/content/access?')) {
+				return json({ schema: 'article', hidden_fields: ['secret'], allowed_actions: ['read', 'update'] });
+			}
+			if (path.includes('/revisions')) return json({ data: [] });
+			if (path.includes('/api/admin/content?')) return json({ data: [] });
+			return json({ ...entry, allowed_actions: ['read'] });
+		}) as unknown as typeof globalThis.fetch;
+		const out = (await load({
+			fetch: fetchFn,
+			cookies: mockCookies(),
+			params: { schema: 'article', id: 'e1' },
+			parent: async () => ({ plugins: none }),
+		} as never)) as { schemaDef: { fields: { name: string }[] }; access: unknown };
+		expect(paths.some((p) => p.endsWith('/api/admin/content/access?schema=article'))).toBe(true);
+		expect(out.schemaDef.fields.map((f) => f.name)).toEqual(['headline']);
+		expect(out.access).toEqual({ hidden: ['secret'], actions: ['read'] });
+	});
 });
 
 describe('content editor load, relation pickers', () => {

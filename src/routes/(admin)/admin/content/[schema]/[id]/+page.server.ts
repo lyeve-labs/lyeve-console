@@ -19,7 +19,8 @@ import { createAssignment, isTransitionAction, transitionAssignment } from '$lib
 import { listPeople } from '$lib/server/people';
 import { loadComments, loadLocalization, loadReleases, loadReview } from '$lib/server/entry-panels';
 import { forbiddenText } from '$lib/api/gate';
-import { accessOf, withoutHidden } from '$lib/utils/content-access';
+import { UNKNOWN_ACCESS, accessOf, joinAccess, withoutHidden } from '$lib/utils/content-access';
+import { readContentAccess } from '$lib/api/content-access';
 
 /*
  * Entries live in the admin store (sys_content_entries) and are served by the
@@ -216,7 +217,7 @@ export const load: PageServerLoad = async (event) => {
 	// is an unhandled one. The entry's own failure is reported below.
 	const tenant = entry.then((e) => e.tenant_id).catch(() => '');
 
-	const [schemaDef, item, entryLinks, revisionList, localization, review, comments, releases] = await Promise.all([
+	const [schemaDef, item, typeAccess, entryLinks, revisionList, localization, review, comments, releases] = await Promise.all([
 		schema.catch((err: unknown): Schema => readError(err, `Content type "${params.schema}" not found`)),
 		entry.catch(async (err: unknown) => {
 			// The rules refuse the entry's type, so the refusal names the type.
@@ -226,6 +227,10 @@ export const load: PageServerLoad = async (event) => {
 			}
 			return readError(err, 'Entry not found');
 		}),
+		// The entry's own report decides what this page shows. The type's is
+		// read beside it for an engine whose entries carry none, and its
+		// failure leaves the decision to the entry's.
+		readContentAccess(client, params.schema).catch(() => UNKNOWN_ACCESS),
 		fields.then((f) => readEntryLinks(client, params.id, f)),
 		listRevisions(client, params.id, fields),
 		loadLocalization(client, params.id, runs(plugins, PLUGIN.localization)),
@@ -241,7 +246,7 @@ export const load: PageServerLoad = async (event) => {
 
 	// A field the reader's rules hide is no input: the engine keeps its stored
 	// value whatever a save sends, and a required check on it could not pass.
-	const { access } = item;
+	const access = joinAccess(typeAccess, item.access);
 	const def = withoutHidden(schemaDef, access.hidden);
 
 	// A has_one or has_many shows the entries that point back, not a picker,

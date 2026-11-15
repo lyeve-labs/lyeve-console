@@ -1,12 +1,12 @@
 /**
  * What the access rules let the reader do with one content type.
  *
- * The content plugin decides it per type and reports it on every entry it
- * returns: `hidden_fields` names the fields the reader may not read, which
- * the entry leaves out, and `allowed_actions` names which of create, read,
- * update and delete the reader may take. A type with no entry reports
- * nothing, so its screens offer what the type defines and the engine
- * refuses what the rules refuse.
+ * The content plugin decides it per type and reports it on its access route
+ * and on every entry it returns: `hidden_fields` names the fields the reader
+ * may not read, which an entry leaves out, and `allowed_actions` names which
+ * of create, read, update and delete the reader may take. An engine older
+ * than the rules reports nothing, so its screens offer what the type
+ * defines and the engine refuses what it refuses.
  */
 import type { Schema } from '@lyeve-labs/client';
 

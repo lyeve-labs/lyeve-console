@@ -1,11 +1,12 @@
 import type { LayoutServerLoad } from './$types';
-import { ApiError, type HttpClient, type Schema, type SchemaField } from '@lyeve-labs/client';
+import type { HttpClient, Schema, SchemaField } from '@lyeve-labs/client';
 import { getSchema } from '@lyeve-labs/client-rest';
 import type { RelationChoices } from '$lib/components/content/relation-choices';
 import { authedClient } from '$lib/server/authz';
 import { readRelationChoices } from '$lib/server/relation-choices';
 import { MAX_PATH_RELATIONS, filterKeys, type Definitions } from '$lib/utils/entry-view';
-import { UNKNOWN_ACCESS, accessOf, withoutHidden, type TypeAccess } from '$lib/utils/content-access';
+import { UNKNOWN_ACCESS, may, withoutHidden, type TypeAccess } from '$lib/utils/content-access';
+import { readContentAccess } from '$lib/api/content-access';
 
 /** The entry list. The editor pages under it have no filters. */
 const LIST_ROUTE = '/(admin)/admin/content/[schema]';
@@ -42,23 +43,12 @@ export const load: LayoutServerLoad = async (event) => {
 	return { relatedSchemas, access, relationChoices: readChoices(client, relatedSchemas[def.name], relatedSchemas) };
 };
 
-/** A type the reader's rules refuse to read. */
-const REFUSED = Symbol('refused');
-
 /**
- * What the reader may do with a content type, from the first entry of its
- * list. A type with no entry reports nothing. A refusal is told apart, and
- * any other failure reports nothing, so the list's own read reports it.
+ * What the reader may do with a content type. A read that fails reports
+ * nothing, so the list's own read reports the failure.
  */
-async function readAccess(client: HttpClient, name: string): Promise<TypeAccess | typeof REFUSED> {
-	try {
-		const body = await client.get<{ data?: unknown[] } | null>(
-			`/api/admin/content?schema=${encodeURIComponent(name)}&limit=1&offset=0`,
-		);
-		return accessOf(body?.data?.[0]);
-	} catch (err) {
-		return err instanceof ApiError && err.status === 403 ? REFUSED : UNKNOWN_ACCESS;
-	}
+function readAccess(client: HttpClient, name: string): Promise<TypeAccess> {
+	return readContentAccess(client, name).catch(() => UNKNOWN_ACCESS);
 }
 
 /**
@@ -72,8 +62,7 @@ async function readDefinitions(
 	client: HttpClient,
 	def: Schema,
 ): Promise<{ defs: Definitions; access: Record<string, TypeAccess> }> {
-	const own = await readAccess(client, def.name);
-	const access: Record<string, TypeAccess> = { [def.name]: own === REFUSED ? UNKNOWN_ACCESS : own };
+	const access: Record<string, TypeAccess> = { [def.name]: await readAccess(client, def.name) };
 	const defs: Definitions = { [def.name]: withoutHidden(def, access[def.name].hidden) };
 	const tried = new Set([def.name]);
 	let from = [defs[def.name]];
@@ -95,10 +84,10 @@ async function readDefinitions(
 		);
 		from = [];
 		names.forEach((name, i) => {
-			const [found, may] = read[i];
-			if (!found || may === REFUSED) return;
-			access[name] = may;
-			defs[name] = withoutHidden(found, may.hidden);
+			const [found, rights] = read[i];
+			if (!found || !may(rights, 'read')) return;
+			access[name] = rights;
+			defs[name] = withoutHidden(found, rights.hidden);
 			from.push(defs[name]);
 		});
 	}

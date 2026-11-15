@@ -99,8 +99,7 @@ export const load: PageServerLoad = async (event) => {
 		getSchema(params.schema, client).catch((err: unknown) => readError(err, `Content type "${params.schema}" not found`)),
 		event.parent(),
 	]);
-	// The layout read what the reader may do with the type from its first
-	// entry. A field the rules hide is no column, filter or sort, so a saved
+	// The layout read what the reader may do with the type. A field the rules hide is no column, filter or sort, so a saved
 	// view that names one opens without it rather than as a refusal.
 	let access: TypeAccess = probed[params.schema] ?? UNKNOWN_ACCESS;
 	let schemaDef = withoutHidden(fullDef, access.hidden);
