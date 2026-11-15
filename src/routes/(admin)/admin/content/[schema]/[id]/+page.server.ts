@@ -6,7 +6,7 @@ import { authedClient, exactParse, requireUser, stripProtectedFields, withExactI
 import { actionError, actionFailure } from '$lib/server/action-error';
 import { readError } from '$lib/server/read-error';
 import { readRelationChoices } from '$lib/server/relation-choices';
-import { setEntryRelations } from '$lib/server/content-relations';
+import { readEntryLinks, setEntryRelations } from '$lib/server/content-relations';
 import { fieldRefusalOf } from '$lib/server/content-validation';
 import { PLUGIN } from '$lib/plugin-names';
 import { runs } from '$lib/plugins';
@@ -211,9 +211,10 @@ export const load: PageServerLoad = async (event) => {
 	// is an unhandled one. The entry's own failure is reported below.
 	const tenant = entry.then((e) => e.tenant_id).catch(() => '');
 
-	const [schemaDef, item, revisionList, localization, review, comments, releases] = await Promise.all([
+	const [schemaDef, item, entryLinks, revisionList, localization, review, comments, releases] = await Promise.all([
 		schema.catch((err: unknown): Schema => readError(err, `Content type "${params.schema}" not found`)),
 		entry.catch((err: unknown) => readError(err, 'Entry not found')),
+		fields.then((f) => readEntryLinks(client, params.id, f)),
 		listRevisions(client, params.id, fields),
 		loadLocalization(client, params.id, runs(plugins, PLUGIN.localization)),
 		loadReview(client, params.id, runs(plugins, PLUGIN.review), user).then(async (r) =>
@@ -222,6 +223,9 @@ export const load: PageServerLoad = async (event) => {
 		loadComments(client, params.id, people, tenant, runs(plugins, PLUGIN.multitenant)).catch(() => null),
 		loadReleases(client, params.id).catch(() => null),
 	]);
+
+	// A many_to_many link is a row beside the entry, never a key in its body.
+	Object.assign(item.data, entryLinks.links);
 
 	const relations = await readRelationChoices(client, schemaDef.fields ?? []);
 
@@ -238,6 +242,7 @@ export const load: PageServerLoad = async (event) => {
 		schemaDef,
 		item,
 		relations,
+		linksFailed: entryLinks.failed,
 		revisions,
 		revisionTotal,
 		revisionsFailed,

@@ -1,7 +1,55 @@
 import type { RequestEvent } from '@sveltejs/kit';
+import type { HttpClient, SchemaField } from '@lyeve-labs/client';
 import { authedHeaders } from '$lib/server/authz';
 import { couldNotLoad } from '$lib/outage';
 import { plural } from '$lib/format';
+
+/**
+ * The most links of one field a read takes. The editor's read and the save's
+ * read ask for the same rows, so a link past them is neither shown nor removed.
+ */
+const LINK_LIMIT = 500;
+
+function linksPath(entryID: string, fieldName: string): string {
+	return `/api/admin/content/${encodeURIComponent(entryID)}/relationships?field=${encodeURIComponent(fieldName)}&limit=${LINK_LIMIT}&offset=0`;
+}
+
+/**
+ * The target ids of each many_to_many field of an entry, read from the rows a
+ * save reconciles. The body holds no link, so a picker seeded from the body
+ * alone opens empty, and the save that follows deletes every link. A field
+ * whose rows could not be read is listed in `failed`, and the editor leaves it
+ * out of the save so its links stay as they are.
+ */
+export async function readEntryLinks(
+	client: HttpClient,
+	entryID: string,
+	fields: readonly SchemaField[],
+): Promise<{ links: Record<string, string[]>; failed: string[] }> {
+	const linked = fields.filter(
+		(f) => !f.system && f.field_type === 'relation' && f.relation_type === 'many_to_many',
+	);
+	const read = await Promise.all(
+		linked.map(async (f) => {
+			try {
+				const body = await client.get<unknown>(linksPath(entryID, f.name));
+				const rows = Array.isArray(body) ? body : (body as { data?: unknown } | null)?.data;
+				if (!Array.isArray(rows)) return { name: f.name, ids: null };
+				const ids = rows.map((row) => String((row as { target_id?: unknown }).target_id ?? '')).filter(Boolean);
+				return { name: f.name, ids };
+			} catch {
+				return { name: f.name, ids: null };
+			}
+		}),
+	);
+	const links: Record<string, string[]> = {};
+	const failed: string[] = [];
+	for (const { name, ids } of read) {
+		if (ids) links[name] = ids;
+		else failed.push(name);
+	}
+	return { links, failed };
+}
 
 /**
  * A many_to_many field whose links did not all reach the plugin. The entry
@@ -50,9 +98,7 @@ export async function setRelations(
 	const fetch = event.fetch;
 	const base = `/api/admin/content/${encodeURIComponent(entryID)}/relationships`;
 
-	const res = await fetch(`${base}?field=${encodeURIComponent(fieldName)}&limit=500&offset=0`, {
-		headers,
-	});
+	const res = await fetch(linksPath(entryID, fieldName), { headers });
 	if (!res.ok) {
 		throw new RelationWriteError(fieldName, couldNotLoad(`the links in ${fieldName}`, { reload: true }));
 	}

@@ -18,7 +18,7 @@ vi.mock('@lyeve-labs/client-rest', () => ({
 import { isHttpError } from '@sveltejs/kit';
 import { load, actions } from './+page.server';
 import { getSchema } from '@lyeve-labs/client-rest';
-import { buildFromData, serialize } from '$lib/utils/content-form';
+import { buildFromData, extractM2MRelations, serialize } from '$lib/utils/content-form';
 import type { PluginSet } from '$lib/plugins';
 
 function json(body: unknown, status = 200): Response {
@@ -350,6 +350,71 @@ async function runSave(event: never) {
 		throw e;
 	}
 }
+
+describe('content editor load, many_to_many links', () => {
+	const linked = {
+		name: 'article',
+		fields: [
+			{ name: 'tags', field_type: 'relation', relation_type: 'many_to_many', relation_to: 'tag' },
+			{ name: 'topics', field_type: 'relation', relation_type: 'many_to_many', relation_to: 'topic' },
+		],
+	};
+
+	type Loaded = { item: { data: Record<string, unknown> }; linksFailed: string[] };
+
+	async function loadLinks(answer: (field: string) => Response): Promise<Loaded> {
+		vi.mocked(getSchema).mockResolvedValueOnce(linked as never);
+		const fetchFn = vi.fn(async (path: string) => {
+			const field = /\/relationships\?field=([^&]+)/.exec(path)?.[1];
+			if (field) return answer(field);
+			if (path.includes('/revisions')) return json({ data: [] });
+			if (path.includes('/api/admin/content?')) return json({ data: [] });
+			return json(entry);
+		}) as unknown as typeof globalThis.fetch;
+		return (await load({
+			fetch: fetchFn,
+			cookies: mockCookies(),
+			params: { schema: 'article', id: 'e1' },
+			parent: async () => ({ plugins: none })
+		} as never)) as unknown as Loaded;
+	}
+
+	it('opens each many_to_many field with the links the entry holds', async () => {
+		const result = await loadLinks((field) =>
+			field === 'tags'
+				? json({ data: [{ id: 'r1', target_id: 't2' }, { id: 'r2', target_id: 't1' }], total_count: 2 })
+				: json({ data: [], total_count: 0 }),
+		);
+
+		// The body holds no link. A picker seeded from the body alone opens
+		// empty, and the save that follows deletes every link the entry has.
+		expect(result.item.data.tags).toEqual(['t2', 't1']);
+		expect(result.item.data.topics).toEqual([]);
+		expect(result.linksFailed).toEqual([]);
+		const values = buildFromData(linked.fields as never, result.item.data);
+		expect(extractM2MRelations(linked.fields as never, values)).toEqual([
+			{ fieldName: 'tags', ids: ['t2', 't1'] },
+			{ fieldName: 'topics', ids: [] },
+		]);
+	});
+
+	it('names a field whose links could not be read and leaves its value unset', async () => {
+		const result = await loadLinks((field) =>
+			field === 'tags' ? json({ error: 'x' }, 503) : json({ data: [{ id: 'r3', target_id: 'p1' }] }),
+		);
+
+		expect(result.linksFailed).toEqual(['tags']);
+		expect(result.item.data).not.toHaveProperty('tags');
+		expect(result.item.data.topics).toEqual(['p1']);
+	});
+
+	it('names a field whose links came back in a shape it cannot read', async () => {
+		const result = await loadLinks(() => json({ id: 'e1', body: {} }));
+
+		expect(result.linksFailed).toEqual(['tags', 'topics']);
+		expect(result.item.data).not.toHaveProperty('tags');
+	});
+});
 
 describe('content editor save, many_to_many fields', () => {
 	it('adds the newly selected targets and removes the deselected ones', async () => {

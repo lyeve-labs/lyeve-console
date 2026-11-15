@@ -26,6 +26,7 @@
 		relationItems = [],
 		relationTotal = undefined,
 		relationFailed = false,
+		linksFailed = false,
 		relationAssistantLabels = undefined,
 		mediaChoices = [],
 		id,
@@ -39,6 +40,8 @@
 		relationTotal?: number;
 		/** The related schema could not be read, so the picker has nothing to offer. */
 		relationFailed?: boolean;
+		/** The entry's own links in this many_to_many field could not be read, so the picker cannot show them. */
+		linksFailed?: boolean;
 		/** The name an assistant reads for each related entry, by id, in place of the one shown. */
 		relationAssistantLabels?: Record<string, string>;
 		/** Published library files, offered by a media field's picker. Null when the library could not be read. */
@@ -208,7 +211,11 @@
 			</p>
 		</div>
 	{:else if field.relation_type === 'many_to_many'}
-		{#if relationFailed}
+		{#if linksFailed}
+			<p class="text-xs text-danger">
+				Could not load the linked entries. Reload the page to try again. Saving leaves the links as they are.
+			</p>
+		{:else if relationFailed}
 			<p class="text-xs text-danger">
 				Could not load the entries in <code>{field.relation_to}</code>. Reload the page to try again.
 			</p>
