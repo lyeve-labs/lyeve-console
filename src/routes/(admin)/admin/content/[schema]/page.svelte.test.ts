@@ -65,7 +65,12 @@ function data(overrides: Record<string, unknown> = {}): PageData {
 	// The view is read from a query the way the load reads it, so a fixture
 	// cannot hand the page a view the load would never produce.
 	const query = (merged.query as string | undefined) ?? (merged.status ? `status=${merged.status}` : '');
-	merged.view ??= readView(new URLSearchParams(query), merged.schemaDef as Schema, merged.limit as number);
+	merged.view ??= readView(
+		new URLSearchParams(query),
+		merged.schemaDef as Schema,
+		merged.limit as number,
+		merged.relatedSchemas as Record<string, Schema> | undefined,
+	);
 	return merged as unknown as PageData;
 }
 
@@ -868,3 +873,111 @@ describe('content listing filter row on a phone', () => {
 		expect(document.querySelector('[data-slot="value"]')?.className).toContain('col-span-2');
 	});
 });
+
+describe('content listing filters on the fields of related entries', () => {
+	const posts = {
+		name: 'posts',
+		display_name: 'Posts',
+		with_draft_publish: false,
+		with_updated_at: false,
+		fields: [
+			{ name: 'title', field_type: 'text', system: false },
+			{ name: 'author', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'people', system: false },
+		],
+	};
+	const relatedSchemas = {
+		posts,
+		people: {
+			name: 'people',
+			fields: [
+				{ name: 'name', field_type: 'text', system: false },
+				{ name: 'company', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'companies', system: false },
+			],
+		},
+		companies: { name: 'companies', fields: [{ name: 'name', field_type: 'text', system: false }] },
+	};
+	const viewed = (query: string, overrides: Record<string, unknown> = {}) =>
+		data({ schemaDef: posts, relatedSchemas, query, items: items(2), total: 2, ...overrides });
+
+	let writes: string[] = [];
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		writes = [];
+		Object.defineProperty(document, 'cookie', {
+			configurable: true,
+			get: () => '',
+			set: (v: string) => {
+				writes.push(v);
+			},
+		});
+	});
+
+	afterEach(() => {
+		Reflect.deleteProperty(document, 'cookie');
+	});
+
+	function navigated(href: string) {
+		const [callback] = nav.afterNavigate.mock.calls.at(-1) as unknown as [(n: { to: { url: URL } }) => void];
+		callback({ to: { url: new URL(href, 'http://localhost') } });
+	}
+
+	it('names each related field after the relation, after the own fields', async () => {
+		render(ContentListPage, { props: { data: viewed(''), form: null } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Add filter' }));
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Field' }));
+		expect(screen.getAllByRole('option').map((o) => o.textContent?.trim())).toEqual([
+			'Entry',
+			'Author',
+			'Created',
+			'Updated',
+			'Author, Name',
+			'Author, Company',
+			'Author, Company, Name',
+		]);
+	});
+
+	it('writes the path of the field it filters on', async () => {
+		render(ContentListPage, { props: { data: viewed(''), form: null } });
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Add filter' }));
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Field' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Author, Company, Name' }));
+		expect(screen.getByRole('combobox', { name: 'Condition' }).textContent?.trim()).toBe('contains');
+		await fireEvent.input(screen.getByRole('textbox', { name: 'Value' }), { target: { value: 'Acme' } });
+
+		const hidden = document.querySelector<HTMLInputElement>('input[type="hidden"][name="filters[author.company.name][contains]"]');
+		expect(hidden?.value).toBe('Acme');
+	});
+
+	it('picks an entry of the related type for a path that ends on a relation', async () => {
+		render(ContentListPage, {
+			props: {
+				data: viewed('limit=100&filters[author.company][eq]=c1', {
+					relationChoices: Promise.resolve({ companies: choices([['c1', 'Acme']]) }),
+				}),
+				form: null,
+			},
+		});
+
+		expect(screen.getByRole('combobox', { name: 'Field' }).textContent?.trim()).toBe('Author, Company');
+		await waitFor(() => expect(screen.getByRole('combobox', { name: 'Value' }).textContent?.trim()).toBe('Acme'));
+	});
+
+	it('remembers a view with paths, and forgets one too large to keep', () => {
+		const kept = 'limit=100&filters[author.name][contains]=Ann&filters[author.company.name][eq]=Acme';
+		const { unmount } = render(ContentListPage, { props: { data: viewed(kept), form: null } });
+		navigated(`/admin/content/posts?${kept}`);
+		const saved = new URLSearchParams(decodeURIComponent(writes[0].split('; ')[0].slice('lyeve_entry_view='.length)));
+		expect(saved.get('filters[author.company.name][eq]')).toBe('Acme');
+		unmount();
+
+		// Each path key costs its brackets encoded, so the cap counts them.
+		const many = Array.from({ length: 80 }, (_, i) => `filters[author.company.name][in]=company-${i}`).join('&');
+		render(ContentListPage, { props: { data: viewed(`limit=100&${many}`), form: null } });
+		navigated(`/admin/content/posts?limit=100&${many}`);
+		expect(writes.at(-1)).toBe('lyeve_entry_view=; Path=/admin/content/posts; Max-Age=0; SameSite=Lax');
+	});
+});
+

@@ -75,9 +75,12 @@ export const load: PageServerLoad = async (event) => {
 	const { limit, offset } = pageWindow(url, DEFAULT_LIMIT, MAX_LIMIT);
 	const q = (url.searchParams.get('q') ?? '').trim();
 
-	const [schemas, schemaDef] = await Promise.all([
+	// The layout reads the related content types' definitions once per visit,
+	// and a filter path resolves against them.
+	const [schemas, schemaDef, { relatedSchemas: related = {} }] = await Promise.all([
 		section<Schema[]>(getSchemas(client), SCHEMAS_FAILED),
 		getSchema(params.schema, client).catch((err: unknown) => readError(err, `Content type "${params.schema}" not found`)),
+		event.parent(),
 	]);
 
 	if (!hasViewParam(url.searchParams)) {
@@ -89,7 +92,12 @@ export const load: PageServerLoad = async (event) => {
 		if (saved && event.request.method === 'GET') {
 			const savedUrl = new URL(url);
 			savedUrl.search = saved;
-			const view = readView(savedUrl.searchParams, schemaDef, pageWindow(savedUrl, DEFAULT_LIMIT, MAX_LIMIT).limit);
+			const view = readView(
+				savedUrl.searchParams,
+				schemaDef,
+				pageWindow(savedUrl, DEFAULT_LIMIT, MAX_LIMIT).limit,
+				related,
+			);
 			// A saved view that is the default one, or that no longer applies to
 			// this content type, opens the plain list.
 			if (viewQuery(view, schemaDef)) {
@@ -99,7 +107,7 @@ export const load: PageServerLoad = async (event) => {
 		}
 	}
 
-	const view = readView(url.searchParams, schemaDef, limit);
+	const view = readView(url.searchParams, schemaDef, limit, related);
 	const fields = schemaDef.fields ?? [];
 	const listed = await section(
 		client.get<ListEnvelope<EntryRow>>(`/api/admin/content?${apiQuery(params.schema, view, q, offset)}`),
