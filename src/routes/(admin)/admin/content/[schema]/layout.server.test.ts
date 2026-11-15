@@ -68,7 +68,12 @@ type Choices = Record<string, { items: { id: string }[]; total: number; failed: 
 describe('the entry list layout reads the relation filter choices', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		rest.getSchema.mockImplementation(async (name: string) => (name === 'posts' ? posts : { name, fields: [] }));
+		rest.getSchema.mockImplementation(async (name: string) => {
+			if (name === 'posts') return posts;
+			// Tags is a has_many, so its type carries the key that points back.
+			if (name === 'tag') return { name, fields: [{ name: 'post', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'posts' }] };
+			return { name, fields: [] };
+		});
 	});
 
 	it('reads each related content type once, however many fields point at it', async () => {

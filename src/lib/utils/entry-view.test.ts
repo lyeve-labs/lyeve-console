@@ -69,7 +69,6 @@ describe('filter keys through relations', () => {
 			['tags', 'Tags'],
 			['cover', 'Cover'],
 			['comments', 'Comments'],
-			['reviews', 'Reviews'],
 			['created_at', 'Created'],
 			['updated_at', 'Updated'],
 			['author.name', 'Author, Name'],
@@ -85,6 +84,21 @@ describe('filter keys through relations', () => {
 			['comments.body', 'Comments, Body'],
 			['comments.post', 'Comments, Post'],
 			['comments.post.title', 'Comments, Post, Title'],
+		]);
+	});
+
+	it('offers an own has_one or has_many only while its key can be read or its target was not read', () => {
+		expect(filterKeys(posts, defs).map((k) => k.key)).not.toContain('reviews');
+		expect(filterKeys(posts, withoutType('reviews')).map((k) => k.key)).toContain('reviews');
+		expect(filterKeys(posts).map((k) => k.key)).toContain('reviews');
+		// A readable has_many stays.
+		expect(filterKeys(posts, defs).map((k) => k.key)).toContain('comments');
+
+		const linked = new URLSearchParams('filters[reviews][eq]=r1&filters[comments][eq]=c1');
+		expect(readView(linked, posts, 100, defs).filters).toEqual([{ key: 'comments', op: 'eq', values: ['c1'] }]);
+		expect(readView(linked, posts, 100, withoutType('reviews')).filters).toEqual([
+			{ key: 'reviews', op: 'eq', values: ['r1'] },
+			{ key: 'comments', op: 'eq', values: ['c1'] },
 		]);
 	});
 

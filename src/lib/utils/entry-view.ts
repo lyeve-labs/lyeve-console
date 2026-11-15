@@ -200,7 +200,8 @@ function pathKeys(source: Schema, path: string[], labels: string[], defs: Defini
  * it, and a declared `title` is the Entry. The entry's own `published_at` is
  * offered only while no field takes the name. Its status is never a
  * condition, because the status parameter narrows by it. A related type
- * whose definition is not in `defs` offers no fields.
+ * whose definition is not in `defs` offers no fields. A has_one or has_many
+ * whose key cannot be read on a target in `defs` is not offered.
  */
 export function filterKeys(schema: Schema, defs: Definitions = {}): FilterKey[] {
 	const keys: FilterKey[] = [];
@@ -210,6 +211,10 @@ export function filterKeys(schema: Schema, defs: Definitions = {}): FilterKey[] 
 	for (const field of userFields(schema)) {
 		const family = FAMILY_OF[field.field_type];
 		if (!family || field.name === 'title') continue;
+		// The admin list refuses a has_one or has_many whose key it cannot read.
+		// Without the target's definition that cannot be told, so it stays.
+		const read = isInverse(field) && !!field.relation_to && field.relation_to in defs;
+		if (read && !stepTarget(schema.name, field, defs)) continue;
 		keys.push({ key: field.name, label: humanizeFieldName(field.name), family, field });
 	}
 	keys.push({ key: 'created_at', label: 'Created', family: 'datetime' });
