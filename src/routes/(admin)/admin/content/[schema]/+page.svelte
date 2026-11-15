@@ -107,6 +107,11 @@
 	// list refuses a search while the rules hide the title or the slug, which
 	// are what it searches first.
 	const canCreate = $derived(may(data.access, 'create'));
+	// A role that may create entries it cannot read reaches only the list's
+	// refusal, so the refusal offers New entry once the engine said create.
+	const createsUnread = $derived(
+		!data.items.ok && data.items.gate.state === 'forbidden' && !!data.access?.actions?.includes('create'),
+	);
 	const canDelete = $derived(may(data.access, 'delete'));
 	const searchable = $derived(!hides(data.schemaDef, 'title') && !hides(data.schemaDef, 'slug'));
 
@@ -563,7 +568,7 @@
 	{/snippet}
 
 	{#snippet actions()}
-		{#if data.items.ok && canCreate}
+		{#if (data.items.ok && canCreate) || createsUnread}
 			<Button size="sm" href="/admin/content/{data.activeSchema}/new">
 				<Plus size={ICON.sm} /> New entry
 			</Button>

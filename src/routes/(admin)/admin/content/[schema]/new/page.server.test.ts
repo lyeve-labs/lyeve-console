@@ -58,7 +58,7 @@ const relations = vi.hoisted(() => ({
 }));
 vi.mock('$lib/server/content-relations', () => relations);
 
-import { isHttpError } from '@sveltejs/kit';
+import { isHttpError, isRedirect } from '@sveltejs/kit';
 import { actions, load } from './+page.server';
 
 function cookies(): Cookies {
@@ -179,6 +179,31 @@ describe('creating a content entry', () => {
 		);
 		const { result } = await create({ title: 'Contact' });
 		expect(JSON.stringify(result)).toContain('slug already in use');
+	});
+});
+
+/*
+ * A role may create entries it cannot read. The editor the create would
+ * redirect to refuses that role, so the action keeps it on the form and
+ * says the entry was made.
+ */
+describe('creating an entry the role cannot read back', () => {
+	it('stays on the form and says the entry was created', async () => {
+		access.get.mockResolvedValueOnce({ schema: 'surveys', hidden_fields: [], allowed_actions: ['create'] });
+
+		const { result, threw } = await create({ title: 'Contact', active: false });
+
+		expect(threw).toBeUndefined();
+		expect(client.post).toHaveBeenCalledOnce();
+		expect(result).toEqual({ createdUnreadable: 'Entry created. Your role cannot open entries of Surveys.' });
+	});
+
+	it('returns to the list when the role may read the entry', async () => {
+		access.get.mockResolvedValueOnce({ schema: 'surveys', ...EVERY_ACTION });
+
+		const { threw } = await create({ title: 'Contact', active: false });
+
+		expect(isRedirect(threw) && threw.location).toBe('/admin/content/surveys');
 	});
 });
 

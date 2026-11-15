@@ -267,6 +267,23 @@ describe('content listing reads', () => {
 		expect(screen.queryByLabelText('Search entries')).toBeNull();
 	});
 
+	it('offers New entry beside the refusal to a role that may create but not read', () => {
+		render(ContentListPage, {
+			props: {
+				data: data({
+					items: { ok: false, gate: { state: 'forbidden' } },
+					total: 0,
+					access: { hidden: [], actions: ['create'] },
+				}),
+				form: null,
+			},
+		});
+
+		expect(screen.getByText('Your role cannot open entries of Posts. Ask a super admin if you need it.')).toBeTruthy();
+		expect(screen.getByRole('link', { name: /New entry/ })).toBeTruthy();
+		expect(screen.queryByLabelText('Search entries')).toBeNull();
+	});
+
 	it('says the picker is missing when the collections could not be read', () => {
 		render(ContentListPage, {
 			props: { data: data({ schemas: { ok: false, gate: { state: 'unavailable' } } }), form: null },

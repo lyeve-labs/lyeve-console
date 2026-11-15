@@ -149,6 +149,14 @@ export const actions: Actions = {
 				return fail(400, { error: `Entry created. ${failed}`, created });
 			}
 		}
+		// A role that may create entries it cannot read would land on the
+		// list's refusal, which reads as a failed save. It stays here, on a
+		// form cleared for the next entry, and is told the entry was created.
+		const access = await readContentAccess(client, params.schema).catch(() => null);
+		if (access && !may(access, 'read')) {
+			const label = schemaDef?.display_name || params.schema;
+			return { createdUnreadable: `Entry created. Your role cannot open entries of ${label}.` };
+		}
 		redirect(303, `/admin/content/${params.schema}`);
 	},
 };
