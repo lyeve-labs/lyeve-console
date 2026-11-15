@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Schema, SchemaField } from '@lyeve-labs/client';
-import { fkColumn, pivotTable, planRelation, planSchemaRelations, tableName } from './relations';
+import { fkColumn, inverseKey, pivotTable, planRelation, planSchemaRelations, tableName } from './relations';
 
 function schema(name: string, fields: Partial<SchemaField>[] = [], display?: string): Schema {
 	return {
@@ -100,8 +100,46 @@ describe('planRelation', () => {
 		const bare = schema('post', [{ name: 'title' }], 'Post');
 		const plan = planRelation(lonely, lonely.fields[0], [lonely, bare])!;
 		expect(plan.requires?.satisfied).toBe(false);
-		expect(plan.problem).toContain('_post.author_id');
-		expect(plan.problem).toContain('empty list');
+		expect(plan.problem).toBe(
+			'Post has no field that belongs to Author, so this relation returns an empty list. Add a relation field of kind "Belongs to one" to Post that points back here.',
+		);
+	});
+
+	it('reads an inverse through the belongs_to that points back, whatever it is called', () => {
+		// The old reading looked for posts_id on comments and found nothing.
+		const posts = schema('posts', [relation('comments', 'comments', 'has_many')], 'Posts');
+		const comments = schema('comments', [relation('post', 'posts', 'belongs_to')], 'Comments');
+		const plan = planRelation(posts, posts.fields[0], [posts, comments])!;
+		expect(plan.reads).toBe('_comments.post_id');
+		expect(plan.requires?.satisfied).toBe(true);
+		expect(plan.problem).toBeNull();
+	});
+
+	it('reports two fields that point back and no key column to choose between them', () => {
+		const posts = schema('posts', [relation('comments', 'comments', 'has_many')], 'Posts');
+		const comments = schema(
+			'comments',
+			[relation('post', 'posts', 'belongs_to'), relation('reply_to', 'posts', 'belongs_to')],
+			'Comments',
+		);
+		const plan = planRelation(posts, posts.fields[0], [posts, comments])!;
+		expect(plan.requires?.satisfied).toBe(false);
+		expect(plan.problem).toBe(
+			'Comments has 2 fields that belong to Posts (post, reply_to), so this relation returns an empty list. Remove all but one of them.',
+		);
+	});
+
+	it('reports a key column that is not the key of a field pointing back', () => {
+		const posts = schema(
+			'posts',
+			[{ ...relation('comments', 'comments', 'has_many'), relation_fk_name: 'author_id' }],
+			'Posts',
+		);
+		const comments = schema('comments', [relation('post', 'posts', 'belongs_to')], 'Comments');
+		const plan = planRelation(posts, posts.fields[0], [posts, comments])!;
+		expect(plan.problem).toBe(
+			'author_id is not the key of a field on Comments that belongs to Posts, so this relation returns an empty list.',
+		);
 	});
 
 	it('accepts an inverse satisfied by an overridden key column', () => {
@@ -159,5 +197,51 @@ describe('planSchemaRelations', () => {
 		]);
 		const plans = planSchemaRelations(post, [post, schema('author'), schema('tag')]);
 		expect(plans.map((p) => p.field.name)).toEqual(['author', 'tags']);
+	});
+});
+
+describe('inverseKey', () => {
+	// The record's cases, with S = posts and T = comments.
+	const hasMany = (extra: Partial<SchemaField> = {}): SchemaField => ({
+		...relation('comments', 'comments', 'has_many'),
+		...extra,
+	});
+	const post = relation('post', 'posts', 'belongs_to');
+	const replyTo = relation('reply_to', 'posts', 'belongs_to');
+
+	it.each([
+		{ declares: 'a belongs_to post toward posts', target: [post], field: hasMany(), key: 'post_id' },
+		{
+			declares: 'two belongs_to toward posts, the field naming reply_to_id',
+			target: [post, replyTo],
+			field: hasMany({ relation_fk_name: 'reply_to_id' }),
+			key: 'reply_to_id',
+		},
+		{ declares: 'two belongs_to toward posts, the field naming none', target: [post, replyTo], field: hasMany(), key: null },
+		{
+			declares: 'a belongs_to post, the field naming author_id',
+			target: [post],
+			field: hasMany({ relation_fk_name: 'author_id' }),
+			key: null,
+		},
+		{
+			declares: 'a field whose column is posts_id and no belongs_to toward posts',
+			target: [{ name: 'posts_id', field_type: 'uid' }],
+			field: hasMany(),
+			key: 'posts_id',
+		},
+		{ declares: 'no belongs_to toward posts and no posts_id', target: [{ name: 'title' }], field: hasMany(), key: null },
+	])('$declares reads $key', ({ target, field, key }) => {
+		const got = inverseKey('posts', field, schema('comments', target as Partial<SchemaField>[]));
+		expect(got.ok ? got.column : null).toBe(key);
+	});
+
+	it('names the field a key belongs to, which the list filters on', () => {
+		const got = inverseKey('posts', hasMany(), schema('comments', [post]));
+		expect(got.ok && got.field.name).toBe('post');
+	});
+
+	it('cannot read a relation to a content type that is not there', () => {
+		expect(inverseKey('posts', hasMany(), undefined)).toEqual({ ok: false, problem: 'no-target' });
 	});
 });

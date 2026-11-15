@@ -830,12 +830,6 @@
 						{#if plan.problem}
 							<Alert tone="warn">
 								{plan.problem}
-								{#if plan.requires && !plan.requires.satisfied}
-									Add a field named
-									<span class="font-mono">{plan.requires.field}</span>
-									to <span class="font-medium">{plan.requires.schema}</span>,
-									typed relation, kind "Belongs to one", pointing back here.
-								{/if}
 							</Alert>
 						{/if}
 					{:else}
@@ -949,16 +943,19 @@
 		</div>
 
 		<p>
-			An inverse relation is read through a column named after
-			<em>this content type</em>, not after the field. An
+			An inverse relation is read through the
+			<span class="font-mono">belongs_to</span> field on the other content
+			type that points back here, not through the field's own name. An
 			<span class="font-mono">author</span> with a
 			<span class="font-mono">has_many</span> field called
-			<span class="font-mono">articles</span> resolves through
-			<span class="font-mono">author_id</span> on
-			<span class="font-mono">_article</span>, so the field can be called
-			anything and renaming it moves nothing in the database. It does need
-			a <span class="font-mono">belongs_to</span> field named
-			<span class="font-mono">author</span> on the other content type.
+			<span class="font-mono">articles</span> resolves through a
+			<span class="font-mono">writer</span> field on
+			<span class="font-mono">article</span> that belongs to
+			<span class="font-mono">author</span>, stored in
+			<span class="font-mono">_article.writer_id</span>. The field can be
+			called anything, and renaming it moves nothing in the database. If
+			the other content type has two fields that point back here, the
+			relation returns nothing until one of them is removed.
 		</p>
 
 		<p>

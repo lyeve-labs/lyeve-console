@@ -152,8 +152,8 @@ describe('schema builder relation panel', () => {
 	});
 
 	it('reports an inverse relation the other schema cannot answer', async () => {
-		// has_many is read through a column named after THIS schema on the other
-		// table. Nothing in the row that declares it can show whether that column
+		// has_many is read through a belongs_to on the other table that points
+		// back here. Nothing in the row that declares it can show whether one
 		// exists, which is the whole reason the check is here.
 		await openPosts();
 		await pickType('title', 'relation');
@@ -161,7 +161,7 @@ describe('schema builder relation panel', () => {
 		await pickOption(screen.getByRole('combobox', { name: 'Target content type' }), 'Authors');
 
 		expect(screen.getByTestId('relation-problems')).toBeTruthy();
-		expect(screen.getAllByText(/_authors\.posts_id does not exist/).length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/has no field that belongs to/).length).toBeGreaterThan(0);
 	});
 
 	it('flags nothing while the schema has no relation field', async () => {

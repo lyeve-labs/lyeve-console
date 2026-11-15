@@ -91,16 +91,65 @@ export function relationKind(type: RelationType | undefined): RelationKind {
 	return RELATION_KINDS.find((k) => k.type === type) ?? RELATION_KINDS[0];
 }
 
-/** The field the other schema must carry for an inverse relation to resolve. */
+/** Whether the other content type carries the key an inverse relation reads. */
 export interface InverseRequirement {
-	/** The schema that needs the field. */
+	/** The content type that needs the key. */
 	schema: string;
-	/** The name that field must have. It is the name, not the target, that derives the column. */
-	field: string;
-	/** The column the engine reads. */
-	column: string;
-	/** True once a field on that schema produces the column. */
+	/** The column the engine reads, once the rule finds one. */
+	column: string | null;
+	/** True once the rule finds the key. */
 	satisfied: boolean;
+}
+
+/** Why the key of an inverse relation cannot be read. */
+export type InverseProblem = 'no-target' | 'not-a-key' | 'ambiguous' | 'no-key';
+
+export type InverseKey =
+	| { ok: true; field: SchemaField; column: string }
+	| { ok: false; problem: InverseProblem; candidates?: SchemaField[] };
+
+/** Whether a relation field is one of the two kinds that store nothing on their own side. */
+export function isInverse(field: SchemaField): boolean {
+	return field.field_type === 'relation' && (field.relation_type === 'has_one' || field.relation_type === 'has_many');
+}
+
+function isBelongsTo(field: SchemaField): boolean {
+	return field.field_type === 'relation' && (field.relation_type ?? 'belongs_to') === 'belongs_to';
+}
+
+/** The column a field stores, or null for a relation kind that stores none on its own table. */
+function columnOf(field: SchemaField): string | null {
+	if (field.field_type !== 'relation') return field.name;
+	return isBelongsTo(field) ? fkColumn(field.name, field.relation_fk_name) : null;
+}
+
+/**
+ * The key a has_one or has_many on `source` reads on its target, by the rule
+ * every surface applies:
+ *
+ * 1. `relation_fk_name` on the field names the key column of a belongs_to on
+ *    the target toward the source.
+ * 2. Without it, the one belongs_to on the target toward the source.
+ * 3. Without one, a field on the target whose column is `<source>_id`.
+ *
+ * Anything else cannot be read, and neither can two belongs_to toward the
+ * source with no `relation_fk_name` to choose between them.
+ */
+export function inverseKey(source: string, field: SchemaField, target: Schema | undefined): InverseKey {
+	if (!target) return { ok: false, problem: 'no-target' };
+	const own = target.fields.filter((f) => !f.system);
+	const back = own.filter((f) => isBelongsTo(f) && f.relation_to === source);
+
+	if (field.relation_fk_name) {
+		const named = back.find((f) => columnOf(f) === field.relation_fk_name);
+		return named ? { ok: true, field: named, column: field.relation_fk_name } : { ok: false, problem: 'not-a-key' };
+	}
+	if (back.length === 1) return { ok: true, field: back[0], column: columnOf(back[0]) as string };
+	if (back.length > 1) return { ok: false, problem: 'ambiguous', candidates: back };
+
+	const column = fkColumn(source);
+	const legacy = own.find((f) => columnOf(f) === column);
+	return legacy ? { ok: true, field: legacy, column } : { ok: false, problem: 'no-key' };
 }
 
 export interface RelationPlan {
@@ -121,24 +170,6 @@ export interface RelationPlan {
 
 function label(s: Schema | undefined, fallback: string): string {
 	return s?.display_name || s?.name || fallback;
-}
-
-/**
- * Whether `target` already carries a field producing `column`.
- *
- * Matched on the derived column and not on the relation's direction, because
- * the column is the whole of what the engine looks for. A `belongs_to` named
- * after this schema is the ordinary way to get one, and an explicit
- * `relation_fk_name` is the other.
- */
-function producesColumn(target: Schema | undefined, column: string): boolean {
-	if (!target) return false;
-	return target.fields.some(
-		(f) =>
-			f.field_type === 'relation' &&
-			(f.relation_type ?? 'belongs_to') === 'belongs_to' &&
-			fkColumn(f.name, f.relation_fk_name) === column,
-	);
 }
 
 /**
@@ -207,32 +238,44 @@ export function planRelation(
 	}
 
 	// has_one and has_many are the same mechanism at two cardinalities: the key
-	// is on the other table and it is named after THIS schema, not after the
-	// field. A field called `articles` on `author` is read through `author_id`
-	// on `_article`, so renaming the field moves nothing.
-	const column = fkColumn(from.name || 'this');
-	const satisfied = producesColumn(target, column);
+	// is a belongs_to on the other table that points back here, so the field
+	// itself can be called anything and renaming it moves nothing.
+	const key = inverseKey(from.name || 'this', field, target);
 	const requires: InverseRequirement = {
 		schema: field.relation_to,
-		field: from.name || 'this',
-		column,
-		satisfied,
+		column: key.ok ? key.column : null,
+		satisfied: key.ok,
 	};
 	const many = kind.type === 'has_many';
+	const empty = `this relation returns ${many ? 'an empty list' : 'nothing'}`;
+	let problem: string | null = null;
+	if (!key.ok) {
+		switch (key.problem) {
+			case 'no-target':
+				problem = `${field.relation_to} is not a content type in this tenant.`;
+				break;
+			case 'not-a-key':
+				problem = `${field.relation_fk_name} is not the key of a field on ${there} that belongs to ${here}, so ${empty}.`;
+				break;
+			case 'ambiguous':
+				problem = `${there} has ${key.candidates?.length} fields that belong to ${here} (${(key.candidates ?? []).map((f) => f.name).join(', ')}), so ${empty}. Remove all but one of them.`;
+				break;
+			default:
+				problem = `${there} has no field that belongs to ${here}, so ${empty}. Add a relation field of kind "Belongs to one" to ${there} that points back here.`;
+		}
+	}
 	return {
 		kind,
 		sentence: many
 			? `Each ${here} row has many ${there} rows.`
 			: `Each ${here} row has one ${there} row. The limit is not enforced, so if several ${there} rows point here, the first one is used.`,
 		creates: [],
-		reads: `${thatTable}.${column}`,
-		flags: `Neither applies. The key is ${thatTable}.${column}, and Req and Idx on it belong to ${there}.`,
+		reads: key.ok ? `${thatTable}.${key.column}` : `no key on ${thatTable}`,
+		flags: key.ok
+			? `Neither applies. The key is ${thatTable}.${key.column}, and Req and Idx on it belong to ${there}.`
+			: `Neither applies. The key belongs to ${there}.`,
 		requires,
-		problem: target
-			? satisfied
-				? null
-				: `${there} has no field named ${requires.field}, so ${thatTable}.${column} does not exist and this relation returns ${many ? 'an empty list' : 'nothing'}.`
-			: `${field.relation_to} is not a content type in this tenant.`,
+		problem,
 	};
 }
 
