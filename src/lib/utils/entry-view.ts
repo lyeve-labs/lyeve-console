@@ -1,5 +1,6 @@
 import type { Schema, SchemaField } from '@lyeve-labs/client';
 import { humanizeFieldName } from './entry-identity';
+import { inverseKey, isInverse } from '../relations';
 
 /**
  * The view of one content type's entry list: its filter conditions, how they
@@ -10,6 +11,10 @@ import { humanizeFieldName } from './entry-identity';
  * load reads it only when the URL names no view. The grammar is the admin
  * list's: `filters[key]=v`, `filters[key][op]=v`, `match`, `q` and `sort`,
  * plus the console's own `limit`, `offset` and `columns`.
+ *
+ * A filter key may also be a dotted path through relations to a field of the
+ * related type, such as `author.name` or `author.company.name`. Which paths
+ * exist depends on the related types' definitions, which the load reads.
  */
 
 /** The page size a list opens at. */
@@ -85,6 +90,15 @@ export interface FilterKey {
 	field?: SchemaField;
 }
 
+/** The definitions of the content types a path can reach, by name. */
+export type Definitions = Record<string, Schema>;
+
+/**
+ * The most relations a filter key walks, counting a relation it ends on. The
+ * admin list refuses a longer path.
+ */
+export const MAX_PATH_RELATIONS = 2;
+
 export interface ColumnChoice {
 	key: string;
 	label: string;
@@ -139,13 +153,57 @@ export function columnChoices(schema: Schema): ColumnChoice[] {
 }
 
 /**
- * Every key a condition can name, the Entry first and the timestamps last.
+ * The type a relation field leads to, when the admin list can follow it: its
+ * definition was read, and a has_one or has_many finds the key it reads on
+ * the other side.
+ */
+function stepTarget(source: string, field: SchemaField, defs: Definitions): Schema | undefined {
+	if (field.field_type !== 'relation' || !field.relation_to) return undefined;
+	const target = defs[field.relation_to];
+	if (!target) return undefined;
+	if (isInverse(field) && !inverseKey(source, field, { ...target, fields: target.fields ?? [] }).ok) return undefined;
+	return target;
+}
+
+/**
+ * The keys through one relation path: the related type's fields, then the
+ * fields one relation further. A relation the path cannot follow is offered
+ * neither as a step nor as the field the path ends on.
+ */
+function pathKeys(source: Schema, path: string[], labels: string[], defs: Definitions, out: FilterKey[]): void {
+	const steps: [SchemaField, Schema][] = [];
+	for (const field of userFields(source)) {
+		const family = FAMILY_OF[field.field_type];
+		if (!family) continue;
+		if (family === 'relation') {
+			// A path that ends on a relation walks it too, so it counts.
+			const target = stepTarget(source.name, field, defs);
+			if (!target || path.length >= MAX_PATH_RELATIONS) continue;
+			steps.push([field, target]);
+		}
+		out.push({
+			key: [...path, field.name].join('.'),
+			label: [...labels, humanizeFieldName(field.name)].join(', '),
+			family,
+			field,
+		});
+	}
+	for (const [field, target] of steps) {
+		pathKeys(target, [...path, field.name], [...labels, humanizeFieldName(field.name)], defs, out);
+	}
+}
+
+/**
+ * Every key a condition can name, the Entry first and the timestamps last,
+ * then the fields of each related type under the relation's name.
  * Each declared field filters under its own name, as the admin list resolves
  * it, and a declared `title` is the Entry. The entry's own `published_at` is
  * offered only while no field takes the name. Its status is never a
- * condition, because the status parameter narrows by it.
+ * condition, because the status parameter narrows by it. A related type
+ * whose definition is not in `defs` offers no fields. A has_one or has_many
+ * whose key cannot be read on a target in `defs` is not offered.
  */
-export function filterKeys(schema: Schema): FilterKey[] {
+export function filterKeys(schema: Schema, defs: Definitions = {}): FilterKey[] {
 	const keys: FilterKey[] = [];
 	const title = userFields(schema).find((f) => f.name === 'title');
 	const titleFamily = title ? FAMILY_OF[title.field_type] : 'text';
@@ -153,12 +211,20 @@ export function filterKeys(schema: Schema): FilterKey[] {
 	for (const field of userFields(schema)) {
 		const family = FAMILY_OF[field.field_type];
 		if (!family || field.name === 'title') continue;
+		// The admin list refuses a has_one or has_many whose key it cannot read.
+		// Without the target's definition that cannot be told, so it stays.
+		const read = isInverse(field) && !!field.relation_to && field.relation_to in defs;
+		if (read && !stepTarget(schema.name, field, defs)) continue;
 		keys.push({ key: field.name, label: humanizeFieldName(field.name), family, field });
 	}
 	keys.push({ key: 'created_at', label: 'Created', family: 'datetime' });
 	keys.push({ key: 'updated_at', label: 'Updated', family: 'datetime' });
 	if (schema.with_draft_publish && !declares(schema, 'published_at')) {
 		keys.push({ key: 'published_at', label: 'Published', family: 'datetime' });
+	}
+	for (const field of userFields(schema)) {
+		const target = stepTarget(schema.name, field, defs);
+		if (target) pathKeys(target, [field.name], [humanizeFieldName(field.name)], defs, keys);
 	}
 	return keys;
 }
@@ -238,9 +304,10 @@ export function hasViewParam(params: URLSearchParams): boolean {
  * not take or a value of the wrong shape is dropped, so an old link opens the
  * list rather than a refusal. A second condition with the same key and
  * operator is dropped too, except `in` and `nin`, which collect their values.
+ * A path whose related type is gone, or was not read, is dropped the same way.
  */
-export function readView(params: URLSearchParams, schema: Schema, limit: number): View {
-	const keys = new Map(filterKeys(schema).map((k) => [k.key, k]));
+export function readView(params: URLSearchParams, schema: Schema, limit: number, defs: Definitions = {}): View {
+	const keys = new Map(filterKeys(schema, defs).map((k) => [k.key, k]));
 	const filters: Condition[] = [];
 	const seen = new Map<string, Condition>();
 	for (const [name, raw] of params) {

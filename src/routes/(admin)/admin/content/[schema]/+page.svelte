@@ -187,7 +187,7 @@
 		lte: 'is on or before',
 	};
 
-	const keys = $derived(filterKeys(data.schemaDef));
+	const keys = $derived(filterKeys(data.schemaDef, data.relatedSchemas));
 	const keyOf = $derived(new Map(keys.map((k) => [k.key, k])));
 	const keyOptions = $derived(keys.map((k) => ({ value: k.key, label: k.label })));
 

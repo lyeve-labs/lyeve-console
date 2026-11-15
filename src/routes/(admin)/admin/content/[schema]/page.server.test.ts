@@ -63,6 +63,7 @@ async function runLoad(query: string, body: unknown) {
 	const result = (await load({
 		fetch,
 		cookies: mockCookies({ '__Host-sys_session': 'tok' }),
+		parent: async () => ({}),
 		params: { schema: 'posts' },
 		url: new URL(`http://localhost/admin/content/posts${query}`),
 	} as never)) as unknown as Loaded;
@@ -124,6 +125,7 @@ describe('content listing reads the collection total from the envelope', () => {
 		const result = (await load({
 			fetch,
 			cookies: mockCookies({ '__Host-sys_session': 'tok' }),
+			parent: async () => ({}),
 			params: { schema: 'posts' },
 			url: new URL('http://localhost/admin/content/posts'),
 		} as never)) as unknown as Loaded;
@@ -136,6 +138,7 @@ describe('content listing reads the collection total from the envelope', () => {
 		const pending = load({
 			fetch: vi.fn(async () => new Response(JSON.stringify({ data: [], total_count: 120 }), { status: 200 })),
 			cookies: mockCookies({ '__Host-sys_session': 'tok' }),
+			parent: async () => ({}),
 			params: { schema: 'posts' },
 			url: new URL('http://localhost/admin/content/posts?limit=50&offset=500'),
 		} as never);
@@ -258,6 +261,7 @@ describe('content listing, an integer past 2^53', () => {
 		const result = (await load({
 			fetch,
 			cookies: mockCookies({ '__Host-sys_session': 'tok' }),
+			parent: async () => ({}),
 			params: { schema: 'posts' },
 			url: new URL('http://localhost/admin/content/posts'),
 		} as never)) as unknown as Loaded;
@@ -300,6 +304,7 @@ describe('content listing names linked entries', () => {
 		const result = (await load({
 			fetch,
 			cookies: mockCookies({ '__Host-sys_session': 'tok' }),
+			parent: async () => ({}),
 			params: { schema: 'posts' },
 			url: new URL('http://localhost/admin/content/posts'),
 		} as never)) as unknown as Loaded;
@@ -339,6 +344,7 @@ describe('content listing names linked entries', () => {
 		const result = (await load({
 			fetch,
 			cookies: mockCookies({ '__Host-sys_session': 'tok' }),
+			parent: async () => ({}),
 			params: { schema: 'posts' },
 			url: new URL('http://localhost/admin/content/posts'),
 		} as never)) as unknown as Loaded;
@@ -376,6 +382,7 @@ describe('deleting an entry', () => {
 		const event = {
 			fetch,
 			cookies: mockCookies({ '__Host-sys_session': 'tok', '__Host-csrf': 'csrf' }),
+			parent: async () => ({}),
 			params: { schema: 'posts' },
 			request: { formData: async () => fd, clone: () => ({ formData: async () => fd }) },
 		} as never;
@@ -439,6 +446,7 @@ describe('content listing reads its view', () => {
 		cookies: Record<string, string> = {},
 		answer?: () => Response,
 		method = 'GET',
+		relatedSchemas: Record<string, unknown> = {},
 	) {
 		const fetch = vi.fn(
 			async (_input: string | URL | Request) =>
@@ -451,6 +459,7 @@ describe('content listing reads its view', () => {
 		const pending = load({
 			fetch,
 			cookies: mockCookies({ '__Host-sys_session': 'tok', ...cookies }),
+			parent: async () => ({ relatedSchemas }),
 			params: { schema: 'posts' },
 			url: new URL(`http://localhost/admin/content/posts${query}`),
 			request: new Request(`http://localhost/admin/content/posts${query}`, { method }),
@@ -538,6 +547,42 @@ describe('content listing reads its view', () => {
 		expect(fetch).not.toHaveBeenCalled();
 	});
 
+	const people = {
+		name: 'author',
+		fields: [
+			{ name: 'name', field_type: 'text' },
+			{ name: 'company', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'companies' },
+		],
+	};
+	const companies = { name: 'companies', fields: [{ name: 'name', field_type: 'text' }] };
+
+	it('forwards a condition on a field of a related entry', async () => {
+		const { fetch } = await viewLoad(
+			'?filters[author.name][contains]=Ann&filters[author.company.name][eq]=Acme',
+			{},
+			undefined,
+			'GET',
+			{ posts: typed, author: people, companies },
+		);
+		const sent = listing(fetch);
+		expect(sent.get('filters[author.name][contains]')).toBe('Ann');
+		expect(sent.get('filters[author.company.name][eq]')).toBe('Acme');
+	});
+
+	it('drops a remembered path into a content type that was deleted, and keeps the rest', async () => {
+		const { outcome } = await viewLoad(
+			'',
+			{ lyeve_entry_view: 'filters[author.company.name][eq]=Acme&filters[author.name][contains]=Ann' },
+			undefined,
+			'GET',
+			{ posts: typed, author: people },
+		);
+		expect(isRedirect(outcome)).toBe(true);
+		const target = new URL((outcome as { location: string }).location, 'http://localhost');
+		const filters = [...target.searchParams.keys()].filter((k) => k.startsWith('filters['));
+		expect(filters).toEqual(['filters[author.name][contains]']);
+	});
+
 	it('lets the URL win over the remembered view', async () => {
 		const { fetch, outcome } = await viewLoad('?sort=headline', {
 			lyeve_entry_view: 'filters[headline][contains]=launch',
@@ -610,6 +655,7 @@ describe('content listing resolves a key the way the admin list does', () => {
 		const result = (await load({
 			fetch,
 			cookies: mockCookies({ '__Host-sys_session': 'tok' }),
+			parent: async () => ({}),
 			params: { schema: 'orders' },
 			url: new URL(
 				'http://localhost/admin/content/orders?filters[status][eq]=open&filters[published_at][gte]=2026-01-01T00:00:00Z' +

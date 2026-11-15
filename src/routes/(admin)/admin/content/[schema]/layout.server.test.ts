@@ -68,7 +68,12 @@ type Choices = Record<string, { items: { id: string }[]; total: number; failed: 
 describe('the entry list layout reads the relation filter choices', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		rest.getSchema.mockImplementation(async (name: string) => (name === 'posts' ? posts : { name, fields: [] }));
+		rest.getSchema.mockImplementation(async (name: string) => {
+			if (name === 'posts') return posts;
+			// Tags is a has_many, so its type carries the key that points back.
+			if (name === 'tag') return { name, fields: [{ name: 'post', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'posts' }] };
+			return { name, fields: [] };
+		});
 	});
 
 	it('reads each related content type once, however many fields point at it', async () => {
@@ -80,15 +85,16 @@ describe('the entry list layout reads the relation filter choices', () => {
 		expect(reads.sort()).toEqual(['people', 'posts', 'tag']);
 		expect(choices?.people).toMatchObject({ total: 900, failed: false, items: [{ id: 'people-1' }] });
 		expect(choices?.posts).toMatchObject({ total: 1, failed: false });
-		// The list has no assistant, so no related definition is read for its labels.
-		expect(rest.getSchema.mock.calls.map((c) => c[0])).toEqual(['posts']);
+		// Each related definition is read once, for the filter paths, and the list
+		// has no assistant, so no entry carries a label for one.
+		expect(rest.getSchema.mock.calls.map((c) => c[0]).sort()).toEqual(['people', 'posts', 'tag']);
 		expect(choices?.people).not.toHaveProperty('assistantLabels');
 	});
 
-	it('returns the choices unawaited, so the list streams before they arrive', () => {
+	it('returns the choices unawaited, so the list streams before they arrive', async () => {
 		let release: (r: Response) => void = () => {};
 		const fetch = vi.fn(() => new Promise<Response>((resolve) => (release = resolve)));
-		const data = load(event(LIST, fetch as never)) as unknown as { relationChoices: Promise<Choices> };
+		const data = (await load(event(LIST, fetch as never))) as unknown as { relationChoices: Promise<Choices> };
 
 		expect(data.relationChoices).toBeInstanceOf(Promise);
 		release(new Response('{}'));
@@ -123,5 +129,66 @@ describe('the entry list layout reads the relation filter choices', () => {
 		rest.getSchema.mockRejectedValueOnce(new Error('down'));
 		const unread = (await load(event(LIST, fetch as never))) as { relationChoices: Promise<Choices> };
 		expect(await unread.relationChoices).toBeNull();
+	});
+});
+
+describe('the entry list layout reads the definitions a filter path reaches', () => {
+	const defs: Record<string, unknown> = {
+		posts: {
+			name: 'posts',
+			fields: [
+				{ name: 'author', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'people' },
+				{ name: 'tags', field_type: 'relation', relation_type: 'many_to_many', relation_to: 'tag' },
+			],
+		},
+		people: {
+			name: 'people',
+			fields: [
+				{ name: 'name', field_type: 'text' },
+				{ name: 'company', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'companies' },
+				{ name: 'mentor', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'people' },
+			],
+		},
+		tag: { name: 'tag', fields: [{ name: 'slug', field_type: 'text' }] },
+		companies: {
+			name: 'companies',
+			fields: [
+				{ name: 'name', field_type: 'text' },
+				{ name: 'country', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'countries' },
+			],
+		},
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		rest.getSchema.mockImplementation(async (name: string) => {
+			if (name in defs) return defs[name];
+			throw new Error('down');
+		});
+	});
+
+	it('reads each type two relations deep once, and no further', async () => {
+		const fetch = vi.fn(async (input: string | URL | Request) => listed(input));
+		const data = (await load(event(LIST, fetch as never))) as {
+			relatedSchemas: Record<string, unknown>;
+			relationChoices: Promise<Choices>;
+		};
+
+		expect(rest.getSchema.mock.calls.map((c) => c[0]).sort()).toEqual(['companies', 'people', 'posts', 'tag']);
+		expect(Object.keys(data.relatedSchemas).sort()).toEqual(['companies', 'people', 'posts', 'tag']);
+		// Author, Company is a path that ends on a relation, so its entries are offered.
+		const choices = await data.relationChoices;
+		expect(Object.keys(choices ?? {}).sort()).toEqual(['companies', 'people', 'tag']);
+	});
+
+	it('leaves out a type whose definition read fails, and still returns the rest', async () => {
+		const fetch = vi.fn(async (input: string | URL | Request) => listed(input));
+		rest.getSchema.mockImplementation(async (name: string) => {
+			if (name === 'people') throw new Error('refused');
+			return defs[name];
+		});
+		const data = (await load(event(LIST, fetch as never))) as { relatedSchemas: Record<string, unknown> };
+
+		expect(Object.keys(data.relatedSchemas).sort()).toEqual(['posts', 'tag']);
 	});
 });
