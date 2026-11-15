@@ -1,6 +1,7 @@
 import type { Schema, SchemaField } from '@lyeve-labs/client';
 import { humanizeFieldName } from './entry-identity';
 import { inverseKey, isInverse } from '../relations';
+import { hides } from './content-access';
 
 /**
  * The view of one content type's entry list: its filter conditions, how they
@@ -226,7 +227,9 @@ export function filterKeys(schema: Schema, defs: Definitions = {}): FilterKey[] 
 		const target = stepTarget(schema.name, field, defs);
 		if (target) pathKeys(target, [field.name], [humanizeFieldName(field.name)], defs, keys);
 	}
-	return keys;
+	// The entry's own title is a key no field declares, and the admin list
+	// refuses a filter on it while the reader's rules hide it.
+	return keys.filter((k) => !hides(schema, k.key));
 }
 
 /**
@@ -252,6 +255,7 @@ export function sortKeys(schema: Schema): Map<string, 'asc' | 'desc'> {
 	}
 	keys.set('created_at', 'desc');
 	keys.set('updated_at', 'desc');
+	for (const key of [...keys.keys()]) if (hides(schema, key)) keys.delete(key);
 	return keys;
 }
 

@@ -11,6 +11,13 @@ import { pageWindow, pastEndOffset, totalOf, withOffset, type ListEnvelope } fro
 import { fieldKey } from '$lib/utils/content-form';
 import { asked } from '$lib/server/asked';
 import {
+	UNKNOWN_ACCESS,
+	accessOf,
+	joinAccess,
+	withoutHidden,
+	type TypeAccess,
+} from '$lib/utils/content-access';
+import {
 	DEFAULT_LIMIT,
 	VIEW_COOKIE,
 	apiQuery,
@@ -51,8 +58,18 @@ const SCHEMAS_FAILED = couldNotLoad('the other content types');
  */
 const FILTERS_REFUSED = 'Could not load entries with these filters. Change or clear the filters.';
 
+/**
+ * The admin list's refusal of a filter, a sort or a search on a field the
+ * reader's rules hide. Its status is the type refusal's, so only the
+ * sentence tells the two apart.
+ */
+const HIDDEN_FIELD_QUERIED = 'a filter or sort names a field this caller cannot read';
+
 function entriesGate(err: unknown): Gate {
 	if (err instanceof ApiError && err.status === 400) return { state: 'error', message: FILTERS_REFUSED };
+	if (err instanceof ApiError && err.status === 403 && (err.body as { error?: unknown } | undefined)?.error === HIDDEN_FIELD_QUERIED) {
+		return { state: 'error', message: FILTERS_REFUSED };
+	}
 	return gateOf(err, ENTRIES_FAILED);
 }
 
@@ -77,11 +94,16 @@ export const load: PageServerLoad = async (event) => {
 
 	// The layout reads the related content types' definitions once per visit,
 	// and a filter path resolves against them.
-	const [schemas, schemaDef, { relatedSchemas: related = {} }] = await Promise.all([
+	const [schemas, fullDef, { relatedSchemas: related = {}, access: probed = {} }] = await Promise.all([
 		section<Schema[]>(getSchemas(client), SCHEMAS_FAILED),
 		getSchema(params.schema, client).catch((err: unknown) => readError(err, `Content type "${params.schema}" not found`)),
 		event.parent(),
 	]);
+	// The layout read what the reader may do with the type from its first
+	// entry. A field the rules hide is no column, filter or sort, so a saved
+	// view that names one opens without it rather than as a refusal.
+	let access: TypeAccess = probed[params.schema] ?? UNKNOWN_ACCESS;
+	let schemaDef = withoutHidden(fullDef, access.hidden);
 
 	if (!hasViewParam(url.searchParams)) {
 		const saved = cookies.get(VIEW_COOKIE);
@@ -107,16 +129,24 @@ export const load: PageServerLoad = async (event) => {
 		}
 	}
 
-	const view = readView(url.searchParams, schemaDef, limit, related);
-	const fields = schemaDef.fields ?? [];
+	let view = readView(url.searchParams, schemaDef, limit, related);
 	const listed = await section(
 		client.get<ListEnvelope<EntryRow>>(`/api/admin/content?${apiQuery(params.schema, view, q, offset)}`),
 		entriesGate,
 	);
+	// The rows report the reader's access as it is now, which a rule written
+	// since the layout's read may have changed.
+	if (listed.ok && listed.value.data?.length) {
+		access = joinAccess(access, accessOf(listed.value.data[0]));
+		schemaDef = withoutHidden(fullDef, access.hidden);
+		view = readView(url.searchParams, schemaDef, limit, related);
+	}
+	const fields = schemaDef.fields ?? [];
 
 	const base = {
 		schemas,
 		schemaDef,
+		access,
 		activeSchema: params.schema,
 		status: view.status,
 		limit,

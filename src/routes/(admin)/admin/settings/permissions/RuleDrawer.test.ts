@@ -45,6 +45,20 @@ function setup(props: Record<string, unknown> = {}) {
 const ruleForm = () => document.body.querySelector('form#rule-form') as HTMLFormElement | null;
 
 describe('RuleDrawer', () => {
+	it('warns that a first rule for admin replaces its default on the resource', () => {
+		const { component } = setup();
+		flushSync(() => component.edit('admin', 'page'));
+		expect(document.body.textContent).toContain('This rule replaces the default for admin on page');
+		expect(document.body.textContent?.replace(/\s+/g, ' ')).toContain(
+			'admin can use page by default. Once you save this rule, only the actions you choose apply there.',
+		);
+		cleanup();
+
+		const editor = setup();
+		flushSync(() => editor.component.edit('editor', 'article'));
+		expect(document.body.textContent).not.toContain('This rule replaces the default');
+	});
+
 	it('stays closed until the page asks it to edit', () => {
 		setup();
 		expect(ruleForm()).toBeNull();

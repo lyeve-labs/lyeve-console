@@ -81,8 +81,12 @@ describe('the entry list layout reads the relation filter choices', () => {
 		const data = (await load(event(LIST, fetch as never))) as { relationChoices: Promise<Choices> };
 		const choices = await data.relationChoices;
 
-		const reads = fetch.mock.calls.map((c) => new URL(String(c[0]), 'http://localhost').searchParams.get('schema'));
+		const asked = fetch.mock.calls.map((c) => new URL(String(c[0]), 'http://localhost').searchParams);
+		const reads = asked.filter((q) => q.get('limit') !== '1').map((q) => q.get('schema'));
 		expect(reads.sort()).toEqual(['people', 'posts', 'tag']);
+		// Each type's access is read once too, from its first entry.
+		const probes = asked.filter((q) => q.get('limit') === '1').map((q) => q.get('schema'));
+		expect(probes.sort()).toEqual(['people', 'posts', 'tag']);
 		expect(choices?.people).toMatchObject({ total: 900, failed: false, items: [{ id: 'people-1' }] });
 		expect(choices?.posts).toMatchObject({ total: 1, failed: false });
 		// Each related definition is read once, for the filter paths, and the list
@@ -93,7 +97,12 @@ describe('the entry list layout reads the relation filter choices', () => {
 
 	it('returns the choices unawaited, so the list streams before they arrive', async () => {
 		let release: (r: Response) => void = () => {};
-		const fetch = vi.fn(() => new Promise<Response>((resolve) => (release = resolve)));
+		// The access reads answer, because the definitions wait for them.
+		const fetch = vi.fn((input: string | URL | Request) =>
+			String(input).includes('limit=1&')
+				? Promise.resolve(listed(input))
+				: new Promise<Response>((resolve) => (release = resolve)),
+		);
 		const data = (await load(event(LIST, fetch as never))) as unknown as { relationChoices: Promise<Choices> };
 
 		expect(data.relationChoices).toBeInstanceOf(Promise);
@@ -190,5 +199,57 @@ describe('the entry list layout reads the definitions a filter path reaches', ()
 		const data = (await load(event(LIST, fetch as never))) as { relatedSchemas: Record<string, unknown> };
 
 		expect(Object.keys(data.relatedSchemas).sort()).toEqual(['posts', 'tag']);
+	});
+});
+
+describe('the entry list layout reads what the rules let the reader do', () => {
+	const defs: Record<string, unknown> = {
+		posts: {
+			name: 'posts',
+			fields: [
+				{ name: 'headline', field_type: 'text' },
+				{ name: 'secret', field_type: 'text' },
+				{ name: 'author', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'people' },
+				{ name: 'vault', field_type: 'relation', relation_type: 'belongs_to', relation_to: 'vaults' },
+			],
+		},
+		people: { name: 'people', fields: [{ name: 'name', field_type: 'text' }, { name: 'salary', field_type: 'number' }] },
+		vaults: { name: 'vaults', fields: [{ name: 'code', field_type: 'text' }] },
+	};
+	const reported: Record<string, unknown> = {
+		posts: { hidden_fields: ['secret'], allowed_actions: ['read', 'update'] },
+		people: { hidden_fields: ['salary'], allowed_actions: ['read'] },
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		rest.getSchema.mockImplementation(async (name: string) => defs[name]);
+	});
+
+	function answer(input: string | URL | Request): Response {
+		const schema = new URL(String(input), 'http://localhost').searchParams.get('schema') ?? '';
+		if (schema === 'vaults') {
+			return new Response(JSON.stringify({ error: 'permission denied', code: 'forbidden' }), {
+				status: 403,
+				headers: { 'content-type': 'application/json' },
+			});
+		}
+		const body = { data: [{ id: `${schema}-1`, title: 'One', ...(reported[schema] as object) }], total_count: 1 };
+		return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+	}
+
+	it('takes hidden fields out of each definition and leaves out a type the reader may not read', async () => {
+		const fetch = vi.fn(async (input: string | URL | Request) => answer(input));
+		const data = (await load(event(LIST, fetch as never))) as {
+			relatedSchemas: Record<string, { fields: { name: string }[] }>;
+			access: Record<string, unknown>;
+			relationChoices: Promise<Choices>;
+		};
+
+		expect(data.relatedSchemas.posts.fields.map((f) => f.name)).toEqual(['headline', 'author', 'vault']);
+		expect(data.relatedSchemas.people.fields.map((f) => f.name)).toEqual(['name']);
+		expect(data.relatedSchemas).not.toHaveProperty('vaults');
+		expect(data.access.posts).toEqual({ hidden: ['secret'], actions: ['read', 'update'] });
+		await data.relationChoices;
 	});
 });

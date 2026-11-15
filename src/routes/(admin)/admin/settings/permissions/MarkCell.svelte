@@ -9,7 +9,8 @@
 	 * Each state has a shape of its own, so the matrix reads the same without
 	 * color. A stored grant is a filled dot and an inherited one a ring,
 	 * because the ring comes from the parent rule and holds only until this
-	 * resource has a rule of its own. A denial is a dash and an exempt role a
+	 * resource has a rule of its own. The default grant admin holds until a
+	 * rule names it is a dashed ring. A denial is a dash and an exempt role a
 	 * shield. Every mark is drawn in currentColor, never as a background, so
 	 * a forced-colors theme repaints it in its own ink instead of erasing it.
 	 */
@@ -31,6 +32,8 @@
 		<svg width="14" height="14" viewBox="0 0 14 14" class="inline-block align-middle text-brand" aria-hidden="true" data-mark={mark}>
 			{#if mark === 'stored'}
 				<circle cx="7" cy="7" r="7" fill="currentColor" />
+			{:else if mark === 'default'}
+				<circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" />
 			{:else}
 				<circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="2" />
 			{/if}

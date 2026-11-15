@@ -1,7 +1,7 @@
 <script lang="ts">
 	import FormErrors from '$lib/components/FormErrors.svelte';
 	import OlderHidden from '$lib/components/OlderHidden.svelte';
-	import { Badge, Breadcrumb, Button, Card, NumberInput, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Breadcrumb, Button, Card, NumberInput, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { SchemaField } from '@lyeve-labs/client';
 	import { enhance } from '$app/forms';
@@ -13,6 +13,9 @@
 	import { entryTitle, shortId } from '$lib/utils/entry-identity';
 	import { formatDateTime } from '$lib/format';
 	import ContentForm from '$lib/components/ContentForm.svelte';
+	import FieldCell from '$lib/components/FieldCell.svelte';
+	import { humanizeFieldName } from '$lib/utils/entry-identity';
+	import { may } from '$lib/utils/content-access';
 	import TranslationsPanel from '$lib/components/TranslationsPanel.svelte';
 	import ReviewBar from '$lib/components/ReviewBar.svelte';
 	import CommentsPanel from '$lib/components/content/CommentsPanel.svelte';
@@ -81,6 +84,9 @@
 
 	let schemaName = $derived(data.schemaDef?.name ?? '');
 	let schemaLabel = $derived(data.schemaDef?.display_name || schemaName);
+	// Without update the reader's rules let them read the entry and change
+	// nothing, so the page shows its values and offers no write.
+	let canUpdate = $derived(may(data.access, 'update'));
 	// The list forwards its view and page on the row link, so the way back
 	// lands on the list the reader left rather than on its first page.
 	let back = $derived({ href: `${listPath(schemaName)}${listQueryFrom(page.url)}`, label: schemaLabel });
@@ -192,13 +198,13 @@
 			{#if data.schemaDef?.with_draft_publish}
 				<div class="flex items-center gap-2">
 					<Badge tone={isPublished ? 'success' : 'warn'}>{itemStatus}</Badge>
-					{#if isPublished}
+					{#if canUpdate && isPublished}
 						<form method="POST" action="?/unpublish" use:enhance>
 							<Button variant="secondary" size="sm" type="submit">
 								<EyeOff size={ICON.sm} /> Unpublish
 							</Button>
 						</form>
-					{:else}
+					{:else if canUpdate}
 						<form method="POST" action="?/publish" use:enhance>
 							<Button variant="primary" size="sm" type="submit">
 								<Eye size={ICON.sm} /> Publish
@@ -264,6 +270,23 @@
 				</div>
 			{/if}
 
+			{#if !canUpdate}
+				<div class="flex flex-col gap-5" data-testid="entry-read-only">
+					<Alert tone="neutral">Your role can view entries of {schemaLabel} but cannot change them.</Alert>
+					<Card>
+						<dl class="flex flex-col gap-4">
+							{#each userFields as field (field.name)}
+								<div class="flex min-w-0 flex-col gap-1">
+									<dt class="text-sm font-medium text-fg">{humanizeFieldName(field.name)}</dt>
+									<dd class="min-w-0 text-sm break-words text-muted">
+										<FieldCell {field} value={data.item?.data?.[field.name]} />
+									</dd>
+								</div>
+							{/each}
+						</dl>
+					</Card>
+				</div>
+			{:else}
 			<form
 				method="POST"
 				action="?/save"
@@ -295,8 +318,9 @@
 					<Button type="submit" loading={save.pending}>Save</Button>
 				</div>
 			</form>
+			{/if}
 
-			{#if data.releases}
+			{#if data.releases && canUpdate}
 				<div class="mt-5">
 					<AddToRelease
 						releases={data.releases.open}
@@ -354,7 +378,7 @@
 									<span class="block text-xs text-fg">{formatDateTime(rev.created_at)}</span>
 									<span class="mt-0.5 block truncate text-xs text-faint">{revDiff(rev)}</span>
 								</button>
-								{#if selectedRev === rev.id}
+								{#if selectedRev === rev.id && canUpdate}
 									<form method="POST" action="?/restore" use:enhance class="mt-2">
 										<input type="hidden" name="rev_num" value={rev.revision_num} />
 										<Button variant="secondary" size="sm" type="submit">
@@ -370,12 +394,14 @@
 							<p class="text-xs font-medium text-fg">Revision {openedRevision.revision_num}</p>
 							<p class="mt-0.5 text-xs text-faint">{formatDateTime(openedRevision.created_at)}</p>
 							<p class="mt-0.5 truncate text-xs text-faint">{revDiff(openedRevision)}</p>
-							<form method="POST" action="?/restore" use:enhance class="mt-2">
-								<input type="hidden" name="rev_num" value={openedRevision.revision_num} />
-								<Button variant="secondary" size="sm" type="submit">
-									<RotateCcw size={ICON.sm} /> Restore
-								</Button>
-							</form>
+							{#if canUpdate}
+								<form method="POST" action="?/restore" use:enhance class="mt-2">
+									<input type="hidden" name="rev_num" value={openedRevision.revision_num} />
+									<Button variant="secondary" size="sm" type="submit">
+										<RotateCcw size={ICON.sm} /> Restore
+									</Button>
+								</form>
+							{/if}
 						</div>
 					{/if}
 					{#if olderHidden || olderUnlisted > 0 || revisionError}

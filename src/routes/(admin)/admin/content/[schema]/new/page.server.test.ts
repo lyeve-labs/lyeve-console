@@ -10,7 +10,12 @@ const client = vi.hoisted(() => ({
 // The strip is the real one, so a test sees what reaches the engine.
 vi.mock('$lib/server/authz', async (importActual) => ({
 	requireUser: vi.fn(async () => ({ id: 'u1' })),
-	authedClient: vi.fn(() => ({ post: client.post, get: reads.get })),
+	// The read of the type's first entry, which says what the rules allow,
+	// goes to `access`, so the other reads keep their order in `reads`.
+	authedClient: vi.fn(() => ({
+		post: client.post,
+		get: (path: string) => (path.includes('limit=1&') ? access.get(path) : reads.get(path)),
+	})),
 	stripProtectedFields: (await importActual<typeof import('$lib/server/authz')>()).stripProtectedFields,
 }));
 
@@ -26,6 +31,7 @@ const { FakeApiError } = vi.hoisted(() => ({
 	},
 }));
 const reads = vi.hoisted(() => ({ get: vi.fn(async (_path: string): Promise<unknown> => ({})) }));
+const access = vi.hoisted(() => ({ get: vi.fn(async (_path: string): Promise<unknown> => ({ data: [] })) }));
 vi.mock('@lyeve-labs/client', () => ({
 	ApiError: FakeApiError,
 }));
@@ -203,7 +209,72 @@ describe('opening the new entry form', () => {
 
 	beforeEach(() => {
 		reads.get.mockReset();
+		access.get.mockReset();
+		access.get.mockResolvedValue({ data: [] });
 		rest.getSchema.mockClear();
+	});
+
+	const withSecret = {
+		name: 'surveys',
+		display_name: 'Surveys',
+		fields: [
+			{ name: 'title', field_type: 'text' },
+			{ name: 'secret', field_type: 'text', required: true },
+		],
+	};
+
+	it('leaves out of the form every field the rules hide', async () => {
+		rest.getSchema.mockResolvedValueOnce(withSecret as never);
+		access.get.mockResolvedValueOnce({
+			data: [{ id: 'e1', hidden_fields: ['secret'], allowed_actions: ['create', 'read'] }],
+		});
+
+		const data = (await open([])) as unknown as { schemaDef: { fields: { name: string }[] } };
+
+		expect(data.schemaDef.fields.map((f) => f.name)).toEqual(['title']);
+	});
+
+	it('refuses the form when the rules do not allow a create on the type', async () => {
+		rest.getSchema.mockResolvedValueOnce(withSecret as never);
+		access.get.mockResolvedValueOnce({ data: [{ id: 'e1', allowed_actions: ['read', 'update'] }] });
+
+		const thrown = await open([]).catch((err: unknown) => err);
+
+		expect(isHttpError(thrown) && thrown.status).toBe(403);
+		expect(isHttpError(thrown) && thrown.body.message).toBe(
+			'Your role cannot create entries of Surveys. Ask a super admin if you need it.',
+		);
+	});
+
+	it('refuses the form when the rules refuse the type', async () => {
+		rest.getSchema.mockResolvedValueOnce(withSecret as never);
+		access.get.mockRejectedValueOnce(
+			Object.assign(new FakeApiError('permission denied', 403), { body: { error: 'permission denied', code: 'forbidden' } }),
+		);
+
+		const thrown = await open([]).catch((err: unknown) => err);
+
+		expect(isHttpError(thrown) && thrown.status).toBe(403);
+		expect(isHttpError(thrown) && thrown.body.message).toBe(
+			'Your role cannot open entries of Surveys. Ask a super admin if you need it.',
+		);
+	});
+
+	it('draws an outage of the rules as an outage that can be retried', async () => {
+		rest.getSchema.mockResolvedValueOnce(withSecret as never);
+		access.get.mockRejectedValueOnce(new FakeApiError('database error', 503));
+
+		const thrown = await open([]).catch((err: unknown) => err);
+
+		expect(isHttpError(thrown) && thrown.status).toBe(503);
+	});
+
+	it('opens the whole form for a type with no entry to report its access', async () => {
+		rest.getSchema.mockResolvedValueOnce(withSecret as never);
+
+		const data = (await open([])) as unknown as { schemaDef: { fields: { name: string }[] } };
+
+		expect(data.schemaDef.fields.map((f) => f.name)).toEqual(['title', 'secret']);
 	});
 
 	it('opens a localized schema without the localization plugin, and offers no locale', async () => {

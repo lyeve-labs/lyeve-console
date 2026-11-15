@@ -78,7 +78,15 @@ describe('SummaryCell', () => {
 		expect(bar?.querySelector('rect:not([data-fill])')?.getAttribute('stroke')).toBe('currentColor');
 		expect(bar?.querySelector('rect[data-fill]')?.getAttribute('width')).toBe('16');
 		cleanup();
-		expect(summary('admin', 'read').querySelector('rect[data-fill]')?.getAttribute('width')).toBe('0');
+		const denied = matrix([rule('reviewer', 'article', [])]);
+		const none = render(SummaryCell, { props: { rules: denied, role: 'reviewer', action: 'read' } as never }).container;
+		expect(none.querySelector('rect[data-fill]')?.getAttribute('width')).toBe('0');
+	});
+
+	it('fills the bar of admin, which no rule names, for every content type and flow', () => {
+		const c = summary('admin', 'read');
+		expect(c.querySelector('rect[data-fill]')?.getAttribute('width')).toBe('32');
+		expect(said(c)).toBe('admin grants read on every content type. admin grants read on every flow.');
 	});
 
 	it('says what the bar shows to a screen reader', () => {
@@ -136,5 +144,41 @@ describe('RuleControls', () => {
 	it('disables the grant control under the exempt role', () => {
 		controls('super_admin', 'article', rules.rule('super_admin', 'article'));
 		expect((screen.getByRole('button', { name: /Edit rule for super_admin/ }) as HTMLButtonElement).disabled).toBe(true);
+	});
+});
+
+describe('the default admin holds until a rule names it', () => {
+	const mark = (rules: RuleMatrix, role: string, schema: string, action: string) =>
+		render(MarkCell, { props: { rules, role, schema, action } as never }).container;
+
+	it('draws the default as a dashed ring and says which rule would end it', () => {
+		const c = mark(matrix([]), 'admin', 'article', 'update');
+		const ring = c.querySelector('svg[data-mark="default"] circle');
+		expect(ring?.getAttribute('stroke-dasharray')).toBeTruthy();
+		expect(said(c)).toBe(
+			'admin is allowed update on article by default, until a rule for admin on article or on every content type is saved.',
+		);
+	});
+
+	it('lets a rule on the content type decide, and keeps the default on the others', () => {
+		const rules = matrix([rule('admin', 'article', ['read'])]);
+		expect(rules.markFor('admin', 'article', 'read')).toBe('stored');
+		expect(rules.markFor('admin', 'article', 'update')).toBe('none');
+		expect(rules.markFor('admin', 'page', 'update')).toBe('default');
+		expect(rules.markFor('admin', '*', 'update')).toBe('default');
+	});
+
+	it('lets a rule on every content type decide every content type without its own', () => {
+		const rules = matrix([rule('admin', '*', ['read'])]);
+		expect(rules.markFor('admin', 'page', 'read')).toBe('inherited');
+		expect(rules.markFor('admin', 'page', 'update')).toBe('none');
+		expect(rules.markFor('admin', 'flows', 'activate')).toBe('default');
+		expect(rules.replacesAGrant('admin', 'page')).toBe(true);
+	});
+
+	it('counts an empty admin rule as taking the default away', () => {
+		expect(matrix([]).replacesAGrant('admin', 'article')).toBe(true);
+		expect(matrix([rule('admin', 'article', [])]).replacesAGrant('admin', 'article')).toBe(true);
+		expect(matrix([]).replacesAGrant('editor', 'article')).toBe(false);
 	});
 });

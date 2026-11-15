@@ -211,6 +211,38 @@ describe('content editor load, the entry read', () => {
 		const thrown = await entryAnswering(403);
 		expect(isHttpError(thrown) && thrown.status).toBe(403);
 	});
+
+	it('names the content type the rules refuse', async () => {
+		vi.mocked(getSchema).mockResolvedValueOnce({ name: 'article', display_name: 'Articles', fields: [] } as never);
+		const thrown = await entryAnswering(403);
+		expect(isHttpError(thrown) && thrown.body.message).toBe(
+			'Your role cannot open entries of Articles. Ask a super admin if you need it.',
+		);
+	});
+
+	it('leaves the fields the rules hide out of the form, and keeps the actions they allow', async () => {
+		vi.mocked(getSchema).mockResolvedValueOnce({
+			name: 'article',
+			fields: [
+				{ name: 'headline', field_type: 'text' },
+				{ name: 'secret', field_type: 'text', required: true },
+			],
+		} as never);
+		const masked = { ...entry, body: { headline: 'Hi' }, hidden_fields: ['secret'], allowed_actions: ['read'] };
+		const fetchFn = vi.fn(async (path: string) => {
+			if (path.includes('/revisions')) return json({ data: [] });
+			if (path.includes('/api/admin/content?')) return json({ data: [] });
+			return json(masked);
+		}) as unknown as typeof globalThis.fetch;
+		const out = (await load({
+			fetch: fetchFn,
+			cookies: mockCookies(),
+			params: { schema: 'article', id: 'e1' },
+			parent: async () => ({ plugins: none }),
+		} as never)) as { schemaDef: { fields: { name: string }[] }; access: unknown };
+		expect(out.schemaDef.fields.map((f) => f.name)).toEqual(['headline']);
+		expect(out.access).toEqual({ hidden: ['secret'], actions: ['read'] });
+	});
 });
 
 describe('content editor load, relation pickers', () => {

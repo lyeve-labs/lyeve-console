@@ -35,6 +35,7 @@
 	import {
 		ACTIONS,
 		ACTION_LABEL,
+		DEFAULT_ROLE,
 		EXEMPT_ROLE,
 		RuleMatrix,
 		WILDCARD,
@@ -153,10 +154,12 @@
 		const inherited = rules.inheritedActions(target.role, target.schema_name);
 		const where = schemaLabel(target.schema_name);
 		let message = '';
-		if (target.schema_name === WILDCARD) {
-			message = 'Every content type falls back to its own rule, and any content type without one is denied.';
-		} else if (target.schema_name === ALL_FLOWS) {
-			message = 'Every flow falls back to its own rule, and any flow without one is denied.';
+		const kind = isFlowResource(target.schema_name) ? 'flow' : 'content type';
+		if (target.schema_name === WILDCARD || target.schema_name === ALL_FLOWS) {
+			const left = target.role === DEFAULT_ROLE ? `${target.role} can use any ${kind} without one` : `any ${kind} without one is denied`;
+			message = `Every ${kind} falls back to its own rule, and ${left}.`;
+		} else if (rules.defaultUnderneath(target.role, target.schema_name)) {
+			message = `${target.role} can then use this ${kind} by default, until a rule names ${target.role} on it again.`;
 		} else if (inherited.length > 0) {
 			message = `The ${parentLabel(target.schema_name)} for ${target.role} then applies to this ${isFlowResource(target.schema_name) ? 'flow' : 'content type'} and grants ${inherited.join(', ')}.`;
 		}
@@ -296,6 +299,8 @@
 										<span class="font-mono text-xs font-medium text-fg">{role}</span>
 										{#if role === EXEMPT_ROLE}
 											<Badge tone="violet">Exempt</Badge>
+										{:else if role === DEFAULT_ROLE && rules.ruleCount(role) === 0}
+											<Badge tone="brand">Allowed by default</Badge>
 										{:else if rules.ruleCount(role) === 0}
 											<Badge tone="warn">No rules</Badge>
 										{:else}
@@ -351,7 +356,9 @@
 													<Badge size="sm">flow</Badge>
 												{/if}
 											</span>
-											{#if !row.perm}
+											{#if !row.perm && rules.byDefault(role, row.schema)}
+												<span class="block pl-6 text-xs text-faint">no rule, allowed by default</span>
+											{:else if !row.perm}
 												<span class="block pl-6 text-xs text-faint">no rule, denied</span>
 											{:else if row.perm.actions.length === 0}
 												<span class="block pl-6 text-xs text-faint">rule grants nothing</span>
@@ -370,8 +377,12 @@
 										<td colspan="8" class="text-sm text-muted">
 											{#if filterText}
 												No content types in this role match this search.
+											{:else if wildcard && role === DEFAULT_ROLE}
+												No content type rules of its own. Every content type uses the wildcard rule above, and {role} can use every flow by default.
 											{:else if wildcard}
 												No content type rules of its own. Every content type uses the wildcard rule above, and every flow is denied.
+											{:else if role === DEFAULT_ROLE}
+												{role} can use every content type and flow by default. Once you save a rule for {role} on a content type or on Every content type, that rule decides.
 											{:else}
 												{role} has no rules, so it is denied every action on every content type and flow.
 											{/if}

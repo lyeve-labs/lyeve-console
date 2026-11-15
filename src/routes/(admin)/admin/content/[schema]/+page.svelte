@@ -37,6 +37,7 @@
 	import { formatCount, formatDate, plural } from '$lib/format';
 	import { ICON } from '$lib/icon';
 	import { SEARCH_DELAY, liveFilter } from '$lib/live-filter.svelte';
+	import { hides, may } from '$lib/utils/content-access';
 	import {
 		FAMILY_OPS,
 		columnChoices,
@@ -100,6 +101,14 @@
 	);
 
 	const path = $derived(listPath(data.activeSchema));
+	const typeLabel = $derived(data.schemaDef.display_name || data.activeSchema);
+
+	// The reader's access rules decide which writes the list offers. The admin
+	// list refuses a search while the rules hide the title or the slug, which
+	// are what it searches first.
+	const canCreate = $derived(may(data.access, 'create'));
+	const canDelete = $derived(may(data.access, 'delete'));
+	const searchable = $derived(!hides(data.schemaDef, 'title') && !hides(data.schemaDef, 'slug'));
 
 	/**
 	 * A link inside the page. It always names the page size, so the load
@@ -554,7 +563,7 @@
 	{/snippet}
 
 	{#snippet actions()}
-		{#if data.items.ok}
+		{#if data.items.ok && canCreate}
 			<Button size="sm" href="/admin/content/{data.activeSchema}/new">
 				<Plus size={ICON.sm} /> New entry
 			</Button>
@@ -617,13 +626,15 @@
 			>
 				<ListToolbar label="Filter entries">
 					{#snippet search()}
-						<label for="entry-search" class="sr-only">Search entries</label>
-						<SearchInput
-							id="entry-search"
-							name="q"
-							bind:value={live.value}
-							oninput={live.input}
-						/>
+						{#if searchable}
+							<label for="entry-search" class="sr-only">Search entries</label>
+							<SearchInput
+								id="entry-search"
+								name="q"
+								bind:value={live.value}
+								oninput={live.input}
+							/>
+						{/if}
 						{#each hiddenFields as [name, value], i (i)}
 							<input type="hidden" {name} {value} />
 						{/each}
@@ -843,7 +854,7 @@
 		{#if !data.items.ok}
 			<GateNotice
 				gate={data.items.gate}
-				title="Entries"
+				title="Entries of {typeLabel}"
 				absent="Content entries are not included in this build."
 			/>
 		{:else if entries.length === 0 && (view.filters.length > 0 || data.q)}
@@ -868,16 +879,24 @@
 				{/snippet}
 			</EmptyState>
 		{:else if entries.length === 0}
-			<EmptyState title="No entries yet" description="Add the first entry to this content type.">
-				{#snippet iconSnippet()}
-					<Inbox size={ICON.lg} />
-				{/snippet}
-				{#snippet action()}
-					<Button href="/admin/content/{data.activeSchema}/new" variant="secondary">
-						<Plus size={ICON.sm} /> New entry
-					</Button>
-				{/snippet}
-			</EmptyState>
+			{#if canCreate}
+				<EmptyState title="No entries yet" description="Add the first entry to this content type.">
+					{#snippet iconSnippet()}
+						<Inbox size={ICON.lg} />
+					{/snippet}
+					{#snippet action()}
+						<Button href="/admin/content/{data.activeSchema}/new" variant="secondary">
+							<Plus size={ICON.sm} /> New entry
+						</Button>
+					{/snippet}
+				</EmptyState>
+			{:else}
+				<EmptyState title="No entries yet">
+					{#snippet iconSnippet()}
+						<Inbox size={ICON.lg} />
+					{/snippet}
+				</EmptyState>
+			{/if}
 		{:else}
 			<Table label="Entries">
 				<thead>
@@ -909,7 +928,9 @@
 						{#if showUpdated}
 							{@render sortHeader('updated_at', 'Updated')}
 						{/if}
-						<th scope="col" class="text-right">Actions</th>
+						{#if canDelete}
+							<th scope="col" class="text-right">Actions</th>
+						{/if}
 					</tr>
 				</thead>
 				<tbody>
@@ -966,6 +987,7 @@
 							{#if showUpdated}
 								<td class="text-xs whitespace-nowrap text-faint">{formatDate(item.updated_at)}</td>
 							{/if}
+							{#if canDelete}
 							<td class="text-right">
 								<form
 									method="POST"
@@ -989,6 +1011,7 @@
 									</Button>
 								</form>
 							</td>
+							{/if}
 						</tr>
 					{/each}
 				</tbody>

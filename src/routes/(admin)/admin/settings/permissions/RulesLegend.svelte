@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Card } from '@lyeve-labs/ui-kit';
-	import { EXEMPT_ROLE } from './rules.svelte';
+	import { DEFAULT_ROLE, EXEMPT_ROLE } from './rules.svelte';
 
 	/**
 	 * The legend under the matrix: how the engine reads a rule, and what each
@@ -20,6 +20,11 @@
 			there, so clearing an action denies it on that content type while the wildcard rule still grants it
 			everywhere else. A content type rule with no action blocks the role from that content type. A filled dot is
 			a stored grant, a ring is an inherited grant and a dash is a denied action. A shield marks a role these rules never limit. A role's bar is empty when it grants the action on nothing, half full on some content types and full on all.
+		</li>
+		<li>
+			{DEFAULT_ROLE} can use every content type and flow by default. Once a rule for {DEFAULT_ROLE} applies to a
+			content type, its own or the wildcard rule, that rule decides there, and the same holds for a flow with
+			its own rule or the All flows rule. A dashed ring marks this default.
 		</li>
 		<li>
 			{EXEMPT_ROLE} is never limited by these rules. Rules stored for it have no effect, and they stay

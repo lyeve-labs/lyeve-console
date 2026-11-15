@@ -121,6 +121,15 @@
 				</Alert>
 			{/if}
 
+			{#if !stored && rules.byDefault(role, resource)}
+				<Alert tone="warn" title="This rule replaces the default for {role} on {schemaLabel(resource)}">
+					{#snippet children()}
+						{role} can use {schemaLabel(resource)} by default. Once you save this rule, only the actions you choose
+						apply there.
+					{/snippet}
+				</Alert>
+			{/if}
+
 			<!-- The kit's group, not a hand-rolled fieldset: a bare m-0 there outranks
 			     the form's space-y-4 and sets "Field mask" on the boxes. -->
 			<CheckboxGroup

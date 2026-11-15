@@ -1,6 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
-import type { Schema } from '@lyeve-labs/client';
+import { ApiError, type HttpClient, type Schema } from '@lyeve-labs/client';
 import { getSchema } from '@lyeve-labs/client-rest';
 import { authedClient, requireUser, stripProtectedFields } from '$lib/server/authz';
 import { actionFailure } from '$lib/server/action-error';
@@ -10,8 +10,9 @@ import { fieldRefusalOf } from '$lib/server/content-validation';
 import { entryIdentity } from '$lib/utils/new-entry';
 import { listMediaChoices, type MediaChoice } from '$lib/api/media';
 import { getLocales } from '$lib/api/localization';
-import { section, type Section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+import { forbiddenText, isOutage, section, type Section } from '$lib/api/gate';
+import { OUTAGE, couldNotLoad } from '$lib/outage';
+import { UNKNOWN_ACCESS, accessOf, may, withoutHidden, type TypeAccess } from '$lib/utils/content-access';
 import { rolesInWords } from '$lib/roles';
 import { PLUGIN } from '$lib/plugin-names';
 import { runs } from '$lib/plugins';
@@ -37,12 +38,19 @@ export const load: PageServerLoad = async (event) => {
 		error(403, `Only ${rolesInWords(CREATORS)} can open this page.`);
 	}
 
-	let schemaDef: Schema;
+	let fullDef: Schema;
+	let access: TypeAccess | null;
 	try {
-		schemaDef = await getSchema(params.schema, client);
+		[fullDef, access] = await Promise.all([getSchema(params.schema, client), readAccess(client, params.schema)]);
 	} catch (err) {
 		readError(err, `Content type "${params.schema}" not found`);
 	}
+	const label = fullDef.display_name || params.schema;
+	if (access === null) error(403, forbiddenText(`entries of ${label}`));
+	if (!may(access, 'create')) error(403, `Your role cannot create entries of ${label}. Ask a super admin if you need it.`);
+	// A field the reader's rules hide is no input, because the engine ignores
+	// what a create sends for it.
+	const schemaDef = withoutHidden(fullDef, access.hidden);
 
 	// The locale routes belong to the localization plugin. Without it there is
 	// no locale to pick, and a read of them would only be refused. A read that
@@ -76,6 +84,25 @@ export const load: PageServerLoad = async (event) => {
 
 	return { schemaDef, relations, locales, mediaChoices };
 };
+
+/**
+ * What the reader may do with the content type, from the first entry of its
+ * list. A type with no entry reports nothing, and the create then decides.
+ * Null is a refusal to read the type, which the page draws as a refusal. An
+ * outage ends the load, so the form never opens over a read that failed.
+ */
+async function readAccess(client: HttpClient, name: string): Promise<TypeAccess | null> {
+	try {
+		const body = await client.get<{ data?: unknown[] } | null>(
+			`/api/admin/content?schema=${encodeURIComponent(name)}&limit=1&offset=0`,
+		);
+		return accessOf(body?.data?.[0]);
+	} catch (err) {
+		if (err instanceof ApiError && err.status === 403) return null;
+		if (isOutage(err)) error(503, OUTAGE.title);
+		return UNKNOWN_ACCESS;
+	}
+}
 
 /**
  * Create the entry in the store the rest of the section reads.
