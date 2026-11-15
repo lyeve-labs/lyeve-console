@@ -255,3 +255,41 @@ describe('content entry editor, history off', () => {
 		expect(screen.getByText('Could not load the revision history. Reload the page to try again.')).toBeTruthy();
 	});
 });
+
+describe('content entry editor, many_to_many links', () => {
+	const fields = [
+		{ name: 'tags', field_type: 'relation', relation_type: 'many_to_many', relation_to: 'tag' },
+		{ name: 'topics', field_type: 'relation', relation_type: 'many_to_many', relation_to: 'topic' },
+	];
+	const relations = {
+		tag: { items: [{ id: 't1', title: 'Alpha' }, { id: 't2', title: 'Beta' }], total: 2, failed: false },
+		topic: { items: [{ id: 'p1', title: 'Gamma' }], total: 1, failed: false },
+	};
+
+	function linkedData(linksFailed: string[]) {
+		return data({
+			schemaDef: { name: 'article', display_name: 'Articles', fields },
+			item: { id: 'e1', created_at: '', updated_at: '', data: { tags: ['t1'] } },
+			relations,
+			linksFailed,
+		});
+	}
+
+	it('posts the links it loaded, and leaves out a field whose links could not be read', () => {
+		const { container } = render(EntryPage, { props: { data: linkedData(['topics']), form: null } });
+
+		const posted = container.querySelector('input[name="m2m_relations"]') as HTMLInputElement;
+		expect(JSON.parse(posted.value)).toEqual({ tags: ['t1'] });
+		expect(
+			screen.getByText('Could not load the linked entries. Reload the page to try again. Saving leaves the links as they are.'),
+		).toBeTruthy();
+	});
+
+	it('posts every many_to_many field when each one loaded', () => {
+		const { container } = render(EntryPage, { props: { data: linkedData([]), form: null } });
+
+		const posted = container.querySelector('input[name="m2m_relations"]') as HTMLInputElement;
+		expect(JSON.parse(posted.value)).toEqual({ tags: ['t1'], topics: [] });
+		expect(screen.queryByText(/Could not load the linked entries/)).toBeNull();
+	});
+});

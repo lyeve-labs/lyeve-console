@@ -15,6 +15,7 @@
 		validationErrors = {},
 		errorKeys = {},
 		relations = {},
+		linksFailed = [],
 		mediaChoices = [],
 		error,
 		label = 'Entry',
@@ -27,6 +28,8 @@
 		errorKeys?: Record<string, string>;
 		/** What each related collection's read gave, by collection name. */
 		relations?: Record<string, RelationChoices>;
+		/** The many_to_many fields whose links could not be read, by name. */
+		linksFailed?: readonly string[];
 		/** Published library files a media field may point at. Null when the library could not be read. */
 		mediaChoices?: MediaChoice[] | null;
 		error?: string | null;
@@ -143,6 +146,7 @@
 						relationItems={relationOf(field)?.items ?? []}
 						relationTotal={relationOf(field)?.total}
 						relationFailed={relationOf(field)?.failed ?? false}
+						linksFailed={linksFailed.includes(field.name)}
 						relationAssistantLabels={relationOf(field)?.assistantLabels}
 						{mediaChoices}
 						error={validationErrors[field.name]}
@@ -164,6 +168,7 @@
 					relationItems={relationOf(field)?.items ?? []}
 					relationTotal={relationOf(field)?.total}
 					relationFailed={relationOf(field)?.failed ?? false}
+					linksFailed={linksFailed.includes(field.name)}
 					relationAssistantLabels={relationOf(field)?.assistantLabels}
 					{mediaChoices}
 					error={validationErrors[field.name]}

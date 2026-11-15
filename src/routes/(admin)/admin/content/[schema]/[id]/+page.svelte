@@ -49,10 +49,14 @@
 	const save = tracked(() => {});
 
 	let serialized = $derived(serialize(userFields, formValues));
+	// A field whose links could not be read opened empty, and posting it would
+	// delete every link it holds, so the save leaves it out.
 	let m2mRelations = $derived(
 		JSON.stringify(
 			Object.fromEntries(
-				extractM2MRelations(userFields, formValues).map((r) => [r.fieldName, r.ids]),
+				extractM2MRelations(userFields, formValues)
+					.filter((r) => !(data.linksFailed ?? []).includes(r.fieldName))
+					.map((r) => [r.fieldName, r.ids]),
 			),
 		),
 	);
@@ -278,6 +282,7 @@
 							{validationErrors}
 							{errorKeys}
 							relations={data.relations}
+							linksFailed={data.linksFailed}
 							mediaChoices={data.mediaChoices}
 							error={translationError || reviewError || commentError || releaseError || revisionError ? null : form?.error}
 							label="{schemaLabel} entry"
