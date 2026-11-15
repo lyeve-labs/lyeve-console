@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, cleanup } from '@testing-library/svelte';
+import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
@@ -67,5 +67,23 @@ describe('new entry refusals', () => {
 		});
 		expect(queryByRole('button', { name: 'Create' })).toBeNull();
 		expect(container.querySelector('a[href="/admin/content/posts/e1"]')?.textContent).toContain('Open the entry');
+	});
+});
+
+/*
+ * A role that may create but not read stays on the form after a create, so
+ * the form says the entry was made and clears for the next one.
+ */
+describe('new entry created without read', () => {
+	it('confirms the create and clears the form', async () => {
+		const { container, findByText, rerender } = render(NewEntryPage, { props: { data: data(null), form: null } });
+		const title = container.querySelector('input[name="title"], input#title, input[type="text"]') as HTMLInputElement;
+		await fireEvent.input(title, { target: { value: 'Draft one' } });
+		expect(title.value).toBe('Draft one');
+
+		await rerender({ data: data(null), form: { createdUnreadable: 'Entry created. Your role cannot open entries of Posts.' } });
+
+		expect(await findByText('Entry created. Your role cannot open entries of Posts.')).toBeTruthy();
+		expect((container.querySelector('input[name="title"], input#title, input[type="text"]') as HTMLInputElement).value).toBe('');
 	});
 });

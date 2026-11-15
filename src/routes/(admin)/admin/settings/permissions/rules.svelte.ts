@@ -43,11 +43,19 @@ export const WILDCARD = '*';
  */
 export const EXEMPT_ROLE = 'super_admin';
 
+/**
+ * The role the engine allows every action on a content type, on every
+ * content type, on a flow and on all flows while no rule names it there:
+ * neither the resource's own rule nor its parent's. From then on the rule
+ * decides, as it does for any other role.
+ */
+export const DEFAULT_ROLE = 'admin';
+
 /** What a role's column summary reports across the schemas beneath it. */
 export type TriState = 'none' | 'some' | 'all';
 
 /** Where a single grant came from, which decides whether it can be cleared here. */
-export type Mark = 'none' | 'stored' | 'inherited' | 'exempt';
+export type Mark = 'none' | 'stored' | 'inherited' | 'default' | 'exempt';
 
 /** A role's summary fills its bar, out of 32: empty for none, half for some, full for all. */
 export const SUMMARY_FILL: Record<TriState, number> = {
@@ -160,12 +168,26 @@ export class RuleMatrix {
 		return parent ? (this.rule(role, parent)?.actions ?? []) : [];
 	}
 
+	/** Whether the role would hold the default grant on a resource without a rule of its own there. */
+	defaultUnderneath(role: string, resource: string): boolean {
+		if (role !== DEFAULT_ROLE || resource === '') return false;
+		const parent = parentOf(resource);
+		return parent === null || !this.rule(role, parent);
+	}
+
+	/** Whether the role holds the default grant on a resource, because no rule names it there. */
+	byDefault(role: string, resource: string): boolean {
+		return this.defaultUnderneath(role, resource) && !this.rule(role, resource);
+	}
+
 	/**
 	 * The actions the engine allows a role on a resource. A resource's own rule
 	 * replaces its parent's, so the parent's actions count only where the
-	 * resource has no rule of its own.
+	 * resource has no rule of its own, and the default grant only where
+	 * neither names the role.
 	 */
 	effectiveActions(role: string, resource: string): string[] {
+		if (this.byDefault(role, resource)) return ACTIONS.filter((action) => applies(action, resource));
 		const own = this.rule(role, resource);
 		return own ? own.actions : this.inheritedActions(role, resource);
 	}
@@ -213,6 +235,7 @@ export class RuleMatrix {
 
 	markFor(role: string, schema: string, action: Action): Mark {
 		if (role === EXEMPT_ROLE) return 'exempt';
+		if (this.byDefault(role, schema)) return 'default';
 		// A resource's own rule replaces its parent's, so the parent's grant
 		// shows only on a resource without one. The wildcard row and the
 		// all-flows row are the parents, so they inherit nothing.
@@ -230,6 +253,11 @@ export class RuleMatrix {
 				return `${role} is granted ${action} on ${where} by this rule.`;
 			case 'inherited':
 				return `${role} is granted ${action} on ${where} by the ${parentLabel(schema)}, because ${where} has no rule of its own.`;
+			case 'default': {
+				const parent = parentOf(schema);
+				const rule = parent ? `a rule for ${role} on ${where} or on ${schemaLabel(parent)}` : `a rule for ${role} on ${where}`;
+				return `${role} is allowed ${action} on ${where} by default, until ${rule} is saved.`;
+			}
 			default:
 				if (this.rule(role, schema) && this.inheritedActions(role, schema).includes(action)) {
 					return `${role} is denied ${action} on ${where}. This rule replaces the ${parentLabel(schema)}, which grants it.`;
@@ -241,12 +269,12 @@ export class RuleMatrix {
 	/**
 	 * Whether a rule on this resource takes away a grant the role holds
 	 * without it. An empty rule still denies what it replaces: the parent
-	 * rule's actions, or the standing grant admin holds on a flow until a rule
-	 * names admin there. Only a rule that replaces nothing does nothing.
+	 * rule's actions, or the default grant admin holds until a rule names
+	 * admin there. Only a rule that replaces nothing does nothing.
 	 */
 	replacesAGrant(role: string, resource: string): boolean {
 		if (resource === '') return false;
-		return this.inheritedActions(role, resource).length > 0 || (role === 'admin' && isFlowResource(resource));
+		return this.inheritedActions(role, resource).length > 0 || this.defaultUnderneath(role, resource);
 	}
 
 	/** Resources the role has no rule for yet, which is what a new rule can name. */

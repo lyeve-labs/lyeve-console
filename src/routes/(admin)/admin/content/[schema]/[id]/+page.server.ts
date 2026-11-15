@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions, RequestEvent } from './$types';
-import { fail, redirect } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { ApiError, type Schema, type SchemaField, type HttpClient } from '@lyeve-labs/client';
 import { getSchema } from '@lyeve-labs/client-rest';
 import { authedClient, exactParse, requireUser, stripProtectedFields, withExactIntegers } from '$lib/server/authz';
@@ -18,6 +18,9 @@ import { createTranslation, translationInput, updateTranslation, type Translatio
 import { createAssignment, isTransitionAction, transitionAssignment } from '$lib/api/review';
 import { listPeople } from '$lib/server/people';
 import { loadComments, loadLocalization, loadReleases, loadReview } from '$lib/server/entry-panels';
+import { forbiddenText } from '$lib/api/gate';
+import { UNKNOWN_ACCESS, accessOf, joinAccess, withoutHidden } from '$lib/utils/content-access';
+import { readContentAccess } from '$lib/api/content-access';
 
 /*
  * Entries live in the admin store (sys_content_entries) and are served by the
@@ -45,7 +48,8 @@ type StoredEntry = {
  * not there from an engine that did not answer. The form holds the schema's
  * fields, which live in the body, so meta stays out of it: a meta key named
  * like a field would otherwise replace that field's value, and the next save
- * would write it into the body.
+ * would write it into the body. The access it reports says which fields the
+ * reader's rules left out and which writes they allow.
  */
 async function getEntry(client: HttpClient, id: string, fields: Promise<SchemaField[]>) {
 	const e = await client.get<StoredEntry>(`/api/admin/content/${encodeURIComponent(id)}`);
@@ -57,6 +61,7 @@ async function getEntry(client: HttpClient, id: string, fields: Promise<SchemaFi
 	);
 	return {
 		id: e.id,
+		access: accessOf(e),
 		tenant_id: e.tenant_id ?? '',
 		created_at: e.created_at,
 		updated_at: e.updated_at,
@@ -212,9 +217,21 @@ export const load: PageServerLoad = async (event) => {
 	// is an unhandled one. The entry's own failure is reported below.
 	const tenant = entry.then((e) => e.tenant_id).catch(() => '');
 
-	const [schemaDef, item, entryLinks, revisionList, localization, review, comments, releases] = await Promise.all([
+	const [schemaDef, item, typeAccess, entryLinks, revisionList, localization, review, comments, releases] = await Promise.all([
 		schema.catch((err: unknown): Schema => readError(err, `Content type "${params.schema}" not found`)),
-		entry.catch((err: unknown) => readError(err, 'Entry not found')),
+		entry.catch(async (err: unknown) => {
+			// The rules refuse the entry's type, so the refusal names the type.
+			if (err instanceof ApiError && err.status === 403) {
+				const def = await schema.catch(() => null);
+				const subject = def?.display_name || params.schema;
+				error(403, { message: forbiddenText(`entries of ${subject}`), subject });
+			}
+			return readError(err, 'Entry not found');
+		}),
+		// The entry's own report decides what this page shows. The type's is
+		// read beside it for an engine whose entries carry none, and its
+		// failure leaves the decision to the entry's.
+		readContentAccess(client, params.schema).catch(() => UNKNOWN_ACCESS),
 		fields.then((f) => readEntryLinks(client, params.id, f)),
 		listRevisions(client, params.id, fields),
 		loadLocalization(client, params.id, runs(plugins, PLUGIN.localization)),
@@ -228,24 +245,30 @@ export const load: PageServerLoad = async (event) => {
 	// A many_to_many link is a row beside the entry, never a key in its body.
 	Object.assign(item.data, entryLinks.links);
 
+	// A field the reader's rules hide is no input: the engine keeps its stored
+	// value whatever a save sends, and a required check on it could not pass.
+	const access = joinAccess(typeAccess, item.access);
+	const def = withoutHidden(schemaDef, access.hidden);
+
 	// A has_one or has_many shows the entries that point back, not a picker,
 	// so its other content type is read for those entries alone.
 	const [relations, inverse] = await Promise.all([
-		readRelationChoices(client, (schemaDef.fields ?? []).filter((f) => !isInverse(f))),
-		readInverseEntries(client, schemaDef.name || params.schema, params.id, schemaDef.fields ?? []),
+		readRelationChoices(client, (def.fields ?? []).filter((f) => !isInverse(f))),
+		readInverseEntries(client, def.name || params.schema, params.id, def.fields ?? []),
 	]);
 
 	// Published library files, for a media field's picker. Read only when
 	// the schema has one. A read that fails is null, so the picker says the
 	// library could not be read instead of claiming nothing is published.
-	const mediaChoices: MediaChoice[] | null = schemaDef.fields.some((f) => f.field_type === 'media')
+	const mediaChoices: MediaChoice[] | null = (def.fields ?? []).some((f) => f.field_type === 'media')
 		? await listMediaChoices(client).catch(() => null)
 		: [];
 
 	const { revisions, hiddenOlder, windowDays, total: revisionTotal, failed: revisionsFailed, historyEnabled } =
 		revisionList;
 	return {
-		schemaDef,
+		schemaDef: def,
+		access,
 		item,
 		relations,
 		inverse,

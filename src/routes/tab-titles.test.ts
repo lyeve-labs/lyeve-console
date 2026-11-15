@@ -98,7 +98,7 @@ const TAB_TITLES: [string, Expected][] = [
 	['(admin)/admin/settings/message-broker/+page.svelte', 'Message broker'],
 	['(admin)/admin/settings/mfa/+page.svelte', 'Two-factor authentication'],
 	['(admin)/admin/settings/oauth/+page.svelte', 'OAuth providers'],
-	['(admin)/admin/settings/permissions/+page.svelte', 'Row-level permissions'],
+	['(admin)/admin/settings/permissions/+page.svelte', 'Permissions'],
 	['(admin)/admin/settings/pii/+page.svelte', 'PII masking'],
 	['(admin)/admin/settings/rate-limits/+page.svelte', 'Rate limits'],
 	['(admin)/admin/settings/rate-limits/tenant/+page.svelte', 'Tenant rate limits'],

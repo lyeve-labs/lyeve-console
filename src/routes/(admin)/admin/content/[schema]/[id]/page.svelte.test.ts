@@ -293,3 +293,84 @@ describe('content entry editor, many_to_many links', () => {
 		expect(screen.queryByText(/Could not load the linked entries/)).toBeNull();
 	});
 });
+
+describe('content entry editor under the reader\'s access rules', () => {
+	const article = {
+		name: 'article',
+		display_name: 'Articles',
+		with_draft_publish: true,
+		fields: [
+			{ name: 'title', field_type: 'text' },
+			{ name: 'summary', field_type: 'text' },
+		],
+	};
+	const revisions = [{ id: 'r1', revision_num: 1, created_at: '2026-09-19T10:00:00Z', created_by: 'u1', data: { title: 'One' } }];
+
+	it('shows the entry read-only, with no write, when the rules do not allow an update', async () => {
+		const { container } = render(EntryPage, {
+			props: {
+				data: data({
+					schemaDef: article,
+					access: { hidden: [], actions: ['read'] },
+					item: { ...data().item, data: { title: 'One', summary: 'Short', _status: 'draft' } },
+					revisions,
+					releases: { open: [], holding: [], failed: false },
+				}),
+				form: null,
+			},
+		});
+
+		expect(screen.getByText('Your role can view entries of Articles but cannot change them.')).toBeTruthy();
+		expect(screen.getByTestId('entry-read-only').textContent).toContain('Short');
+		expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+		expect(screen.queryByRole('button', { name: /publish/i })).toBeNull();
+		expect(container.querySelector('form[action="?/save"]')).toBeNull();
+		expect(container.querySelector('input[id="field-summary"]')).toBeNull();
+
+		await fireEvent.click(screen.getByRole('button', { name: /History/ }));
+		await fireEvent.click(screen.getByRole('button', { name: /summary|title/ }));
+		expect(screen.queryByRole('button', { name: /Restore/ })).toBeNull();
+	});
+
+	it('shows the translations without their writes when the rules do not allow an update', () => {
+		const { container } = render(EntryPage, {
+			props: { data: data({ localization, access: { hidden: [], actions: ['read'] } }), form: null },
+		});
+
+		expect(screen.getByTestId('translations-panel')).toBeTruthy();
+		expect(container.querySelector('form[action="?/saveTranslation"]')).toBeNull();
+		expect(container.querySelector('form[action="?/markTranslated"]')).toBeNull();
+	});
+
+	it('keeps the form, Save and Publish when the rules allow an update', () => {
+		render(EntryPage, {
+			props: {
+				data: data({
+					schemaDef: article,
+					access: { hidden: [], actions: ['read', 'update'] },
+					item: { ...data().item, data: { title: 'One', _status: 'draft' } },
+				}),
+				form: null,
+			},
+		});
+
+		expect(screen.queryByText('Your role can view entries of Articles but cannot change them.')).toBeNull();
+		expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: /Publish/ })).toBeTruthy();
+	});
+
+	it('draws no input for a field the rules hide', () => {
+		const shown = { ...article, fields: [article.fields[0]] };
+		const { container } = render(EntryPage, {
+			props: {
+				data: data({ schemaDef: shown, access: { hidden: ['summary'], actions: ['read', 'update'] } }),
+				form: null,
+			},
+		});
+
+		expect(screen.queryByText('Summary')).toBeNull();
+		expect(container.querySelector('#field-summary')).toBeNull();
+		const posted = JSON.parse((container.querySelector('input[name="data"]') as HTMLInputElement).value);
+		expect(posted).not.toHaveProperty('summary');
+	});
+});

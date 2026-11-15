@@ -47,6 +47,19 @@
 		}
 	});
 
+	// The entry was created for a role that cannot open it, so the page stays
+	// and the form starts over for the next one. Each create hands a new form
+	// result, so a second one clears the form again.
+	let createdUnreadable = $derived(
+		form && 'createdUnreadable' in form && typeof form.createdUnreadable === 'string' ? form.createdUnreadable : '',
+	);
+	$effect(() => {
+		if (!form || !('createdUnreadable' in form)) return;
+		formValues = buildEmpty(data.schemaDef?.fields ?? []);
+		validationErrors = {};
+		errorKeys = {};
+	});
+
 	// Set once the create answered but a link did not land. The entry exists,
 	// so the form offers the entry instead of a second Create.
 	let created = $derived(form && 'created' in form && typeof form.created === 'string' ? form.created : '');
@@ -95,6 +108,10 @@
 			</div>
 		{/if}
 	{/snippet}
+
+	{#if createdUnreadable}
+		<Alert tone="success" announce>{createdUnreadable}</Alert>
+	{/if}
 
 	{#if data.locales && !data.locales.ok}
 		<Alert tone="warn">

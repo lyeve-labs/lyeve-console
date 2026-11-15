@@ -213,3 +213,21 @@ describe('TranslationsPanel progress and fallback', () => {
 		expect(container.textContent).not.toContain('No field on this content type is marked');
 	});
 });
+
+describe('TranslationsPanel without update', () => {
+	it('shows the translations with no save and no mark translated', () => {
+		const { container } = mount([row('fr', 'outdated', 'Bonjour')], { readOnly: true });
+		expect(screen.getByTestId('translation-read-only').textContent).toContain('Bonjour');
+		expect(container.querySelector('form[action="?/saveTranslation"]')).toBeNull();
+		expect(container.querySelector('form[action="?/markTranslated"]')).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+		expect(screen.getByText('The source changed after this was translated.')).toBeTruthy();
+	});
+
+	it('keeps both writes while the rules allow an update', () => {
+		const { container } = mount([row('fr', 'outdated', 'Bonjour')]);
+		expect(container.querySelector('form[action="?/saveTranslation"]')).toBeTruthy();
+		expect(container.querySelector('form[action="?/markTranslated"]')).toBeTruthy();
+		expect(screen.queryByTestId('translation-read-only')).toBeNull();
+	});
+});

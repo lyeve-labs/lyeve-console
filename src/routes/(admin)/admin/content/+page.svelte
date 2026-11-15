@@ -25,6 +25,7 @@
 		type CollectionSort,
 	} from '$lib/api/collections';
 	import { NO_VALUE, formatCount, formatDateTime, plural } from '$lib/format';
+	import { may } from '$lib/utils/content-access';
 	import { ICON } from '$lib/icon';
 	import { liveFilter } from '$lib/live-filter.svelte';
 
@@ -67,14 +68,20 @@
 		updated: string | null;
 		fields: number;
 		relations: number;
+		/** The access rules let the reader read its entries, so a count and a date are theirs to see. */
+		readable: boolean;
+		creatable: boolean;
 	} {
 		const fields = (schema.fields ?? []).filter((f) => !f.system);
 		const st = data.stats?.[schema.name];
+		const access = data.access?.[schema.name];
 		return {
 			rows: st?.rows ?? null,
 			updated: st?.last_updated ?? null,
 			fields: fields.length,
 			relations: planSchemaRelations(schema, rows).length,
+			readable: may(access, 'read'),
+			creatable: may(access, 'create'),
 		};
 	}
 
@@ -298,11 +305,13 @@
 									</a>
 									<span class="block truncate font-mono text-xs text-faint">{schema.name}</span>
 								</td>
-								<td data-cell="nowrap" class="text-right tabular-nums">{f.rows === null ? 'unknown' : formatCount(f.rows)}</td>
+								<td data-cell="nowrap" class="text-right tabular-nums">
+									{!f.readable ? NO_VALUE : f.rows === null ? 'unknown' : formatCount(f.rows)}
+								</td>
 								<td data-cell="nowrap" class="text-right tabular-nums">{f.fields}</td>
 								<td data-cell="nowrap" class="text-right tabular-nums">{f.relations}</td>
 								<td class="whitespace-nowrap text-xs">
-									{f.updated ? formatDateTime(f.updated, f.updated) : NO_VALUE}
+									{f.readable && f.updated ? formatDateTime(f.updated, f.updated) : NO_VALUE}
 								</td>
 								<td>
 									<div class="flex flex-wrap gap-1">
@@ -312,14 +321,16 @@
 									</div>
 								</td>
 								<td class="text-right">
-									<Button
-										variant="ghost"
-										size="sm"
-										href="/admin/content/{schema.name}/new"
-										aria-label="New entry in {schema.display_name || schema.name}"
-									>
-										<Plus size={ICON.sm} />
-									</Button>
+									{#if f.creatable}
+										<Button
+											variant="ghost"
+											size="sm"
+											href="/admin/content/{schema.name}/new"
+											aria-label="New entry in {schema.display_name || schema.name}"
+										>
+											<Plus size={ICON.sm} />
+										</Button>
+									{/if}
 								</td>
 							</tr>
 						{/each}
@@ -335,7 +346,7 @@
 					count={rows.length}
 					total={data.total ?? undefined}
 					hasNext={data.hasMore}
-					noun="collections"
+					noun="content types"
 					href={pageHref('/admin/content', data.limit, {
 						...(data.query ? { q: data.query } : {}),
 						...(data.filter !== 'all' ? { filter: data.filter } : {}),

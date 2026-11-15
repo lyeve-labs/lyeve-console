@@ -11,7 +11,9 @@ import { entryIdentity } from '$lib/utils/new-entry';
 import { listMediaChoices, type MediaChoice } from '$lib/api/media';
 import { getLocales } from '$lib/api/localization';
 import { section, type Section } from '$lib/api/gate';
+import { readContentAccess } from '$lib/api/content-access';
 import { couldNotLoad } from '$lib/outage';
+import { may, withoutHidden, type TypeAccess } from '$lib/utils/content-access';
 import { rolesInWords } from '$lib/roles';
 import { PLUGIN } from '$lib/plugin-names';
 import { runs } from '$lib/plugins';
@@ -37,12 +39,22 @@ export const load: PageServerLoad = async (event) => {
 		error(403, `Only ${rolesInWords(CREATORS)} can open this page.`);
 	}
 
-	let schemaDef: Schema;
+	let fullDef: Schema;
+	let access: TypeAccess;
 	try {
-		schemaDef = await getSchema(params.schema, client);
+		[fullDef, access] = await Promise.all([getSchema(params.schema, client), readContentAccess(client, params.schema)]);
 	} catch (err) {
 		readError(err, `Content type "${params.schema}" not found`);
 	}
+	// Create is decided apart from read, so a role that may create entries
+	// it cannot read still gets the form.
+	const label = fullDef.display_name || params.schema;
+	if (!may(access, 'create')) {
+		error(403, { message: `Your role cannot create entries of ${label}. Ask a super admin if you need it.`, subject: label });
+	}
+	// A field the reader's rules hide is no input, because the engine ignores
+	// what a create sends for it.
+	const schemaDef = withoutHidden(fullDef, access.hidden);
 
 	// The locale routes belong to the localization plugin. Without it there is
 	// no locale to pick, and a read of them would only be refused. A read that
@@ -138,6 +150,14 @@ export const actions: Actions = {
 			if (failed) {
 				return fail(400, { error: `Entry created. ${failed}`, created });
 			}
+		}
+		// A role that may create entries it cannot read would land on the
+		// list's refusal, which reads as a failed save. It stays here, on a
+		// form cleared for the next entry, and is told the entry was created.
+		const access = await readContentAccess(client, params.schema).catch(() => null);
+		if (access && !may(access, 'read')) {
+			const label = schemaDef?.display_name || params.schema;
+			return { createdUnreadable: `Entry created. Your role cannot open entries of ${label}.` };
 		}
 		redirect(303, `/admin/content/${params.schema}`);
 	},

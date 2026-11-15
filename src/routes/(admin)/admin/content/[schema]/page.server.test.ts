@@ -447,6 +447,7 @@ describe('content listing reads its view', () => {
 		answer?: () => Response,
 		method = 'GET',
 		relatedSchemas: Record<string, unknown> = {},
+		access: Record<string, unknown> = {},
 	) {
 		const fetch = vi.fn(
 			async (_input: string | URL | Request) =>
@@ -459,7 +460,7 @@ describe('content listing reads its view', () => {
 		const pending = load({
 			fetch,
 			cookies: mockCookies({ '__Host-sys_session': 'tok', ...cookies }),
-			parent: async () => ({ relatedSchemas }),
+			parent: async () => ({ relatedSchemas, access }),
 			params: { schema: 'posts' },
 			url: new URL(`http://localhost/admin/content/posts${query}`),
 			request: new Request(`http://localhost/admin/content/posts${query}`, { method }),
@@ -527,6 +528,66 @@ describe('content listing reads its view', () => {
 			ok: false,
 			gate: { state: 'error', message: 'Could not load entries with these filters. Change or clear the filters.' },
 		});
+	});
+
+	it('draws a filter on a field the rules hide as a refused filter, not as a refused type', async () => {
+		const { outcome } = await viewLoad('?filters[headline][contains]=x', {}, () =>
+			new Response(
+				JSON.stringify({ error: 'a filter or sort names a field this caller cannot read', code: 'forbidden' }),
+				{ status: 403, headers: { 'content-type': 'application/json' } },
+			),
+		);
+		expect((outcome as Loaded).items).toEqual({
+			ok: false,
+			gate: { state: 'error', message: 'Could not load entries with these filters. Change or clear the filters.' },
+		});
+	});
+
+	it('draws a refused content type as a refusal', async () => {
+		const { outcome } = await viewLoad('', {}, () =>
+			new Response(JSON.stringify({ error: 'permission denied', code: 'forbidden' }), {
+				status: 403,
+				headers: { 'content-type': 'application/json' },
+			}),
+		);
+		expect((outcome as Loaded).items).toEqual({ ok: false, gate: { state: 'forbidden' } });
+	});
+
+	it('leaves a field the rules hide out of the view, so the list never asks for it', async () => {
+		const access = { posts: { hidden: ['price'], actions: ['read'] } };
+		const { fetch, outcome } = await viewLoad(
+			'?filters[price][gte]=9.5&filters[headline][contains]=a&sort=-price&columns=price,headline',
+			{},
+			undefined,
+			'GET',
+			{},
+			access,
+		);
+		const sent = listing(fetch);
+		expect(sent.get('filters[price][gte]')).toBeNull();
+		expect(sent.get('filters[headline][contains]')).toBe('a');
+		expect(sent.get('sort')).not.toBe('-price');
+		const loaded = outcome as unknown as {
+			schemaDef: { fields: { name: string }[] };
+			view: { columns: string[] };
+			access: unknown;
+		};
+		expect(loaded.schemaDef.fields.map((f) => f.name)).not.toContain('price');
+		expect(loaded.view.columns).toEqual(['headline']);
+		expect(loaded.access).toEqual({ hidden: ['price'], actions: ['read'] });
+	});
+
+	it('takes the access the listed entries report over the one read before', async () => {
+		const reported = [{ ...rows(1)[0], hidden_fields: ['headline'], allowed_actions: ['read', 'update'] }];
+		const { outcome } = await viewLoad('', {}, () =>
+			new Response(JSON.stringify({ data: reported, total_count: 1 }), {
+				status: 200,
+				headers: { 'content-type': 'application/json' },
+			}),
+		);
+		const loaded = outcome as unknown as { schemaDef: { fields: { name: string }[] }; access: unknown };
+		expect(loaded.schemaDef.fields.map((f) => f.name)).not.toContain('headline');
+		expect(loaded.access).toEqual({ hidden: ['headline'], actions: ['read', 'update'] });
 	});
 
 	it('opens the remembered view by a redirect, keeping the search and the page', async () => {

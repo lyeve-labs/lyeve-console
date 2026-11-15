@@ -14,6 +14,7 @@ import ContentListPage from './+page.svelte';
 import type { PageData } from './$types';
 import type { Schema } from '@lyeve-labs/client';
 import { readView } from '$lib/utils/entry-view';
+import { withoutHidden } from '$lib/utils/content-access';
 
 afterEach(cleanup);
 
@@ -250,7 +251,7 @@ describe('content listing reads', () => {
 			props: { data: data({ items: { ok: false, gate: { state: 'unavailable' } }, total: 0 }), form: null },
 		});
 
-		expect(screen.getByText(/entries did not load/)).toBeTruthy();
+		expect(screen.getByText(/entries of Posts did not load/)).toBeTruthy();
 		expect(screen.queryByText('No entries yet')).toBeNull();
 		expect(screen.queryByRole('link', { name: /New entry/ })).toBeNull();
 	});
@@ -260,8 +261,27 @@ describe('content listing reads', () => {
 			props: { data: data({ items: { ok: false, gate: { state: 'forbidden' } }, total: 0 }), form: null },
 		});
 
-		expect(screen.getByText(/Your role cannot open entries/)).toBeTruthy();
+		expect(screen.getByText('Your role cannot open entries of Posts. Ask a super admin if you need it.')).toBeTruthy();
 		expect(screen.queryByText('No entries yet')).toBeNull();
+		expect(screen.queryByRole('link', { name: /New entry/ })).toBeNull();
+		expect(screen.queryByLabelText('Search entries')).toBeNull();
+	});
+
+	it('offers New entry beside the refusal to a role that may create but not read', () => {
+		render(ContentListPage, {
+			props: {
+				data: data({
+					items: { ok: false, gate: { state: 'forbidden' } },
+					total: 0,
+					access: { hidden: [], actions: ['create'] },
+				}),
+				form: null,
+			},
+		});
+
+		expect(screen.getByText('Your role cannot open entries of Posts. Ask a super admin if you need it.')).toBeTruthy();
+		expect(screen.getByRole('link', { name: /New entry/ })).toBeTruthy();
+		expect(screen.queryByLabelText('Search entries')).toBeNull();
 	});
 
 	it('says the picker is missing when the collections could not be read', () => {
@@ -981,3 +1001,60 @@ describe('content listing filters on the fields of related entries', () => {
 	});
 });
 
+
+describe('the entry list under the reader\'s access rules', () => {
+	const posts: Schema = {
+		name: 'posts',
+		display_name: 'Posts',
+		fields: [
+			{ name: 'title', field_type: 'text', system: false },
+			{ name: 'summary', field_type: 'text', system: false },
+		],
+		with_draft_publish: false,
+		with_updated_at: false,
+	} as unknown as Schema;
+
+	function listed(access: { hidden: string[]; actions: string[] | null }) {
+		return data({ schemaDef: withoutHidden(posts, access.hidden), access, items: items(2), total: 2 });
+	}
+
+	it('leaves a hidden field out of the columns, the filters and the sort', async () => {
+		const { container } = render(ContentListPage, {
+			props: { data: listed({ hidden: ['summary'], actions: ['create', 'delete', 'read', 'update'] }), form: null },
+		});
+
+		const headers = [...container.querySelectorAll('thead th')].map((th) => th.textContent?.trim());
+		expect(headers).not.toContain('Summary');
+		expect(container.querySelector('thead a[href*="sort=summary"]')).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: /Add filter/ }));
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Field' }));
+		const options = screen.getAllByRole('option').map((o) => o.textContent?.trim());
+		expect(options).toContain('Entry');
+		expect(options).not.toContain('Summary');
+	});
+
+	it('offers no search and no sort by the entry while its title is hidden', () => {
+		const { container } = render(ContentListPage, {
+			props: { data: listed({ hidden: ['title'], actions: ['read'] }), form: null },
+		});
+
+		expect(screen.queryByLabelText('Search entries')).toBeNull();
+		expect(container.querySelector('thead a[href*="sort=title"]')).toBeNull();
+	});
+
+	it('offers New entry and Delete only for the actions the rules allow', () => {
+		const { container } = render(ContentListPage, {
+			props: { data: listed({ hidden: [], actions: ['read', 'update'] }), form: null },
+		});
+
+		expect(screen.queryByRole('link', { name: /New entry/ })).toBeNull();
+		expect(container.querySelector('form[action="?/delete"]')).toBeNull();
+		cleanup();
+
+		const allowed = render(ContentListPage, {
+			props: { data: listed({ hidden: [], actions: ['create', 'delete', 'read', 'update'] }), form: null },
+		});
+		expect(screen.getByRole('link', { name: /New entry/ })).toBeTruthy();
+		expect(allowed.container.querySelectorAll('form[action="?/delete"]')).toHaveLength(2);
+	});
+});

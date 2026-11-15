@@ -383,6 +383,8 @@ describe('permissions page role disclosure', () => {
 		);
 		const first = container.querySelector('#rules-editor tr') as HTMLElement;
 		expect(first.textContent).toContain('Every content type');
+		// The icon draws the asterisk, so the cell names the row once.
+		expect(first.querySelector('td')?.textContent?.trim()).toBe('Every content type');
 	});
 });
 
@@ -398,7 +400,33 @@ describe('permissions page collapsed summary', () => {
 
 	it('reports a role with no rule as granting nothing', () => {
 		const { container } = setupWith([], ['article', 'page']);
-		expect(roleRow(container, 'admin').textContent).toContain('admin grants read on no content type.');
+		expect(roleRow(container, 'editor').textContent).toContain('editor grants read on no content type.');
+	});
+
+	it('shows admin allowed by default on every content type and flow while no rule names it', async () => {
+		const { container } = setupWith([], ['article', 'page']);
+		const row = roleRow(container, 'admin');
+		expect(row.textContent).toContain('Allowed by default');
+		expect(row.textContent).not.toContain('No rules');
+		expect(row.textContent).toContain('admin grants read on every content type.');
+		expect(row.textContent).toContain('admin grants read on every flow.');
+
+		await fireEvent.click(row.querySelector('button[aria-controls="rules-admin"]') as HTMLElement);
+		const body = container.querySelector('#rules-admin') as HTMLElement;
+		expect(body.textContent).toContain(
+			'admin can use every content type and flow by default. Once you save a rule for admin on a content type or on Every content type, that rule decides.',
+		);
+		expect(childRow(container, 'admin', 'Every content type').querySelectorAll('[data-mark="default"]')).toHaveLength(4);
+	});
+
+	it('shows the rule, not the default, once a rule names admin on a content type', async () => {
+		const { container } = setupWith([rule('admin', 'article', ['read'])], ['article', 'page']);
+		const row = roleRow(container, 'admin');
+		expect(row.textContent).not.toContain('Allowed by default');
+		expect(row.textContent).toContain('admin grants update on some content types.');
+		await fireEvent.click(container.querySelector('#show-unruled') as HTMLElement);
+		expect(childRow(container, 'admin', 'article').querySelector('[data-mark="none"]')).toBeTruthy();
+		expect(childRow(container, 'admin', 'page').textContent).toContain('no rule, allowed by default');
 	});
 
 	it('reports a partial grant as some and a wildcard grant as every schema', () => {
@@ -785,7 +813,12 @@ describe('permissions page marks without color', () => {
 
 	it('fills a summary bar empty for none, half for some and full for all', () => {
 		const { container } = setupWith(
-			[rule('editor', 'article', ['read']), rule('reviewer', '*', ['read']), rule('reviewer', 'flows', ['read'])],
+			[
+				rule('editor', 'article', ['read']),
+				rule('reviewer', '*', ['read']),
+				rule('reviewer', 'flows', ['read']),
+				rule('viewer', 'article', []),
+			],
 			['article', 'page'],
 		);
 		const fill = (role: string, state: string) => {
@@ -797,7 +830,7 @@ describe('permissions page marks without color', () => {
 			expect(rect?.getAttribute('fill')).toBe('currentColor');
 			return rect?.getAttribute('width');
 		};
-		expect(fill('admin', 'none')).toBe('0');
+		expect(fill('viewer', 'none')).toBe('0');
 		expect(fill('editor', 'some')).toBe('16');
 		expect(fill('reviewer', 'all')).toBe('32');
 		expect(roleRow(container, 'super_admin').querySelector('[data-mark="exempt"]')).toBeTruthy();

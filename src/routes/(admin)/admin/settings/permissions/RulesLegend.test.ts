@@ -20,4 +20,10 @@ describe('RulesLegend', () => {
 		expect(text).toContain('super_admin is never limited by these rules.');
 		expect(text).toContain('A content type rule replaces the wildcard rule on that content type.');
 	});
+
+	it('states the admin default in the first rule a reader meets', () => {
+		const { container } = render(RulesLegend);
+		const first = (container.querySelector('li')?.textContent ?? '').replace(/\s+/g, ' ');
+		expect(first).toContain('is denied every action on it, except admin, which may take every action there until a rule for admin applies.');
+	});
 });
