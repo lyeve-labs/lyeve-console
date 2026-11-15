@@ -566,6 +566,12 @@
 		</div>
 	</Collapsible>
 
+	<!-- The warning and the field list share one block, so the warning never
+	     adds a child to the fieldset. Chromium rebuilds a fieldset's layout
+	     when a child box is added, and the rebuild leaves the rows of the size
+	     container below without boxes: every row and the column headings draw
+	     at 0x0 while their computed style still reads as shown. -->
+	<div class="flex flex-col gap-4">
 	{#if brokenRelations.length > 0}
 		<div data-testid="relation-problems">
 			<Alert tone="warn">
@@ -925,6 +931,7 @@
 	{#if schema.with_localization}
 		{@render plannedField('_locale', 'text', 'Translations are stored per entry and locale. This column is not used.', 'system, not read')}
 	{/if}
+</div>
 </div>
 
 {#if canWrite}

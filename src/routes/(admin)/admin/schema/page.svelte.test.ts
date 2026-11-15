@@ -212,6 +212,24 @@ describe('schema builder relation panel', () => {
 		expect(container.textContent).toMatch(/choose which one this relation reads/i);
 	});
 
+	it('adds no child to the form when a warning appears, so the field list keeps its boxes', async () => {
+		// Chromium rebuilds a fieldset's layout when a child box is added, and the
+		// rebuild leaves every row of a size container inside it without a box:
+		// the rows keep their computed style but draw at 0x0. The warning appears
+		// inside a block the fieldset already holds.
+		const { container } = await openPosts({
+			schemas: [...(data().schemas as unknown[]), comments('post', 'reply_to')],
+		});
+		const fieldset = container.querySelector('fieldset')!;
+		const before = [...fieldset.children];
+		await pickType('title', 'relation');
+		await fireEvent.click(screen.getByRole('radio', { name: 'Has many' }));
+		await pickOption(screen.getByRole('combobox', { name: 'Target content type' }), 'Comments');
+
+		expect(screen.getByTestId('relation-problems')).toBeTruthy();
+		expect([...fieldset.children]).toEqual(before);
+	});
+
 	it('flags nothing while the schema has no relation field', async () => {
 		await openPosts();
 		expect(screen.queryByTestId('relation-problems')).toBeNull();
