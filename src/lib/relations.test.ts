@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Schema, SchemaField } from '@lyeve-labs/client';
-import { fkColumn, inverseKey, pivotTable, planRelation, planSchemaRelations, tableName } from './relations';
+import { fkColumn, inverseCandidates, inverseKey, pivotTable, planRelation, planSchemaRelations, tableName } from './relations';
 
 function schema(name: string, fields: Partial<SchemaField>[] = [], display?: string): Schema {
 	return {
@@ -125,7 +125,7 @@ describe('planRelation', () => {
 		const plan = planRelation(posts, posts.fields[0], [posts, comments])!;
 		expect(plan.requires?.satisfied).toBe(false);
 		expect(plan.problem).toBe(
-			'Comments has 2 fields that belong to Posts (post, reply_to), so this relation returns an empty list. Remove all but one of them.',
+			'Comments has 2 fields that belong to Posts (post, reply_to). Choose which one this relation reads.',
 		);
 	});
 
@@ -243,5 +243,19 @@ describe('inverseKey', () => {
 
 	it('cannot read a relation to a content type that is not there', () => {
 		expect(inverseKey('posts', hasMany(), undefined)).toEqual({ ok: false, problem: 'no-target' });
+	});
+});
+
+describe('inverseCandidates', () => {
+	it('lists the belongs_to fields on the target that point back, and nothing else', () => {
+		const comments = schema('comments', [
+			relation('post', 'posts', 'belongs_to'),
+			relation('author', 'authors', 'belongs_to'),
+			relation('replies', 'posts', 'has_many'),
+			{ name: 'posts_id' },
+			relation('reply_to', 'posts', 'belongs_to'),
+		]);
+		expect(inverseCandidates('posts', comments).map((f) => f.name)).toEqual(['post', 'reply_to']);
+		expect(inverseCandidates('posts', undefined)).toEqual([]);
 	});
 });

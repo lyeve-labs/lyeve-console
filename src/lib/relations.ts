@@ -123,6 +123,11 @@ function columnOf(field: SchemaField): string | null {
 	return isBelongsTo(field) ? fkColumn(field.name, field.relation_fk_name) : null;
 }
 
+/** The belongs_to fields on `target` that point back at `source`, any one of which can be an inverse key. */
+export function inverseCandidates(source: string, target: Schema | undefined): SchemaField[] {
+	return (target?.fields ?? []).filter((f) => !f.system && isBelongsTo(f) && f.relation_to === source);
+}
+
 /**
  * The key a has_one or has_many on `source` reads on its target, by the rule
  * every surface applies:
@@ -138,7 +143,7 @@ function columnOf(field: SchemaField): string | null {
 export function inverseKey(source: string, field: SchemaField, target: Schema | undefined): InverseKey {
 	if (!target) return { ok: false, problem: 'no-target' };
 	const own = target.fields.filter((f) => !f.system);
-	const back = own.filter((f) => isBelongsTo(f) && f.relation_to === source);
+	const back = inverseCandidates(source, target);
 
 	if (field.relation_fk_name) {
 		const named = back.find((f) => columnOf(f) === field.relation_fk_name);
@@ -258,7 +263,7 @@ export function planRelation(
 				problem = `${field.relation_fk_name} is not the key of a field on ${there} that belongs to ${here}, so ${empty}.`;
 				break;
 			case 'ambiguous':
-				problem = `${there} has ${key.candidates?.length} fields that belong to ${here} (${(key.candidates ?? []).map((f) => f.name).join(', ')}), so ${empty}. Remove all but one of them.`;
+				problem = `${there} has ${key.candidates?.length} fields that belong to ${here} (${(key.candidates ?? []).map((f) => f.name).join(', ')}). Choose which one this relation reads.`;
 				break;
 			default:
 				problem = `${there} has no field that belongs to ${here}, so ${empty}. Add a relation field of kind "Belongs to one" to ${there} that points back here.`;

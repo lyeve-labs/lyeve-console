@@ -11,7 +11,7 @@
 	import { BookOpen, ChevronDown, GripVertical, Link2, Pencil, Plus, RefreshCw, Trash2, TriangleAlert } from '@lucide/svelte';
 	import { collectionRoutes } from '$lib/api/collection-api';
 	import { curlFor } from '$lib/api/request-preview';
-	import { RELATION_KINDS, planRelation, planSchemaRelations, tableName, type RelationType } from '$lib/relations';
+	import { RELATION_KINDS, fkColumn, inverseCandidates, isInverse, planRelation, planSchemaRelations, tableName, type RelationType } from '$lib/relations';
 	import { decimalScale, dropUnlocalizableMark, fieldNameTarget, localizableProblem, type Problem } from '$lib/schema/editor';
 	import { ICON } from '$lib/icon';
 	import { methodTone } from '$lib/tones';
@@ -172,6 +172,31 @@
 				label: s.display_name || s.name,
 				keywords: [s.name, tableName(s.name)],
 			}));
+	}
+
+	/**
+	 * The fields an inverse relation may read its key from, each stored by its
+	 * key column. Offered only when the choice matters: two or more fields
+	 * point back, or a key is already named. A named key that no field points
+	 * back through stays listed, so the picker shows the value the form saves.
+	 */
+	function keyOptions(from: Schema, field: SchemaField): SelectOption[] | null {
+		if (!isInverse(field)) return null;
+		const target = schemas.find((s) => s.name === field.relation_to);
+		const options = inverseCandidates(from.name, target).map((f) => ({
+			value: fkColumn(f.name, f.relation_fk_name),
+			label: f.name,
+		}));
+		if (options.length < 2 && !field.relation_fk_name) return null;
+		if (field.relation_fk_name && !options.some((o) => o.value === field.relation_fk_name)) {
+			options.push({ value: field.relation_fk_name, label: field.relation_fk_name });
+		}
+		return options;
+	}
+
+	function targetLabel(field: SchemaField): string {
+		const target = schemas.find((s) => s.name === field.relation_to);
+		return target?.display_name || field.relation_to || 'the other content type';
 	}
 
 	/**
@@ -605,6 +630,7 @@
 		{#each userFields as field, i (field.id ?? i)}
 		{@const rowId = field.id ?? String(i)}
 		{@const plan = planRelation(schema, field, schemas)}
+		{@const keys = keyOptions(schema, field)}
 		{@const inert = inertFlags(field)}
 		<div class="rounded-lg border border-line bg-surface-2">
 			<div class="flex items-center gap-3 p-3">
@@ -788,6 +814,19 @@
 								field.relation_to = v;
 							}}
 						/>
+						{#if keys}
+							<Select
+								id="relation-key-{rowId}"
+								label="Key field"
+								hint="The field on {targetLabel(field)} whose value links each entry back here."
+								placeholder="Choose a field"
+								options={keys}
+								value={field.relation_fk_name ?? ''}
+								onvaluechange={(v) => {
+									field.relation_fk_name = v || undefined;
+								}}
+							/>
+						{/if}
 					</div>
 					{#if unservedTarget(field)}
 						<p class="text-xs text-muted">
@@ -954,8 +993,8 @@
 			<span class="font-mono">author</span>, stored in
 			<span class="font-mono">_article.writer_id</span>. The field can be
 			called anything, and renaming it moves nothing in the database. If
-			the other content type has two fields that point back here, the
-			relation returns nothing until one of them is removed.
+			the other content type has two fields that point back here, choose
+			which one this relation reads.
 		</p>
 
 		<p>
