@@ -13,6 +13,7 @@
 		type TranslationStatus,
 	} from '$lib/api/localization';
 	import FieldInput from './FieldInput.svelte';
+	import FieldCell from './FieldCell.svelte';
 	import { ICON } from '$lib/icon';
 	import { plural } from '$lib/format';
 
@@ -23,6 +24,7 @@
 		unavailable = false,
 		error = null,
 		errorLocale = '',
+		readOnly = false,
 	}: {
 		fields: SchemaField[];
 		locales: LocalePreferences;
@@ -32,6 +34,8 @@
 		/** The last action's refusal, shown under the locale it was about. */
 		error?: string | null;
 		errorLocale?: string;
+		/** The reader's rules allow no change to the entry, so the translations show without a write. */
+		readOnly?: boolean;
 	} = $props();
 
 	let textFields = $derived(translatableFields(fields));
@@ -201,14 +205,16 @@
 				<div class="flex flex-col gap-4" data-testid="translation-{draft.active}" data-status={status}>
 					<div class="flex flex-wrap items-center gap-2">
 						<Badge tone={STATUS_TONE[status]} dot>{STATUS_LABEL[status]}</Badge>
-						{#if status === 'outdated'}
+						{#if status === 'outdated' && readOnly}
+							<span class="text-xs text-warn">The source changed after this was translated.</span>
+						{:else if status === 'outdated'}
 							<span class="text-xs text-warn">
 								The source changed after this was translated. Review it, then mark it translated.
 							</span>
 						{:else if status === 'missing'}
 							<span class="text-xs text-faint">Readers of {draft.active} see the source until this is saved.</span>
 						{/if}
-						{#if t && status !== 'translated'}
+						{#if t && status !== 'translated' && !readOnly}
 							<form method="POST" action="?/markTranslated" use:enhance class="ml-auto">
 								<input type="hidden" name="locale" value={draft.active} />
 								<Button variant="secondary" size="sm" type="submit">
@@ -244,6 +250,18 @@
 						<Alert tone="danger">{error}</Alert>
 					{/if}
 
+					{#if readOnly}
+						<dl class="flex flex-col gap-4" data-testid="translation-read-only">
+							{#each textFields as field (field.name)}
+								<div class="flex min-w-0 flex-col gap-1">
+									<dt class="text-sm font-medium text-fg">{field.name}</dt>
+									<dd class="min-w-0 text-sm break-words text-muted">
+										<FieldCell {field} value={draft.values[draft.active][field.name]} />
+									</dd>
+								</div>
+							{/each}
+						</dl>
+					{:else}
 					<form
 						method="POST"
 						action="?/saveTranslation"
@@ -303,6 +321,7 @@
 							<Button type="submit" size="sm" loading={submitting}>Save</Button>
 						</div>
 					</form>
+					{/if}
 				</div>
 			{/if}
 		{/if}

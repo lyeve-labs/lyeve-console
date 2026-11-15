@@ -332,6 +332,16 @@ describe('content entry editor under the reader\'s access rules', () => {
 		expect(screen.queryByRole('button', { name: /Restore/ })).toBeNull();
 	});
 
+	it('shows the translations without their writes when the rules do not allow an update', () => {
+		const { container } = render(EntryPage, {
+			props: { data: data({ localization, access: { hidden: [], actions: ['read'] } }), form: null },
+		});
+
+		expect(screen.getByTestId('translations-panel')).toBeTruthy();
+		expect(container.querySelector('form[action="?/saveTranslation"]')).toBeNull();
+		expect(container.querySelector('form[action="?/markTranslated"]')).toBeNull();
+	});
+
 	it('keeps the form, Save and Publish when the rules allow an update', () => {
 		render(EntryPage, {
 			props: {

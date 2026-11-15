@@ -355,6 +355,7 @@
 						unavailable={data.localization.unavailable}
 						error={translationError?.message}
 						errorLocale={translationError?.locale}
+						readOnly={!canUpdate}
 					/>
 				</div>
 			{/if}
