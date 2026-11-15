@@ -19,7 +19,7 @@ const LOAD_FAILED = 'Could not load permission rules.';
 export const load: PageServerLoad = async (event) => {
 	const user = await loadUser(event);
 	if (!user.roles.includes('super_admin')) {
-		error(403, 'Only a super admin can manage row-level permissions.');
+		error(403, 'Only a super admin can manage permissions.');
 	}
 	const client = authedClient(event);
 	// The plugin states the role ceiling and how many roles already hold a

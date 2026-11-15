@@ -383,6 +383,8 @@ describe('permissions page role disclosure', () => {
 		);
 		const first = container.querySelector('#rules-editor tr') as HTMLElement;
 		expect(first.textContent).toContain('Every content type');
+		// The icon draws the asterisk, so the cell names the row once.
+		expect(first.querySelector('td')?.textContent?.trim()).toBe('Every content type');
 	});
 });
 
@@ -414,7 +416,7 @@ describe('permissions page collapsed summary', () => {
 		expect(body.textContent).toContain(
 			'admin can use every content type and flow by default. Once you save a rule for admin on a content type or on Every content type, that rule decides.',
 		);
-		expect(childRow(container, 'admin', '*').querySelectorAll('[data-mark="default"]')).toHaveLength(4);
+		expect(childRow(container, 'admin', 'Every content type').querySelectorAll('[data-mark="default"]')).toHaveLength(4);
 	});
 
 	it('shows the rule, not the default, once a rule names admin on a content type', async () => {

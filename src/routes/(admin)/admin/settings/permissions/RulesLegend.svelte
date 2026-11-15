@@ -12,7 +12,8 @@
 	<ul class="list-disc space-y-2 pl-5 text-sm text-muted">
 		<li>
 			A role with no rule for a content type, neither its own nor the wildcard rule,
-			is denied every action on it. A request is allowed when any of the caller's roles grants the
+			is denied every action on it, except {DEFAULT_ROLE}, which may take every action there until a rule
+			for {DEFAULT_ROLE} applies. A request is allowed when any of the caller's roles grants the
 			action, and refused with 403 when none does.
 		</li>
 		<li>
@@ -22,9 +23,8 @@
 			a stored grant, a ring is an inherited grant and a dash is a denied action. A shield marks a role these rules never limit. A role's bar is empty when it grants the action on nothing, half full on some content types and full on all.
 		</li>
 		<li>
-			{DEFAULT_ROLE} can use every content type and flow by default. Once a rule for {DEFAULT_ROLE} applies to a
-			content type, its own or the wildcard rule, that rule decides there, and the same holds for a flow with
-			its own rule or the All flows rule. A dashed ring marks this default.
+			{DEFAULT_ROLE} keeps the same default on a flow until the flow's own rule or the All flows rule names
+			{DEFAULT_ROLE}. A dashed ring marks this default.
 		</li>
 		<li>
 			{EXEMPT_ROLE} is never limited by these rules. Rules stored for it have no effect, and they stay

@@ -188,7 +188,7 @@
 </script>
 
 <PageShell
-	title="Row-level permissions"
+	title="Permissions"
 	description="Set what each role can do with each content type and flow."
 	width="wide"
 >
@@ -234,8 +234,8 @@
 		<GateNotice
 			level={2}
 			gate={loadGate}
-			title="Row-level permissions"
-			absent="Row-level permissions are not included in this build."
+			title="Permissions"
+			absent="Permissions are not included in this build."
 		/>
 	{:else}
 		<!-- The explanatory card below renders its title as an h3, so without this
@@ -333,8 +333,7 @@
 								<tr class="bg-brand/5">
 									<td data-cell="nowrap">
 										<span class="flex items-center gap-2 pl-6">
-											<Asterisk size={ICON.sm} class="shrink-0 text-brand" />
-											<span class="font-mono text-xs text-brand">*</span>
+											<Asterisk size={ICON.sm} class="shrink-0 text-brand" aria-hidden="true" />
 											<Badge tone="brand">Every content type</Badge>
 										</span>
 									</td>
