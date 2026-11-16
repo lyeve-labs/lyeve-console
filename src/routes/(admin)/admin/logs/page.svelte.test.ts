@@ -148,7 +148,7 @@ describe('Paging', () => {
 			props: props([entry()], { total: 250, limit: 100, offset: 100 }),
 		});
 
-		expect(container.textContent).toContain('entries 101 to 200 of 250');
+		expect(container.textContent).toContain('Entries 101 to 200 of 250');
 	});
 });
 

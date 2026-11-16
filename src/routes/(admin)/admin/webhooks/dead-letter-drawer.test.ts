@@ -73,7 +73,7 @@ describe('the dead letter drawer', () => {
 	it('opens on the queue the load read and states the total when it is larger than the page', () => {
 		render(DeadLetterDrawer, { props: props(queue([entry('a', 'pending'), entry('b', 'replayed')], 9, 0, 2)) });
 		expect(dialog()?.textContent).toContain('Dead letter queue');
-		expect(dialog()?.textContent).toContain('entries 1 to 2 of 9');
+		expect(dialog()?.textContent).toContain('Entries 1 to 2 of 9');
 	});
 
 	it('leaves the total out when the queue did not state one', () => {

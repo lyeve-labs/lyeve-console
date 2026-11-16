@@ -113,8 +113,8 @@ describe('reviews page', () => {
 		const second = { ...assignment, id: 'a2' };
 		render(ReviewsPage, { props: { data: data({ assignments: [assignment, second], total: 2 }) } });
 		const section = screen.getByRole('region', { name: 'Assignments' });
-		expect(section.textContent).toContain('assignments 1 to 2 of 2');
-		expect(section.textContent).not.toContain('definitions 1');
+		expect(section.textContent).toContain('Assignments 1 to 2 of 2');
+		expect(section.textContent).not.toContain('Definitions 1');
 	});
 
 	it('shows the approvals a quorum stage holds and the other assignees', () => {

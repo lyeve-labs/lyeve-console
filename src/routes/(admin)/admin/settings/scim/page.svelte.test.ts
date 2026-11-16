@@ -126,8 +126,8 @@ describe('the rows', () => {
 
 	it('counts connections in the pager, the word the page uses for them', () => {
 		const { container } = render(ScimPage, { props: props() });
-		expect(said(container)).toContain('connections 1 to 1 of 1');
-		expect(said(container)).not.toContain('providers 1 to 1');
+		expect(said(container)).toContain('Connections 1 to 1 of 1');
+		expect(said(container)).not.toContain('Providers 1 to 1');
 	});
 
 	it('offers a rotation for every connection, since the token cannot be read back', () => {
