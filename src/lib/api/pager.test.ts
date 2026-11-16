@@ -56,7 +56,7 @@ describe('the pager the admin lists render', () => {
 	it('states the range without a total when the endpoint stated none', () => {
 		const { container } = render(Pagination, { props: { ...uncounted, page: 2 } });
 
-		expect(container.textContent).toContain('files 51 to 100');
+		expect(container.textContent).toContain('Files 51 to 100');
 		expect(container.textContent).not.toContain(' of ');
 	});
 
@@ -68,13 +68,13 @@ describe('the pager the admin lists render', () => {
 			props: { ...uncounted, page: 3, count: 12, hasNext: false },
 		});
 
-		expect(container.textContent).toContain('files 101 to 112');
+		expect(container.textContent).toContain('Files 101 to 112');
 	});
 
 	it('states the total when there is one', () => {
 		const { container } = render(Pagination, { props: { ...uncounted, page: 2, total: 4210 } });
 
-		expect(container.textContent).toContain('files 51 to 100 of 4,210');
+		expect(container.textContent).toContain('Files 51 to 100 of 4,210');
 	});
 
 	it('carries a search across a page change', () => {
@@ -99,7 +99,7 @@ describe('the pager the admin lists render', () => {
 			props: { ...uncounted, count: 4, hasNext: false },
 		});
 
-		expect(container.textContent).toContain('files 1 to 4');
+		expect(container.textContent).toContain('Files 1 to 4');
 		expect(step(container, 'Next page')).toBeNull();
 		expect(step(container, 'Previous page')).toBeNull();
 	});
@@ -119,6 +119,6 @@ describe('the pager the admin lists render', () => {
 			},
 		});
 
-		expect(container.textContent).toContain('rows 4,201 to 4,250 of 12,345');
+		expect(container.textContent).toContain('Rows 4,201 to 4,250 of 12,345');
 	});
 });

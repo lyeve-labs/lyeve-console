@@ -157,7 +157,7 @@ describe('content index access rules', () => {
 	it('names content types in the pager', () => {
 		const { container } = render(ContentIndex, { props: { data: data({ total: 60, hasMore: true }) } });
 
-		expect(container.textContent).toContain('content types');
+		expect(container.textContent).toContain('Content types 1 to 50 of 60');
 		expect(container.textContent).not.toMatch(/collections/i);
 	});
 });

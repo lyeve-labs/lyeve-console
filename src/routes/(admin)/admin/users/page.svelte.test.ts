@@ -161,7 +161,7 @@ describe('Users pagination', () => {
 			props: props({ offset: 25, users: accounts(25, 25), hasMore: true }),
 		});
 
-		expect(container.textContent).toContain('accounts 26 to 50');
+		expect(container.textContent).toContain('Accounts 26 to 50');
 	});
 
 	it('renders no pager at all when one page holds everything', () => {

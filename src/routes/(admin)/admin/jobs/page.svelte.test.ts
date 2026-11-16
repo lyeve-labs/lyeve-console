@@ -167,13 +167,13 @@ describe('the job list when it could not be read', () => {
 		const answered = setup();
 		expect(answered.container.querySelector('#job-search')).not.toBeNull();
 		expect(answered.container.querySelector('table')).not.toBeNull();
-		expect(answered.container.textContent).toContain('jobs 1 to 1');
+		expect(answered.container.textContent).toContain('Jobs 1 to 1');
 		cleanup();
 
 		const { container } = failed({ state: 'unavailable' });
 		expect(container.querySelector('#job-search')).toBeNull();
 		expect(container.querySelector('table')).toBeNull();
-		expect(container.textContent).not.toContain('jobs 1 to');
+		expect(container.textContent).not.toContain('Jobs 1 to');
 	});
 
 	it('keeps the first-run state for a list that answered empty', () => {
