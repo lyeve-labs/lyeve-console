@@ -7,9 +7,9 @@
 
 	/*
 	 * A refused entry or new entry draws inside the content type's frame, the
-	 * way the entry list draws its refusal: the type as the title, the way
-	 * back, and the sentence. Every other failure keeps the console's error
-	 * panel.
+	 * way the entry list draws its refusal: the type as the title of the page
+	 * and the tab, the way back, and the sentence. Every other failure keeps
+	 * the console's error panel.
 	 */
 	const status = $derived(page.status);
 	const message = $derived(page.error?.message ?? '');
@@ -18,7 +18,7 @@
 </script>
 
 {#if status === 403}
-	<PageShell title={subject} documentTitle="No access" width="wide" {back}>
+	<PageShell title={subject} width="wide" {back}>
 		{#snippet breadcrumb()}
 			<Breadcrumb items={crumbsAfter(back, [{ label: 'Content', href: '/admin/content' }, { label: subject }])} />
 		{/snippet}

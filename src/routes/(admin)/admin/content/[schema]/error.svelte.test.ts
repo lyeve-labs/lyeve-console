@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { render, cleanup } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
@@ -41,6 +42,22 @@ describe('content type error page', () => {
 		expect(container.textContent).not.toContain('403');
 		expect(container.textContent).not.toContain('Access denied');
 		expect(container.querySelector('a[href="/admin/content"]')).not.toBeNull();
+	});
+
+	// The tab reads what the page reads, the way the entry list titles its
+	// own refusal, so a reader with several tabs open finds the content type.
+	it('titles the tab with the content type on a refusal', async () => {
+		renderAt(403, { message: 'Your role cannot open entries of Posts.', subject: 'Posts' });
+		await tick();
+
+		expect(document.title).toBe('Posts - LyEve Console');
+	});
+
+	it('keeps the status title on the tab for a failure that is not a refusal', async () => {
+		renderAt(404, { message: 'Not found' });
+		await tick();
+
+		expect(document.title).toBe('Not found - LyEve Console');
 	});
 
 	it('keeps the error panel for a failure that is not a refusal', () => {
