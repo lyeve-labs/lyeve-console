@@ -85,6 +85,24 @@ describe('admin/webhooks/incoming paging', () => {
 		expect(result).toMatchObject({ limit: 25, offset: 25, total: 26 });
 	});
 
+	it('sends the search and the status to the engine and back to the page', async () => {
+		const { event, asked } = listEvent({ data: [row('a')], total_count: 1 }, '?q=stripe&status=enabled');
+		const result = (await load(event)) as Loaded;
+		const url = new URL(asked.find((u) => u.includes('/incoming-webhooks'))!, 'http://e');
+		expect(url.searchParams.get('q')).toBe('stripe');
+		expect(url.searchParams.get('status')).toBe('enabled');
+		expect(result).toMatchObject({ q: 'stripe', status: 'enabled' });
+	});
+
+	it('drops a status it does not offer and cuts a search past 200 characters', async () => {
+		const { event, asked } = listEvent({ data: [row('a')], total_count: 1 }, `?status=on&q=${'a'.repeat(201)}`);
+		const result = (await load(event)) as Loaded;
+		const url = asked.find((u) => u.includes('/incoming-webhooks'))!;
+		expect(url).not.toContain('status=');
+		expect(url).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(result).toMatchObject({ q: 'a'.repeat(200), status: '' });
+	});
+
 	it('sends a page past the end back to the last page', async () => {
 		const { event } = listEvent({ data: [], total_count: 3 }, '?limit=25&offset=50');
 		await expect(load(event)).rejects.toMatchObject({ status: 307, location: '/admin/webhooks/incoming?limit=25&offset=0' });

@@ -38,6 +38,8 @@
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import type { ActionData, PageData } from './$types';
 	import { ICON } from '#lib/icon.ts';
+	import { page } from '$app/state';
+	import { listBack } from '#lib/back.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -144,7 +146,7 @@
 	title={exp.name}
 	description={exp.description || 'No description yet.'}
 	width="wide"
-	back={{ href: '/admin/experiments', label: 'Experiments' }}
+	back={listBack('/admin/experiments', 'Experiments', page.url, ['q'])}
 >
 	{#snippet actions()}
 		<Badge tone={statusTone(exp.status)} dot>{STATUS_LABELS[exp.status]}</Badge>

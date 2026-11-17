@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 const nav = vi.hoisted(() => ({ goto: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => nav);
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://localhost/') } }));
+vi.mock('$app/state', () => appState);
 
 import SyntheticPage from './+page.svelte';
 import type { Probe, ProbeAlert } from '#lib/api/synthetic.ts';
@@ -57,6 +59,8 @@ const props = (over: Record<string, unknown> = {}, form: unknown = null) => ({
 		total: 1,
 		limit: 25,
 		offset: 0,
+		q: '',
+		show: '',
 		hasMore: false,
 		gate: { state: 'ok' },
 		licensed: true,
@@ -207,6 +211,22 @@ describe('notice channels', () => {
 		gate: { state: 'ok' },
 	});
 
+	it('opens and closes the channels with the search, the filter and the page kept', async () => {
+		appState.page.url = new URL('http://localhost/admin/observability/synthetic?q=home&show=paused&offset=25&channels=p1');
+		nav.goto.mockClear();
+		const { container, getByRole } = render(SyntheticPage, {
+			props: props({ q: 'home', show: 'paused', channelsFor: read() }),
+		});
+		const link = container.querySelector('a[aria-label="Notice channels for Homepage"]');
+		expect(link?.getAttribute('href')).toBe('/admin/observability/synthetic?q=home&show=paused&offset=25&channels=p1');
+		await fireEvent.click(getByRole('button', { name: 'Cancel' }));
+		expect(nav.goto).toHaveBeenCalledWith('/admin/observability/synthetic?q=home&show=paused&offset=25', {
+			replace: true,
+			reset: false,
+		});
+		appState.page.url = new URL('http://localhost/');
+	});
+
 	it('links each probe to its own channels', () => {
 		const { container } = render(SyntheticPage, { props: props() });
 		const link = container.querySelector('a[aria-label="Notice channels for Homepage"]');
@@ -281,15 +301,14 @@ describe('the tiles', () => {
 });
 
 describe('the probe toolbar', () => {
-	it('narrows the rows on this page by name', async () => {
-		const { container } = render(SyntheticPage, {
-			props: props({ probes: [probe({ id: 'a', name: 'Homepage' }), probe({ id: 'b', name: 'Checkout' })], total: 2 }),
-		});
-		const input = container.querySelector('#probe-narrow') as HTMLInputElement;
-		await fireEvent.input(input, { target: { value: 'check' } });
-		const rows = [...container.querySelectorAll('tbody tr')].map((r) => r.textContent ?? '');
-		expect(rows).toHaveLength(1);
-		expect(rows[0]).toContain('Checkout');
+	it('keeps the search and the page size on each show link, and the search on the pager', () => {
+		appState.page.url = new URL('http://localhost/admin/observability/synthetic?q=check&show=failing&limit=100&offset=100');
+		const { container } = render(SyntheticPage, { props: props({ total: 60, hasMore: true, q: 'check', show: 'failing' }) });
+		appState.page.url = new URL('http://localhost/');
+		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
+		expect(hrefs).toContain('/admin/observability/synthetic?q=check&limit=100&show=paused');
+		expect(hrefs).toContain('/admin/observability/synthetic?q=check&limit=100');
+		expect(hrefs.some((h) => h.startsWith('/admin/observability/synthetic?show=failing&q=check&') && h.includes('offset=25'))).toBe(true);
 	});
 });
 
@@ -329,11 +348,12 @@ describe('a failed row action', () => {
 });
 
 describe('a filter that matches nothing', () => {
-	it('draws no table or pager above the empty state', async () => {
-		const { container } = render(SyntheticPage, { props: props() });
-		await fireEvent.input(container.querySelector('#probe-narrow') as HTMLInputElement, { target: { value: 'no such probe' } });
-		expect(said(container)).toContain('No probes on this page match these filters');
+	it('draws no table or pager above the empty state, and offers to clear the filters', () => {
+		const { container } = render(SyntheticPage, { props: props({ probes: [], total: 0, q: 'no such probe' }) });
+		expect(said(container)).toContain('No probes match these filters');
+		expect(said(container)).not.toContain('No probes yet');
 		expect(container.querySelector('table')).toBeNull();
+		expect(container.querySelector('a[href="/admin/observability/synthetic"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 });
 
@@ -386,6 +406,6 @@ describe('editing a probe whose secrets no read returns', () => {
 describe('the probe search box', () => {
 	it('is named for a screen reader', () => {
 		const { container } = render(SyntheticPage, { props: props() });
-		expect(container.querySelector('label[for="probe-narrow"]')?.textContent).toBe('Search this page');
+		expect(container.querySelector('label[for="probe-search"]')?.textContent).toBe('Search probes');
 	});
 });

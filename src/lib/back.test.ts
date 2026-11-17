@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { actionWithQuery, listBack, listQuery, queryWithout, returnAddress } from './back';
+import { actionWithQuery, filterHref, listBack, listQuery, queryWithout, returnAddress } from './back';
 
 describe('listBack', () => {
 	it('returns the bare list when the detail URL carries no filter', () => {
@@ -73,5 +73,21 @@ describe('returnAddress', () => {
 
 	it('is the bare path when nothing is kept', () => {
 		expect(returnAddress(new URL('http://localhost/admin/jobs?/create'))).toBe('/admin/jobs');
+	});
+});
+
+describe('filterHref', () => {
+	const url = new URL('http://localhost/admin/jobs?q=nightly&limit=100&offset=200&status=enabled');
+
+	it('keeps the search and the page size, sets the filter and starts at the first page', () => {
+		expect(filterHref(url, 'status', 'disabled')).toBe('/admin/jobs?q=nightly&limit=100&status=disabled');
+	});
+
+	it('takes the filter out for its empty option', () => {
+		expect(filterHref(url, 'status', '')).toBe('/admin/jobs?q=nightly&limit=100');
+	});
+
+	it('is the bare path when nothing else is set', () => {
+		expect(filterHref(new URL('http://localhost/admin/jobs?status=enabled&offset=50'), 'status', '')).toBe('/admin/jobs');
 	});
 });

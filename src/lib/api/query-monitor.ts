@@ -12,6 +12,7 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
+import { query } from '#lib/api/list.ts';
 
 const QUERY_LOG_URL = '/api/admin/query-log';
 
@@ -73,8 +74,9 @@ export async function listQueryLog(
 	client: HttpClient,
 	limit: number,
 	offset: number,
+	q = '',
 ): Promise<Page<QueryLogEntry>> {
-	return client.get<Page<QueryLogEntry>>(`${QUERY_LOG_URL}?limit=${limit}&offset=${offset}`);
+	return client.get<Page<QueryLogEntry>>(`${QUERY_LOG_URL}${query({ limit, offset, q })}`);
 }
 
 /** Why an analysis read no plan, as the plugin names it. */

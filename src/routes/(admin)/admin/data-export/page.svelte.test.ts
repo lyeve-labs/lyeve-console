@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ refreshAll: vi.fn(async () => {}), invalidate: vi.fn(async () => {}) }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://localhost/') } }));
+vi.mock('$app/state', () => appState);
 
 import ExportPage from './+page.svelte';
 import type { ExportJob, ExportSchedule } from '#lib/api/data-export.ts';
@@ -55,6 +57,7 @@ const props = (over: Record<string, unknown> = {}, form: unknown = null) => {
 		total: 1,
 		limit: 50,
 		offset: 0,
+		q: '',
 		gate: { state: 'ok' },
 		licensed: true,
 		schemas: ['article', 'page'],
@@ -124,7 +127,7 @@ describe('Data export jobs', () => {
 
 	it('names the search box for a screen reader', () => {
 		const { getByLabelText } = render(ExportPage, { props: props() });
-		expect(getByLabelText('Search this page')).toBeTruthy();
+		expect(getByLabelText('Search exports')).toBeTruthy();
 	});
 
 	it('states a size a person can read', () => {
@@ -145,11 +148,30 @@ describe('Data export jobs', () => {
 	});
 
 	it('filters by status through links that keep it in the address', () => {
+		appState.page.url = new URL('http://localhost/admin/data-export?status=failed');
 		const { getByRole } = render(ExportPage, { props: props({ status: 'failed' }) });
+		appState.page.url = new URL('http://localhost/');
 		const failed = getByRole('link', { name: 'Failed' });
 		expect(failed.getAttribute('href')).toBe('/admin/data-export?status=failed');
 		expect(failed.getAttribute('aria-current')).toBeTruthy();
 		expect(getByRole('link', { name: 'All' }).getAttribute('href')).toBe('/admin/data-export');
+	});
+
+	it('keeps the search and the page size on each status link, and the search on the pager', () => {
+		appState.page.url = new URL('http://localhost/admin/data-export?status=failed&q=nightly&limit=100&offset=100');
+		const { container, getByRole } = render(ExportPage, { props: props({ status: 'failed', q: 'nightly', total: 80 }) });
+		appState.page.url = new URL('http://localhost/');
+		expect(getByRole('link', { name: 'Completed' }).getAttribute('href')).toBe('/admin/data-export?q=nightly&limit=100&status=completed');
+		expect(getByRole('link', { name: 'All' }).getAttribute('href')).toBe('/admin/data-export?q=nightly&limit=100');
+		const next = container.querySelector('a[href*="offset=50"]');
+		expect(next?.getAttribute('href')).toContain('q=nightly');
+	});
+
+	it('offers to clear a search that matches nothing, rather than saying nothing was exported', () => {
+		const { container, getByRole } = render(ExportPage, { props: props({ jobs: [], total: 0, q: 'nightly' }) });
+		expect(said(container)).toContain('No exports match these filters');
+		expect(said(container)).not.toContain('No exports yet');
+		expect(getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/data-export');
 	});
 
 	it('keeps the status on the pager', () => {
@@ -245,23 +267,6 @@ describe('Data export empty states', () => {
 	it('offers the action that fills an empty schedule list', () => {
 		const { getByRole } = render(ExportPage, { props: props() });
 		expect(getByRole('button', { name: /new schedule/i })).toBeTruthy();
-	});
-});
-
-describe('Data export filter on this page', () => {
-	it('draws no empty table and no pager above a filter that matches nothing', async () => {
-		const { container } = render(ExportPage, { props: props() });
-		const search = container.querySelector('#export-narrow') as HTMLInputElement;
-
-		await fireEvent.input(search, { target: { value: 'nothing like it' } });
-
-		expect(said(container)).toContain('No exports on this page match this search');
-		expect(container.querySelector('table')).toBeNull();
-		const empty = [...container.querySelectorAll('*')].find((el) => el.textContent?.trim() === 'No exports on this page match this search');
-		const pager = container.querySelector('nav');
-		if (empty && pager) {
-			expect(empty.compareDocumentPosition(pager) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-		}
 	});
 });
 

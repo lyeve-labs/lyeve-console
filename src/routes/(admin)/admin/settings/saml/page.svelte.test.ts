@@ -69,6 +69,7 @@ const props = (over: Record<string, unknown> = {}, form: unknown = null) => ({
 		total: 1,
 		limit: 25,
 		offset: 0,
+		q: '',
 		hasMore: false,
 		gate: { state: 'ok' },
 		licensed: true,
@@ -167,6 +168,13 @@ describe('the empty state', () => {
 		const { container } = render(SamlPage, { props: props({ providers: [] }) });
 		expect(said(container)).toContain('No identity providers yet');
 		expect(said(container)).toContain('sign-in button on the sign-in page');
+	});
+
+	it('offers to clear a search that matches nothing, rather than offering a new provider', () => {
+		const { container } = render(SamlPage, { props: props({ providers: [], total: 0, q: 'nothing like it' }) });
+		expect(said(container)).toContain('No providers match this search');
+		expect(said(container)).not.toContain('No identity providers yet');
+		expect(container.querySelector('a[href="/admin/settings/saml"]')?.textContent?.trim()).toBe('Clear search');
 	});
 });
 
@@ -328,11 +336,9 @@ describe('the drawer', () => {
 });
 
 describe('the pager', () => {
-	it('stays when nothing on this page matches the search', async () => {
-		const { container } = render(SamlPage, { props: props({ total: 60, hasMore: true }) });
-		await fireEvent.input(screen.getByPlaceholderText('Name or entity ID on this page'), { target: { value: 'nothing like it' } });
-		expect(said(container)).toContain('No providers on this page match these filters');
-		expect(container.querySelector('a[href="/admin/settings/saml?limit=25&offset=25"]')).toBeTruthy();
+	it('keeps the search on the next page', () => {
+		const { container } = render(SamlPage, { props: props({ total: 60, hasMore: true, q: 'okta' }) });
+		expect(container.querySelector('a[href="/admin/settings/saml?q=okta&limit=25&offset=25"]')).toBeTruthy();
 	});
 });
 

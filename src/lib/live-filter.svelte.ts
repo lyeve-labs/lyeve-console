@@ -4,6 +4,29 @@ import { tick, untrack } from 'svelte';
 export const SEARCH_DELAY = 300;
 
 /**
+ * Carries the page size of `address` into a GET filter form that has no field
+ * of its own for it, or takes the carried one out when the address has none.
+ * The form holds no offset, so the search starts again at the first page.
+ */
+export function carryLimit(form: HTMLFormElement, address: string) {
+	const limit = new URL(address).searchParams.get('limit');
+	let carried = form.querySelector<HTMLInputElement>('input[data-carried-limit]');
+	if (!carried && form.elements.namedItem('limit')) return;
+	if (!limit) {
+		carried?.remove();
+		return;
+	}
+	if (!carried) {
+		carried = document.createElement('input');
+		carried.type = 'hidden';
+		carried.name = 'limit';
+		carried.dataset.carriedLimit = '';
+		form.append(carried);
+	}
+	carried.value = limit;
+}
+
+/**
  * A list's GET filter form that applies as the reader types and as each
  * filter changes, with no Search or Apply button.
  *
@@ -66,6 +89,7 @@ export function liveFilter(loaded: () => string, { name = 'q', delay = SEARCH_DE
 	function onsubmit() {
 		cancel();
 		sent = typed();
+		if (form) carryLimit(form, location.href);
 	}
 
 	return {

@@ -35,6 +35,8 @@
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
 	import { ICON } from '#lib/icon.ts';
+	import { listQuery } from '#lib/back.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -53,14 +55,11 @@
 	const saveFailure = $derived(failure?.action === 'save' ? failure.error : undefined);
 	const pageFailure = $derived(failure && failure.action !== 'save' ? failure.error : undefined);
 
-	let narrow = $state('');
-	const visible = $derived(
-		narrow.trim()
-			? data.experiments.filter((e) =>
-					`${e.name} ${e.description ?? ''}`.toLowerCase().includes(narrow.trim().toLowerCase()),
-				)
-			: data.experiments,
-	);
+	// The plugin searches every experiment, so a match past the first page
+	// shows on the first. The search lives in the URL, and a row link carries
+	// it so the experiment's back link returns to the same slice.
+	const live = liveFilter(() => data.q);
+	const rowQuery = $derived(listQuery({ q: data.q }));
 	const running = $derived(data.experiments.filter((e) => e.status === 'running').length);
 
 	let open = $state(false);
@@ -194,7 +193,30 @@
 	{:else}
 		<FormErrors message={pageFailure} />
 
-		{#if data.experiments.length === 0}
+		{#if data.experiments.length > 0 || data.q}
+			<form method="GET" {@attach live.form}>
+				<ListToolbar label="Filter experiments">
+					{#snippet search()}
+						<label for="experiment-search" class="sr-only">Search experiments</label>
+						<SearchInput
+							id="experiment-search"
+							name="q"
+							bind:value={live.value}
+							oninput={live.input}
+							placeholder="Name or description"
+						/>
+					{/snippet}
+				</ListToolbar>
+			</form>
+		{/if}
+
+		{#if data.experiments.length === 0 && data.q}
+			<EmptyState level={2} title="No experiments match this search" description="Clear the search to see every experiment.">
+				{#snippet action()}
+					<Button variant="secondary" href="/admin/experiments">Clear search</Button>
+				{/snippet}
+			</EmptyState>
+		{:else if data.experiments.length === 0}
 			<EmptyState
 				level={2}
 				title="No experiments yet"
@@ -210,118 +232,99 @@
 				{/snippet}
 			</EmptyState>
 		{:else}
-			<ListToolbar label="Filter experiments">
-				{#snippet search()}
-					<label for="experiment-search" class="sr-only">Search this page</label>
-					<SearchInput id="experiment-search" bind:value={narrow} placeholder="Name or description on this page" />
-				{/snippet}
-			</ListToolbar>
-
 			<p class="text-xs text-muted">
 				{running}
 				{plural(running, 'experiment is', 'experiments are')} running and splitting traffic now.
 			</p>
 
-			{#if visible.length === 0}
-				<EmptyState
-					level={2}
-					title="No experiments on this page match these filters"
-					description="The search covers this page only. Clear it or go to another page."
-				>
-					{#snippet iconSnippet()}
-						<FlaskConical size={ICON.lg} />
-					{/snippet}
-				</EmptyState>
-			{:else}
-				<Table label="Experiments">
-					<thead>
+			<Table label="Experiments">
+				<thead>
+					<tr>
+						<th scope="col">Experiment</th>
+						<th scope="col">Status</th>
+						<th scope="col">Exposures needed</th>
+						<th scope="col">Created</th>
+						<th scope="col"><span class="sr-only">Actions</span></th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each data.experiments as e (e.id)}
 						<tr>
-							<th scope="col">Experiment</th>
-							<th scope="col">Status</th>
-							<th scope="col">Exposures needed</th>
-							<th scope="col">Created</th>
-							<th scope="col"><span class="sr-only">Actions</span></th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each visible as e (e.id)}
-							<tr>
-								<td>
-									<a class="relative hit-area font-medium text-brand hover:underline" href="/admin/experiments/{e.id}">
-										{e.name}
-									</a>
-									{#if e.description}
-										<div class="max-w-md truncate text-xs text-faint">{e.description}</div>
-									{/if}
-								</td>
-								<td data-cell="nowrap">
-									<Badge tone={statusTone(e.status)} dot>{STATUS_LABELS[e.status]}</Badge>
-								</td>
-								<td data-cell="nowrap" class="text-xs text-faint">
-									{e.min_sample_size} across all variants
-								</td>
-								<td data-cell="nowrap" class="text-xs text-faint">
-									{formatDateTime(e.created_at)}
-								</td>
-								<td data-cell="nowrap">
-									<div class="flex items-center justify-end gap-1">
-										<!-- Only the moves the engine accepts from this status. A
-										     button that can only answer 409 is worse than no
-										     button, so the map is mirrored rather than guessed. -->
-										{#each movesFrom(e.status) as move (move)}
-											<form method="POST" action="?/move" use:enhance={moveExperiment(e, move)}>
-												<input type="hidden" name="id" value={e.id} />
-												<input type="hidden" name="move" value={move} />
-												<Button variant="ghost" size="sm" type="submit">
-													{TRANSITION_LABELS[move]}
-												</Button>
-											</form>
-										{/each}
-										{#if !isFinished(e.status)}
-											<Button
-												variant="ghost"
-												size="sm"
-												aria-label="Edit {e.name}"
-												onclick={() => openEdit(e)}
-											>
-												<Pencil size={ICON.sm} />
-											</Button>
-											<Button
-												variant="ghost"
-												size="sm"
-												aria-label="Duplicate {e.name}"
-												onclick={() => openDuplicate(e)}
-											>
-												<Copy size={ICON.sm} />
-											</Button>
-										{/if}
-										<form method="POST" action="?/delete" use:enhance={removeExperiment(e)}>
+							<td>
+								<a class="relative hit-area font-medium text-brand hover:underline" href="/admin/experiments/{e.id}{rowQuery}">
+									{e.name}
+								</a>
+								{#if e.description}
+									<div class="max-w-md truncate text-xs text-faint">{e.description}</div>
+								{/if}
+							</td>
+							<td data-cell="nowrap">
+								<Badge tone={statusTone(e.status)} dot>{STATUS_LABELS[e.status]}</Badge>
+							</td>
+							<td data-cell="nowrap" class="text-xs text-faint">
+								{e.min_sample_size} across all variants
+							</td>
+							<td data-cell="nowrap" class="text-xs text-faint">
+								{formatDateTime(e.created_at)}
+							</td>
+							<td data-cell="nowrap">
+								<div class="flex items-center justify-end gap-1">
+									<!-- Only the moves the engine accepts from this status. A
+									     button that can only answer 409 is worse than no
+									     button, so the map is mirrored rather than guessed. -->
+									{#each movesFrom(e.status) as move (move)}
+										<form method="POST" action="?/move" use:enhance={moveExperiment(e, move)}>
 											<input type="hidden" name="id" value={e.id} />
-											<Button
-												variant="ghost"
-												size="sm"
-												type="submit"
-												aria-label="Delete {e.name}"
-											>
-												<Trash2 size={ICON.sm} class="text-danger" />
+											<input type="hidden" name="move" value={move} />
+											<Button variant="ghost" size="sm" type="submit">
+												{TRANSITION_LABELS[move]}
 											</Button>
 										</form>
-									</div>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</Table>
-				<Pagination
-					page={pageNumber(data.offset, data.limit)}
-					perPage={data.limit}
-					count={data.experiments.length}
-					total={data.total ?? undefined}
-					hasNext={data.hasMore}
-					noun="experiments"
-					href={pageHref('/admin/experiments', data.limit)}
-				/>
-			{/if}
+									{/each}
+									{#if !isFinished(e.status)}
+										<Button
+											variant="ghost"
+											size="sm"
+											aria-label="Edit {e.name}"
+											onclick={() => openEdit(e)}
+										>
+											<Pencil size={ICON.sm} />
+										</Button>
+										<Button
+											variant="ghost"
+											size="sm"
+											aria-label="Duplicate {e.name}"
+											onclick={() => openDuplicate(e)}
+										>
+											<Copy size={ICON.sm} />
+										</Button>
+									{/if}
+									<form method="POST" action="?/delete" use:enhance={removeExperiment(e)}>
+										<input type="hidden" name="id" value={e.id} />
+										<Button
+											variant="ghost"
+											size="sm"
+											type="submit"
+											aria-label="Delete {e.name}"
+										>
+											<Trash2 size={ICON.sm} class="text-danger" />
+										</Button>
+									</form>
+								</div>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</Table>
+			<Pagination
+				page={pageNumber(data.offset, data.limit)}
+				perPage={data.limit}
+				count={data.experiments.length}
+				total={data.total ?? undefined}
+				hasNext={data.hasMore}
+				noun="experiments"
+				href={pageHref('/admin/experiments', data.limit, data.q ? { q: data.q } : {})}
+			/>
 		{/if}
 	{/if}
 </PageShell>

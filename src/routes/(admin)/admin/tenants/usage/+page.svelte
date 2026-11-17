@@ -18,7 +18,6 @@
 		SearchInput,
 	} from '@lyeve-labs/ui-kit';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
-	import { narrows } from '#lib/narrow.ts';
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import { tick } from 'svelte';
 	import { enhance } from '#lib/enhance.ts';
@@ -48,6 +47,7 @@
 	import { formatBytes, formatDateTime, formatCount, plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -139,10 +139,10 @@
 	const reportingOnly = $derived(
 		data.quotas.filter((q) => hasAnyLimit(q) && !enforces(q)),
 	);
-	// The endpoint takes no search, so the box narrows the page on screen and
-	// the pager below still walks every quota.
-	let query = $state('');
-	const visibleQuotas = $derived(data.quotas.filter((q) => narrows(query, q.tenant_id)));
+	// The plugin searches every quota by tenant, so a match past the first page
+	// shows on the first. An admin's list holds one quota, so the box is a
+	// super admin's.
+	const live = liveFilter(() => data.q);
 	const usageByTenant = $derived(new Map((data.usage.ok ? data.usage.value : []).map((u) => [u.tenant_id, u])));
 
 	function review(r: QuotaRequest, decision: 'approve' | 'deny'): SubmitFunction {
@@ -241,7 +241,29 @@
 				API calls and bandwidth count requests made with an API key only. Requests from a signed-in
 				session are not counted.
 			</p>
-			{#if data.quotas.length === 0}
+			{#if isSuperAdmin && (data.quotas.length > 0 || data.q)}
+				<form method="GET" {@attach live.form}>
+					<ListToolbar label="Filter quotas">
+						{#snippet search()}
+							<label for="quota-search" class="sr-only">Search quotas</label>
+							<SearchInput
+								id="quota-search"
+								name="q"
+								bind:value={live.value}
+								oninput={live.input}
+								placeholder="Tenant"
+							/>
+						{/snippet}
+					</ListToolbar>
+				</form>
+			{/if}
+			{#if data.quotas.length === 0 && data.q}
+				<EmptyState title="No quotas match this search" description="Clear the search to see every quota.">
+					{#snippet action()}
+						<Button variant="secondary" href="/admin/tenants/usage">Clear search</Button>
+					{/snippet}
+				</EmptyState>
+			{:else if data.quotas.length === 0}
 				<EmptyState
 					title="No quotas yet"
 					description={isSuperAdmin ? 'Every tenant may use as much as it likes.' : 'This tenant may use as much as it likes.'}
@@ -258,21 +280,9 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<ListToolbar label="Filter quotas">
-					{#snippet search()}
-						<label for="quota-search" class="sr-only">Search this page</label>
-						<SearchInput id="quota-search" bind:value={query} placeholder="Tenant on this page" />
-					{/snippet}
-				</ListToolbar>
 				{#if !data.usage.ok}
 					<GateNotice gate={data.usage.gate} title="what each tenant used" absent="Usage per tenant is not included in this build. The quotas below show their limits only." />
 				{/if}
-				{#if visibleQuotas.length === 0}
-					<EmptyState
-						title="No quotas match this search"
-						description="The search covers this page only. Clear it or go to another page."
-					/>
-				{:else}
 				<Table label="Quotas">
 					<thead>
 						<tr>
@@ -285,7 +295,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each visibleQuotas as q (q.id)}
+						{#each data.quotas as q (q.id)}
 							{@const used = usageByTenant.get(q.tenant_id)}
 							{@const callPct = used ? usedPct(used.api_calls, q.requests_limit) : null}
 							{@const storePct = used ? usedPct(used.storage_bytes, q.storage_bytes_limit) : null}
@@ -346,14 +356,13 @@
 						{/each}
 					</tbody>
 				</Table>
-				{/if}
 				<Pagination
 					page={pageNumber(data.offset, data.limit)}
 					perPage={data.limit}
 					count={data.quotas.length}
 					total={data.quotaTotal ?? undefined}
 					noun="quotas"
-					href={pageHref('/admin/tenants/usage', data.limit)}
+					href={pageHref('/admin/tenants/usage', data.limit, data.q ? { q: data.q } : {})}
 				/>
 			{/if}
 		</section>

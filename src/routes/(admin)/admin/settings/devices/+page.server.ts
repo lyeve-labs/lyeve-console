@@ -12,7 +12,7 @@ import {
 } from '#lib/api/devices.ts';
 import { type Gate, GATE_OK, section } from '#lib/api/gate.ts';
 import { couldNotLoad } from '#lib/outage.ts';
-import { pageOf, pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { pageOf, pageWindow, pastEndOffset, searchOf, withOffset } from '#lib/api/list.ts';
 import { asked } from '#lib/server/asked.ts';
 
 const DEFAULT_LIMIT = 25;
@@ -21,6 +21,7 @@ const MAX_LIMIT = 100;
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();
 	const { limit, offset } = pageWindow(event.url, DEFAULT_LIMIT, MAX_LIMIT);
+	const q = searchOf(event.url);
 
 	// The browser reading the page, so a row can be marked as probably this
 	// one. It is passed through rather than read in the component because a
@@ -36,13 +37,14 @@ export const load: PageServerLoad = async (event) => {
 			offset,
 			hasMore: false,
 			userAgent,
+			q,
 			gate: { state: 'absent' } as Gate,
 		};
 	}
 
 	const client = authedClient(event);
 	const read = await section(
-		listDevices(client, limit + 1, offset).then((res) => pageOf(res, limit, offset)),
+		listDevices(client, limit + 1, offset, q).then((res) => pageOf(res, limit, offset)),
 		couldNotLoad('your devices'),
 	);
 	if (read.ok) {
@@ -57,6 +59,7 @@ export const load: PageServerLoad = async (event) => {
 		offset,
 		hasMore: read.ok && read.value.hasMore,
 		userAgent,
+		q,
 		gate: read.ok ? GATE_OK : read.gate,
 	};
 };

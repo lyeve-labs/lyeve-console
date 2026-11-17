@@ -59,6 +59,24 @@ describe('the key list', () => {
 			location: expect.stringContaining('offset=50'),
 		});
 	});
+
+	it('sends the search and the show filter to the engine and back to the page', async () => {
+		engine.get.mockResolvedValue({ data: [], total_count: 0 });
+		const out = (await load(loadEvent('?q=invoice&show=stored'))) as { q: string; show: string };
+		const asked = new URL(String(engine.get.mock.calls[0][0]), 'http://e');
+		expect(asked.searchParams.get('q')).toBe('invoice');
+		expect(asked.searchParams.get('show')).toBe('stored');
+		expect(out).toMatchObject({ q: 'invoice', show: 'stored' });
+	});
+
+	it('drops a show value it does not offer and cuts a search past 200 characters', async () => {
+		engine.get.mockResolvedValue({ data: [], total_count: 0 });
+		const out = (await load(loadEvent(`?show=expired&q=${'a'.repeat(201)}`))) as { q: string; show: string };
+		const asked = String(engine.get.mock.calls[0][0]);
+		expect(asked).not.toContain('show=');
+		expect(asked).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(out).toMatchObject({ q: 'a'.repeat(200), show: '' });
+	});
 });
 
 describe('a release the engine does not carry out', () => {

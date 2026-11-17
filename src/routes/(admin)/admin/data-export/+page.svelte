@@ -46,6 +46,9 @@
 	import { confirmed, submitter } from '#lib/forms.svelte.ts';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { filterHref } from '#lib/back.ts';
+	import { page } from '$app/state';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -76,22 +79,19 @@
 		return () => clearInterval(id);
 	});
 
-	// Link chips: the plugin narrows the jobs by status, so the choice lives in
-	// the address, and the pager and a reload keep it.
+	// Link chips and a search the plugin applies to every job, so both live in
+	// the address, and the pager and a reload keep them. Each chip keeps the
+	// search.
 	const base = '/admin/data-export';
-	const statusOptions = [
-		{ value: '', label: 'All', href: base },
-		...JOB_STATUSES.map((s) => ({ value: s, label: s[0].toUpperCase() + s.slice(1), href: `${base}?status=${s}` })),
-	];
-
-	let narrow = $state('');
-	const visible = $derived(
-		narrow.trim()
-			? data.jobs.filter((j) =>
-					`${j.name} ${j.format} ${j.status}`.toLowerCase().includes(narrow.trim().toLowerCase()),
-				)
-			: data.jobs,
-	);
+	const statusOptions = $derived([
+		{ value: '', label: 'All', href: filterHref(page.url, 'status', '') },
+		...JOB_STATUSES.map((s) => ({
+			value: s,
+			label: s[0].toUpperCase() + s.slice(1),
+			href: filterHref(page.url, 'status', s),
+		})),
+	]);
+	const live = liveFilter(() => data.q);
 
 	// Null while the schema list is unread, so the fields say why the choice is empty.
 	const schemaNames = $derived(data.schemas.ok ? data.schemas.value : null);
@@ -238,7 +238,7 @@
 				{/if}
 			</div>
 
-			{#if data.jobs.length === 0 && !data.status}
+			{#if data.jobs.length === 0 && !data.status && !data.q}
 				<EmptyState
 					title="No exports yet"
 					description="Exports appear here while they run and after they finish."
@@ -251,33 +251,32 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<ListToolbar label="Filter exports">
-					{#snippet search()}
-						<label for="export-narrow" class="sr-only">Search this page</label>
-						<SearchInput
-							id="export-narrow"
-							bind:value={narrow}
-							placeholder="Name, format or status on this page"
-						/>
-					{/snippet}
-					{#snippet filters()}
-						<FilterChips label="Status" value={data.status} options={statusOptions} />
-					{/snippet}
-				</ListToolbar>
+				<form method="GET" {@attach live.form}>
+					{#if data.status}<input type="hidden" name="status" value={data.status} />{/if}
+					<ListToolbar label="Filter exports">
+						{#snippet search()}
+							<label for="export-search" class="sr-only">Search exports</label>
+							<SearchInput
+								id="export-search"
+								name="q"
+								bind:value={live.value}
+								oninput={live.input}
+								placeholder="Name or format"
+							/>
+						{/snippet}
+						{#snippet filters()}
+							<FilterChips label="Status" value={data.status} options={statusOptions} />
+						{/snippet}
+					</ListToolbar>
+				</form>
 
 				{#if data.jobs.length === 0}
-					<EmptyState title="No exports match these filters" description="Choose another status to see the rest.">
+					<EmptyState title="No exports match these filters" description="Clear the search or choose another status.">
 						{#snippet iconSnippet()}
 							<Search size={ICON.lg} />
 						{/snippet}
 						{#snippet action()}
 							<Button variant="secondary" href={base}>Clear filters</Button>
-						{/snippet}
-					</EmptyState>
-				{:else if visible.length === 0}
-					<EmptyState title="No exports on this page match this search" description="Clear the search, or go to another page.">
-						{#snippet iconSnippet()}
-							<Search size={ICON.lg} />
 						{/snippet}
 					</EmptyState>
 				{:else}
@@ -293,7 +292,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each visible as job (job.id)}
+							{#each data.jobs as job (job.id)}
 								<tr>
 									<td>
 										{job.name}
@@ -374,7 +373,10 @@
 						count={data.jobs.length}
 						total={data.total ?? undefined}
 						noun="exports"
-						href={pageHref(base, data.limit, data.status ? { status: data.status } : {})}
+						href={pageHref(base, data.limit, {
+							...(data.status ? { status: data.status } : {}),
+							...(data.q ? { q: data.q } : {}),
+						})}
 					/>
 				{/if}
 			{/if}

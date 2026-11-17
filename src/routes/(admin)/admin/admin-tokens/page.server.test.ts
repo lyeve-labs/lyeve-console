@@ -164,6 +164,32 @@ describe('the load', () => {
 		expect(out.tenants.ok).toBe(false);
 	});
 
+	it('sends the search and the status to the engine and back to the page', async () => {
+		const { ev, fetch } = loadEvent(
+			['admin'],
+			{ 'GET /api/admin/admin-tokens': { status: 200, body: { data: [], total_count: 0 } } },
+			'http://admin/admin/admin-tokens?q=ci&status=replaced'
+		);
+		const out = (await load(ev)) as Record<string, unknown>;
+		const asked = new URL(String(fetch.mock.calls.map(([u]) => String(u)).find((u) => u.includes('/api/admin/admin-tokens?'))), 'http://e');
+		expect(asked.searchParams.get('q')).toBe('ci');
+		expect(asked.searchParams.get('status')).toBe('replaced');
+		expect(out).toMatchObject({ q: 'ci', status: 'replaced' });
+	});
+
+	it('drops a status it does not offer and cuts a search past 200 characters', async () => {
+		const { ev, fetch } = loadEvent(
+			['admin'],
+			{ 'GET /api/admin/admin-tokens': { status: 200, body: { data: [], total_count: 0 } } },
+			`http://admin/admin/admin-tokens?status=paused&q=${'a'.repeat(201)}`
+		);
+		const out = (await load(ev)) as Record<string, unknown>;
+		const asked = String(fetch.mock.calls.map(([u]) => String(u)).find((u) => u.includes('/api/admin/admin-tokens?')));
+		expect(asked).not.toContain('status=');
+		expect(asked).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(out).toMatchObject({ q: 'a'.repeat(200), status: '' });
+	});
+
 	it('sends a page past the end back to the last page that holds tokens', async () => {
 		const { ev } = loadEvent(
 			['admin'],

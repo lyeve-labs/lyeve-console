@@ -25,6 +25,7 @@ const props = (over: Record<string, unknown> = {}) => ({
 		total: 1,
 		limit: 50,
 		offset: 0,
+		q: '',
 		gate: { state: 'ok' },
 		...over,
 	} as never,
@@ -66,7 +67,7 @@ describe('PII masking access log', () => {
 
 	it('names the search box for a screen reader', () => {
 		const { getByLabelText } = render(ReadsPage, { props: props() });
-		expect(getByLabelText('Search this page')).toBeTruthy();
+		expect(getByLabelText('Search unmasked reads')).toBeTruthy();
 	});
 
 	it('reads an empty log as nobody having looked', () => {
@@ -92,5 +93,19 @@ describe('PII unmasked reads pager', () => {
 		const { container } = render(ReadsPage, { props: props({ entries, total: 120 }) });
 		const next = [...container.querySelectorAll('a')].find((a) => a.getAttribute('aria-label')?.includes('Next'));
 		expect(next?.getAttribute('href')).toBe('/admin/settings/pii/reads?limit=50&offset=50');
+	});
+
+	it('keeps the search on the next page', () => {
+		const entries = Array.from({ length: 50 }, (_, i) => ({ id: `a${i}`, pii_type: 'email', accessed_at: '2026-09-22T10:00:00Z' }));
+		const { container } = render(ReadsPage, { props: props({ entries, total: 120, q: 'email' }) });
+		const next = [...container.querySelectorAll('a')].find((a) => a.getAttribute('aria-label')?.includes('Next'));
+		expect(next?.getAttribute('href')).toBe('/admin/settings/pii/reads?q=email&limit=50&offset=50');
+	});
+
+	it('offers to clear a search that matches nothing, rather than saying nobody looked', () => {
+		const { container } = render(ReadsPage, { props: props({ entries: [], total: 0, q: 'phone' }) });
+		expect(said(container)).toContain('No unmasked reads match this search');
+		expect(said(container)).not.toContain('No unmasked reads yet');
+		expect(container.querySelector('a[href="/admin/settings/pii/reads"]')?.textContent?.trim()).toBe('Clear search');
 	});
 });

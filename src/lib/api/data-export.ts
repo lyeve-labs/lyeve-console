@@ -11,6 +11,7 @@
  */
 import type { HttpClient } from '@lyeve-labs/client';
 import { formatCount } from '#lib/format.ts';
+import { query } from '#lib/api/list.ts';
 
 export const JOBS_URL = '/api/admin/data-export/jobs';
 const SCHEDULES_URL = '/api/admin/data-export/schedules';
@@ -131,15 +132,15 @@ export interface Page<T> {
 	total_count: number;
 }
 
-/** One page of jobs, narrowed by the plugin to `status` when one is named. */
+/** One page of jobs, narrowed by the plugin to `status` and to the jobs whose name or format holds `q`, when either is named. */
 export async function listJobs(
 	client: HttpClient,
 	limit: number,
 	offset: number,
 	status: JobStatus | '' = '',
+	q = '',
 ): Promise<Page<ExportJob>> {
-	const narrowed = status ? `&status=${status}` : '';
-	const res = await client.get<JobPage>(`${JOBS_URL}?limit=${limit}&offset=${offset}${narrowed}`);
+	const res = await client.get<JobPage>(`${JOBS_URL}${query({ limit, offset, status, q })}`);
 	const data = res?.jobs ?? [];
 	return { data, total_count: res?.total ?? data.length };
 }

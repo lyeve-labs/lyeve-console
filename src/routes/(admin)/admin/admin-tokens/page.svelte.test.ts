@@ -5,7 +5,8 @@ import Page from './+page.svelte';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }), applyAction: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn(), refreshAll: vi.fn() }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://admin/admin/admin-tokens') } }));
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://admin/admin/admin-tokens') } }));
+vi.mock('$app/state', () => appState);
 
 afterEach(cleanup);
 
@@ -38,6 +39,8 @@ function setup(over: Record<string, unknown> = {}, roles = ['super_admin']) {
 		total: 0,
 		limit: 50,
 		offset: 0,
+		q: '',
+		status: '',
 		grants: [{ name: 'schemas:read', description: 'Read schemas.', routes: [{ method: 'GET', pattern: '/api/admin/schemas' }] }],
 		mfaEnrolled: false,
 		tenants: [],
@@ -132,10 +135,26 @@ describe('admin tokens page', () => {
 		expect(document.body.textContent).toContain('Could not load the tenants');
 	});
 
-	it('offers the five statuses as chips', () => {
-		const { getByRole } = setup({ tokens: [token({})], total: 1 });
-		const chips = getByRole('group', { name: 'Status' });
-		expect(chips.querySelectorAll('button')).toHaveLength(5);
+	it('offers the five statuses as links that keep the search and the page size', () => {
+		appState.page.url = new URL('http://admin/admin/admin-tokens?q=ci&limit=100&offset=100');
+		const { getByRole } = setup({ tokens: [token({})], total: 1, q: 'ci' });
+		appState.page.url = new URL('http://admin/admin/admin-tokens');
+		expect(getByRole('link', { name: 'Replaced' }).getAttribute('href')).toBe('/admin/admin-tokens?q=ci&limit=100&status=replaced');
+		expect(getByRole('link', { name: 'All' }).getAttribute('href')).toBe('/admin/admin-tokens?q=ci&limit=100');
+	});
+
+	it('keeps the search and the status on the pager', () => {
+		const { container } = setup({ tokens: [token({})], total: 120, q: 'ci', status: 'expired' });
+		expect(container.querySelector('a[href="/admin/admin-tokens?status=expired&q=ci&limit=50&offset=50"]')).toBeTruthy();
+	});
+
+	it('offers to clear filters that match nothing, rather than offering a first token', () => {
+		appState.page.url = new URL('http://admin/admin/admin-tokens?q=nothing+like+it');
+		const { container } = setup({ tokens: [], total: 0, q: 'nothing like it' });
+		appState.page.url = new URL('http://admin/admin/admin-tokens');
+		expect(container.textContent).toContain('No tokens match these filters');
+		expect(container.textContent).not.toContain('No admin tokens yet');
+		expect(container.querySelector('a[href="/admin/admin-tokens"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 
 	it('opens the rotate form as the same side panel as the create form, with its fields and its warning', async () => {

@@ -54,6 +54,24 @@ describe('the events load', () => {
 			location: expect.stringContaining('offset=50'),
 		});
 	});
+
+	it('sends the search and the error filter to the engine and back to the page', async () => {
+		route({ '/events/replay': { data: [], total_count: 0 }, '/events?': { data: [], total_count: 0 } });
+		const out = (await load(loadEvent('?q=orders&failed=1'))) as Loaded;
+		const asked = new URL(engine.get.mock.calls.map((c) => String(c[0])).find((u) => u.includes('/events?'))!, 'http://e');
+		expect(asked.searchParams.get('q')).toBe('orders');
+		expect(asked.searchParams.get('failed')).toBe('1');
+		expect(out).toMatchObject({ q: 'orders', failed: '1' });
+	});
+
+	it('drops an error filter value it does not offer and cuts a search past 200 characters', async () => {
+		route({ '/events/replay': { data: [], total_count: 0 }, '/events?': { data: [], total_count: 0 } });
+		const out = (await load(loadEvent(`?failed=yes&q=${'a'.repeat(201)}`))) as Loaded;
+		const asked = engine.get.mock.calls.map((c) => String(c[0])).find((u) => u.includes('/events?'))!;
+		expect(asked).not.toContain('failed=');
+		expect(asked).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(out).toMatchObject({ q: 'a'.repeat(200), failed: '' });
+	});
 });
 
 type Failure = { status: number; data: { error: string } };

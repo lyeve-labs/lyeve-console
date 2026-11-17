@@ -14,7 +14,7 @@ describe('webhooks create drawer posts a real event list', () => {
 	it('names every checkbox so getAll("events") sees a list', async () => {
 		const { container, getAllByText } = render(WebhooksPage, {
 			props: {
-				data: { webhooks: { ok: true, value: [] }, schemas: { ok: true, value: [{ name: 'post' }] }, entitlements, user: { roles: ['super_admin'] } },
+				data: { q: '', status: '', webhooks: { ok: true, value: [] }, schemas: { ok: true, value: [{ name: 'post' }] }, entitlements, user: { roles: ['super_admin'] } },
 				form: null
 			} as never
 		});
@@ -35,7 +35,7 @@ describe('webhooks create drawer posts a real event list', () => {
 	it('says what an empty delivery option means and when an option is refused', async () => {
 		const { container, getAllByText } = render(WebhooksPage, {
 			props: {
-				data: { webhooks: { ok: true, value: [] }, schemas: { ok: true, value: [{ name: 'post' }] }, entitlements, user: { roles: ['super_admin'] } },
+				data: { q: '', status: '', webhooks: { ok: true, value: [] }, schemas: { ok: true, value: [{ name: 'post' }] }, entitlements, user: { roles: ['super_admin'] } },
 				form: null
 			} as never
 		});
@@ -57,6 +57,8 @@ describe('webhooks edit drawer posts the schemas it holds', () => {
 		const { container, getByRole } = render(WebhooksPage, {
 			props: {
 				data: {
+					q: '',
+					status: '',
 					webhooks: { ok: true, value: [hook] },
 					schemas: { ok: false, gate: { state: 'unavailable' } },
 					entitlements,
@@ -82,6 +84,8 @@ describe('webhooks create drawer during a schema outage', () => {
 		const { container, getAllByText } = render(WebhooksPage, {
 			props: {
 				data: {
+					q: '',
+					status: '',
 					webhooks: { ok: true, value: [] },
 					schemas: { ok: false, gate: { state: 'unavailable' } },
 					entitlements,

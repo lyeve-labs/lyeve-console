@@ -59,6 +59,7 @@ const props = (over: Record<string, unknown> = {}, form: unknown = null) => ({
 		total: 1,
 		limit: 25,
 		offset: 0,
+		q: '',
 		hasMore: false,
 		gate: { state: 'ok' },
 		licensed: true,
@@ -122,6 +123,18 @@ describe('the rows', () => {
 			props: props({ providers: [provider({ deprovision_on_delete: false })] }),
 		});
 		expect(said(container)).not.toContain('Deprovisioning accounts');
+	});
+
+	it('offers to clear a search that matches nothing, rather than offering a new connection', () => {
+		const { container } = render(ScimPage, { props: props({ providers: [], total: 0, q: 'nothing like it' }) });
+		expect(said(container)).toContain('No connections match this search');
+		expect(said(container)).not.toContain('No connections yet');
+		expect(container.querySelector('a[href="/admin/settings/scim"]')?.textContent?.trim()).toBe('Clear search');
+	});
+
+	it('keeps the search on the next page', () => {
+		const { container } = render(ScimPage, { props: props({ total: 60, hasMore: true, q: 'azure' }) });
+		expect(container.querySelector('a[href="/admin/settings/scim?q=azure&limit=25&offset=25"]')).toBeTruthy();
 	});
 
 	it('counts connections in the pager, the word the page uses for them', () => {
@@ -244,20 +257,6 @@ describe('the drawers', () => {
 		const radios = [...document.body.querySelectorAll<HTMLInputElement>('input[type="radio"][name="deprovision_action"]')];
 		expect(radios.map((r) => r.value)).toEqual(['disable', 'delete']);
 		expect(document.body.textContent).toContain('This cannot be undone.');
-	});
-});
-
-describe('the search', () => {
-	it('narrows the page and keeps the pager when nothing matches', async () => {
-		const { container } = render(ScimPage, {
-			props: props({ providers: [provider(), provider({ id: 'c2', name: 'Okta' })], total: 40, hasMore: true }),
-		});
-		await fireEvent.input(screen.getByPlaceholderText('Connection name on this page'), { target: { value: 'okta' } });
-		expect(said(container)).toContain('Okta');
-		expect(said(container)).not.toContain('Azure AD');
-		await fireEvent.input(screen.getByPlaceholderText('Connection name on this page'), { target: { value: 'nothing like it' } });
-		expect(said(container)).toContain('No connections match this search');
-		expect(container.querySelector('a[href="/admin/settings/scim?limit=25&offset=25"]')).toBeTruthy();
 	});
 });
 

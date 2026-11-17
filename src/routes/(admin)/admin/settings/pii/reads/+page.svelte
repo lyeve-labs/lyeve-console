@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Badge, EmptyState, PageShell, Pagination, SearchInput, Stat, Table } from '@lyeve-labs/ui-kit';
+	import { Badge, Button, EmptyState, PageShell, Pagination, SearchInput, Stat, Table } from '@lyeve-labs/ui-kit';
 	import RefreshButton from '#lib/components/RefreshButton.svelte';
-	import { Eye, Search } from '@lucide/svelte';
+	import { Eye } from '@lucide/svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import PiiTabs from '#lib/components/PiiTabs.svelte';
@@ -10,21 +10,14 @@
 	import type { PageData } from './$types';
 	import { ICON } from '#lib/icon.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 
 	let { data }: { data: PageData } = $props();
 
-	let narrow = $state('');
-
 	const looks = $derived(byType(data.entries));
-	const visible = $derived(
-		narrow.trim()
-			? data.entries.filter((e) =>
-					`${e.pii_type} ${e.record_type ?? ''} ${e.viewer_role ?? ''}`
-						.toLowerCase()
-						.includes(narrow.trim().toLowerCase()),
-				)
-			: data.entries,
-	);
+	// The plugin searches the whole log, so a match past the first page shows
+	// on the first. The search lives in the URL, so the pager keeps it.
+	const live = liveFilter(() => data.q);
 </script>
 
 <PageShell
@@ -49,10 +42,33 @@
 		/>
 	{:else}
 		<div class="grid gap-4 sm:grid-cols-4">
-			<Stat size="sm" mono label="Unmasked reads" value={data.total} />
+			<Stat size="sm" mono label={data.q ? 'Matching reads' : 'Unmasked reads'} value={data.total} />
 		</div>
 
-		{#if data.entries.length === 0}
+		{#if data.entries.length > 0 || data.q}
+			<form method="GET" {@attach live.form}>
+				<ListToolbar label="Filter unmasked reads">
+					{#snippet search()}
+						<label for="pii-search" class="sr-only">Search unmasked reads</label>
+						<SearchInput
+							id="pii-search"
+							name="q"
+							bind:value={live.value}
+							oninput={live.input}
+							placeholder="Kind, record or role"
+						/>
+					{/snippet}
+				</ListToolbar>
+			</form>
+		{/if}
+
+		{#if data.entries.length === 0 && data.q}
+			<EmptyState title="No unmasked reads match this search" description="Clear the search to see every read.">
+				{#snippet action()}
+					<Button variant="secondary" href="/admin/settings/pii/reads">Clear search</Button>
+				{/snippet}
+			</EmptyState>
+		{:else if data.entries.length === 0}
 			<EmptyState
 				title="No unmasked reads yet"
 				description="A read appears here when someone allowed to see a field views it unmasked."
@@ -71,59 +87,37 @@
 				</div>
 			{/if}
 
-			<ListToolbar label="Filter unmasked reads">
-				{#snippet search()}
-					<label for="pii-narrow" class="sr-only">Search this page</label>
-					<SearchInput
-						id="pii-narrow"
-						bind:value={narrow}
-						placeholder="Kind, record or role on this page"
-					/>
-				{/snippet}
-			</ListToolbar>
-
-			{#if visible.length === 0}
-				<EmptyState
-					title="No unmasked reads match this search"
-					description="The search covers this page only. Clear it to see every read on this page."
-				>
-					{#snippet iconSnippet()}
-						<Search size={ICON.lg} />
-					{/snippet}
-				</EmptyState>
-			{:else}
-				<Table label="Unmasked reads">
-					<thead>
+			<Table label="Unmasked reads">
+				<thead>
+					<tr>
+						<th scope="col">Read</th>
+						<th scope="col">Kind</th>
+						<th scope="col">Record</th>
+						<th scope="col">Role</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each data.entries as entry (entry.id)}
 						<tr>
-							<th scope="col">Read</th>
-							<th scope="col">Kind</th>
-							<th scope="col">Record</th>
-							<th scope="col">Role</th>
+							<td data-cell="nowrap" class="text-xs text-faint"
+								>{formatDateTime(entry.accessed_at)}</td
+							>
+							<td data-cell="nowrap">{entry.pii_type}</td>
+							<td data-cell="nowrap" class="font-mono text-xs"
+								>{entry.record_type ?? NO_VALUE}</td
+							>
+							<td data-cell="nowrap" class="text-xs">{entry.viewer_role ?? NO_VALUE}</td>
 						</tr>
-					</thead>
-					<tbody>
-						{#each visible as entry (entry.id)}
-							<tr>
-								<td data-cell="nowrap" class="text-xs text-faint"
-									>{formatDateTime(entry.accessed_at)}</td
-								>
-								<td data-cell="nowrap">{entry.pii_type}</td>
-								<td data-cell="nowrap" class="font-mono text-xs"
-									>{entry.record_type ?? NO_VALUE}</td
-								>
-								<td data-cell="nowrap" class="text-xs">{entry.viewer_role ?? NO_VALUE}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</Table>
-			{/if}
+					{/each}
+				</tbody>
+			</Table>
 			<Pagination
 				page={pageNumber(data.offset, data.limit)}
 				perPage={data.limit}
 				count={data.entries.length}
 				total={data.total}
 				noun="reads"
-				href={pageHref('/admin/settings/pii/reads', data.limit)}
+				href={pageHref('/admin/settings/pii/reads', data.limit, data.q ? { q: data.q } : {})}
 			/>
 		{/if}
 	{/if}

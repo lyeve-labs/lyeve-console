@@ -21,7 +21,7 @@
 	import { enhance } from '#lib/enhance.ts';
 	import { confirmed, drawerFailure, tracked } from '#lib/forms.svelte.ts';
 	import type { SubmitFunction } from '$app/forms';
-	import { KeyRound, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from '@lucide/svelte';
+	import { KeyRound, Pencil, Plus, RefreshCw, Trash2 } from '@lucide/svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
@@ -36,6 +36,7 @@
 	import { NO_VALUE, formatDate } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -48,14 +49,9 @@
 	// admin is shown the list and no control that would only be refused.
 	const canWrite = $derived(data.user.roles.includes('super_admin'));
 
-	let narrow = $state('');
-	const visible = $derived(
-		narrow.trim()
-			? data.providers.filter((p) =>
-					`${p.name} ${p.entity_id}`.toLowerCase().includes(narrow.trim().toLowerCase()),
-				)
-			: data.providers,
-	);
+	// The plugin searches every provider by name and entity ID, so a match
+	// past the first page shows on the first.
+	const live = liveFilter(() => data.q);
 
 	const enabledCount = $derived(data.providers.filter((p) => p.enabled).length);
 	// A certificate nobody renews takes the instance down on a date. This is the
@@ -273,7 +269,30 @@
 		<section class="flex flex-col gap-4">
 			<SectionHeading level={2}>Providers</SectionHeading>
 
-			{#if data.providers.length === 0}
+			{#if data.providers.length > 0 || data.q}
+				<form method="GET" {@attach live.form}>
+					<ListToolbar label="Filter providers">
+						{#snippet search()}
+							<label for="saml-search" class="sr-only">Search providers</label>
+							<SearchInput
+								id="saml-search"
+								name="q"
+								bind:value={live.value}
+								oninput={live.input}
+								placeholder="Name or entity ID"
+							/>
+						{/snippet}
+					</ListToolbar>
+				</form>
+			{/if}
+
+			{#if data.providers.length === 0 && data.q}
+				<EmptyState title="No providers match this search" description="Clear the search to see every provider.">
+					{#snippet action()}
+						<Button variant="secondary" href="/admin/settings/saml">Clear search</Button>
+					{/snippet}
+				</EmptyState>
+			{:else if data.providers.length === 0}
 				<EmptyState
 					title="No identity providers yet"
 					description={canWrite ? 'Add one to put a sign-in button on the sign-in page.' : 'Ask a super admin to add one, which puts a sign-in button on the sign-in page.'}
@@ -290,110 +309,92 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<ListToolbar label="Filter providers">
-					{#snippet search()}
-						<label for="saml-search" class="sr-only">Search this page</label>
-						<SearchInput id="saml-search" bind:value={narrow} placeholder="Name or entity ID on this page" />
-					{/snippet}
-				</ListToolbar>
-
-				{#if visible.length === 0}
-					<EmptyState
-						title="No providers on this page match these filters"
-						description="The search covers this page only. Clear it or go to another page."
-					>
-						{#snippet iconSnippet()}
-							<ShieldCheck size={ICON.lg} />
-						{/snippet}
-					</EmptyState>
-				{:else}
-					<Table label="Providers">
-						<thead>
+				<Table label="Providers">
+					<thead>
+						<tr>
+							<th scope="col">Provider</th>
+							<th scope="col">Identity provider</th>
+							<th scope="col">Our certificate</th>
+							<th scope="col">Their certificate</th>
+							<th scope="col"><span class="sr-only">Actions</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each data.providers as p (p.id)}
 							<tr>
-								<th scope="col">Provider</th>
-								<th scope="col">Identity provider</th>
-								<th scope="col">Our certificate</th>
-								<th scope="col">Their certificate</th>
-								<th scope="col"><span class="sr-only">Actions</span></th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each visible as p (p.id)}
-								<tr>
-									<td data-cell="nowrap">
-										<div class="flex items-center gap-2">
-											<span class="font-medium text-fg">{p.name}</span>
-											<Badge tone={p.enabled ? 'success' : 'neutral'} dot>
-												{p.enabled ? 'Enabled' : 'Disabled'}
-											</Badge>
-										</div>
-										<!-- Under a finger the separator widens, so the two links' hit
-										     areas sit apart instead of overlapping on a short link. -->
-										<div class="text-xs text-faint">
-											<a class="relative hit-area underline" href={metadataPath(p.name)}>Metadata</a>
-											<span class="mx-1 coarse:mx-4">·</span>
-											<a class="relative hit-area underline" href={signInPath(p.name)}>Test sign-in</a>
-										</div>
-									</td>
-									<td class="max-w-xs truncate text-xs text-faint" title={p.entity_id}>
-										{p.entity_id || NO_VALUE}
-									</td>
-									<td data-cell="nowrap">
-										<Badge tone={certTone(providerHealth({ ...p, idp_cert_expires_at: null }))}>
-											{formatDate(p.sp_cert_expires_at)}
+								<td data-cell="nowrap">
+									<div class="flex items-center gap-2">
+										<span class="font-medium text-fg">{p.name}</span>
+										<Badge tone={p.enabled ? 'success' : 'neutral'} dot>
+											{p.enabled ? 'Enabled' : 'Disabled'}
 										</Badge>
-										<div class="text-xs text-faint">{expiryLabel(p.sp_cert_expires_at)}</div>
-									</td>
-									<td data-cell="nowrap">
-										<Badge tone={certTone(providerHealth({ ...p, sp_cert_expires_at: null }))}>
-											{formatDate(p.idp_cert_expires_at)}
-										</Badge>
-										<div class="text-xs text-faint">{expiryLabel(p.idp_cert_expires_at)}</div>
-									</td>
-									<td data-cell="nowrap">
-										{#if canWrite}
-											<div class="flex items-center justify-end gap-1">
-												{#if !p.sp_cert_next}
-													<form method="POST" action="?/prepare" use:enhance>
-														<input type="hidden" name="id" value={p.id} />
-														<Button
-															variant="ghost"
-															size="sm"
-															type="submit"
-															aria-label="Prepare a new certificate for {p.name}"
-															title="Prepare a new certificate"
-														>
-															<RefreshCw size={ICON.sm} />
-														</Button>
-													</form>
-												{/if}
-												<Button
-													variant="ghost"
-													size="sm"
-													aria-label="Edit {p.name}"
-													onclick={() => openEdit(p)}
-												>
-													<Pencil size={ICON.sm} />
-												</Button>
-												<form method="POST" action="?/delete" use:enhance={removeProvider(p)}>
+									</div>
+									<!-- Under a finger the separator widens, so the two links' hit
+									     areas sit apart instead of overlapping on a short link. -->
+									<div class="text-xs text-faint">
+										<a class="relative hit-area underline" href={metadataPath(p.name)}>Metadata</a>
+										<span class="mx-1 coarse:mx-4">·</span>
+										<a class="relative hit-area underline" href={signInPath(p.name)}>Test sign-in</a>
+									</div>
+								</td>
+								<td class="max-w-xs truncate text-xs text-faint" title={p.entity_id}>
+									{p.entity_id || NO_VALUE}
+								</td>
+								<td data-cell="nowrap">
+									<Badge tone={certTone(providerHealth({ ...p, idp_cert_expires_at: null }))}>
+										{formatDate(p.sp_cert_expires_at)}
+									</Badge>
+									<div class="text-xs text-faint">{expiryLabel(p.sp_cert_expires_at)}</div>
+								</td>
+								<td data-cell="nowrap">
+									<Badge tone={certTone(providerHealth({ ...p, sp_cert_expires_at: null }))}>
+										{formatDate(p.idp_cert_expires_at)}
+									</Badge>
+									<div class="text-xs text-faint">{expiryLabel(p.idp_cert_expires_at)}</div>
+								</td>
+								<td data-cell="nowrap">
+									{#if canWrite}
+										<div class="flex items-center justify-end gap-1">
+											{#if !p.sp_cert_next}
+												<form method="POST" action="?/prepare" use:enhance>
 													<input type="hidden" name="id" value={p.id} />
 													<Button
 														variant="ghost"
 														size="sm"
 														type="submit"
-														aria-label="Delete {p.name}"
+														aria-label="Prepare a new certificate for {p.name}"
+														title="Prepare a new certificate"
 													>
-														<Trash2 size={ICON.sm} class="text-danger" />
+														<RefreshCw size={ICON.sm} />
 													</Button>
 												</form>
-											</div>
-										{/if}
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</Table>
-				{/if}
+											{/if}
+											<Button
+												variant="ghost"
+												size="sm"
+												aria-label="Edit {p.name}"
+												onclick={() => openEdit(p)}
+											>
+												<Pencil size={ICON.sm} />
+											</Button>
+											<form method="POST" action="?/delete" use:enhance={removeProvider(p)}>
+												<input type="hidden" name="id" value={p.id} />
+												<Button
+													variant="ghost"
+													size="sm"
+													type="submit"
+													aria-label="Delete {p.name}"
+												>
+													<Trash2 size={ICON.sm} class="text-danger" />
+												</Button>
+											</form>
+										</div>
+									{/if}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</Table>
 				<Pagination
 					page={pageNumber(data.offset, data.limit)}
 					perPage={data.limit}
@@ -401,7 +402,7 @@
 					total={data.total ?? undefined}
 					hasNext={data.hasMore}
 					noun="providers"
-					href={pageHref('/admin/settings/saml', data.limit)}
+					href={pageHref('/admin/settings/saml', data.limit, data.q ? { q: data.q } : {})}
 				/>
 			{/if}
 		</section>

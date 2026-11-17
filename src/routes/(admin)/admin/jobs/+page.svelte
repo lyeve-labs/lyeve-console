@@ -9,9 +9,9 @@
 		Modal,
 		NumberInput,
 		PageShell,
+		SegmentedControl,
 		Pagination,
 		SearchInput,
-		SegmentedControl,
 		Table,
 		Textarea,
 		Toggle,
@@ -32,9 +32,9 @@
 	import { ALERT_PREFIX, hasChannels } from '#lib/api/cron-alerts.ts';
 	import AlertChannelFields from '#lib/components/AlertChannelFields.svelte';
 	import { formatDateTime } from '#lib/format.ts';
-	import { narrows } from '#lib/narrow.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
-	import { actionWithQuery, queryWithout, returnAddress } from '#lib/back.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
+	import { actionWithQuery, filterHref, queryWithout, returnAddress } from '#lib/back.ts';
 	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -127,21 +127,17 @@
 		);
 	}
 
-	// The endpoint takes no search, so the box narrows the page on screen and
-	// the pager below still walks the whole collection.
-	let query = $state('');
-	let status = $state('');
-	const STATUSES = [
-		{ value: '', label: 'All' },
-		{ value: 'enabled', label: 'Enabled' },
-		{ value: 'disabled', label: 'Disabled' },
-	];
-	const visible = $derived(
-		(data.jobs.ok ? data.jobs.value : []).filter(
-			(j) =>
-				narrows(query, j.name, j.description, j.schedule, j.endpoint) &&
-				(status === '' || (status === 'enabled') === j.enabled)
-		)
+	// The plugin searches and filters every job, so a match past the first
+	// page shows on the first. Both live in the URL, so the pager, the drawer's
+	// writes and a reload keep them.
+	const live = liveFilter(() => data.q);
+	const filtered = $derived(data.q !== '' || data.status !== '');
+	const statusOptions = $derived(
+		[
+			{ value: '', label: 'All' },
+			{ value: 'enabled', label: 'Enabled' },
+			{ value: 'disabled', label: 'Disabled' },
+		].map((o) => ({ ...o, href: filterHref(page.url, 'status', o.value) })),
 	);
 </script>
 
@@ -174,7 +170,35 @@
 			title="Scheduled jobs"
 			absent="Scheduled jobs are not included in this build."
 		/>
-	{:else if data.jobs.value.length === 0}
+	{:else}
+		{#if data.jobs.value.length > 0 || filtered}
+			<form method="GET" {@attach live.form}>
+				{#if data.status}<input type="hidden" name="status" value={data.status} />{/if}
+				<ListToolbar label="Filter jobs">
+					{#snippet search()}
+						<label for="job-search" class="sr-only">Search jobs</label>
+						<SearchInput
+							id="job-search"
+							name="q"
+							bind:value={live.value}
+							oninput={live.input}
+							placeholder="Name, schedule or endpoint"
+						/>
+					{/snippet}
+					{#snippet filters()}
+						<SegmentedControl label="Status" labelHidden value={data.status} options={statusOptions} />
+					{/snippet}
+				</ListToolbar>
+			</form>
+		{/if}
+
+		{#if data.jobs.value.length === 0 && filtered}
+			<EmptyState level={2} title="No jobs match these filters" description="Clear the search or choose another status.">
+				{#snippet action()}
+					<Button variant="secondary" href="/admin/jobs">Clear filters</Button>
+				{/snippet}
+			</EmptyState>
+		{:else if data.jobs.value.length === 0}
 		<EmptyState level={2} title="No jobs yet" description="Schedule HTTP jobs to run on a cron expression.">
 			{#snippet iconSnippet()}
 				<Inbox size={ICON.lg} />
@@ -185,19 +209,6 @@
 				</Button>
 			{/snippet}
 		</EmptyState>
-	{:else}
-		<ListToolbar label="Filter jobs">
-			{#snippet search()}
-				<label for="job-search" class="sr-only">Search this page</label>
-				<SearchInput id="job-search" bind:value={query} placeholder="Name, schedule or endpoint on this page" />
-			{/snippet}
-			{#snippet filters()}
-				<SegmentedControl label="Status" labelHidden bind:value={status} options={STATUSES} />
-			{/snippet}
-		</ListToolbar>
-
-		{#if visible.length === 0}
-			<EmptyState level={2} title="No jobs on this page match these filters" description="Clear the search and the status filter, or go to another page. The search covers only this page." />
 		{:else}
 		<Table label="Scheduled jobs">
 			<thead>
@@ -211,7 +222,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each visible as job (job.id)}
+				{#each data.jobs.value as job (job.id)}
 					<tr>
 						<td>
 							<p class="font-medium text-fg">{job.name}</p>
@@ -271,7 +282,6 @@
 				{/each}
 			</tbody>
 		</Table>
-		{/if}
 
 		<!-- The endpoint states no total, so the range comes from the rows on
 		     screen: without the count the summary could only name the page. -->
@@ -281,8 +291,12 @@
 			count={data.jobs.value.length}
 			hasNext={data.hasMore}
 			noun="jobs"
-			href={pageHref('/admin/jobs', data.limit)}
+			href={pageHref('/admin/jobs', data.limit, {
+				...(data.status ? { status: data.status } : {}),
+				...(data.q ? { q: data.q } : {}),
+			})}
 		/>
+		{/if}
 	{/if}
 </PageShell>
 

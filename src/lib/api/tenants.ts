@@ -5,6 +5,31 @@
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
 import { refusalOf, type Refusal } from '#lib/api/refusal.ts';
 import { linkHref } from '#lib/links.ts';
+import { query } from '#lib/api/list.ts';
+import type { Tenant } from '@lyeve-labs/client-rest';
+
+/** The tenant list's filters: a search over the slug, name and plan, and `enabled` or `disabled`. */
+export interface TenantFilter {
+	q?: string;
+	status?: string;
+}
+
+/**
+ * One page of tenants, narrowed by the plugin before it pages. The client
+ * package's list reads the paging alone, and the console sends the filters
+ * too.
+ */
+export async function listTenantPage(
+	client: HttpClient,
+	limit: number,
+	offset: number,
+	filter: TenantFilter = {},
+): Promise<{ items: Tenant[]; total: number }> {
+	const res = await client.get<{ data?: Tenant[] | null; total_count?: number } | null>(
+		`/api/admin/tenants${query({ limit, offset, q: filter.q, status: filter.status })}`,
+	);
+	return { items: res?.data ?? [], total: res?.total_count ?? 0 };
+}
 
 /** What the plugin says about creating a tenant on this instance. */
 export interface Provisioning {

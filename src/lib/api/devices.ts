@@ -13,7 +13,7 @@
  * lying about what the endpoint does.
  */
 import type { HttpClient } from '@lyeve-labs/client';
-import type { ListEnvelope } from './list';
+import { query, type ListEnvelope } from './list';
 
 const DEVICES_URL = '/api/admin/devices';
 const TRUST_URL = '/api/admin/devices/trust';
@@ -40,9 +40,10 @@ export interface Device {
 export async function listDevices(
 	client: HttpClient,
 	limit: number,
-	offset: number
+	offset: number,
+	q = ''
 ): Promise<ListEnvelope<Device>> {
-	return client.get<ListEnvelope<Device>>(`${DEVICES_URL}?limit=${limit}&offset=${offset}`);
+	return client.get<ListEnvelope<Device>>(`${DEVICES_URL}${query({ limit, offset, q })}`);
 }
 
 /** Remembers the browser making this request under a label. */

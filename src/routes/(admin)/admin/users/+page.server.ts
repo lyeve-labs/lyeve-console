@@ -11,9 +11,9 @@ import { passwordTooLong, setUserPassword, type ListedUser } from '#lib/api/user
 import { seatRefusal } from '#lib/api/admin-seats.ts';
 import { refusalText } from '#lib/api/refusal.ts';
 import { section, type Section } from '#lib/api/gate.ts';
-import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { chipOf, pageWindow, pastEndOffset, query, searchOf, withOffset } from '#lib/api/list.ts';
 import { couldNotLoad } from '#lib/outage.ts';
-import { rolesInWords } from '#lib/roles.ts';
+import { ROLES, rolesInWords } from '#lib/roles.ts';
 import { asked } from '#lib/server/asked.ts';
 
 /** The engine's own page size when a request names none. */
@@ -38,6 +38,8 @@ export const load: PageServerLoad = async (event) => {
 
 	// Snapped to a page boundary, so the pager numbers the rows on screen.
 	const { limit, offset } = pageWindow(url, DEFAULT_LIMIT, MAX_LIMIT);
+	const q = searchOf(url);
+	const role = chipOf(url, 'role', ROLES);
 
 	/*
 	 * The users endpoint answers with a bare array and no row count, so there is
@@ -48,7 +50,7 @@ export const load: PageServerLoad = async (event) => {
 	 */
 	const [rows, tenants] = await Promise.all([
 		section(
-			client.get<ListedUser[]>(`/api/admin/users?limit=${limit + 1}&offset=${offset}`),
+			client.get<ListedUser[]>(`/api/admin/users${query({ limit: limit + 1, offset, q, role })}`),
 			couldNotLoad('the accounts')
 		),
 		// An account belongs to one tenant. With several, the engine cannot
@@ -71,7 +73,7 @@ export const load: PageServerLoad = async (event) => {
 	const choices: Section<{ slug: string; name: string }[]> = tenants.ok
 		? { ok: true, value: tenants.value.filter((t) => !t.archived).map((t) => ({ slug: t.slug, name: t.name })) }
 		: tenants;
-	return { users, limit, offset, hasMore, tenants: choices };
+	return { users, limit, offset, q, role, hasMore, tenants: choices };
 };
 
 export const actions: Actions = {

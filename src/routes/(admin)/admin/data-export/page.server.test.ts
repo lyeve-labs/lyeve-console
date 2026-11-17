@@ -74,11 +74,23 @@ describe('data export load', () => {
 	it('asks the plugin for the status the address names, and for every status otherwise', async () => {
 		const failed = (await load(event('?status=failed'))) as unknown as { status: string };
 		expect(failed.status).toBe('failed');
-		expect(api.listJobs).toHaveBeenLastCalledWith(expect.anything(), 50, 0, 'failed');
+		expect(api.listJobs).toHaveBeenLastCalledWith(expect.anything(), 50, 0, 'failed', '');
 
 		const unknown = (await load(event('?status=bogus'))) as unknown as { status: string };
 		expect(unknown.status).toBe('');
-		expect(api.listJobs).toHaveBeenLastCalledWith(expect.anything(), 50, 0, '');
+		expect(api.listJobs).toHaveBeenLastCalledWith(expect.anything(), 50, 0, '', '');
+	});
+
+	it('sends the search beside the status, and back to the page', async () => {
+		const out = (await load(event('?status=failed&q=nightly'))) as unknown as { status: string; q: string };
+		expect(api.listJobs).toHaveBeenLastCalledWith(expect.anything(), 50, 0, 'failed', 'nightly');
+		expect(out).toMatchObject({ status: 'failed', q: 'nightly' });
+	});
+
+	it('cuts a search past 200 characters before sending it', async () => {
+		const out = (await load(event(`?q=${'a'.repeat(201)}`))) as unknown as { q: string };
+		expect(api.listJobs).toHaveBeenLastCalledWith(expect.anything(), 50, 0, '', 'a'.repeat(200));
+		expect(out.q).toBe('a'.repeat(200));
 	});
 
 	it('sends a page past the end back to the last page', async () => {

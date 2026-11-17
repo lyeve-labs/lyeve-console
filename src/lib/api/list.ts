@@ -232,3 +232,26 @@ export async function readAll<T>(
 	}
 	return { rows, total };
 }
+
+/** The longest search, in characters, the engine's list endpoints accept. Longer is refused with 400. */
+export const MAX_SEARCH = 200;
+
+/**
+ * The search a list's address carries, trimmed. A search longer than the
+ * engine accepts is cut to its first MAX_SEARCH characters and trimmed again,
+ * so the box shows what was searched and the rows match it.
+ */
+export function searchOf(url: URL): string {
+	const q = (url.searchParams.get('q') ?? '').trim();
+	return [...q].slice(0, MAX_SEARCH).join('').trim();
+}
+
+/**
+ * The value of a list's filter parameter when it is one the list offers, and
+ * empty otherwise. A value no chip carries would filter the list with no chip
+ * selected, and the engine refuses one it does not know.
+ */
+export function chipOf(url: URL, key: string, allowed: readonly string[]): string {
+	const raw = url.searchParams.get(key) ?? '';
+	return allowed.includes(raw) ? raw : '';
+}

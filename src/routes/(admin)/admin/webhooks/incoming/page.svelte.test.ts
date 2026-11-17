@@ -3,6 +3,8 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://localhost/') } }));
+vi.mock('$app/state', () => appState);
 
 import IncomingPage from './+page.svelte';
 
@@ -23,6 +25,8 @@ function setup(over: Record<string, unknown> = {}, form: unknown = null) {
 	return render(IncomingPage, {
 		props: {
 			data: {
+				q: '',
+				status: '',
 				incomingWebhooks: { ok: true, value: [stripe] },
 				schemas: { ok: true, value: [{ name: 'orders' }] },
 				entitlements,
@@ -40,12 +44,21 @@ function setup(over: Record<string, unknown> = {}, form: unknown = null) {
 }
 
 describe('the incoming webhook search', () => {
-	it('says it covers this page only, in its label, its placeholder and when nothing matches', async () => {
-		const { container, getByLabelText } = setup();
-		const search = getByLabelText('Search this page') as HTMLInputElement;
-		expect(search.getAttribute('placeholder')).toBe('Name, content type or ID on this page');
-		await fireEvent.input(search, { target: { value: 'nothing like it' } });
-		expect(container.textContent).toContain('No incoming webhooks on this page match these filters');
+	it('offers to clear filters that match nothing, rather than offering a first endpoint', () => {
+		const { container, getByLabelText } = setup({ incomingWebhooks: { ok: true, value: [] }, total: 0, q: 'nothing like it' });
+		expect(getByLabelText('Search incoming webhooks').getAttribute('placeholder')).toBe('Name, content type or ID');
+		expect(container.textContent).toContain('No incoming webhooks match these filters');
+		expect(container.textContent).not.toContain('No incoming webhooks yet');
+		expect(container.querySelector('a[href="/admin/webhooks/incoming"]')?.textContent?.trim()).toBe('Clear filters');
+	});
+
+	it('keeps the search and the page size on each status link, and the search on the pager', () => {
+		appState.page.url = new URL('http://localhost/admin/webhooks/incoming?q=stripe&status=enabled&limit=100&offset=100');
+		const { container } = setup({ q: 'stripe', status: 'enabled', total: 120, hasMore: true });
+		appState.page.url = new URL('http://localhost/');
+		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
+		expect(hrefs).toContain('/admin/webhooks/incoming?q=stripe&limit=100&status=disabled');
+		expect(hrefs.some((h) => h.startsWith('/admin/webhooks/incoming?status=enabled&q=stripe&') && h.includes('offset=50'))).toBe(true);
 	});
 });
 
@@ -106,6 +119,8 @@ describe('the incoming webhook drawer and the failures of other actions', () => 
 		await fireEvent.click(getByRole('button', { name: 'Edit Stripe' }));
 		await rerender({
 			data: {
+				q: '',
+				status: '',
 				incomingWebhooks: { ok: true, value: [stripe] },
 				schemas: { ok: true, value: [{ name: 'orders' }] },
 				entitlements,

@@ -13,7 +13,7 @@ import {
 	type QueryLogEntry,
 } from '#lib/api/query-monitor.ts';
 import { GATE_OK, gateOf, type Gate } from '#lib/api/gate.ts';
-import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { pageWindow, pastEndOffset, searchOf, withOffset } from '#lib/api/list.ts';
 import { couldNotLoad } from '#lib/outage.ts';
 
 /**
@@ -61,6 +61,7 @@ export const load: PageServerLoad = async (event) => {
 
 	const { limit, offset } = pageWindow(event.url, DEFAULT_LIMIT, MAX_LIMIT);
 	const dialect = dialectOf(event.url.searchParams.get('dialect'));
+	const q = searchOf(event.url);
 
 	// The shell says why the page is unavailable while its plugin does not run.
 	if (notRunning(plugins, PLUGIN.queryMonitor)) {
@@ -69,6 +70,7 @@ export const load: PageServerLoad = async (event) => {
 			total: 0,
 			limit,
 			offset,
+			q,
 			gate: { state: 'absent' } as CaptureGate,
 			dialect,
 			analysis: null as AnalysisRead | null,
@@ -82,7 +84,7 @@ export const load: PageServerLoad = async (event) => {
 	let gate: CaptureGate = GATE_OK;
 	let stated: number | null = null;
 	try {
-		const page = await listQueryLog(client, limit, offset);
+		const page = await listQueryLog(client, limit, offset, q);
 		entries = page.data ?? [];
 		stated = page.total_count ?? null;
 		// The envelope carries the collection count. Keeping what has been read
@@ -110,5 +112,5 @@ export const load: PageServerLoad = async (event) => {
 		}
 	}
 
-	return { entries, total, limit, offset, gate, dialect, analysis, analyzeFailed };
+	return { entries, total, limit, offset, q, gate, dialect, analysis, analyzeFailed };
 };

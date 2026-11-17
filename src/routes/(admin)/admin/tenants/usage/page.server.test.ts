@@ -79,6 +79,44 @@ describe('the usage load', () => {
 });
 
 describe('the usage load past the end', () => {
+	it('sends a super admin search to the engine and back to the page', async () => {
+		route({
+			'/api/admin/quotas': { data: [], total_count: 0 },
+			'/api/admin/quota-requests': { data: [], total_count: 0 },
+			'/api/admin/usage/tenants': [],
+			'/api/admin/users': [],
+		});
+		const event = loadEvent() as unknown as { url: URL };
+		event.url = new URL('http://localhost/admin/tenants/usage?q=acme');
+		const out = (await load(event as never)) as { q: string };
+		const asked = engine.get.mock.calls.map(([u]) => String(u)).find((u) => u.startsWith('/api/admin/quotas'))!;
+		expect(new URL(asked, 'http://e').searchParams.get('q')).toBe('acme');
+		expect(out.q).toBe('acme');
+	});
+
+	it('sends no search an admin types, and cuts a super admin\'s search past 200 characters', async () => {
+		route({
+			'/api/admin/quotas': { data: [], total_count: 0 },
+			'/api/admin/quota-requests': { data: [], total_count: 0 },
+			'/api/admin/usage/tenants': [],
+			'/api/admin/users': [],
+		});
+		const sent = async (roles: string[], q: string) => {
+			engine.get.mockClear();
+			const event = loadEvent(roles) as unknown as { url: URL };
+			event.url = new URL(`http://localhost/admin/tenants/usage?q=${q}`);
+			const out = (await load(event as never)) as { q: string };
+			const asked = engine.get.mock.calls.map(([u]) => String(u)).find((u) => u.startsWith('/api/admin/quotas'))!;
+			return { asked, q: out.q };
+		};
+		const admin = await sent(['admin'], 'acme');
+		expect(admin.asked).not.toContain('q=');
+		expect(admin.q).toBe('');
+		const long = await sent(['super_admin'], 'a'.repeat(201));
+		expect(long.asked).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(long.q).toBe('a'.repeat(200));
+	});
+
 	it('sends a page of quotas past the end back to the last page that holds rows', async () => {
 		route({
 			'/api/admin/quotas': { data: [], total_count: 60 },

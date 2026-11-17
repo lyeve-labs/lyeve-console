@@ -114,6 +114,8 @@ describe('plugin pages', () => {
 						]
 					},
 					schemas: { ok: true, value: [{ name: 'post' }] },
+					q: '',
+					status: '',
 					entitlements,
 					user: { roles: ['super_admin'] }
 				},

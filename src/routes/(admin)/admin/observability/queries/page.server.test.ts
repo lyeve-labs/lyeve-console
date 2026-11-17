@@ -49,4 +49,19 @@ describe('the slow queries load', () => {
 			location: expect.stringContaining('offset=50'),
 		});
 	});
+
+	it('sends the search to the engine and back to the page', async () => {
+		engine.get.mockResolvedValue({ data: [], total_count: 0 });
+		const out = (await load(loadEvent('?q=sys_content'))) as Loaded;
+		const asked = new URL(String(engine.get.mock.calls[0][0]), 'http://e');
+		expect(asked.searchParams.get('q')).toBe('sys_content');
+		expect(out.q).toBe('sys_content');
+	});
+
+	it('cuts a search past 200 characters before sending it', async () => {
+		engine.get.mockResolvedValue({ data: [], total_count: 0 });
+		const out = (await load(loadEvent(`?q=${'a'.repeat(201)}`))) as Loaded;
+		expect(String(engine.get.mock.calls[0][0])).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(out.q).toBe('a'.repeat(200));
+	});
 });

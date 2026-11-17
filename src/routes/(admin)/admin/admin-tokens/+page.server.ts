@@ -9,6 +9,7 @@ import {
 	describeRefusal,
 	listAdminGrants,
 	listAdminTokenRequests,
+	TOKEN_STATUSES,
 	listAdminTokens,
 	parseAllowedIPs,
 	resolveExpiry,
@@ -19,7 +20,7 @@ import {
 	type AdminTokenRequest,
 	type StepUp,
 } from '#lib/api/admin-tokens.ts';
-import { pageWindow, pastEndOffset, rowsOf, statedTotal, totalOf, withOffset } from '#lib/api/list.ts';
+import { chipOf, pageWindow, pastEndOffset, rowsOf, searchOf, statedTotal, totalOf, withOffset } from '#lib/api/list.ts';
 import { gateOf, section, type Gate, type Section } from '#lib/api/gate.ts';
 import { couldNotLoad } from '#lib/outage.ts';
 import { rolesInWords } from '#lib/roles.ts';
@@ -47,9 +48,11 @@ export const load: PageServerLoad = async (event) => {
 	const superAdmin = user.roles.includes('super_admin');
 	const client = authedClient(event);
 	const { limit, offset } = pageWindow(url, PAGE, MAX_PAGE);
+	const q = searchOf(url);
+	const status = chipOf(url, 'status', TOKEN_STATUSES);
 
 	const [list, grants, mfa, tenants] = await Promise.all([
-		section(listAdminTokens(client, limit, offset), couldNotLoad('the admin tokens')),
+		section(listAdminTokens(client, limit, offset, { q, status }), couldNotLoad('the admin tokens')),
 		// The grants are the create form's only required choice, so a failed
 		// read is said in the form rather than drawn as a catalog with none.
 		section(listAdminGrants(client), 'Could not load the grants, so you cannot create a token. Reload the page to try again.'),
@@ -123,6 +126,8 @@ export const load: PageServerLoad = async (event) => {
 		total,
 		limit,
 		offset,
+		q,
+		status,
 		grants,
 		mfaEnrolled: mfa,
 		tenants: tenantChoices,

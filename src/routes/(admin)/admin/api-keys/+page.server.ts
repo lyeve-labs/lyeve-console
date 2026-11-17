@@ -16,7 +16,7 @@ import {
 } from '#lib/api/api-keys.ts';
 import { cleanScopes, fetchKeyScopeCatalog } from '#lib/api/key-access.ts';
 import { listSchemaNames } from '#lib/api/search-settings.ts';
-import { pageWindow, pastEndOffset, rowsOf, statedTotal, totalOf, withOffset } from '#lib/api/list.ts';
+import { chipOf, pageWindow, pastEndOffset, rowsOf, searchOf, statedTotal, totalOf, withOffset } from '#lib/api/list.ts';
 import { section, type Section } from '#lib/api/gate.ts';
 import { rolesInWords } from '#lib/roles.ts';
 import { couldNotLoad } from '#lib/outage.ts';
@@ -48,8 +48,10 @@ export const load: PageServerLoad = async (event) => {
 	// The endpoint pages at fifty, so a read that names no window shows the
 	// first fifty keys as every key the instance has.
 	const { limit, offset } = pageWindow(url, 50, 500);
+	const q = searchOf(url);
+	const status = chipOf(url, 'status', ['active', 'revoked']);
 	const read = await section(
-		listKeys(client, limit, offset),
+		listKeys(client, limit, offset, { q, status }),
 		couldNotLoad('the API keys')
 	);
 	const rows = read.ok ? rowsOf(read.value) : [];
@@ -103,6 +105,8 @@ export const load: PageServerLoad = async (event) => {
 		total,
 		limit,
 		offset,
+		q,
+		status,
 		catalog,
 		catalogFailed: !catalogRead.ok && catalogRead.gate.state !== 'absent',
 		schemaNames,

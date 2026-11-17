@@ -12,7 +12,7 @@ import {
 	type ReplayRun,
 } from '#lib/api/events.ts';
 import { type Gate, GATE_OK, section, type Section } from '#lib/api/gate.ts';
-import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { chipOf, pageWindow, pastEndOffset, searchOf, withOffset } from '#lib/api/list.ts';
 import { instantFromWallClock } from '#lib/utils/wall-clock.ts';
 import { couldNotLoad } from '#lib/outage.ts';
 import { asked } from '#lib/server/asked.ts';
@@ -34,6 +34,8 @@ const NO_RUNS: Section<Runs> = { ok: true, value: { rows: [], total: 0 } };
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();
 	const { limit, offset } = pageWindow(event.url, DEFAULT_LIMIT, MAX_LIMIT);
+	const q = searchOf(event.url);
+	const failed = chipOf(event.url, 'failed', ['1']);
 
 	// The shell says why the page is unavailable while its plugin does not run.
 	if (notRunning(plugins, PLUGIN.events)) {
@@ -43,13 +45,15 @@ export const load: PageServerLoad = async (event) => {
 			total: 0,
 			limit,
 			offset,
+			q,
+			failed,
 			gate: { state: 'absent' } as Gate,
 		};
 	}
 
 	const client = authedClient(event);
-	const read = await section(listEvents(client, limit, offset), couldNotLoad('the event log'));
-	if (!read.ok) return { events: [] as EventRow[], runs: NO_RUNS, total: 0, limit, offset, gate: read.gate };
+	const read = await section(listEvents(client, limit, offset, { q, failed }), couldNotLoad('the event log'));
+	if (!read.ok) return { events: [] as EventRow[], runs: NO_RUNS, total: 0, limit, offset, q, failed, gate: read.gate };
 
 	const events = read.value.data ?? [];
 	const back = pastEndOffset(events.length, limit, offset, read.value.total_count ?? null);
@@ -66,7 +70,7 @@ export const load: PageServerLoad = async (event) => {
 		couldNotLoad('replay runs')
 	);
 
-	return { events, runs, total, limit, offset, gate: GATE_OK };
+	return { events, runs, total, limit, offset, q, failed, gate: GATE_OK };
 };
 
 export const actions: Actions = {

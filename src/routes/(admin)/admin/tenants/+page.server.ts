@@ -2,7 +2,6 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail, error, redirect } from '@sveltejs/kit';
 import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
 import {
-	listTenants,
 	createTenant,
 	updateTenant,
 	deleteTenant,
@@ -10,10 +9,10 @@ import {
 } from '@lyeve-labs/client-rest';
 import { ApiError } from '@lyeve-labs/client';
 import { actionFailure, tagged } from '#lib/server/action-error.ts';
-import { getProvisioning, tenantRefusal } from '#lib/api/tenants.ts';
+import { getProvisioning, listTenantPage, tenantRefusal } from '#lib/api/tenants.ts';
 import { refusalText } from '#lib/api/refusal.ts';
 import { section, type Gate, type Section } from '#lib/api/gate.ts';
-import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { chipOf, pageWindow, pastEndOffset, searchOf, withOffset } from '#lib/api/list.ts';
 import { couldNotLoad } from '#lib/outage.ts';
 import { asked } from '#lib/server/asked.ts';
 
@@ -61,6 +60,8 @@ export const load: PageServerLoad = async (event) => {
 	const client = authedClient(event);
 
 	const { limit, offset } = pageWindow(url, DEFAULT_LIMIT, MAX_LIMIT);
+	const q = searchOf(url);
+	const status = chipOf(url, 'status', ['enabled', 'disabled']);
 
 	// The plugin says whether a create would pass, so the page offers one only
 	// then, and where it would not, the link to what lifts it. Only a refusal
@@ -69,7 +70,7 @@ export const load: PageServerLoad = async (event) => {
 	// so the page says what happened rather than calling the instance
 	// unlicensed.
 	const [read, provisioning] = await Promise.all([
-		section(listTenants(client, limit, offset), LIST_FAILED),
+		section(listTenantPage(client, limit, offset, { q, status }), LIST_FAILED),
 		section(getProvisioning(client), PROVISIONING_FAILED),
 	]);
 	const canProvision = provisioning.ok && provisioning.value.enabled;
@@ -84,7 +85,7 @@ export const load: PageServerLoad = async (event) => {
 			? provisioning.gate
 			: null;
 	// The page draws the gate in place of the list and offers no create.
-	if (!read.ok) return { tenants: read, limit, offset, total: 0, canProvision: false, provisionGate: null, provisioningUrl };
+	if (!read.ok) return { tenants: read, limit, offset, q, status, total: 0, canProvision: false, provisionGate: null, provisioningUrl };
 	const result = read.value;
 	// A page past the end is not an instance with no tenants, so the request
 	// goes back to the last page that holds rows.
@@ -99,7 +100,7 @@ export const load: PageServerLoad = async (event) => {
 	// Typed, because a bare literal widens `ok` to boolean and the page could
 	// no longer tell the two cases apart.
 	const tenants: Section<Tenant[]> = { ok: true, value: result.items };
-	return { tenants, limit, offset, total, canProvision, provisionGate, provisioningUrl };
+	return { tenants, limit, offset, q, status, total, canProvision, provisionGate, provisioningUrl };
 };
 
 export const actions: Actions = {

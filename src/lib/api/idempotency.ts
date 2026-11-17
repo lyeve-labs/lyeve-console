@@ -13,7 +13,7 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import type { ListEnvelope } from './list';
+import { query, type ListEnvelope } from './list';
 
 const KEYS_URL = '/api/admin/idempotency';
 const STATS_URL = '/api/admin/idempotency/stats';
@@ -40,9 +40,10 @@ export async function readStats(client: HttpClient): Promise<IdempotencyStats> {
 export async function listKeys(
 	client: HttpClient,
 	limit: number,
-	offset: number
+	offset: number,
+	filter: { q?: string; show?: string } = {}
 ): Promise<ListEnvelope<IdempotencyKey>> {
-	return client.get<ListEnvelope<IdempotencyKey>>(`${KEYS_URL}?limit=${limit}&offset=${offset}`);
+	return client.get<ListEnvelope<IdempotencyKey>>(`${KEYS_URL}${query({ limit, offset, q: filter.q, show: filter.show })}`);
 }
 
 /** Drops one key so the next request carrying it runs the handler again. */

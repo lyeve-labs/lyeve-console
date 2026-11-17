@@ -14,10 +14,10 @@
 		Modal,
 		MultiSelect,
 		PageShell,
+		SegmentedControl,
 		Pagination,
 		PasswordInput,
 		SearchInput,
-		SegmentedControl,
 		Table,
 		Textarea,
 		Toggle,
@@ -45,8 +45,9 @@
 	import { duplicateRow } from '#lib/duplicate.ts';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';
-	import { narrows } from '#lib/narrow.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { filterHref } from '#lib/back.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 	import { eventTone } from '#lib/tones.ts';
 	import { page } from '$app/state';
@@ -189,21 +190,17 @@
 		open = true;
 	}
 
-	// The endpoint takes no search, so the box narrows the page on screen and
-	// the pager below still walks the whole collection.
-	let query = $state('');
-	let status = $state('');
-	const STATUSES = [
-		{ value: '', label: 'All' },
-		{ value: 'enabled', label: 'Enabled' },
-		{ value: 'disabled', label: 'Disabled' },
-	];
-	const visible = $derived(
-		rows.filter(
-			(wh) =>
-				narrows(query, wh.name, wh.url, wh.events.join(' '), wh.schemas.join(' ')) &&
-				(status === '' || (status === 'enabled') === wh.enabled)
-		)
+	// The plugin searches and filters every webhook, so a match past the first
+	// page shows on the first. Both live in the URL, so the pager and a reload
+	// keep them.
+	const live = liveFilter(() => data.q);
+	const filtered = $derived(Boolean(data.q || data.status));
+	const statusOptions = $derived(
+		[
+			{ value: '', label: 'All' },
+			{ value: 'enabled', label: 'Enabled' },
+			{ value: 'disabled', label: 'Disabled' },
+		].map((o) => ({ ...o, href: filterHref(page.url, 'status', o.value) })),
 	);
 
 	let testResults = $state<
@@ -296,7 +293,35 @@
 			title="Webhooks"
 			absent="Webhooks are not included in this build."
 		/>
-	{:else if data.webhooks.value.length === 0}
+	{:else}
+		{#if data.webhooks.value.length > 0 || filtered}
+			<form method="GET" {@attach live.form}>
+				{#if data.status}<input type="hidden" name="status" value={data.status} />{/if}
+				<ListToolbar label="Filter webhooks">
+					{#snippet search()}
+						<label for="webhook-search" class="sr-only">Search webhooks</label>
+						<SearchInput
+							id="webhook-search"
+							name="q"
+							bind:value={live.value}
+							oninput={live.input}
+							placeholder="Name, URL, event or content type"
+						/>
+					{/snippet}
+					{#snippet filters()}
+						<SegmentedControl label="Status" labelHidden value={data.status} options={statusOptions} />
+					{/snippet}
+				</ListToolbar>
+			</form>
+		{/if}
+
+		{#if data.webhooks.value.length === 0 && filtered}
+			<EmptyState level={2} title="No webhooks match these filters" description="Clear the search or choose another status.">
+				{#snippet action()}
+					<Button variant="secondary" href="/admin/webhooks">Clear filters</Button>
+				{/snippet}
+			</EmptyState>
+		{:else if data.webhooks.value.length === 0}
 		<EmptyState
 			level={2}
 			title="No webhooks yet"
@@ -312,19 +337,6 @@
 				{/if}
 			{/snippet}
 		</EmptyState>
-	{:else}
-		<ListToolbar label="Filter webhooks">
-			{#snippet search()}
-				<label for="webhook-search" class="sr-only">Search this page</label>
-				<SearchInput id="webhook-search" bind:value={query} placeholder="Name, URL, event or content type on this page" />
-			{/snippet}
-			{#snippet filters()}
-				<SegmentedControl label="Status" labelHidden bind:value={status} options={STATUSES} />
-			{/snippet}
-		</ListToolbar>
-
-		{#if visible.length === 0}
-			<EmptyState level={2} title="No webhooks on this page match" description="Clear the search and the status filter, or go to another page." />
 		{:else}
 		<Table label="Webhooks">
 			<thead>
@@ -338,7 +350,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each visible as wh (wh.id)}
+				{#each rows as wh (wh.id)}
 					<tr>
 						<td data-cell="nowrap" class="font-medium text-fg">{wh.name}</td>
 						<td data-cell="nowrap" class="font-mono text-xs text-muted">{truncate(wh.url)}</td>
@@ -455,7 +467,6 @@
 				{/each}
 			</tbody>
 		</Table>
-		{/if}
 
 		<!-- The total is stated only when the envelope carried one. Absent is
 		     not zero here, so it is left out rather than sent as a number
@@ -467,8 +478,12 @@
 			total={data.total ?? undefined}
 			hasNext={data.hasMore}
 			noun="webhooks"
-			href={pageHref('/admin/webhooks', data.limit)}
+			href={pageHref('/admin/webhooks', data.limit, {
+				...(data.status ? { status: data.status } : {}),
+				...(data.q ? { q: data.q } : {}),
+			})}
 		/>
+		{/if}
 	{/if}
 </PageShell>
 

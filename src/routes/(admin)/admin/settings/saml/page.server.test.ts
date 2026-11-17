@@ -47,6 +47,21 @@ describe('SAML load', () => {
 			location: '/admin/settings/saml?offset=25&limit=25',
 		});
 	});
+
+	it('sends the search to the engine and back to the page', async () => {
+		const ev = event({ data: [], total_count: 0 }, '?q=okta');
+		const out = (await load(ev)) as { q: string };
+		const asked = new URL(String((ev as { fetch: { mock: { calls: unknown[][] } } }).fetch.mock.calls[0][0]), 'http://e');
+		expect(asked.searchParams.get('q')).toBe('okta');
+		expect(out.q).toBe('okta');
+	});
+
+	it('cuts a search past 200 characters before sending it', async () => {
+		const ev = event({ data: [], total_count: 0 }, `?q=${'a'.repeat(201)}`);
+		const out = (await load(ev)) as { q: string };
+		expect(String((ev as { fetch: { mock: { calls: unknown[][] } } }).fetch.mock.calls[0][0])).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(out.q).toBe('a'.repeat(200));
+	});
 });
 
 type Call = { method: string; path: string; body: unknown };

@@ -104,6 +104,28 @@ describe('admin/tenants load', () => {
 		expect(seen[0]).toContain('limit=500');
 	});
 
+	it('sends the search and the status to the engine and back to the page', async () => {
+		const { event, seen } = loadEvent({ data: tenants(1), total_count: 1 }, '?q=acme&status=disabled');
+
+		const result = await run(event);
+
+		const asked = new URL(seen.find((u) => u.includes('/api/admin/tenants?'))!, 'http://e');
+		expect(asked.searchParams.get('q')).toBe('acme');
+		expect(asked.searchParams.get('status')).toBe('disabled');
+		expect(result).toMatchObject({ q: 'acme', status: 'disabled' });
+	});
+
+	it('drops a status it does not offer and cuts a search past 200 characters', async () => {
+		const { event, seen } = loadEvent({ data: tenants(1), total_count: 1 }, `?status=archived&q=${'a'.repeat(201)}`);
+
+		const result = await run(event);
+
+		const asked = seen.find((u) => u.includes('/api/admin/tenants?'))!;
+		expect(asked).not.toContain('status=');
+		expect(asked).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(result).toMatchObject({ q: 'a'.repeat(200), status: '' });
+	});
+
 	it('refuses a negative offset rather than passing it on', async () => {
 		const { event } = loadEvent({ data: tenants(50), total_count: 731 }, '?offset=-10');
 

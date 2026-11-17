@@ -26,9 +26,21 @@ beforeEach(() => vi.clearAllMocks());
 describe('pii reads load', () => {
 	it('reads one page of the access log and nothing of the rules', async () => {
 		api.listAccessLog.mockResolvedValue({ data: [ENTRY], total_count: 1 });
-		expect(await load(loadEvent())).toEqual({ entries: [ENTRY], total: 1, limit: 50, offset: 0, gate: { state: 'ok' } });
-		expect(api.listAccessLog).toHaveBeenCalledWith(expect.anything(), 50, 0);
+		expect(await load(loadEvent())).toEqual({ entries: [ENTRY], total: 1, limit: 50, offset: 0, q: '', gate: { state: 'ok' } });
+		expect(api.listAccessLog).toHaveBeenCalledWith(expect.anything(), 50, 0, '');
 		expect(api.getRules).not.toHaveBeenCalled();
+	});
+
+	it('sends the search to the engine and back to the page', async () => {
+		api.listAccessLog.mockResolvedValue({ data: [ENTRY], total_count: 1 });
+		expect(await load(loadEvent('?q=email'))).toMatchObject({ q: 'email' });
+		expect(api.listAccessLog).toHaveBeenCalledWith(expect.anything(), 50, 0, 'email');
+	});
+
+	it('cuts a search past 200 characters before sending it', async () => {
+		api.listAccessLog.mockResolvedValue({ data: [ENTRY], total_count: 1 });
+		expect(await load(loadEvent(`?q=${'a'.repeat(201)}`))).toMatchObject({ q: 'a'.repeat(200) });
+		expect(api.listAccessLog).toHaveBeenCalledWith(expect.anything(), 50, 0, 'a'.repeat(200));
 	});
 
 	it('sends an access log page past the end back to the last page', async () => {
