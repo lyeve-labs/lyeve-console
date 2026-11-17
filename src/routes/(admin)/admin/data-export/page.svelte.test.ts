@@ -255,9 +255,9 @@ describe('Data export filter on this page', () => {
 
 		await fireEvent.input(search, { target: { value: 'nothing like it' } });
 
-		expect(said(container)).toContain('No exports match this search');
+		expect(said(container)).toContain('No exports on this page match this search');
 		expect(container.querySelector('table')).toBeNull();
-		const empty = [...container.querySelectorAll('*')].find((el) => el.textContent?.trim() === 'No exports match this search');
+		const empty = [...container.querySelectorAll('*')].find((el) => el.textContent?.trim() === 'No exports on this page match this search');
 		const pager = container.querySelector('nav');
 		if (empty && pager) {
 			expect(empty.compareDocumentPosition(pager) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

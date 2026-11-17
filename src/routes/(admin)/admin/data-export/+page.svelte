@@ -275,7 +275,7 @@
 						{/snippet}
 					</EmptyState>
 				{:else if visible.length === 0}
-					<EmptyState title="No exports match this search" description="Clear the search, or go to another page.">
+					<EmptyState title="No exports on this page match this search" description="Clear the search, or go to another page.">
 						{#snippet iconSnippet()}
 							<Search size={ICON.lg} />
 						{/snippet}
