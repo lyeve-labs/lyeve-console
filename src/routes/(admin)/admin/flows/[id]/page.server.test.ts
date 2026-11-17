@@ -75,7 +75,7 @@ function loadEvent(routes: Record<string, Route> = everything) {
 	};
 }
 
-function actionEvent(form: FormData, routes: Record<string, Route> = everything) {
+function actionEvent(form: FormData, routes: Record<string, Route> = everything, address = 'http://localhost/admin/flows/f1') {
 	const { fetch, calls } = fetchFor(routes);
 	return {
 		calls,
@@ -84,7 +84,7 @@ function actionEvent(form: FormData, routes: Record<string, Route> = everything)
 			cookies: mockCookies(),
 			params: { id: 'f1' },
 			request: { formData: async () => form },
-			url: new URL('http://localhost/admin/flows/f1'),
+			url: new URL(address),
 		} as never,
 	};
 }
@@ -496,6 +496,11 @@ describe('admin/flows/[id] actions', () => {
 		const { event, calls } = actionEvent(new FormData());
 		await expect(actions.delete(event)).rejects.toMatchObject({ status: 303, location: '/admin/flows' });
 		expect(calls.some((c) => c.init?.method === 'DELETE')).toBe(true);
+	});
+
+	it('delete returns to the list the flow was opened from, its status and search kept', async () => {
+		const { event } = actionEvent(new FormData(), everything, 'http://localhost/admin/flows/f1?status=active&q=sync&offset=20&/delete');
+		await expect(actions.delete(event)).rejects.toMatchObject({ status: 303, location: '/admin/flows?status=active&q=sync' });
 	});
 
 	it('run loads one run with its steps', async () => {
