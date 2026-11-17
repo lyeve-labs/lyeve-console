@@ -13,6 +13,7 @@
 	import { formatDateTime } from '$lib/format';
 	import { shortId } from '$lib/utils/entry-identity';
 	import { ICON } from '$lib/icon';
+	import { actionWithQuery } from '$lib/back';
 	import { couldNotLoad } from '$lib/outage';
 
 	let {
@@ -28,6 +29,7 @@
 		definitionsFailed = false,
 		error = null,
 		errorStatus = 0,
+		listQuery = '',
 	}: {
 		entryId: string;
 		/** The entry's latest assignment, null when it is under no review. */
@@ -55,6 +57,8 @@
 		error?: string | null;
 		/** The status the refusal came with. A 403 is named as a permission. */
 		errorStatus?: number;
+		/** The query of the list the entry was opened from, which each write carries back to the entry's address. */
+		listQuery?: string;
 	} = $props();
 
 	const STATUS_LABEL: Record<ReviewStatus, string> = {
@@ -166,7 +170,7 @@
 			{#if definitions.length > 0}
 				<form
 					method="POST"
-					action="?/reviewStart"
+					action={actionWithQuery('reviewStart', listQuery)}
 					use:enhance={() => {
 						submitting = 'start';
 						return async ({ update }) => {
@@ -304,7 +308,7 @@
 			{#if actions.length > 0}
 				<form
 					method="POST"
-					action="?/reviewTransition"
+					action={actionWithQuery('reviewTransition', listQuery)}
 					use:enhance={({ submitter }) => {
 						const value = (submitter as HTMLButtonElement | null)?.value;
 						submitting = actions.find((a) => a === value) ?? null;

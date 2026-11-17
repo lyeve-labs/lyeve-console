@@ -9,6 +9,7 @@
 	import { Clock, Eye, EyeOff, History, RotateCcw } from '@lucide/svelte';
 	import { crumbsAfter } from '$lib/breadcrumb';
 	import { listPath, listQueryFrom } from '$lib/utils/entry-view';
+	import { actionWithQuery } from '$lib/back';
 	import { buildFromData, validate, serialize, extractM2MRelations } from '$lib/utils/content-form';
 	import { entryTitle, shortId } from '$lib/utils/entry-identity';
 	import { formatDateTime } from '$lib/format';
@@ -88,8 +89,10 @@
 	// nothing, so the page shows its values and offers no write.
 	let canUpdate = $derived(may(data.access, 'update'));
 	// The list forwards its view and page on the row link, so the way back
-	// lands on the list the reader left rather than on its first page.
-	let back = $derived({ href: `${listPath(schemaName)}${listQueryFrom(page.url)}`, label: schemaLabel });
+	// lands on the list the reader left rather than on its first page. Every
+	// write posts with it, so the address an action returns to keeps it too.
+	let listQuery = $derived(listQueryFrom(page.url));
+	let back = $derived({ href: `${listPath(schemaName)}${listQuery}`, label: schemaLabel });
 	let entryId = $derived(data.item?.id ?? '');
 
 	// The heading names the entry the author named, not the first eight
@@ -199,13 +202,13 @@
 				<div class="flex items-center gap-2">
 					<Badge tone={isPublished ? 'success' : 'warn'}>{itemStatus}</Badge>
 					{#if canUpdate && isPublished}
-						<form method="POST" action="?/unpublish" use:enhance>
+						<form method="POST" action={actionWithQuery('unpublish', listQuery)} use:enhance>
 							<Button variant="secondary" size="sm" type="submit">
 								<EyeOff size={ICON.sm} /> Unpublish
 							</Button>
 						</form>
 					{:else if canUpdate}
-						<form method="POST" action="?/publish" use:enhance>
+						<form method="POST" action={actionWithQuery('publish', listQuery)} use:enhance>
 							<Button variant="primary" size="sm" type="submit">
 								<Eye size={ICON.sm} /> Publish
 							</Button>
@@ -266,6 +269,7 @@
 						definitionsFailed={data.review.definitionsFailed}
 						error={reviewError?.message}
 						errorStatus={reviewError?.status}
+						{listQuery}
 					/>
 				</div>
 			{/if}
@@ -289,7 +293,7 @@
 			{:else}
 			<form
 				method="POST"
-				action="?/save"
+				action={actionWithQuery('save', listQuery)}
 				use:enhance={save.enhance}
 				onsubmit={handleSubmit}
 				class="flex flex-col gap-5"
@@ -356,6 +360,7 @@
 						error={translationError?.message}
 						errorLocale={translationError?.locale}
 						readOnly={!canUpdate}
+						{listQuery}
 					/>
 				</div>
 			{/if}
@@ -380,7 +385,7 @@
 									<span class="mt-0.5 block truncate text-xs text-faint">{revDiff(rev)}</span>
 								</button>
 								{#if selectedRev === rev.id && canUpdate}
-									<form method="POST" action="?/restore" use:enhance class="mt-2">
+									<form method="POST" action={actionWithQuery('restore', listQuery)} use:enhance class="mt-2">
 										<input type="hidden" name="rev_num" value={rev.revision_num} />
 										<Button variant="secondary" size="sm" type="submit">
 											<RotateCcw size={ICON.sm} /> Restore
@@ -396,7 +401,7 @@
 							<p class="mt-0.5 text-xs text-faint">{formatDateTime(openedRevision.created_at)}</p>
 							<p class="mt-0.5 truncate text-xs text-faint">{revDiff(openedRevision)}</p>
 							{#if canUpdate}
-								<form method="POST" action="?/restore" use:enhance class="mt-2">
+								<form method="POST" action={actionWithQuery('restore', listQuery)} use:enhance class="mt-2">
 									<input type="hidden" name="rev_num" value={openedRevision.revision_num} />
 									<Button variant="secondary" size="sm" type="submit">
 										<RotateCcw size={ICON.sm} /> Restore

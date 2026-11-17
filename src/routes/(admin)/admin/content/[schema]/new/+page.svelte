@@ -3,8 +3,10 @@
 	import type { PageData, ActionData } from './$types';
 	import type { SchemaField } from '@lyeve-labs/client';
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
 	import { Globe } from '@lucide/svelte';
 	import { crumbsAfter } from '$lib/breadcrumb';
+	import { listPath, listQueryFrom } from '$lib/utils/entry-view';
 	import { buildEmpty, validate, serialize, extractM2MRelations } from '$lib/utils/content-form';
 	import ContentForm from '$lib/components/ContentForm.svelte';
 	import { ICON } from '$lib/icon';
@@ -76,7 +78,9 @@
 	let schemaName = $derived(data.schemaDef?.name ?? '');
 	let schemaLabel = $derived(data.schemaDef?.display_name || schemaName);
 
-	const back = $derived({ href: `/admin/content/${schemaName}`, label: schemaLabel });
+	// New entry carries the list's view and page, so the way back, and the
+	// create's redirect, land on the list the reader left.
+	const back = $derived({ href: `${listPath(schemaName)}${listQueryFrom(page.url)}`, label: schemaLabel });
 </script>
 
 <PageShell

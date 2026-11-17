@@ -53,7 +53,11 @@ async function loadReview(routes: Record<string, unknown>): Promise<EntryReview>
 function actionEvent(fields: Record<string, string>) {
 	const data = new FormData();
 	for (const [k, v] of Object.entries(fields)) data.set(k, v);
-	return { request: { formData: async () => data }, params: { schema: 'article', id: 'e1' } } as never;
+	return {
+		url: new URL('http://localhost/admin/content/article/e1?/action'),
+		request: { formData: async () => data },
+		params: { schema: 'article', id: 'e1' },
+	} as never;
 }
 
 beforeEach(() => vi.clearAllMocks());
@@ -116,7 +120,11 @@ describe('starting a review', () => {
 		data.append('other_assignees', B);
 		data.append('other_assignees', C);
 		data.append('other_assignees', A);
-		const event = { request: { formData: async () => data }, params: { schema: 'article', id: 'e1' } } as never;
+		const event = {
+			url: new URL('http://localhost/admin/content/article/e1?/reviewStart'),
+			request: { formData: async () => data },
+			params: { schema: 'article', id: 'e1' },
+		} as never;
 		await expect(actions.reviewStart(event)).rejects.toMatchObject({ status: 303 });
 		expect(engine.post.mock.calls[0][1]).toEqual({
 			entry_id: 'e1',

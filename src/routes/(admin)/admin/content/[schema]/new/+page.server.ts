@@ -19,6 +19,7 @@ import { PLUGIN } from '$lib/plugin-names';
 import { runs } from '$lib/plugins';
 import { readRelationChoices } from '$lib/server/relation-choices';
 import { isInverse } from '$lib/relations';
+import { listPath, listQueryFrom } from '$lib/utils/entry-view';
 
 /** One locale the new entry can be written in. */
 type LocaleChoice = { code: string; name: string; is_default: boolean };
@@ -159,6 +160,8 @@ export const actions: Actions = {
 			const label = schemaDef?.display_name || params.schema;
 			return { createdUnreadable: `Entry created. Your role cannot open entries of ${label}.` };
 		}
-		redirect(303, `/admin/content/${params.schema}`);
+		// The form posts to its own address, which carries the list's query
+		// from the New entry link, so the reader returns to that view.
+		redirect(303, `${listPath(params.schema)}${listQueryFrom(event.url)}`);
 	},
 };
