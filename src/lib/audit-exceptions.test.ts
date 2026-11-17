@@ -4,11 +4,12 @@ import { describe, expect, it } from 'vitest';
 /*
  * pnpm-workspace.yaml lets the audit pass GHSA-3r8g-jcqq-3p5j, a denial of
  * service in the form data parser of SvelteKit's remote functions that only
- * 3.1.1 fixes. SvelteKit looks a remote function up in the build's table of
- * remote modules before it reads a request body, and the console declares
- * none, so the parser is never reached. These cases keep the exception true:
- * they fail once the console declares a remote function, and once SvelteKit
- * carries the fix, so the entry goes with its reason.
+ * 3.1.1 fixes. Remote functions stay off until a config turns on
+ * `experimental.remoteFunctions`, and SvelteKit looks a remote function up in
+ * the build's table of remote modules before it reads a request body, so the
+ * parser is never reached. These cases keep the exception true: they fail
+ * once a config SvelteKit reads names the flag or a remote module appears,
+ * and once SvelteKit carries the fix, so the entry goes with its reason.
  */
 const ADVISORY = 'GHSA-3r8g-jcqq-3p5j';
 const skipped = readFileSync('pnpm-workspace.yaml', 'utf8').includes(ADVISORY);
@@ -23,7 +24,12 @@ describe('the audit exception for remote functions', () => {
 	it('stands only while the console declares no remote function', () => {
 		if (!skipped) return;
 		expect(globSync(['src/**/*.remote.ts', 'src/**/*.remote.js'])).toEqual([]);
-		expect(readFileSync('svelte.config.js', 'utf8')).not.toMatch(/remoteFunctions/);
+		// The flag reaches SvelteKit from svelte.config or from the options vite.config gives sveltekit().
+		const configs = globSync('{svelte,vite}.config.{js,ts,mjs,mts}');
+		expect(configs.length).toBeGreaterThanOrEqual(2);
+		for (const config of configs) {
+			expect(readFileSync(config, 'utf8'), config).not.toMatch(/remoteFunctions/);
+		}
 	});
 
 	it('goes once the installed SvelteKit carries the fix', () => {
