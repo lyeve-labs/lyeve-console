@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- The console takes ui-kit 0.62.0. A ghost button that is switched on, such as Node palette, Inspector and Focus mode in the flow toolbar and the lock on a resizable side panel, shows it with the hover fill and a stronger border.
 - The console takes ui-kit 0.61.0. On the sidebar's icon rail each entry is a 40px square centered in the rail with a 20px icon, and the current page is the same square filled evenly. The rail draws no scroll bar, the mark is centered above the entries, and the column no longer runs under the sidebar's edge.
 
 ## [0.28.0] - 2026-11-11
