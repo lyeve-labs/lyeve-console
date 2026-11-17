@@ -46,7 +46,8 @@
 	import { confirmed, submitter } from '#lib/forms.svelte.ts';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
-	import { listQuery } from '#lib/back.ts';
+	import { filterHref } from '#lib/back.ts';
+	import { page } from '$app/state';
 	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
@@ -83,11 +84,11 @@
 	// search.
 	const base = '/admin/data-export';
 	const statusOptions = $derived([
-		{ value: '', label: 'All', href: `${base}${listQuery({ q: data.q })}` },
+		{ value: '', label: 'All', href: filterHref(page.url, 'status', '') },
 		...JOB_STATUSES.map((s) => ({
 			value: s,
 			label: s[0].toUpperCase() + s.slice(1),
-			href: `${base}${listQuery({ status: s, q: data.q })}`,
+			href: filterHref(page.url, 'status', s),
 		})),
 	]);
 	const live = liveFilter(() => data.q);

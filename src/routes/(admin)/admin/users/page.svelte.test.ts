@@ -7,6 +7,8 @@ vi.mock('$app/navigation', () => ({
 	refreshAll: vi.fn(async () => {}),
 }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://localhost/') } }));
+vi.mock('$app/state', () => appState);
 
 import UsersPage from './+page.svelte';
 
@@ -395,11 +397,13 @@ describe('Users read failures', () => {
 });
 
 describe('Users role filter', () => {
-	it('offers the roles as links that keep the search', () => {
+	it('offers the roles as links that keep the search and the page size', () => {
+		appState.page.url = new URL('http://localhost/admin/users?q=ada&limit=100&offset=100');
 		const { getByRole } = render(UsersPage, { props: props({ q: 'ada' }) });
+		appState.page.url = new URL('http://localhost/');
 
-		expect(getByRole('link', { name: 'super_admin' }).getAttribute('href')).toBe('/admin/users?role=super_admin&q=ada');
-		expect(getByRole('link', { name: 'All' }).getAttribute('href')).toBe('/admin/users?q=ada');
+		expect(getByRole('link', { name: 'super_admin' }).getAttribute('href')).toBe('/admin/users?q=ada&limit=100&role=super_admin');
+		expect(getByRole('link', { name: 'All' }).getAttribute('href')).toBe('/admin/users?q=ada&limit=100');
 	});
 
 	it('keeps the search and the role on the pager', () => {

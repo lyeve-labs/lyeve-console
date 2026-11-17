@@ -31,7 +31,8 @@
 	import { passkeysRemovedText } from '#lib/api/users.ts';
 	import { formatDate } from '#lib/format.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
-	import { listQuery } from '#lib/back.ts';
+	import { filterHref } from '#lib/back.ts';
+	import { page } from '$app/state';
 	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
@@ -173,7 +174,7 @@
 	const roleFilters = $derived(
 		[{ value: '', label: 'All' }, ...ROLE_OPTIONS].map((o) => ({
 			...o,
-			href: `/admin/users${listQuery({ role: o.value, q: data.q })}`,
+			href: filterHref(page.url, 'role', o.value),
 		})),
 	);
 	const rows = $derived(data.users.ok ? data.users.value : []);

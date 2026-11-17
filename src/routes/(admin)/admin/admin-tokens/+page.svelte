@@ -37,7 +37,7 @@
 	import { tracked } from '#lib/forms.svelte.ts';
 	import { formatCount, formatDate, formatDateTime, plural, relativeTime } from '#lib/format.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
-	import { listQuery } from '#lib/back.ts';
+	import { filterHref } from '#lib/back.ts';
 	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 	import {
@@ -237,7 +237,7 @@
 			{ value: 'replaced', label: 'Replaced' },
 			{ value: 'expired', label: 'Expired' },
 			{ value: 'revoked', label: 'Revoked' },
-		].map((o) => ({ ...o, href: `/admin/admin-tokens${listQuery({ status: o.value, q: data.q })}` })),
+		].map((o) => ({ ...o, href: filterHref(page.url, 'status', o.value) })),
 	);
 
 	const isOwner = (t: AdminToken) => t.owner_user_id === data.user.id;

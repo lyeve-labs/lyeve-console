@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ refreshAll: vi.fn(async () => {}), invalidate: vi.fn(async () => {}) }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://localhost/') } }));
+vi.mock('$app/state', () => appState);
 
 import ExportPage from './+page.svelte';
 import type { ExportJob, ExportSchedule } from '#lib/api/data-export.ts';
@@ -146,17 +148,21 @@ describe('Data export jobs', () => {
 	});
 
 	it('filters by status through links that keep it in the address', () => {
+		appState.page.url = new URL('http://localhost/admin/data-export?status=failed');
 		const { getByRole } = render(ExportPage, { props: props({ status: 'failed' }) });
+		appState.page.url = new URL('http://localhost/');
 		const failed = getByRole('link', { name: 'Failed' });
 		expect(failed.getAttribute('href')).toBe('/admin/data-export?status=failed');
 		expect(failed.getAttribute('aria-current')).toBeTruthy();
 		expect(getByRole('link', { name: 'All' }).getAttribute('href')).toBe('/admin/data-export');
 	});
 
-	it('keeps the search on each status link and the pager', () => {
+	it('keeps the search and the page size on each status link, and the search on the pager', () => {
+		appState.page.url = new URL('http://localhost/admin/data-export?status=failed&q=nightly&limit=100&offset=100');
 		const { container, getByRole } = render(ExportPage, { props: props({ status: 'failed', q: 'nightly', total: 80 }) });
-		expect(getByRole('link', { name: 'Completed' }).getAttribute('href')).toBe('/admin/data-export?status=completed&q=nightly');
-		expect(getByRole('link', { name: 'All' }).getAttribute('href')).toBe('/admin/data-export?q=nightly');
+		appState.page.url = new URL('http://localhost/');
+		expect(getByRole('link', { name: 'Completed' }).getAttribute('href')).toBe('/admin/data-export?q=nightly&limit=100&status=completed');
+		expect(getByRole('link', { name: 'All' }).getAttribute('href')).toBe('/admin/data-export?q=nightly&limit=100');
 		const next = container.querySelector('a[href*="offset=50"]');
 		expect(next?.getAttribute('href')).toContain('q=nightly');
 	});
