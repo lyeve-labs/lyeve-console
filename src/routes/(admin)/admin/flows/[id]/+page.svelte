@@ -3,6 +3,7 @@
 	import { BookOpen, Download, Keyboard, LayoutGrid, LayoutTemplate, PanelLeft, Play, Upload, Workflow } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import { actionWithQuery, listBack, queryWithout } from '$lib/back';
+	import { FLOW_LIST_KEYS } from '../list-keys';
 	import { enhance } from '$app/forms';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { createClient } from '@lyeve-labs/client';
@@ -62,7 +63,7 @@
 
 	// The list's filter rides on the row link, so the way back lands on the
 	// same slice of Flows the reader opened this one from.
-	const back = $derived(listBack('/admin/flows', 'Flows', page.url, ['status', 'q']));
+	const back = $derived(listBack('/admin/flows', 'Flows', page.url, FLOW_LIST_KEYS));
 
 	// The shell shows why the page is unavailable while the flow plugin does
 	// not run. A plugin that runs and refuses its routes is said here.
@@ -369,7 +370,7 @@
 		pageHref(
 			page.url.pathname,
 			runs?.limit ?? 20,
-			Object.fromEntries(['status', 'q'].flatMap((k) => (page.url.searchParams.get(k) ? [[k, page.url.searchParams.get(k) ?? '']] : []))),
+			Object.fromEntries(FLOW_LIST_KEYS.flatMap((k) => (page.url.searchParams.get(k) ? [[k, page.url.searchParams.get(k) ?? '']] : []))),
 		),
 	);
 	// The Assistant tab exists only when the engine offers the assistant's

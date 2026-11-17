@@ -3,6 +3,7 @@ import { error, fail, redirect, type ActionFailure } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { getSchemas } from '@lyeve-labs/client-rest';
 import { listBack } from '$lib/back';
+import { FLOW_LIST_KEYS } from '../list-keys';
 import { authedClient, authedHeaders, requireUser } from '$lib/server/authz';
 import { actionError } from '$lib/server/action-error';
 import { readImportForm } from '$lib/server/flow-import';
@@ -422,7 +423,7 @@ export const actions: Actions = {
 			return refused(err, 'Could not delete the flow. Try again.');
 		}
 		// Back to the list the flow was opened from, as the page's way back is.
-		redirect(303, listBack('/admin/flows', 'Flows', event.url, ['status', 'q']).href);
+		redirect(303, listBack('/admin/flows', 'Flows', event.url, FLOW_LIST_KEYS).href);
 	},
 
 	/**
