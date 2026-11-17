@@ -7,10 +7,10 @@
 		Checkbox,
 		DateTimePicker,
 		EmptyState,
-		FilterChips,
 		Input,
 		PageShell,
 		SearchInput,
+		Toggle,
 		SectionHeading,
 		Stat,
 		Table,
@@ -31,7 +31,9 @@
 	import { NO_VALUE, formatDateTime } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
-	import { listQuery } from '#lib/back.ts';
+	import { filterHref } from '#lib/back.ts';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
@@ -78,12 +80,11 @@
 	// a shared link keep them.
 	const live = liveFilter(() => data.q);
 	const filtered = $derived(data.q !== '' || data.failed !== '');
-	const failedOptions = $derived(
-		[
-			{ value: '', label: 'All' },
-			{ value: '1', label: 'With errors' },
-		].map((o) => ({ ...o, href: `/admin/events${listQuery({ failed: o.value, q: data.q })}` })),
-	);
+	// A switch that applies at once. The search and the page size stay, and
+	// the log starts again at its first page.
+	function showFailed(on: boolean) {
+		void goto(filterHref(page.url, 'failed', on ? '1' : ''), { reset: false });
+	}
 
 	const failures = $derived(failedOnly(data.events).length);
 </script>
@@ -241,7 +242,7 @@
 							/>
 						{/snippet}
 						{#snippet filters()}
-							<FilterChips label="Errors" value={data.failed} options={failedOptions} />
+							<Toggle label="Only events with errors" checked={data.failed === '1'} onchange={showFailed} />
 						{/snippet}
 					</ListToolbar>
 				</form>

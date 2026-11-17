@@ -17,6 +17,8 @@ vi.mock('$app/forms', () => ({
 }));
 
 const kit = vi.hoisted(() => ({ confirm: vi.fn(async () => false) }));
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://localhost/') } }));
+vi.mock('$app/state', () => appState);
 vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 	const actual = await importOriginal<Record<string, unknown>>();
 	return { ...actual, confirm: kit.confirm };
@@ -325,10 +327,12 @@ describe('the webhook search and status filter', () => {
 		});
 	}
 
-	it('keeps the search on each status link and the pager', () => {
+	it('keeps the search and the page size on each status link, and the search on the pager', () => {
+		appState.page.url = new URL('http://localhost/admin/webhooks?q=ship&status=enabled&limit=100&offset=100');
 		const { container } = filtered([webhook], 'ship', 'enabled');
+		appState.page.url = new URL('http://localhost/');
 		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
-		expect(hrefs).toContain('/admin/webhooks?status=disabled&q=ship');
+		expect(hrefs).toContain('/admin/webhooks?q=ship&limit=100&status=disabled');
 		expect(hrefs.some((h) => h.startsWith('/admin/webhooks?status=enabled&q=ship&') && h.includes('offset=50'))).toBe(true);
 	});
 

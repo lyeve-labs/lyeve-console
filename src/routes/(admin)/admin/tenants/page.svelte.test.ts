@@ -20,6 +20,8 @@ vi.mock('@lyeve-labs/ui-kit', async (original) => ({
 }));
 
 import TenantsPage from './+page.svelte';
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://localhost/') } }));
+vi.mock('$app/state', () => appState);
 
 afterEach(cleanup);
 
@@ -138,10 +140,12 @@ describe('Tenants pagination', () => {
 
 	// A link turns the page before the page hydrates, which a callback cannot.
 	it('keeps the search and the status on the pager, the chips and each row link', () => {
+		appState.page.url = new URL('http://localhost/admin/tenants?q=acme&status=enabled&limit=100&offset=100');
 		const { container } = render(TenantsPage, { props: props({ q: 'acme', status: 'enabled' }) });
+		appState.page.url = new URL('http://localhost/');
 		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
 		expect(hrefs).toContain('/admin/tenants/t0?status=enabled&q=acme');
-		expect(hrefs).toContain('/admin/tenants?status=disabled&q=acme');
+		expect(hrefs).toContain('/admin/tenants?q=acme&limit=100&status=disabled');
 		expect(hrefs.some((h) => h.startsWith('/admin/tenants?status=enabled&q=acme&') && h.includes('offset=50'))).toBe(true);
 	});
 

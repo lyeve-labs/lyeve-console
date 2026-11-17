@@ -3,7 +3,10 @@ import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SubmitFunction } from '$app/forms';
 
-vi.mock('$app/navigation', () => ({ refreshAll: vi.fn(async () => {}) }));
+const nav = vi.hoisted(() => ({ refreshAll: vi.fn(async () => {}), goto: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => nav);
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://localhost/') } }));
+vi.mock('$app/state', () => appState);
 const forms = vi.hoisted(() => ({ submits: [] as SubmitFunction[] }));
 vi.mock('$app/forms', () => ({
 	enhance: (_form: HTMLFormElement, submit: SubmitFunction) => {
@@ -262,10 +265,19 @@ describe('the search box', () => {
 		expect(container.querySelector('a[href="/admin/events"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 
-	it('keeps the search on the error filter and the pager', () => {
+	it('keeps the search on the pager', () => {
 		const { container } = render(EventsPage, { props: props({ q: 'orders', failed: '1', total: 120 }) });
 		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href'));
-		expect(hrefs).toContain('/admin/events?q=orders');
 		expect(hrefs.some((h) => h?.includes('failed=1') && h.includes('q=orders') && h.includes('offset=50'))).toBe(true);
+	});
+
+	it('switches the error filter at once, keeping the search and the page size from the first page', async () => {
+		appState.page.url = new URL('http://localhost/admin/events?q=orders&limit=100&offset=100');
+		const { getByRole } = render(EventsPage, { props: props({ q: 'orders', total: 120 }) });
+		const toggle = getByRole('switch', { name: 'Only events with errors' });
+		expect(toggle.getAttribute('aria-checked')).toBe('false');
+		await fireEvent.click(toggle);
+		expect(nav.goto).toHaveBeenCalledWith('/admin/events?q=orders&limit=100&failed=1', { reset: false });
+		appState.page.url = new URL('http://localhost/');
 	});
 });

@@ -10,6 +10,7 @@
 		Input,
 		Modal,
 		PageShell,
+		SegmentedControl,
 		SectionHeading,
 		Stat,
 		Table,
@@ -18,7 +19,6 @@
 		Pagination,
 		RadioGroup,
 		SearchInput,
-		FilterChips,
 	} from '@lyeve-labs/ui-kit';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import { enhance } from '#lib/enhance.ts';
@@ -49,7 +49,8 @@
 	import { formatDateTime, plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
-	import { listQuery } from '#lib/back.ts';
+	import { filterHref, queryWithout, returnAddress } from '#lib/back.ts';
+	import { page } from '$app/state';
 	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
@@ -117,7 +118,7 @@
 			{ value: '', label: 'All' },
 			{ value: 'failing', label: 'Failing' },
 			{ value: 'paused', label: 'Paused' },
-		].map((o) => ({ ...o, href: `/admin/observability/synthetic${listQuery({ show: o.value, q: data.q })}` })),
+		].map((o) => ({ ...o, href: filterHref(page.url, 'show', o.value) })),
 	);
 
 	let open = $state(false);
@@ -336,7 +337,7 @@
 							/>
 						{/snippet}
 						{#snippet filters()}
-							<FilterChips label="Show" value={data.show} options={showOptions} />
+							<SegmentedControl label="Show" labelHidden value={data.show} options={showOptions} />
 						{/snippet}
 					</ListToolbar>
 				</form>

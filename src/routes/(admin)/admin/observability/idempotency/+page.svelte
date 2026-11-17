@@ -5,12 +5,12 @@
 		Button,
 		EmptyState,
 		PageShell,
+		SegmentedControl,
 		SectionHeading,
 		Stat,
 		Table,
 		Pagination,
 		SearchInput,
-		FilterChips,
 	} from '@lyeve-labs/ui-kit';
 	import { confirmed } from '#lib/forms.svelte.ts';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
@@ -32,7 +32,8 @@
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
 	import { ICON } from '#lib/icon.ts';
-	import { listQuery } from '#lib/back.ts';
+	import { filterHref } from '#lib/back.ts';
+	import { page } from '$app/state';
 	import { liveFilter } from '#lib/live-filter.svelte.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -51,7 +52,7 @@
 			{ value: '', label: 'All' },
 			{ value: 'open', label: 'Not finished' },
 			{ value: 'stored', label: 'Stored' },
-		].map((o) => ({ ...o, href: `/admin/observability/idempotency${listQuery({ show: o.value, q: data.q })}` })),
+		].map((o) => ({ ...o, href: filterHref(page.url, 'show', o.value) })),
 	);
 
 	/**
@@ -142,7 +143,7 @@
 							/>
 						{/snippet}
 						{#snippet filters()}
-							<FilterChips label="Show" value={data.show} options={showOptions} />
+							<SegmentedControl label="Show" labelHidden value={data.show} options={showOptions} />
 						{/snippet}
 					</ListToolbar>
 				</form>

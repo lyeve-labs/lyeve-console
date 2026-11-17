@@ -11,9 +11,9 @@
 		Input,
 		Modal,
 		PageShell,
+		SegmentedControl,
 		Progress,
 		SearchInput,
-		FilterChips,
 		Pagination,
 		Table,
 		type StatusTone,
@@ -30,7 +30,8 @@
 	import { ROLE_OPTIONS, roleTone } from '#lib/roles.ts';
 	import { formatCount, formatDate, plural } from '#lib/format.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
-	import { listQuery } from '#lib/back.ts';
+	import { filterHref } from '#lib/back.ts';
+	import { page } from '$app/state';
 	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 	import {
@@ -196,7 +197,7 @@
 			{ value: '', label: 'All' },
 			{ value: 'active', label: 'Active' },
 			{ value: 'revoked', label: 'Revoked' },
-		].map((o) => ({ ...o, href: `/admin/api-keys${listQuery({ status: o.value, q: data.q })}` })),
+		].map((o) => ({ ...o, href: filterHref(page.url, 'status', o.value) })),
 	);
 
 	const create = submitter(() => (showCreate = false));
@@ -245,7 +246,7 @@
 						/>
 					{/snippet}
 					{#snippet filters()}
-						<FilterChips label="Status" value={data.status} options={statusOptions} />
+						<SegmentedControl label="Status" labelHidden value={data.status} options={statusOptions} />
 					{/snippet}
 				</ListToolbar>
 			</form>

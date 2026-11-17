@@ -30,7 +30,8 @@ async function deleteTitle(): Promise<string> {
 	return String((kit.confirm.mock.calls[0] as unknown[] | undefined)?.[0] ?? '');
 }
 vi.mock('$app/navigation', () => ({ goto: vi.fn(), refreshAll: vi.fn() }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://admin/admin/api-keys') } }));
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://admin/admin/api-keys') } }));
+vi.mock('$app/state', () => appState);
 
 afterEach(() => {
 	cleanup();
@@ -206,15 +207,20 @@ describe('API keys page', () => {
 		expect(queryByRole('button', { name: /New key/ })).toBeNull();
 	});
 
-	it('keeps the search on each status link and the pager', () => {
+	it('keeps the search and the page size on each status link, and the search on the pager', () => {
+		appState.page.url = new URL('http://admin/admin/api-keys?q=deploy&status=active&limit=100&offset=100');
 		const { container } = setup([key({})], { total: 120, q: 'deploy', status: 'active' });
+		appState.page.url = new URL('http://admin/admin/api-keys');
 		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
-		expect(hrefs).toContain('/admin/api-keys?status=revoked&q=deploy');
+		expect(hrefs).toContain('/admin/api-keys?q=deploy&limit=100&status=revoked');
+		expect(hrefs).toContain('/admin/api-keys?q=deploy&limit=100');
 		expect(container.querySelector('a[href="/admin/api-keys?status=active&q=deploy&limit=50&offset=50"]')).toBeTruthy();
 	});
 
 	it('offers to clear filters that match nothing, rather than inviting a first key', () => {
+		appState.page.url = new URL('http://admin/admin/api-keys?q=nothing+like+it');
 		const { container } = setup([], { q: 'nothing like it' });
+		appState.page.url = new URL('http://admin/admin/api-keys');
 		expect(container.textContent).toContain('No keys match these filters');
 		expect(container.textContent).not.toContain('No API keys yet');
 		expect(container.querySelector('a[href="/admin/api-keys"]')?.textContent?.trim()).toBe('Clear filters');

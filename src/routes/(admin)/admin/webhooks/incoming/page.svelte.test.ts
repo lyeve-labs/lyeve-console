@@ -3,6 +3,8 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://localhost/') } }));
+vi.mock('$app/state', () => appState);
 
 import IncomingPage from './+page.svelte';
 
@@ -50,10 +52,12 @@ describe('the incoming webhook search', () => {
 		expect(container.querySelector('a[href="/admin/webhooks/incoming"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 
-	it('keeps the search on each status link and the pager', () => {
+	it('keeps the search and the page size on each status link, and the search on the pager', () => {
+		appState.page.url = new URL('http://localhost/admin/webhooks/incoming?q=stripe&status=enabled&limit=100&offset=100');
 		const { container } = setup({ q: 'stripe', status: 'enabled', total: 120, hasMore: true });
+		appState.page.url = new URL('http://localhost/');
 		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
-		expect(hrefs).toContain('/admin/webhooks/incoming?status=disabled&q=stripe');
+		expect(hrefs).toContain('/admin/webhooks/incoming?q=stripe&limit=100&status=disabled');
 		expect(hrefs.some((h) => h.startsWith('/admin/webhooks/incoming?status=enabled&q=stripe&') && h.includes('offset=50'))).toBe(true);
 	});
 });

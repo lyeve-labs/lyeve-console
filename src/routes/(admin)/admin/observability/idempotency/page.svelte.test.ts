@@ -13,6 +13,8 @@ vi.mock('$app/forms', () => ({
 }));
 
 const kit = vi.hoisted(() => ({ confirm: vi.fn(async () => false) }));
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://localhost/') } }));
+vi.mock('$app/state', () => appState);
 vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 	const actual = await importOriginal<Record<string, unknown>>();
 	return { ...actual, confirm: kit.confirm };
@@ -74,11 +76,13 @@ describe('the key toolbar', () => {
 		expect(container.querySelector('a[href="/admin/observability/idempotency"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 
-	it('keeps the search on each show link', () => {
+	it('keeps the search and the page size on each show link, from the first page', () => {
+		appState.page.url = new URL('http://localhost/admin/observability/idempotency?q=invoice&limit=100&offset=100');
 		const { container } = render(IdempotencyPage, { props: props({ q: 'invoice' }) });
+		appState.page.url = new URL('http://localhost/');
 		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href'));
-		expect(hrefs).toContain('/admin/observability/idempotency?show=open&q=invoice');
-		expect(hrefs).toContain('/admin/observability/idempotency?q=invoice');
+		expect(hrefs).toContain('/admin/observability/idempotency?q=invoice&limit=100&show=open');
+		expect(hrefs).toContain('/admin/observability/idempotency?q=invoice&limit=100');
 	});
 });
 

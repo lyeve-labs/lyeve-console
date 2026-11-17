@@ -6,9 +6,9 @@
 		Drawer,
 		Input,
 		PageShell,
+		SegmentedControl,
 		Pagination,
 		SearchInput,
-		FilterChips,
 		Table,
 		toast,
 	} from '@lyeve-labs/ui-kit';
@@ -25,7 +25,8 @@
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import { ICON } from '#lib/icon.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
-	import { listQuery } from '#lib/back.ts';
+	import { filterHref, listQuery } from '#lib/back.ts';
+	import { page } from '$app/state';
 	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { TENANT_LIST_KEYS } from './list-keys';
 	import { formRefusal } from '#lib/api/refusal.ts';
@@ -115,7 +116,7 @@
 			{ value: '', label: 'All' },
 			{ value: 'enabled', label: 'Enabled' },
 			{ value: 'disabled', label: 'Disabled' },
-		].map((o) => ({ ...o, href: `/admin/tenants${listQuery({ status: o.value, q: data.q })}` })),
+		].map((o) => ({ ...o, href: filterHref(page.url, 'status', o.value) })),
 	);
 	const listParams = $derived(
 		Object.fromEntries(TENANT_LIST_KEYS.flatMap((k) => (data[k] ? [[k, data[k]]] : []))) as Record<string, string>,
@@ -146,7 +147,7 @@
 				/>
 			{/snippet}
 			{#snippet filters()}
-				<FilterChips label="Status" value={data.status} options={statusOptions} />
+				<SegmentedControl label="Status" labelHidden value={data.status} options={statusOptions} />
 			{/snippet}
 		</ListToolbar>
 	</form>

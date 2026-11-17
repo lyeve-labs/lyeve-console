@@ -9,9 +9,9 @@
 		Modal,
 		NumberInput,
 		PageShell,
+		SegmentedControl,
 		Pagination,
 		SearchInput,
-		FilterChips,
 		Table,
 		Textarea,
 		Toggle,
@@ -34,7 +34,7 @@
 	import { formatDateTime } from '#lib/format.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
 	import { liveFilter } from '#lib/live-filter.svelte.ts';
-	import { actionWithQuery, listQuery, queryWithout, returnAddress } from '#lib/back.ts';
+	import { actionWithQuery, filterHref, queryWithout, returnAddress } from '#lib/back.ts';
 	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -137,7 +137,7 @@
 			{ value: '', label: 'All' },
 			{ value: 'enabled', label: 'Enabled' },
 			{ value: 'disabled', label: 'Disabled' },
-		].map((o) => ({ ...o, href: `/admin/jobs${listQuery({ status: o.value, q: data.q })}` })),
+		].map((o) => ({ ...o, href: filterHref(page.url, 'status', o.value) })),
 	);
 </script>
 
@@ -186,7 +186,7 @@
 						/>
 					{/snippet}
 					{#snippet filters()}
-						<FilterChips label="Status" value={data.status} options={statusOptions} />
+						<SegmentedControl label="Status" labelHidden value={data.status} options={statusOptions} />
 					{/snippet}
 				</ListToolbar>
 			</form>

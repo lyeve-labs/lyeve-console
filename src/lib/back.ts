@@ -62,3 +62,16 @@ export function actionWithQuery(name: string, query: string): string {
 export function returnAddress(url: ReadonlyURL, drop: readonly string[] = []): string {
 	return `${url.pathname}${queryWithout(url, drop)}`;
 }
+
+/**
+ * A filter option's address: the one the reader is on with `key` set to
+ * `value`, or taken out for an empty value. The search and the page size stay,
+ * and the list starts again at its first page, because the page the reader
+ * was on may be past the end of the filtered list.
+ */
+export function filterHref(url: ReadonlyURL, key: string, value: string): string {
+	const params = new URLSearchParams(queryWithout(url, [key, 'offset']));
+	if (value) params.set(key, value);
+	const query = params.toString();
+	return query ? `${url.pathname}?${query}` : url.pathname;
+}

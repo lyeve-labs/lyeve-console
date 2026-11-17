@@ -111,14 +111,17 @@ describe('the job drawer', () => {
 });
 
 describe('the job list toolbar', () => {
-	it('keeps the search on each status link and the pager', () => {
+	it('keeps the search and the page size on each status link, and the search on the pager', () => {
+		state.page.url = new URL('http://localhost/admin/jobs?q=digest&status=enabled&limit=100&offset=100');
 		const { container } = setup({ q: 'digest', status: 'enabled', hasMore: true });
 		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
-		expect(hrefs).toContain('/admin/jobs?status=disabled&q=digest');
+		expect(hrefs).toContain('/admin/jobs?q=digest&limit=100&status=disabled');
+		expect(hrefs).toContain('/admin/jobs?q=digest&limit=100');
 		expect(hrefs.some((h) => h.startsWith('/admin/jobs?status=enabled&q=digest&') && h.includes('offset=50'))).toBe(true);
 	});
 
 	it('offers to clear filters that match nothing, rather than offering a first job', () => {
+		state.page.url = new URL('http://localhost/admin/jobs?q=nothing+like+it');
 		const { container } = setup({ jobs: { ok: true, value: [] }, q: 'nothing like it' });
 		expect(container.textContent).toContain('No jobs match these filters');
 		expect(container.textContent).not.toContain('No jobs yet');

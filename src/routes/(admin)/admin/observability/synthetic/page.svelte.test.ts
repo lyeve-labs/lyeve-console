@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 const nav = vi.hoisted(() => ({ goto: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => nav);
+const appState = vi.hoisted(() => ({ page: { url: new URL('http://localhost/') } }));
+vi.mock('$app/state', () => appState);
 
 import SyntheticPage from './+page.svelte';
 import type { Probe, ProbeAlert } from '#lib/api/synthetic.ts';
@@ -283,10 +285,13 @@ describe('the tiles', () => {
 });
 
 describe('the probe toolbar', () => {
-	it('keeps the search on each show link and the pager', () => {
+	it('keeps the search and the page size on each show link, and the search on the pager', () => {
+		appState.page.url = new URL('http://localhost/admin/observability/synthetic?q=check&show=failing&limit=100&offset=100');
 		const { container } = render(SyntheticPage, { props: props({ total: 60, hasMore: true, q: 'check', show: 'failing' }) });
+		appState.page.url = new URL('http://localhost/');
 		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
-		expect(hrefs).toContain('/admin/observability/synthetic?show=paused&q=check');
+		expect(hrefs).toContain('/admin/observability/synthetic?q=check&limit=100&show=paused');
+		expect(hrefs).toContain('/admin/observability/synthetic?q=check&limit=100');
 		expect(hrefs.some((h) => h.startsWith('/admin/observability/synthetic?show=failing&q=check&') && h.includes('offset=25'))).toBe(true);
 	});
 });

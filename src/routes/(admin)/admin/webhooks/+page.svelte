@@ -14,10 +14,10 @@
 		Modal,
 		MultiSelect,
 		PageShell,
+		SegmentedControl,
 		Pagination,
 		PasswordInput,
 		SearchInput,
-		FilterChips,
 		Table,
 		Textarea,
 		Toggle,
@@ -46,7 +46,7 @@
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
-	import { listQuery } from '#lib/back.ts';
+	import { filterHref } from '#lib/back.ts';
 	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 	import { eventTone } from '#lib/tones.ts';
@@ -200,7 +200,7 @@
 			{ value: '', label: 'All' },
 			{ value: 'enabled', label: 'Enabled' },
 			{ value: 'disabled', label: 'Disabled' },
-		].map((o) => ({ ...o, href: `/admin/webhooks${listQuery({ status: o.value, q: data.q })}` })),
+		].map((o) => ({ ...o, href: filterHref(page.url, 'status', o.value) })),
 	);
 
 	let testResults = $state<
@@ -309,7 +309,7 @@
 						/>
 					{/snippet}
 					{#snippet filters()}
-						<FilterChips label="Status" value={data.status} options={statusOptions} />
+						<SegmentedControl label="Status" labelHidden value={data.status} options={statusOptions} />
 					{/snippet}
 				</ListToolbar>
 			</form>
