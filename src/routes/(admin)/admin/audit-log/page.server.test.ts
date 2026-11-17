@@ -53,6 +53,7 @@ describe('audit-log prune posts to a prefix the engine mounts', () => {
 			await actions.prune({
 				fetch,
 				cookies,
+				url: new URL('http://localhost/admin/audit-log?/prune'),
 				request: { formData: async () => form },
 			} as never);
 		} catch (thrown) {
@@ -64,6 +65,26 @@ describe('audit-log prune posts to a prefix the engine mounts', () => {
 		const headers = fetch.mock.calls[0][1]?.headers as Record<string, string>;
 		expect(headers.Authorization).toBe('Bearer tok');
 		expect(headers['X-CSRF-Token']).toBe('csrf-tok');
+	});
+
+	it('returns to the list the reader pruned from, filters and page kept', async () => {
+		const fetch = vi.fn(async () => new Response(JSON.stringify({ deleted: 7 }), { status: 200 }));
+		const form = new FormData();
+		form.set('older_than', '2026-01-01');
+		let location = '';
+		try {
+			await actions.prune({
+				fetch,
+				cookies: mockCookies({ '__Host-sys_session': 'tok', '__Host-csrf': 'csrf-tok' }),
+				url: new URL('http://localhost/admin/audit-log?q=alice&action=user.login&from=2026-01-01&offset=50&pruned=3&/prune'),
+				request: { formData: async () => form },
+			} as never);
+		} catch (thrown) {
+			const redirect = thrown as { status?: number; location?: string };
+			if (redirect.status !== 303) throw thrown;
+			location = redirect.location ?? '';
+		}
+		expect(location).toBe('/admin/audit-log?q=alice&action=user.login&from=2026-01-01&offset=50&pruned=7');
 	});
 
 	it('relays the reason the plugin gives for a refused prune', async () => {
@@ -232,6 +253,12 @@ describe('audit-log search maps to the endpoint filters', () => {
 		const both = endpointQuery(filter('content.delete', { action: 'schema.create' }), 50, 0);
 		expect(both.get('action')).toBe('schema.create');
 		expect(both.get('resource_type')).toBe('content.delete');
+	});
+
+	it('sends the action once when the search names the action the select chose', () => {
+		const same = endpointQuery(filter('content.delete', { action: 'content.delete' }), 50, 0);
+		expect(same.get('action')).toBe('content.delete');
+		expect(same.get('resource_type')).toBeNull();
 	});
 
 	it('sends anything else as the resource type', () => {

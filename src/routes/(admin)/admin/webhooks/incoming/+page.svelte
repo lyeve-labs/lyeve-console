@@ -160,8 +160,8 @@
 	{:else}
 		<ListToolbar label="Filter incoming webhooks">
 			{#snippet search()}
-				<label for="incoming-search" class="sr-only">Narrow the list</label>
-				<SearchInput id="incoming-search" bind:value={query} placeholder="Name, content type or id" />
+				<label for="incoming-search" class="sr-only">Search this page</label>
+				<SearchInput id="incoming-search" bind:value={query} placeholder="Name, content type or ID on this page" />
 			{/snippet}
 			{#snippet filters()}
 				<SegmentedControl label="Status" labelHidden bind:value={status} options={STATUSES} />
@@ -169,7 +169,7 @@
 		</ListToolbar>
 
 		{#if visible.length === 0}
-			<EmptyState level={2} title="No incoming webhooks match these filters" description="Clear the search or widen the status to see every endpoint." />
+			<EmptyState level={2} title="No incoming webhooks on this page match these filters" description="Clear the search and the status filter, or go to another page." />
 		{:else}
 		<div class="flex flex-col gap-3">
 			{#each visible as wh (wh.id)}

@@ -115,6 +115,17 @@ describe('ReviewBar', () => {
 		expect((screen.getByRole('textbox', { name: /Assignee/ }) as HTMLInputElement).value).toBe(USER);
 	});
 
+	it('posts each write with the list query the entry page carries', () => {
+		const definitions = [
+			{ id: 'd1', name: 'Editorial', slug: 'editorial', content_schema: 'article', publish_on_approve: true, created_at: '', updated_at: '' },
+		];
+		render(ReviewBar, { props: { entryId: 'e1', assignment: null, stages: [], definitions, listQuery: '?q=launch' } });
+		expect(screen.getByRole('form', { name: 'Start a review' }).getAttribute('action')).toBe('?q=launch&/reviewStart');
+		cleanup();
+		render(ReviewBar, { props: { entryId: 'e1', assignment: assignment(), stages, userId: USER, listQuery: '?q=launch' } });
+		expect(document.querySelector('form[action$="/reviewTransition"]')?.getAttribute('action')).toBe('?q=launch&/reviewTransition');
+	});
+
 	it('shows no start form to a caller with no definitions', () => {
 		render(ReviewBar, { props: { entryId: 'e1', assignment: null, stages: [] } });
 		expect(screen.getByTestId('review-none')).toBeTruthy();

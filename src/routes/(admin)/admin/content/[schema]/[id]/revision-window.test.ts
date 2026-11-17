@@ -61,7 +61,11 @@ async function loadWith(revisions: unknown): Promise<Loaded> {
 function actionEvent(fields: Record<string, string>) {
 	const data = new FormData();
 	for (const [k, v] of Object.entries(fields)) data.set(k, v);
-	return { request: { formData: async () => data }, params: { schema: 'article', id: 'e1' } } as never;
+	return {
+		url: new URL('http://localhost/admin/content/article/e1?/action'),
+		request: { formData: async () => data },
+		params: { schema: 'article', id: 'e1' },
+	} as never;
 }
 
 beforeEach(() => vi.clearAllMocks());

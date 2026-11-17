@@ -569,7 +569,7 @@
 
 	{#snippet actions()}
 		{#if (data.items.ok && canCreate) || createsUnread}
-			<Button size="sm" href="/admin/content/{data.activeSchema}/new">
+			<Button size="sm" href="/admin/content/{data.activeSchema}/new{rowQuery}">
 				<Plus size={ICON.sm} /> New entry
 			</Button>
 		{/if}

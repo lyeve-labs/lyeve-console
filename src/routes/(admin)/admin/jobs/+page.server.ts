@@ -9,6 +9,10 @@ import { section, type Gate, type Section } from '$lib/api/gate';
 import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
 import { couldNotLoad } from '$lib/outage';
 import { asked } from '$lib/server/asked';
+import { returnAddress } from '$lib/back';
+
+/** The keys that open the drawer, which a write's way back leaves out so the drawer stays shut. */
+const DRAWER_KEYS = ['edit', 'new'];
 
 export interface Job {
 	id: string;
@@ -170,7 +174,7 @@ export const actions: Actions = {
 			return failed('create', err, 'Could not create the job. Try again.');
 		}
 		if (saved?.alert_signing_secret) return signingReveal(saved);
-		redirect(303, '/admin/jobs');
+		redirect(303, returnAddress(event.url, DRAWER_KEYS));
 	},
 
 	update: async (event) => {
@@ -188,7 +192,7 @@ export const actions: Actions = {
 			return failed('update', err, 'Could not save the job. Try again.');
 		}
 		if (saved?.alert_signing_secret) return signingReveal(saved);
-		redirect(303, '/admin/jobs');
+		redirect(303, returnAddress(event.url, DRAWER_KEYS));
 	},
 
 	delete: asked(
@@ -210,7 +214,7 @@ export const actions: Actions = {
 				const failed = actionFailure(err, 'Could not delete the job. Try again.');
 				return fail(failed.status, { ...failed.data, action: 'delete' as const });
 			}
-			redirect(303, '/admin/jobs');
+			redirect(303, returnAddress(event.url, DRAWER_KEYS));
 		},
 	),
 };

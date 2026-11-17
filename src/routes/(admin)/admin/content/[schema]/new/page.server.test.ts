@@ -65,11 +65,16 @@ function cookies(): Cookies {
 	return { get: vi.fn(() => 'tok') } as unknown as Cookies;
 }
 
-async function create(data: Record<string, unknown>, m2m?: Record<string, string[]>) {
+async function create(
+	data: Record<string, unknown>,
+	m2m?: Record<string, string[]>,
+	address = 'http://localhost/admin/content/surveys/new',
+) {
 	const form = new FormData();
 	form.set('data', JSON.stringify(data));
 	if (m2m) form.set('m2m_relations', JSON.stringify(m2m));
 	const event = {
+		url: new URL(address),
 		request: { formData: async () => form },
 		params: { schema: 'surveys' },
 		fetch: vi.fn(),
@@ -204,6 +209,18 @@ describe('creating an entry the role cannot read back', () => {
 		const { threw } = await create({ title: 'Contact', active: false });
 
 		expect(isRedirect(threw) && threw.location).toBe('/admin/content/surveys');
+	});
+
+	it('returns to the list the reader opened the form from, its search and page kept', async () => {
+		access.get.mockResolvedValueOnce({ schema: 'surveys', ...EVERY_ACTION });
+
+		const { threw } = await create(
+			{ title: 'Contact', active: false },
+			undefined,
+			'http://localhost/admin/content/surveys/new?q=contact&status=draft&offset=50',
+		);
+
+		expect(isRedirect(threw) && threw.location).toBe('/admin/content/surveys?q=contact&status=draft&offset=50');
 	});
 });
 

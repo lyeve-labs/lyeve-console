@@ -15,6 +15,7 @@
 	import FieldInput from './FieldInput.svelte';
 	import FieldCell from './FieldCell.svelte';
 	import { ICON } from '$lib/icon';
+	import { actionWithQuery } from '$lib/back';
 	import { plural } from '$lib/format';
 
 	let {
@@ -25,6 +26,7 @@
 		error = null,
 		errorLocale = '',
 		readOnly = false,
+		listQuery = '',
 	}: {
 		fields: SchemaField[];
 		locales: LocalePreferences;
@@ -36,6 +38,8 @@
 		errorLocale?: string;
 		/** The reader's rules allow no change to the entry, so the translations show without a write. */
 		readOnly?: boolean;
+		/** The query of the list the entry was opened from, which each write carries back to the entry's address. */
+		listQuery?: string;
 	} = $props();
 
 	let textFields = $derived(translatableFields(fields));
@@ -215,7 +219,7 @@
 							<span class="text-xs text-faint">Readers of {draft.active} see the source until this is saved.</span>
 						{/if}
 						{#if t && status !== 'translated' && !readOnly}
-							<form method="POST" action="?/markTranslated" use:enhance class="ml-auto">
+							<form method="POST" action={actionWithQuery('markTranslated', listQuery)} use:enhance class="ml-auto">
 								<input type="hidden" name="locale" value={draft.active} />
 								<Button variant="secondary" size="sm" type="submit">
 									<CircleCheck size={ICON.sm} /> Mark translated
@@ -264,7 +268,7 @@
 					{:else}
 					<form
 						method="POST"
-						action="?/saveTranslation"
+						action={actionWithQuery('saveTranslation', listQuery)}
 						use:enhance={() => {
 							submitting = true;
 							return async ({ update }) => {

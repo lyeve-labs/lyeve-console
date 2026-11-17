@@ -31,3 +31,32 @@ export function listQuery(filters: Record<string, string | number | null | undef
 	const query = params.toString();
 	return query ? `?${query}` : '';
 }
+
+/**
+ * The query an address carries, less the keys in `drop` and less the name of
+ * the action a form posted to, as `?a=b` or an empty string. SvelteKit names
+ * the action as the first key that starts with a slash.
+ */
+export function queryWithout(url: URL, drop: readonly string[] = []): string {
+	const params = new URLSearchParams();
+	for (const [key, value] of url.searchParams) {
+		if (key.startsWith('/') || drop.includes(key)) continue;
+		params.append(key, value);
+	}
+	const query = params.toString();
+	return query ? `?${query}` : '';
+}
+
+/**
+ * A form action that keeps the query the page carries. A bare `?/name`
+ * replaces it, so the action, and the address its redirect names, would no
+ * longer know the filters and the page the reader had open.
+ */
+export function actionWithQuery(name: string, query: string): string {
+	return query ? `${query}&/${name}` : `?/${name}`;
+}
+
+/** Where an action sends the reader back to: the address it was posted from, less `drop`. */
+export function returnAddress(url: URL, drop: readonly string[] = []): string {
+	return `${url.pathname}${queryWithout(url, drop)}`;
+}

@@ -3,12 +3,16 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PageData } from './$types';
 
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/content/article/e1') } }));
+const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/content/article/e1') } }));
+vi.mock('$app/state', () => state);
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 
 import EntryPage from './+page.svelte';
 
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	state.page.url = new URL('http://localhost/admin/content/article/e1');
+});
 
 function data(overrides: Record<string, unknown> = {}): PageData {
 	return {
@@ -357,6 +361,30 @@ describe('content entry editor under the reader\'s access rules', () => {
 		expect(screen.queryByText('Your role can view entries of Articles but cannot change them.')).toBeNull();
 		expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
 		expect(screen.getByRole('button', { name: /Publish/ })).toBeTruthy();
+	});
+
+	it('posts every write that returns here with the list the entry was opened from', async () => {
+		state.page.url = new URL('http://localhost/admin/content/article/e1?q=launch&status=draft&offset=50');
+		const { container } = render(EntryPage, {
+			props: {
+				data: data({
+					schemaDef: article,
+					access: { hidden: [], actions: ['read', 'update'] },
+					item: { ...data().item, data: { title: 'One', summary: 'Short', _status: 'draft' } },
+					revisions,
+					releases: { open: [], holding: [], failed: false },
+				}),
+				form: null,
+			},
+		});
+
+		const kept = '?q=launch&status=draft&offset=50';
+		expect(screen.getByRole('link', { name: 'Articles' }).getAttribute('href')).toBe(`/admin/content/article${kept}`);
+		expect(container.querySelector(`form[action="${kept}&/save"]`)).toBeTruthy();
+		expect(container.querySelector(`form[action="${kept}&/publish"]`)).toBeTruthy();
+		await fireEvent.click(screen.getByRole('button', { name: /History/ }));
+		await fireEvent.click(screen.getByRole('button', { name: /summary|title/ }));
+		expect(container.querySelector(`form[action="${kept}&/restore"]`)).toBeTruthy();
 	});
 
 	it('draws no input for a field the rules hide', () => {

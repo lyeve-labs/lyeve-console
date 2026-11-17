@@ -160,6 +160,12 @@ describe('reviews page', () => {
 		expect(row.querySelector('a')).toBeNull();
 	});
 
+	it('says a filtered list matched nothing and offers to clear the filter', () => {
+		render(ReviewsPage, { props: { data: data({ assignments: [], total: 0, status: 'rejected' }) } });
+		expect(screen.getByText('No assignments match these filters')).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/reviews');
+	});
+
 	it('names the read that failed in its own section, never the first-run state', () => {
 		render(ReviewsPage, {
 			props: { data: data({ assignments: { ok: false, gate: { state: 'unavailable' } } }) },

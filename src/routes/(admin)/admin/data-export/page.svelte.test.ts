@@ -144,6 +144,27 @@ describe('Data export jobs', () => {
 		expect(said(container)).toContain('storage refused the write');
 	});
 
+	it('filters by status through links that keep it in the address', () => {
+		const { getByRole } = render(ExportPage, { props: props({ status: 'failed' }) });
+		const failed = getByRole('link', { name: 'Failed' });
+		expect(failed.getAttribute('href')).toBe('/admin/data-export?status=failed');
+		expect(failed.getAttribute('aria-current')).toBeTruthy();
+		expect(getByRole('link', { name: 'All' }).getAttribute('href')).toBe('/admin/data-export');
+	});
+
+	it('keeps the status on the pager', () => {
+		const { container } = render(ExportPage, { props: props({ status: 'failed', total: 80 }) });
+		const next = container.querySelector('a[href*="offset=50"]');
+		expect(next?.getAttribute('href')).toContain('status=failed');
+	});
+
+	it('says a filtered list matched nothing and offers to clear the filter', () => {
+		const { container, getByRole } = render(ExportPage, { props: props({ jobs: [], total: 0, status: 'failed' }) });
+		expect(said(container)).toContain('No exports match these filters');
+		expect(said(container)).not.toContain('No exports yet');
+		expect(getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/data-export');
+	});
+
 	it('reads an empty list as nothing exported yet', () => {
 		const { container } = render(ExportPage, { props: props({ jobs: [], total: 0 }) });
 		expect(said(container)).toContain('No exports yet');
@@ -234,9 +255,9 @@ describe('Data export filter on this page', () => {
 
 		await fireEvent.input(search, { target: { value: 'nothing like it' } });
 
-		expect(said(container)).toContain('No exports match this search');
+		expect(said(container)).toContain('No exports on this page match this search');
 		expect(container.querySelector('table')).toBeNull();
-		const empty = [...container.querySelectorAll('*')].find((el) => el.textContent?.trim() === 'No exports match this search');
+		const empty = [...container.querySelectorAll('*')].find((el) => el.textContent?.trim() === 'No exports on this page match this search');
 		const pager = container.querySelector('nav');
 		if (empty && pager) {
 			expect(empty.compareDocumentPosition(pager) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

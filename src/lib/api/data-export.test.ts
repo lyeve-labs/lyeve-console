@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
 	downloadable,
 	jobProgress,
@@ -93,6 +93,19 @@ describe('reading the plugin', () => {
 		expect(jobs.total_count).toBe(12);
 		const schedules = await listSchedules({ get: async () => ({ schedules: [schedule()], total: 1 }) } as never);
 		expect(schedules.data[0].name).toBe('nightly');
+	});
+});
+
+describe('reading one status', () => {
+	it('asks the plugin for the status the page names, and for every status otherwise', async () => {
+		const { listJobs } = await import('./data-export');
+		const get = vi.fn(async () => ({ jobs: [], total: 0, count: 0 }));
+		await listJobs({ get } as never, 50, 0, 'failed');
+		await listJobs({ get } as never, 50, 0, '');
+		expect(get.mock.calls.map((c) => (c as unknown[])[0])).toEqual([
+			'/api/admin/data-export/jobs?limit=50&offset=0&status=failed',
+			'/api/admin/data-export/jobs?limit=50&offset=0',
+		]);
 	});
 });
 

@@ -17,6 +17,7 @@ import { addReleaseItem } from '$lib/api/content-releases';
 import { createTranslation, translationInput, updateTranslation, type TranslationStatus } from '$lib/api/localization';
 import { createAssignment, isTransitionAction, transitionAssignment } from '$lib/api/review';
 import { listPeople } from '$lib/server/people';
+import { listPath, listQueryFrom } from '$lib/utils/entry-view';
 import { loadComments, loadLocalization, loadReleases, loadReview } from '$lib/server/entry-panels';
 import { forbiddenText } from '$lib/api/gate';
 import { UNKNOWN_ACCESS, accessOf, joinAccess, withoutHidden } from '$lib/utils/content-access';
@@ -288,6 +289,15 @@ export const load: PageServerLoad = async (event) => {
 	};
 };
 
+/**
+ * The entry's own address for an action's redirect. Every write on the page
+ * posts with the query of the list the entry was opened from, and the
+ * address keeps it, so the way back still lands on that list.
+ */
+function entryAddress(event: RequestEvent): string {
+	return `/admin/content/${event.params.schema}/${event.params.id}${listQueryFrom(event.url)}`;
+}
+
 /** Moves the entry to `status`, and returns `failed` when the engine refuses. */
 async function setStatus(event: RequestEvent, status: 'published' | 'draft', failed: string) {
 	await requireUser(event);
@@ -298,7 +308,7 @@ async function setStatus(event: RequestEvent, status: 'published' | 'draft', fai
 	} catch (err) {
 		return actionFailure(err, failed);
 	}
-	redirect(303, `/admin/content/${params.schema}/${params.id}`);
+	redirect(303, entryAddress(event));
 }
 
 export const actions: Actions = {
@@ -344,7 +354,7 @@ export const actions: Actions = {
 			const failed = await setEntryRelations(event, params.id, links);
 			if (failed) return fail(400, { error: `Entry saved. ${failed}` });
 		}
-		redirect(303, `/admin/content/${params.schema}`);
+		redirect(303, `${listPath(params.schema)}${listQueryFrom(event.url)}`);
 	},
 
 	publish: (event) => setStatus(event, 'published', 'Could not publish the entry. Try again.'),
@@ -395,7 +405,7 @@ export const actions: Actions = {
 			const failed = actionFailure(err, 'Could not save the translation. Try again.');
 			return fail(failed.status, { ...failed.data, translationLocale: locale });
 		}
-		redirect(303, `/admin/content/${params.schema}/${params.id}`);
+		redirect(303, entryAddress(event));
 	},
 
 	/** Set one locale's translation to `translated` without touching its text. */
@@ -414,7 +424,7 @@ export const actions: Actions = {
 			const failed = actionFailure(err, 'Could not mark the translation as translated. Try again.');
 			return fail(failed.status, { ...failed.data, translationLocale: locale });
 		}
-		redirect(303, `/admin/content/${params.schema}/${params.id}`);
+		redirect(303, entryAddress(event));
 	},
 
 	/**
@@ -444,7 +454,7 @@ export const actions: Actions = {
 				reviewStatus: status,
 			});
 		}
-		redirect(303, `/admin/content/${params.schema}/${params.id}`);
+		redirect(303, entryAddress(event));
 	},
 
 	/**
@@ -486,7 +496,7 @@ export const actions: Actions = {
 				reviewStatus: status,
 			});
 		}
-		redirect(303, `/admin/content/${params.schema}/${params.id}`);
+		redirect(303, entryAddress(event));
 	},
 
 	/** Start a thread, or reply to one when the form names its first comment. */
@@ -568,7 +578,7 @@ export const actions: Actions = {
 			const failed = actionFailure(err, 'Could not restore the revision. Try again.');
 			return fail(failed.status, { ...failed.data, revision: true });
 		}
-		redirect(303, `/admin/content/${params.schema}/${params.id}`);
+		redirect(303, entryAddress(event));
 	},
 
 	/**

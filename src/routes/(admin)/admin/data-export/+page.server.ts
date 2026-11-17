@@ -7,6 +7,7 @@ import { actionError, actionFailure, tagged } from '$lib/server/action-error';
 import { PLUGIN } from '$lib/plugin-names';
 import { notRunning } from '$lib/plugins';
 import {
+	JOB_STATUSES,
 	cancelJob,
 	createSchedule,
 	deleteSchedule,
@@ -16,6 +17,7 @@ import {
 	startExport,
 	type ExportJob,
 	type ExportSchedule,
+	type JobStatus,
 } from '$lib/api/data-export';
 import { type Gate, GATE_OK, gateOf, section, type Section } from '$lib/api/gate';
 import { couldNotLoad } from '$lib/outage';
@@ -48,13 +50,17 @@ export const load: PageServerLoad = async (event) => {
 	event.depends('app:data-export');
 	const { plugins } = await event.parent();
 	const { limit, offset } = pageWindow(event.url, DEFAULT_LIMIT, MAX_LIMIT);
+	// The plugin narrows the jobs by status. A status it never stores would
+	// list nothing, so the page lists every job instead.
+	const named = event.url.searchParams.get('status') ?? '';
+	const status: JobStatus | '' = JOB_STATUSES.find((s) => s === named) ?? '';
 
 	// The shell says why the page is unavailable while its plugin does not run.
 	if (notRunning(plugins, PLUGIN.dataExport)) {
 		const gate: Gate = { state: 'absent' };
 		const schedules: Section<ExportSchedule[]> = { ok: false, gate };
 		const schemas: Section<string[]> = { ok: false, gate };
-		return { jobs: [] as ExportJob[], schedules, schemas, total: 0, limit, offset, gate };
+		return { jobs: [] as ExportJob[], schedules, schemas, total: 0, limit, offset, status, gate };
 	}
 
 	const client = authedClient(event);
@@ -62,7 +68,7 @@ export const load: PageServerLoad = async (event) => {
 	let total = 0;
 	let gate: Gate = GATE_OK;
 	try {
-		const page = await listJobs(client, limit, offset);
+		const page = await listJobs(client, limit, offset, status);
 		jobs = page.data;
 		total = Math.max(page.total_count, offset + jobs.length);
 		const back = pastEndOffset(jobs.length, limit, offset, page.total_count);
@@ -90,7 +96,7 @@ export const load: PageServerLoad = async (event) => {
 				])
 			: [unread(), unread()];
 
-	return { jobs, schedules, schemas, total, limit, offset, gate };
+	return { jobs, schedules, schemas, total, limit, offset, status, gate };
 };
 
 export const actions: Actions = {

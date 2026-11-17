@@ -34,6 +34,7 @@
 	import { formatDateTime } from '$lib/format';
 	import { narrows } from '$lib/narrow';
 	import { pageHref, pageNumber } from '$lib/api/list';
+	import { actionWithQuery, queryWithout, returnAddress } from '$lib/back';
 	import { ICON } from '$lib/icon';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -99,12 +100,17 @@
 		else if (data.openNew) openCreate();
 	});
 
-	// Closing takes the query out of the address, or the next load would open
-	// the drawer again on a job the reader had just put away.
+	// The keys that open the drawer. Closing takes them out of the address, or
+	// the next load would open the drawer again on a job the reader had just
+	// put away, and every write posts without them. The page the reader is on
+	// stays in both.
+	const DRAWER_KEYS = ['edit', 'new'];
+	const kept = $derived(queryWithout(page.url, DRAWER_KEYS));
+
 	function closeDrawer() {
 		open = false;
-		if (page.url.searchParams.has('edit') || page.url.searchParams.has('new')) {
-			void goto('/admin/jobs', { replaceState: true, noScroll: true, keepFocus: true });
+		if (DRAWER_KEYS.some((key) => page.url.searchParams.has(key))) {
+			void goto(returnAddress(page.url, DRAWER_KEYS), { replaceState: true, noScroll: true, keepFocus: true });
 		}
 	}
 
@@ -246,7 +252,7 @@
 								</Button>
 								<form
 									method="POST"
-									action="?/delete"
+									action={actionWithQuery('delete', kept)}
 									use:enhance={deleteJob(job.name)}
 								>
 									<input type="hidden" name="id" value={job.id} />
@@ -297,7 +303,7 @@
 <Drawer bind:open title={editing ? `Edit ${editing.name}` : 'New job'} onclose={closeDrawer}>
 	<form
 		method="POST"
-		action={editing ? '?/update' : '?/create'}
+		action={actionWithQuery(editing ? 'update' : 'create', kept)}
 		id="job-form"
 		use:enhance={submit.enhance}
 		class="flex flex-col gap-4"

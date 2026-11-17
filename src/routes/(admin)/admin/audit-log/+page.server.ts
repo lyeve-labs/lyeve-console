@@ -10,6 +10,7 @@ import { AUDIT_EXPORT_CEILING, UUID, endpointQuery, readFilter } from '$lib/serv
 import { formatCount } from '$lib/format';
 import { rolesInWords } from '$lib/roles';
 import { couldNotLoad } from '$lib/outage';
+import { queryWithout } from '$lib/back';
 
 export interface AuditEntry {
 	id: string;
@@ -129,6 +130,9 @@ export const actions: Actions = {
 		}
 
 		const result = (await res.json()) as { deleted: number };
-		redirect(303, `/admin/audit-log?pruned=${result.deleted}`);
+		// The form posts with the list's query, so the reader comes back to the
+		// filters and the page they pruned from, with the count beside them.
+		const kept = queryWithout(event.url, ['pruned']);
+		redirect(303, `/admin/audit-log${kept ? `${kept}&` : '?'}pruned=${result.deleted}`);
 	},
 };

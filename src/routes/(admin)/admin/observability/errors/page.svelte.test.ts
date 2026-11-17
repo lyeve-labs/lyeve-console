@@ -49,6 +49,14 @@ function setup(over: Record<string, unknown> = {}, form: Record<string, unknown>
 	});
 }
 
+describe('a status that matches nothing', () => {
+	it('says no failure matches and offers to clear the filter', () => {
+		const { getByRole } = setup({ alerts: [], total: 0, status: 'ignored' });
+		expect(document.body.textContent).toContain('No failures match these filters');
+		expect(getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/observability/errors');
+	});
+});
+
 function actionsOf(row: Element): string[] {
 	return [...row.querySelectorAll('input[name="action"]')].map((i) => (i as HTMLInputElement).value);
 }

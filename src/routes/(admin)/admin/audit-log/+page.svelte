@@ -24,7 +24,7 @@
 	import GateNotice from '$lib/components/GateNotice.svelte';
 	import ListToolbar from '$lib/components/ListToolbar.svelte';
 	import { NO_VALUE, formatDateTime, plural } from '$lib/format';
-	import { listQuery } from '$lib/back';
+	import { actionWithQuery, listQuery, queryWithout } from '$lib/back';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { PageData, ActionData } from './$types';
 	import { pageNumber, pageOffset } from '$lib/api/list';
@@ -287,7 +287,13 @@
 </PageShell>
 
 {#if data.isSuperAdmin}
-	<form method="POST" action="?/prune" use:enhance={handlePruneSubmit} bind:this={pruneForm} class="hidden">
+	<form
+		method="POST"
+		action={actionWithQuery('prune', queryWithout(page.url, ['pruned']))}
+		use:enhance={handlePruneSubmit}
+		bind:this={pruneForm}
+		class="hidden"
+	>
 		<input type="hidden" name="older_than" value={pruneDate} />
 	</form>
 {/if}

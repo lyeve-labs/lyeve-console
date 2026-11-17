@@ -114,7 +114,8 @@ describe('media library views', () => {
 		setup([], { q: 'nothing' });
 		expect(screen.queryByRole('link', { name: 'Clear' })).toBeNull();
 		expect(screen.getByRole('button', { name: 'Clear search' })).toBeTruthy();
-		expect(screen.getByText('No files match')).toBeTruthy();
+		expect(screen.getByText('No files match these filters')).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/media');
 	});
 
 	it('searches as you type, with no Search button', () => {

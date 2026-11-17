@@ -62,12 +62,14 @@ export function exportBody(filter: AuditFilter): Record<string, string> {
  * the bare type. One box has to pick the column by the shape of what was
  * typed: an id goes to the actor, a dotted name to the action, and anything
  * else to the resource type. The action select wins over a dotted search,
- * because both name the same column.
+ * because both name the same column. A search for the action the select
+ * already chose adds nothing, and one for another action stays a resource
+ * type, which matches nothing, as no entry has two actions.
  */
 export function endpointQuery(filter: AuditFilter, limit: number, offset: number): URLSearchParams {
 	const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
 	if (filter.action) params.set('action', filter.action);
-	if (filter.q) {
+	if (filter.q && filter.q !== filter.action) {
 		if (UUID.test(filter.q)) params.set('actor', filter.q);
 		else if (filter.q.includes('.') && !filter.action) params.set('action', filter.q);
 		else params.set('resource_type', filter.q);

@@ -389,13 +389,18 @@ function relationFetch(held: { id: string; target_id: string }[]) {
 	return { fn, calls };
 }
 
-function saveEvent(fetchFn: typeof globalThis.fetch, m2m: Record<string, string[]>) {
+function saveEvent(
+	fetchFn: typeof globalThis.fetch,
+	m2m: Record<string, string[]>,
+	address = 'http://localhost/admin/content/article/e1?/save',
+) {
 	const fd = new FormData();
 	fd.set('data', JSON.stringify({ title: 'One' }));
 	fd.set('m2m_relations', JSON.stringify(m2m));
 	return {
 		fetch: fetchFn,
 		cookies: mockCookies(),
+		url: new URL(address),
 		params: { schema: 'article', id: 'e1' },
 		request: { formData: async () => fd }
 	} as never;
@@ -590,6 +595,22 @@ describe('content editor load, has_one and has_many entries', () => {
 	});
 });
 
+describe('content editor save, the way back', () => {
+	it('returns to the list the entry was opened from, its view, search and page kept', async () => {
+		const { fn } = relationFetch([]);
+		const event = saveEvent(fn, {}, 'http://localhost/admin/content/article/e1?q=launch&status=draft&offset=50&/save');
+		let location = '';
+		try {
+			await actions.save(event);
+		} catch (e) {
+			const err = e as { status?: number; location?: string };
+			if (err.status !== 303) throw e;
+			location = err.location ?? '';
+		}
+		expect(location).toBe('/admin/content/article?q=launch&status=draft&offset=50');
+	});
+});
+
 describe('content editor save, many_to_many fields', () => {
 	it('adds the newly selected targets and removes the deselected ones', async () => {
 		const { fn, calls } = relationFetch([
@@ -664,6 +685,7 @@ function restoreEvent(fetchFn: typeof globalThis.fetch, revNum: string) {
 	return {
 		fetch: fetchFn,
 		cookies: mockCookies(),
+		url: new URL('http://localhost/admin/content/article/e1?/restore'),
 		params: { schema: 'article', id: 'e1' },
 		request: { formData: async () => fd }
 	} as never;
@@ -746,6 +768,7 @@ function titleSaveEvent(fetchFn: typeof globalThis.fetch) {
 	return {
 		fetch: fetchFn,
 		cookies: mockCookies(),
+		url: new URL('http://localhost/admin/content/article/e1?/action'),
 		params: { schema: 'article', id: 'e1' },
 		request: { formData: async () => fd }
 	} as never;
@@ -788,6 +811,7 @@ function translationEvent(fetchFn: typeof globalThis.fetch, fields: Record<strin
 	return {
 		fetch: fetchFn,
 		cookies: mockCookies(),
+		url: new URL('http://localhost/admin/content/article/e1?/action'),
 		params: { schema: 'article', id: 'e1' },
 		request: { formData: async () => fd }
 	} as never;
@@ -997,6 +1021,7 @@ describe('content editor, an integer past 2^53', () => {
 		const event = {
 			fetch: fetchFn,
 			cookies: mockCookies(),
+			url: new URL('http://localhost/admin/content/article/e1'),
 			params: { schema: 'article', id: 'e1' },
 			parent: async () => ({ plugins: none }),
 		};

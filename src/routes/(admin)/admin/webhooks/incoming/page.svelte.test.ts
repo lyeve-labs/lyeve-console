@@ -39,6 +39,16 @@ function setup(over: Record<string, unknown> = {}, form: unknown = null) {
 	});
 }
 
+describe('the incoming webhook search', () => {
+	it('says it covers this page only, in its label, its placeholder and when nothing matches', async () => {
+		const { container, getByLabelText } = setup();
+		const search = getByLabelText('Search this page') as HTMLInputElement;
+		expect(search.getAttribute('placeholder')).toBe('Name, content type or ID on this page');
+		await fireEvent.input(search, { target: { value: 'nothing like it' } });
+		expect(container.textContent).toContain('No incoming webhooks on this page match these filters');
+	});
+});
+
 describe('the incoming webhook list when it could not be read', () => {
 	it('says the engine did not answer and offers no first endpoint', () => {
 		const { container, queryByRole } = setup({ incomingWebhooks: { ok: false, gate: { state: 'unavailable' } } });

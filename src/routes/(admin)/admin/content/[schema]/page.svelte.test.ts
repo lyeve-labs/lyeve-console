@@ -238,6 +238,15 @@ describe('content listing row links', () => {
 		expect(link?.getAttribute('href')).toBe('/admin/content/posts/entry-200-0000-0000-0000?limit=100&offset=200');
 	});
 
+	it('send New entry with the same query, so the create returns to this view', () => {
+		render(ContentListPage, {
+			props: { data: data({ q: 'spring', offset: 200, items: items(100, 200) }), form: null },
+		});
+		expect(screen.getByRole('link', { name: /New entry/ }).getAttribute('href')).toBe(
+			'/admin/content/posts/new?limit=100&q=spring&offset=200',
+		);
+	});
+
 	it('stay a clean path on the first page', () => {
 		const { container } = render(ContentListPage, { props: { data: data(), form: null } });
 		const link = container.querySelector('tbody a[href^="/admin/content/posts/entry-0"]');

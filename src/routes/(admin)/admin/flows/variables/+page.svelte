@@ -138,7 +138,13 @@
 		{#if data.gate.state !== 'ok'}
 			<!-- Nothing: the empty state would say there are none. -->
 		{:else if data.variables.length === 0 && data.q}
-			<EmptyState level={2} title="No variables match" description="Secret values are not searched. Try another key or value." />
+			<EmptyState level={2} title="No variables match these filters" description="Secret values are not searched.">
+				{#snippet action()}
+					<Button variant="secondary" href={fromFlow ? `/admin/flows/variables?flow=${encodeURIComponent(fromFlow)}` : '/admin/flows/variables'}>
+						Clear filters
+					</Button>
+				{/snippet}
+			</EmptyState>
 		{:else if data.variables.length === 0}
 			<EmptyState level={2} title="No variables yet" description="Create a variable to use it in expressions as vars.<key>.">
 				{#snippet iconSnippet()}<VariableIcon size={ICON.lg} />{/snippet}

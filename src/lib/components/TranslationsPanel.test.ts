@@ -224,6 +224,12 @@ describe('TranslationsPanel without update', () => {
 		expect(screen.getByText('The source changed after this was translated.')).toBeTruthy();
 	});
 
+	it('posts both writes with the list query the entry page carries', () => {
+		const { container } = mount([row('fr', 'outdated', 'Bonjour')], { listQuery: '?q=launch&offset=50' });
+		expect(container.querySelector('form[action="?q=launch&offset=50&/saveTranslation"]')).toBeTruthy();
+		expect(container.querySelector('form[action="?q=launch&offset=50&/markTranslated"]')).toBeTruthy();
+	});
+
 	it('keeps both writes while the rules allow an update', () => {
 		const { container } = mount([row('fr', 'outdated', 'Bonjour')]);
 		expect(container.querySelector('form[action="?/saveTranslation"]')).toBeTruthy();

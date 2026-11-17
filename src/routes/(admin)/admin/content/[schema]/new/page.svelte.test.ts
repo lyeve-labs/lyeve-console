@@ -3,10 +3,15 @@ import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
+const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/content/posts/new') } }));
+vi.mock('$app/state', () => state);
 
 import NewEntryPage from './+page.svelte';
 
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	state.page.url = new URL('http://localhost/admin/content/posts/new');
+});
 
 const schemaDef = {
 	name: 'posts',
@@ -18,6 +23,14 @@ const schemaDef = {
 function data(locales: unknown) {
 	return { schemaDef, relations: {}, locales, mediaChoices: [] } as never;
 }
+
+describe('new entry, the way back', () => {
+	it('returns to the list it was opened from, its view, search and page kept', () => {
+		state.page.url = new URL('http://localhost/admin/content/posts/new?status=draft&q=spring&offset=50');
+		const { getByRole } = render(NewEntryPage, { props: { data: data({ ok: true, value: [] }), form: null } });
+		expect(getByRole('link', { name: 'Posts' }).getAttribute('href')).toBe('/admin/content/posts?status=draft&q=spring&offset=50');
+	});
+});
 
 describe('new entry locale', () => {
 	it('names the locale picker', () => {

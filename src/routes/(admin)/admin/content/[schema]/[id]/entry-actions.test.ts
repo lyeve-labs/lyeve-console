@@ -12,10 +12,14 @@ import { actions } from './+page.server';
 
 type Failure = { status: number; data: Record<string, unknown> };
 
-function actionEvent(fields: Record<string, string> = {}) {
+function actionEvent(fields: Record<string, string> = {}, address = 'http://localhost/admin/content/article/e1?/publish') {
 	const data = new FormData();
 	for (const [k, v] of Object.entries(fields)) data.set(k, v);
-	return { request: { formData: async () => data }, params: { schema: 'article', id: 'e1' } } as never;
+	return {
+		url: new URL(address),
+		request: { formData: async () => data },
+		params: { schema: 'article', id: 'e1' },
+	} as never;
 }
 
 beforeEach(() => vi.clearAllMocks());
@@ -25,6 +29,15 @@ describe('publishing an entry', () => {
 		engine.put.mockResolvedValue({});
 		await expect(actions.publish(actionEvent())).rejects.toMatchObject({ status: 303, location: '/admin/content/article/e1' });
 		expect(engine.put).toHaveBeenCalledWith('/api/admin/content/e1', { status: 'published' });
+	});
+
+	it('keeps the list the entry was opened from on its address', async () => {
+		engine.put.mockResolvedValue({});
+		const event = actionEvent({}, 'http://localhost/admin/content/article/e1?q=launch&offset=50&/publish');
+		await expect(actions.publish(event)).rejects.toMatchObject({
+			status: 303,
+			location: '/admin/content/article/e1?q=launch&offset=50',
+		});
 	});
 
 	it('relays the reason the plugin refused', async () => {

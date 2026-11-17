@@ -212,8 +212,8 @@
 		{:else}
 			<ListToolbar label="Filter experiments">
 				{#snippet search()}
-					<label for="experiment-search" class="sr-only">Search experiments</label>
-					<SearchInput id="experiment-search" bind:value={narrow} placeholder="Search experiments" />
+					<label for="experiment-search" class="sr-only">Search this page</label>
+					<SearchInput id="experiment-search" bind:value={narrow} placeholder="Name or description on this page" />
 				{/snippet}
 			</ListToolbar>
 
@@ -225,8 +225,8 @@
 			{#if visible.length === 0}
 				<EmptyState
 					level={2}
-					title="No experiments match this search"
-					description="The search covers names and descriptions."
+					title="No experiments on this page match these filters"
+					description="The search covers this page only. Clear it or go to another page."
 				>
 					{#snippet iconSnippet()}
 						<FlaskConical size={ICON.lg} />

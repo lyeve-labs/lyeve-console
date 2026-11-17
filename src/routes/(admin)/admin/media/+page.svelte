@@ -245,7 +245,9 @@
 			absent="The media library is not included in this build."
 		/>
 	{:else if items.length === 0 && data.q}
-		<EmptyState level={2} title="No files match" description="Clear the search to see the whole library." />
+		<EmptyState level={2} title="No files match these filters" description="Clear the search to see the whole library.">
+			{#snippet action()}<Button variant="secondary" href="/admin/media">Clear filters</Button>{/snippet}
+		</EmptyState>
 	{:else if items.length === 0}
 		<EmptyState level={2} title="No files yet" description="Upload images, PDFs, video or audio.">
 			{#snippet iconSnippet()}
