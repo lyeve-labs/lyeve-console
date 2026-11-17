@@ -130,7 +130,7 @@
 								name="q"
 								bind:value={live.value}
 								oninput={live.input}
-								placeholder="Name or browser"
+								placeholder="Device name or user agent"
 							/>
 						{/snippet}
 					</ListToolbar>
@@ -140,7 +140,7 @@
 			{#if data.devices.length === 0 && data.q}
 				<EmptyState title="No devices match this search" description="Clear the search to see every device.">
 					{#snippet action()}
-						<Button variant="secondary" href="/admin/settings/devices">Clear filters</Button>
+						<Button variant="secondary" href="/admin/settings/devices">Clear search</Button>
 					{/snippet}
 				</EmptyState>
 			{:else if data.devices.length === 0}

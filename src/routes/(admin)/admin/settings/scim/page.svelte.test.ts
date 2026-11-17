@@ -129,7 +129,7 @@ describe('the rows', () => {
 		const { container } = render(ScimPage, { props: props({ providers: [], total: 0, q: 'nothing like it' }) });
 		expect(said(container)).toContain('No connections match this search');
 		expect(said(container)).not.toContain('No connections yet');
-		expect(container.querySelector('a[href="/admin/settings/scim"]')?.textContent?.trim()).toBe('Clear filters');
+		expect(container.querySelector('a[href="/admin/settings/scim"]')?.textContent?.trim()).toBe('Clear search');
 	});
 
 	it('keeps the search on the next page', () => {

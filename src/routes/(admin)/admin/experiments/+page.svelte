@@ -213,7 +213,7 @@
 		{#if data.experiments.length === 0 && data.q}
 			<EmptyState level={2} title="No experiments match this search" description="Clear the search to see every experiment.">
 				{#snippet action()}
-					<Button variant="secondary" href="/admin/experiments">Clear filters</Button>
+					<Button variant="secondary" href="/admin/experiments">Clear search</Button>
 				{/snippet}
 			</EmptyState>
 		{:else if data.experiments.length === 0}

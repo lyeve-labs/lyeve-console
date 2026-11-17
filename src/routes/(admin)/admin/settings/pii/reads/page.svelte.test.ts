@@ -106,6 +106,6 @@ describe('PII unmasked reads pager', () => {
 		const { container } = render(ReadsPage, { props: props({ entries: [], total: 0, q: 'phone' }) });
 		expect(said(container)).toContain('No unmasked reads match this search');
 		expect(said(container)).not.toContain('No unmasked reads yet');
-		expect(container.querySelector('a[href="/admin/settings/pii/reads"]')?.textContent?.trim()).toBe('Clear filters');
+		expect(container.querySelector('a[href="/admin/settings/pii/reads"]')?.textContent?.trim()).toBe('Clear search');
 	});
 });

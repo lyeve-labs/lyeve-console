@@ -260,7 +260,7 @@
 			{#if data.quotas.length === 0 && data.q}
 				<EmptyState title="No quotas match this search" description="Clear the search to see every quota.">
 					{#snippet action()}
-						<Button variant="secondary" href="/admin/tenants/usage">Clear filters</Button>
+						<Button variant="secondary" href="/admin/tenants/usage">Clear search</Button>
 					{/snippet}
 				</EmptyState>
 			{:else if data.quotas.length === 0}

@@ -209,7 +209,7 @@
 			{#if data.entries.length === 0 && data.q}
 				<EmptyState title="No statements match this search" description="Clear the search to see every statement.">
 					{#snippet action()}
-						<Button variant="secondary" href="/admin/observability/queries">Clear filters</Button>
+						<Button variant="secondary" href="/admin/observability/queries">Clear search</Button>
 					{/snippet}
 				</EmptyState>
 			{:else if data.entries.length === 0}

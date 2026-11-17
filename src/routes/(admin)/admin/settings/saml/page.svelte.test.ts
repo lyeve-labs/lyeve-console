@@ -174,7 +174,7 @@ describe('the empty state', () => {
 		const { container } = render(SamlPage, { props: props({ providers: [], total: 0, q: 'nothing like it' }) });
 		expect(said(container)).toContain('No providers match this search');
 		expect(said(container)).not.toContain('No identity providers yet');
-		expect(container.querySelector('a[href="/admin/settings/saml"]')?.textContent?.trim()).toBe('Clear filters');
+		expect(container.querySelector('a[href="/admin/settings/saml"]')?.textContent?.trim()).toBe('Clear search');
 	});
 });
 

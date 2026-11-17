@@ -151,7 +151,7 @@ describe('the quota list', () => {
 		const { container } = render(UsagePage, { props: props({ quotas: [], quotaTotal: 0, q: 'nothing like it' }) });
 		expect(container.textContent).toContain('No quotas match this search');
 		expect(container.textContent).not.toContain('No quotas yet');
-		expect(container.querySelector('a[href="/admin/tenants/usage"]')?.textContent?.trim()).toBe('Clear filters');
+		expect(container.querySelector('a[href="/admin/tenants/usage"]')?.textContent?.trim()).toBe('Clear search');
 	});
 
 	it('offers the first quota from the empty list', () => {

@@ -65,7 +65,7 @@
 		{#if data.entries.length === 0 && data.q}
 			<EmptyState title="No unmasked reads match this search" description="Clear the search to see every read.">
 				{#snippet action()}
-					<Button variant="secondary" href="/admin/settings/pii/reads">Clear filters</Button>
+					<Button variant="secondary" href="/admin/settings/pii/reads">Clear search</Button>
 				{/snippet}
 			</EmptyState>
 		{:else if data.entries.length === 0}

@@ -174,6 +174,6 @@ describe('the search', () => {
 		const { container } = render(DevicesPage, { props: props({ devices: [], total: 0, q: 'nothing like it' }) });
 		expect(said(container)).toContain('No devices match this search');
 		expect(said(container)).not.toContain('treated as coming from a new device');
-		expect(container.querySelector('a[href="/admin/settings/devices"]')?.textContent?.trim()).toBe('Clear filters');
+		expect(container.querySelector('a[href="/admin/settings/devices"]')?.textContent?.trim()).toBe('Clear search');
 	});
 });

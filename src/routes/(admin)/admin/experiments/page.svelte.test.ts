@@ -77,7 +77,7 @@ describe('the moves on a row', () => {
 		const { container } = render(ExperimentsPage, { props: props({ experiments: [], total: 0, q: 'nothing like it' }) });
 		expect(said(container)).toContain('No experiments match this search');
 		expect(said(container)).not.toContain('No experiments yet');
-		expect(container.querySelector('a[href="/admin/experiments"]')?.textContent?.trim()).toBe('Clear filters');
+		expect(container.querySelector('a[href="/admin/experiments"]')?.textContent?.trim()).toBe('Clear search');
 	});
 
 	it('carries the search on each row link and the pager', () => {

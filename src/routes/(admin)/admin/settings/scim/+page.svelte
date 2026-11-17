@@ -196,7 +196,7 @@
 			{#if data.providers.length === 0 && data.q}
 				<EmptyState title="No connections match this search" description="Clear the search to see every connection.">
 					{#snippet action()}
-						<Button variant="secondary" href="/admin/settings/scim">Clear filters</Button>
+						<Button variant="secondary" href="/admin/settings/scim">Clear search</Button>
 					{/snippet}
 				</EmptyState>
 			{:else if data.providers.length === 0}

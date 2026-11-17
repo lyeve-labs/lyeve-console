@@ -222,7 +222,7 @@ describe('Slow queries filter', () => {
 		const { container } = render(QueriesPage, { props: props({ entries: [], total: 0, q: 'no such statement' }) });
 
 		expect(container.textContent).toContain('No statements match this search');
-		expect(container.querySelector('a[href="/admin/observability/queries"]')?.textContent?.trim()).toBe('Clear filters');
+		expect(container.querySelector('a[href="/admin/observability/queries"]')?.textContent?.trim()).toBe('Clear search');
 		expect(container.querySelector('table')).toBeNull();
 		expect(container.querySelector('nav[aria-label*="agination" i]')).toBeNull();
 	});

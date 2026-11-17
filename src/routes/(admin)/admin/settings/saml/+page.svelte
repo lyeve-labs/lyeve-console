@@ -289,7 +289,7 @@
 			{#if data.providers.length === 0 && data.q}
 				<EmptyState title="No providers match this search" description="Clear the search to see every provider.">
 					{#snippet action()}
-						<Button variant="secondary" href="/admin/settings/saml">Clear filters</Button>
+						<Button variant="secondary" href="/admin/settings/saml">Clear search</Button>
 					{/snippet}
 				</EmptyState>
 			{:else if data.providers.length === 0}
