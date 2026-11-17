@@ -144,6 +144,27 @@ describe('Data export jobs', () => {
 		expect(said(container)).toContain('storage refused the write');
 	});
 
+	it('filters by status through links that keep it in the address', () => {
+		const { getByRole } = render(ExportPage, { props: props({ status: 'failed' }) });
+		const failed = getByRole('link', { name: 'Failed' });
+		expect(failed.getAttribute('href')).toBe('/admin/data-export?status=failed');
+		expect(failed.getAttribute('aria-current')).toBeTruthy();
+		expect(getByRole('link', { name: 'All' }).getAttribute('href')).toBe('/admin/data-export');
+	});
+
+	it('keeps the status on the pager', () => {
+		const { container } = render(ExportPage, { props: props({ status: 'failed', total: 80 }) });
+		const next = container.querySelector('a[href*="offset=50"]');
+		expect(next?.getAttribute('href')).toContain('status=failed');
+	});
+
+	it('says a filtered list matched nothing and offers to clear the filter', () => {
+		const { container, getByRole } = render(ExportPage, { props: props({ jobs: [], total: 0, status: 'failed' }) });
+		expect(said(container)).toContain('No exports match these filters');
+		expect(said(container)).not.toContain('No exports yet');
+		expect(getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/data-export');
+	});
+
 	it('reads an empty list as nothing exported yet', () => {
 		const { container } = render(ExportPage, { props: props({ jobs: [], total: 0 }) });
 		expect(said(container)).toContain('No exports yet');

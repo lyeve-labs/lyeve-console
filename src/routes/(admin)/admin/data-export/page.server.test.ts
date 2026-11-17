@@ -71,6 +71,16 @@ describe('data export load', () => {
 		expect(result.schemas).toEqual({ ok: true, value: ['article', 'page'] });
 	});
 
+	it('asks the plugin for the status the address names, and for every status otherwise', async () => {
+		const failed = (await load(event('?status=failed'))) as unknown as { status: string };
+		expect(failed.status).toBe('failed');
+		expect(api.listJobs).toHaveBeenLastCalledWith(expect.anything(), 50, 0, 'failed');
+
+		const unknown = (await load(event('?status=bogus'))) as unknown as { status: string };
+		expect(unknown.status).toBe('');
+		expect(api.listJobs).toHaveBeenLastCalledWith(expect.anything(), 50, 0, '');
+	});
+
 	it('sends a page past the end back to the last page', async () => {
 		api.listJobs.mockResolvedValue({ data: [], total_count: 60 });
 

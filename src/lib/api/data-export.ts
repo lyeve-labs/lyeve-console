@@ -47,6 +47,9 @@ export type ExportStage = '' | 'queued' | 'reading' | 'writing' | 'packaging' | 
 
 export type JobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'canceled';
 
+/** Every status the plugin stores, in the order a job moves through them. */
+export const JOB_STATUSES: readonly JobStatus[] = ['pending', 'running', 'completed', 'failed', 'canceled'];
+
 /** Which content an export covers. */
 export interface ContentFilter {
 	schemas?: string[] | null;
@@ -128,12 +131,15 @@ export interface Page<T> {
 	total_count: number;
 }
 
+/** One page of jobs, narrowed by the plugin to `status` when one is named. */
 export async function listJobs(
 	client: HttpClient,
 	limit: number,
 	offset: number,
+	status: JobStatus | '' = '',
 ): Promise<Page<ExportJob>> {
-	const res = await client.get<JobPage>(`${JOBS_URL}?limit=${limit}&offset=${offset}`);
+	const narrowed = status ? `&status=${status}` : '';
+	const res = await client.get<JobPage>(`${JOBS_URL}?limit=${limit}&offset=${offset}${narrowed}`);
 	const data = res?.jobs ?? [];
 	return { data, total_count: res?.total ?? data.length };
 }

@@ -5,6 +5,7 @@
 		Button,
 		Drawer,
 		EmptyState,
+		FilterChips,
 		Input,
 		PageShell,
 		Pagination,
@@ -31,6 +32,7 @@
 		EXPORT_ROW_CEILING,
 		FORMAT_LABELS,
 		JOBS_URL,
+		JOB_STATUSES,
 		active,
 		cronLabel,
 		downloadable,
@@ -73,6 +75,14 @@
 		const id = setInterval(() => void invalidate('app:data-export'), POLL_MS);
 		return () => clearInterval(id);
 	});
+
+	// Link chips: the plugin narrows the jobs by status, so the choice lives in
+	// the address, and the pager and a reload keep it.
+	const base = '/admin/data-export';
+	const statusOptions = [
+		{ value: '', label: 'All', href: base },
+		...JOB_STATUSES.map((s) => ({ value: s, label: s[0].toUpperCase() + s.slice(1), href: `${base}?status=${s}` })),
+	];
 
 	let narrow = $state('');
 	const visible = $derived(
@@ -228,7 +238,7 @@
 				{/if}
 			</div>
 
-			{#if data.jobs.length === 0}
+			{#if data.jobs.length === 0 && !data.status}
 				<EmptyState
 					title="No exports yet"
 					description="Exports appear here while they run and after they finish."
@@ -250,9 +260,21 @@
 							placeholder="Name, format or status on this page"
 						/>
 					{/snippet}
+					{#snippet filters()}
+						<FilterChips label="Status" value={data.status} options={statusOptions} />
+					{/snippet}
 				</ListToolbar>
 
-				{#if visible.length === 0}
+				{#if data.jobs.length === 0}
+					<EmptyState title="No exports match these filters" description="Choose another status to see the rest.">
+						{#snippet iconSnippet()}
+							<Search size={ICON.lg} />
+						{/snippet}
+						{#snippet action()}
+							<Button variant="secondary" href={base}>Clear filters</Button>
+						{/snippet}
+					</EmptyState>
+				{:else if visible.length === 0}
 					<EmptyState title="No exports match this search" description="Clear the search, or go to another page.">
 						{#snippet iconSnippet()}
 							<Search size={ICON.lg} />
@@ -345,14 +367,16 @@
 						</tbody>
 					</Table>
 				{/if}
-				<Pagination
-					page={pageNumber(data.offset, data.limit)}
-					perPage={data.limit}
-					count={data.jobs.length}
-					total={data.total ?? undefined}
-					noun="exports"
-					href={pageHref('/admin/data-export', data.limit)}
-				/>
+				{#if data.jobs.length > 0}
+					<Pagination
+						page={pageNumber(data.offset, data.limit)}
+						perPage={data.limit}
+						count={data.jobs.length}
+						total={data.total ?? undefined}
+						noun="exports"
+						href={pageHref(base, data.limit, data.status ? { status: data.status } : {})}
+					/>
+				{/if}
 			{/if}
 		</section>
 
