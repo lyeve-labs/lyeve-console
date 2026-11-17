@@ -35,9 +35,10 @@
 	import StepUpField from '#lib/components/admin-tokens/StepUpField.svelte';
 	import TokenExpiryField from '#lib/components/admin-tokens/TokenExpiryField.svelte';
 	import { tracked } from '#lib/forms.svelte.ts';
-	import { narrows } from '#lib/narrow.ts';
 	import { formatCount, formatDate, formatDateTime, plural, relativeTime } from '#lib/format.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { listQuery } from '#lib/back.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 	import {
 		MAX_TOKEN_DAYS,
@@ -224,22 +225,19 @@
 		return `${next.pathname}${next.search}`;
 	}
 
-	// The endpoint takes no search, so the box narrows the page on screen.
-	let query = $state('');
-	let status = $state('');
-	const STATUSES = [
-		{ value: '', label: 'All' },
-		{ value: 'active', label: 'Active' },
-		{ value: 'replaced', label: 'Replaced' },
-		{ value: 'expired', label: 'Expired' },
-		{ value: 'revoked', label: 'Revoked' },
-	];
-	const visible = $derived(
-		tokens.filter(
-			(t) =>
-				narrows(query, t.name, t.display_prefix, t.owner_email ?? '', t.grants.join(' ')) &&
-				(status === '' || statusOf(t) === status)
-		)
+	// The engine searches and filters every token, judging the status as the
+	// badge does, so a match past the first page shows on the first. Both live
+	// in the URL, so the pager, the request log and a reload keep them.
+	const live = liveFilter(() => data.q);
+	const filtered = $derived(Boolean(data.q || data.status));
+	const statusOptions = $derived(
+		[
+			{ value: '', label: 'All' },
+			{ value: 'active', label: 'Active' },
+			{ value: 'replaced', label: 'Replaced' },
+			{ value: 'expired', label: 'Expired' },
+			{ value: 'revoked', label: 'Revoked' },
+		].map((o) => ({ ...o, href: `/admin/admin-tokens${listQuery({ status: o.value, q: data.q })}` })),
 	);
 
 	const isOwner = (t: AdminToken) => t.owner_user_id === data.user.id;
@@ -262,7 +260,35 @@
 
 	{#if !data.tokens.ok}
 		<GateNotice level={2} gate={data.tokens.gate} title="Admin tokens" absent="Admin tokens are not included in this build." />
-	{:else if tokens.length === 0}
+	{:else}
+		{#if tokens.length > 0 || filtered}
+			<form method="GET" {@attach live.form}>
+				{#if data.status}<input type="hidden" name="status" value={data.status} />{/if}
+				<ListToolbar label="Filter admin tokens">
+					{#snippet search()}
+						<label for="token-search" class="sr-only">Search admin tokens</label>
+						<SearchInput
+							id="token-search"
+							name="q"
+							bind:value={live.value}
+							oninput={live.input}
+							placeholder="Name, prefix, owner or grant"
+						/>
+					{/snippet}
+					{#snippet filters()}
+						<FilterChips label="Status" value={data.status} options={statusOptions} />
+					{/snippet}
+				</ListToolbar>
+			</form>
+		{/if}
+
+		{#if tokens.length === 0 && filtered}
+			<EmptyState level={2} title="No tokens match these filters" description="Clear the search or choose another status.">
+				{#snippet action()}
+					<Button variant="secondary" href="/admin/admin-tokens">Clear filters</Button>
+				{/snippet}
+			</EmptyState>
+		{:else if tokens.length === 0}
 		<EmptyState
 			level={2}
 			title="No admin tokens yet"
@@ -277,23 +303,6 @@
 				</Button>
 			{/snippet}
 		</EmptyState>
-	{:else}
-		<ListToolbar label="Filter admin tokens">
-			{#snippet search()}
-				<label for="token-search" class="sr-only">Search this page</label>
-				<SearchInput id="token-search" bind:value={query} placeholder="Name, prefix, owner or grant on this page" />
-			{/snippet}
-			{#snippet filters()}
-				<FilterChips label="Status" bind:value={status} options={STATUSES} />
-			{/snippet}
-		</ListToolbar>
-
-		{#if visible.length === 0}
-			<EmptyState
-				level={2}
-				title="No tokens on this page match these filters"
-				description="Clear the search and the status filter, or go to another page."
-			/>
 		{:else}
 			<Table label="Admin tokens">
 				<thead>
@@ -309,7 +318,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each visible as t (t.id)}
+					{#each tokens as t (t.id)}
 						{@const st = statusOf(t)}
 						{@const tone = expiryTone(t.expires_at, now)}
 						<tr>
@@ -380,15 +389,18 @@
 					{/each}
 				</tbody>
 			</Table>
-		{/if}
 		<Pagination
 			page={pageNumber(data.offset, data.limit)}
 			perPage={data.limit}
 			count={tokens.length}
 			total={data.total}
 			noun="tokens"
-			href={pageHref('/admin/admin-tokens', data.limit)}
+			href={pageHref('/admin/admin-tokens', data.limit, {
+				...(data.status ? { status: data.status } : {}),
+				...(data.q ? { q: data.q } : {}),
+			})}
 		/>
+		{/if}
 	{/if}
 </PageShell>
 

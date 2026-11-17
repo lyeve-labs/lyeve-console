@@ -117,9 +117,33 @@ describe('the accounts list', () => {
 			users: { ok: true, value: [{ id: 'u1', email: 'a@b.co' }] },
 			limit: 25,
 			offset: 0,
+			q: '',
+			role: '',
 			hasMore: false,
 			tenants: { ok: true, value: [] },
 		});
+	});
+
+	it('sends the search and the role to the engine and back to the page', async () => {
+		const { event, seen } = loadEvent([], '?q=ada&role=editor');
+
+		const result = await run(event);
+
+		const asked = new URL(seen.find((u) => u.includes('/api/admin/users?'))!, 'http://e');
+		expect(asked.searchParams.get('q')).toBe('ada');
+		expect(asked.searchParams.get('role')).toBe('editor');
+		expect(result).toMatchObject({ q: 'ada', role: 'editor' });
+	});
+
+	it('drops a role it does not offer and a search the engine would refuse', async () => {
+		const { event, seen } = loadEvent([], `?role=owner&q=${'a'.repeat(201)}`);
+
+		const result = await run(event);
+
+		const asked = seen.find((u) => u.includes('/api/admin/users?'))!;
+		expect(asked).not.toContain('role=');
+		expect(asked).not.toContain('q=');
+		expect(result).toMatchObject({ q: '', role: '' });
 	});
 
 	// The endpoint clamps at its own default and sends no row count, so a page

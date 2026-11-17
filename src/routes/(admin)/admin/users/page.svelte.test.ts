@@ -26,7 +26,7 @@ function accounts(count: number, from = 0) {
 /** Load data as the load returns it. A bare array stands for a read that answered. */
 function data(overrides: Record<string, unknown> = {}) {
 	const answered = (value: unknown) => (Array.isArray(value) ? { ok: true, value } : value);
-	const merged: Record<string, unknown> = { users: accounts(25), limit: 25, offset: 0, hasMore: false, tenants: [], ...overrides };
+	const merged: Record<string, unknown> = { users: accounts(25), limit: 25, offset: 0, q: '', role: '', hasMore: false, tenants: [], ...overrides };
 	return { ...merged, users: answered(merged.users), tenants: answered(merged.tenants) };
 }
 
@@ -395,11 +395,23 @@ describe('Users read failures', () => {
 });
 
 describe('Users role filter', () => {
-	it('offers the roles as chips', () => {
-		const { getByRole } = render(UsersPage, { props: props() });
+	it('offers the roles as links that keep the search', () => {
+		const { getByRole } = render(UsersPage, { props: props({ q: 'ada' }) });
 
-		expect(getByRole('group', { name: 'Role' })).toBeTruthy();
-		expect(getByRole('button', { name: 'super_admin' })).toBeTruthy();
+		expect(getByRole('link', { name: 'super_admin' }).getAttribute('href')).toBe('/admin/users?role=super_admin&q=ada');
+		expect(getByRole('link', { name: 'All' }).getAttribute('href')).toBe('/admin/users?q=ada');
+	});
+
+	it('keeps the search and the role on the pager', () => {
+		const { container } = render(UsersPage, { props: props({ q: 'ada', role: 'editor', hasMore: true }) });
+		expect(container.querySelector('a[href="/admin/users?role=editor&q=ada&limit=25&offset=25"]')).toBeTruthy();
+	});
+
+	it('offers to clear filters that match nothing, rather than offering a first account', () => {
+		const { container } = render(UsersPage, { props: props({ users: [], q: 'nobody' }) });
+		expect(container.textContent).toContain('No users match these filters');
+		expect(container.textContent).not.toContain('No users yet');
+		expect(container.querySelector('a[href="/admin/users"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 });
 

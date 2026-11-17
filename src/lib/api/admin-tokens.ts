@@ -1,6 +1,6 @@
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import type { ListEnvelope } from './list';
+import { query, type ListEnvelope } from './list';
 import { httpStatusTone } from '../tones';
 import { outageFor } from '../outage';
 import { plural } from '../format';
@@ -66,8 +66,16 @@ export interface CreateAdminTokenInput {
 	tenant_id?: string;
 }
 
-export function listAdminTokens(client: HttpClient, limit = 50, offset = 0): Promise<ListEnvelope<AdminToken>> {
-	return client.get<ListEnvelope<AdminToken>>(`${TOKENS_URL}?limit=${limit}&offset=${offset}`);
+/** The statuses the engine filters the token list by, judged as `tokenStatus` judges them. */
+export const TOKEN_STATUSES = ['active', 'replaced', 'expired', 'revoked'] as const;
+
+export function listAdminTokens(
+	client: HttpClient,
+	limit = 50,
+	offset = 0,
+	filter: { q?: string; status?: string } = {}
+): Promise<ListEnvelope<AdminToken>> {
+	return client.get<ListEnvelope<AdminToken>>(`${TOKENS_URL}${query({ limit, offset, q: filter.q, status: filter.status })}`);
 }
 
 export async function listAdminGrants(client: HttpClient): Promise<AdminGrant[]> {

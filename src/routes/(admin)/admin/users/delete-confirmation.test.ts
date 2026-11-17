@@ -61,6 +61,8 @@ const props = () => ({
 		users: { ok: true, value: accounts(2) },
 		limit: 25,
 		offset: 0,
+		q: '',
+		role: '',
 		hasMore: false,
 		tenants: { ok: true, value: [] },
 	} as never,

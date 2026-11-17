@@ -27,11 +27,12 @@
 	import { formRefusal } from '#lib/api/refusal.ts';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import { confirmed, fieldErrors, tracked } from '#lib/forms.svelte.ts';
-	import { narrows } from '#lib/narrow.ts';
 	import { ROLE_OPTIONS, roleTone } from '#lib/roles.ts';
 	import { passkeysRemovedText } from '#lib/api/users.ts';
 	import { formatDate } from '#lib/format.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { listQuery } from '#lib/back.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
 	type User = Extract<PageData['users'], { ok: true }>['value'][number];
@@ -164,17 +165,18 @@
 		};
 	};
 
-	// The endpoint takes no search, so the box narrows the page on screen and
-	// the pager below still walks the whole collection.
-	let query = $state('');
-	let role = $state('');
-	const ROLE_FILTERS = [{ value: '', label: 'All' }, ...ROLE_OPTIONS];
-	const rows = $derived(data.users.ok ? data.users.value : []);
-	const visible = $derived(
-		rows.filter(
-			(u) => narrows(query, u.email, u.roles.join(' ')) && (role === '' || u.roles.includes(role))
-		)
+	// The engine searches every account by address and filters it by role, so
+	// a match past the first page shows on the first. Both live in the URL, so
+	// the pager and a reload keep them.
+	const live = liveFilter(() => data.q);
+	const filtered = $derived(Boolean(data.q || data.role));
+	const roleFilters = $derived(
+		[{ value: '', label: 'All' }, ...ROLE_OPTIONS].map((o) => ({
+			...o,
+			href: `/admin/users${listQuery({ role: o.value, q: data.q })}`,
+		})),
 	);
+	const rows = $derived(data.users.ok ? data.users.value : []);
 
 	/*
 	 * Links, not goto(). A click that lands before the page hydrates reaches no
@@ -211,7 +213,35 @@
 
 	{#if !data.users.ok}
 		<GateNotice gate={data.users.gate} title="Users" absent="The accounts list needs a newer version of the engine." />
-	{:else if rows.length === 0}
+	{:else}
+		{#if rows.length > 0 || filtered}
+			<form method="GET" {@attach live.form}>
+				{#if data.role}<input type="hidden" name="role" value={data.role} />{/if}
+				<ListToolbar label="Filter users">
+					{#snippet search()}
+						<label for="user-search" class="sr-only">Search users</label>
+						<SearchInput
+							id="user-search"
+							name="q"
+							bind:value={live.value}
+							oninput={live.input}
+							placeholder="Email address"
+						/>
+					{/snippet}
+					{#snippet filters()}
+						<FilterChips label="Role" value={data.role} options={roleFilters} />
+					{/snippet}
+				</ListToolbar>
+			</form>
+		{/if}
+
+		{#if rows.length === 0 && filtered}
+			<EmptyState title="No users match these filters" description="Clear the search or choose another role.">
+				{#snippet action()}
+					<Button variant="secondary" href="/admin/users">Clear filters</Button>
+				{/snippet}
+			</EmptyState>
+		{:else if rows.length === 0}
 		<EmptyState
 			title="No users yet"
 			description="Create an account to give someone access to this engine."
@@ -225,22 +255,6 @@
 				</Button>
 			{/snippet}
 		</EmptyState>
-	{:else}
-		<ListToolbar label="Filter users">
-			{#snippet search()}
-				<label for="user-search" class="sr-only">Search this page</label>
-				<SearchInput id="user-search" bind:value={query} placeholder="Email or role on this page" />
-			{/snippet}
-			{#snippet filters()}
-				<FilterChips label="Role" bind:value={role} options={ROLE_FILTERS} />
-			{/snippet}
-		</ListToolbar>
-
-		{#if visible.length === 0}
-			<EmptyState
-				title="No users match this search"
-				description="The search covers this page only. Clear it or go to another page."
-			/>
 		{:else}
 			<Table label="Users">
 				<thead>
@@ -252,7 +266,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each visible as user (user.id)}
+					{#each rows as user (user.id)}
 						<tr>
 							<td data-cell="nowrap">
 								<div class="flex flex-wrap items-center gap-2">
@@ -315,7 +329,6 @@
 					{/each}
 				</tbody>
 			</Table>
-		{/if}
 
 		<Pagination
 			page={pageNumber(data.offset, data.limit)}
@@ -323,8 +336,12 @@
 			count={rows.length}
 			hasNext={data.hasMore}
 			noun="accounts"
-			href={pageHref('/admin/users', data.limit)}
+			href={pageHref('/admin/users', data.limit, {
+				...(data.role ? { role: data.role } : {}),
+				...(data.q ? { q: data.q } : {}),
+			})}
 		/>
+		{/if}
 	{/if}
 </PageShell>
 
