@@ -86,6 +86,22 @@ describe('the job drawer', () => {
 		expect(container.querySelector('[role="dialog"]')?.textContent).toContain('New job');
 	});
 
+	it('keeps the page the reader had open when the drawer is put away', async () => {
+		state.page.url = new URL('http://localhost/admin/jobs?offset=50&edit=j1');
+		const { getByRole } = setup({ openJob: job, offset: 50 });
+		await fireEvent.click(getByRole('button', { name: 'Cancel' }));
+		expect(nav.goto).toHaveBeenCalledWith('/admin/jobs?offset=50', expect.objectContaining({ replaceState: true }));
+	});
+
+	it('posts each write with the page the reader had open, less the key that opened the drawer', () => {
+		state.page.url = new URL('http://localhost/admin/jobs?offset=50&edit=j1');
+		const { container } = setup({ openJob: job, offset: 50 });
+		const dialog = container.querySelector('[role="dialog"]') as HTMLElement;
+		expect(dialog.querySelector('form')?.getAttribute('action')).toBe('?offset=50&/update');
+		const remove = container.querySelector('form[action$="/delete"]') as HTMLFormElement;
+		expect(remove.getAttribute('action')).toBe('?offset=50&/delete');
+	});
+
 	it('takes the query out of the address when the drawer is put away', async () => {
 		state.page.url = new URL('http://localhost/admin/jobs?edit=j1');
 		const { getByRole } = setup({ openJob: job });

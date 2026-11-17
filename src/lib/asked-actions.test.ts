@@ -102,6 +102,16 @@ function askingNames(src: string, how: Asking): Map<string, string> {
 
 type Form = { file: string; action: string | null; enhance: string };
 
+/**
+ * The action an `action={...}` expression posts to, or null when it is
+ * computed. `actionWithQuery('<name>', query)` posts to that action of the
+ * page that draws the form, as `?/<name>` does, so it reads as that.
+ */
+function actionOf(expression: string): string | null {
+	const m = /^\{\s*actionWithQuery\(\s*'([\w-]+)'\s*,/.exec(expression);
+	return m ? `?/${m[1]}` : null;
+}
+
 /** Every form in a component with its action and its enhance expression. */
 function formsOf(file: string, src: string): Form[] {
 	const forms: Form[] = [];
@@ -122,7 +132,7 @@ function formsOf(file: string, src: string): Form[] {
 			const start = i + attr[1].length + 1;
 			const end = attr[2] === '{' ? closeOf(src, start) : start + attr[2].length;
 			const value = src.slice(start, end);
-			if (attr[1] === 'action') action = value.startsWith('"') ? value.slice(1, -1) : null;
+			if (attr[1] === 'action') action = value.startsWith('"') ? value.slice(1, -1) : actionOf(value);
 			else enhance = value.slice(1, -1);
 			i = end;
 		}

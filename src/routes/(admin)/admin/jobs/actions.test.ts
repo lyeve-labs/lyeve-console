@@ -14,11 +14,14 @@ vi.mock('$lib/server/authz', async (importOriginal) => ({
 
 import { actions } from './+page.server';
 
-function event(fields: Record<string, string>) {
+function event(fields: Record<string, string>, address = 'http://localhost/admin/jobs?/save') {
 	const data = new FormData();
 	data.set('confirmed', 'yes');
 	for (const [k, v] of Object.entries(fields)) data.set(k, v);
-	return { request: { formData: async () => data, clone: () => ({ formData: async () => data }) } } as never;
+	return {
+		url: new URL(address),
+		request: { formData: async () => data, clone: () => ({ formData: async () => data }) },
+	} as never;
 }
 
 type Failure = { status: number; data: Record<string, unknown> };
@@ -38,6 +41,21 @@ describe('the jobs role check', () => {
 		expect(engine.post).not.toHaveBeenCalled();
 		expect(engine.put).not.toHaveBeenCalled();
 		expect(engine.delete).not.toHaveBeenCalled();
+	});
+});
+
+describe('returning to the list', () => {
+	// The drawer and each row post with the page the reader had open, less the
+	// key that opened the drawer, so a write lands back on that page.
+	it.each(['create', 'update', 'delete'] as const)('%s returns to the page the reader had open', async (name) => {
+		engine.post.mockResolvedValue({});
+		engine.put.mockResolvedValue({});
+		engine.delete.mockResolvedValue(undefined);
+		const at = `http://localhost/admin/jobs?offset=50&edit=j1&/${name}`;
+		await expect(actions[name](event({ ...job, id: 'j1' }, at))).rejects.toMatchObject({
+			status: 303,
+			location: '/admin/jobs?offset=50',
+		});
 	});
 });
 

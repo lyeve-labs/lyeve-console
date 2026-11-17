@@ -14,7 +14,7 @@ import { actions } from './+page.server';
 function event(fields: Record<string, string | string[]>, params: Record<string, string> = {}) {
 	const data = new FormData();
 	for (const [k, v] of Object.entries(fields)) for (const one of Array.isArray(v) ? v : [v]) data.append(k, one);
-	return { params, request: { formData: async () => data } } as never;
+	return { params, url: new URL('http://localhost/admin/jobs?/save'), request: { formData: async () => data } } as never;
 }
 
 type Failure = { status: number; data: Record<string, unknown> };
