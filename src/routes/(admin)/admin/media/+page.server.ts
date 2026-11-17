@@ -1,19 +1,19 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireUser } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
-import { checked } from '$lib/checkbox';
-import { refusalOf, refusalText } from '$lib/api/refusal';
-import { pageOf, pageWindow, pastEndOffset, withOffset, type ListEnvelope } from '$lib/api/list';
-import { section, type Section } from '$lib/api/gate';
-import { describeMedia, importMedia, importRefusal, parseTags, setMediaPublic, updateMediaDetails, type MediaItem, setFocalPoint, signTransformUrl, transformRequestFrom } from '$lib/api/media';
+import { authedClient, requireUser } from '#lib/server/authz.ts';
+import { actionError } from '#lib/server/action-error.ts';
+import { checked } from '#lib/checkbox.ts';
+import { refusalOf, refusalText } from '#lib/api/refusal.ts';
+import { pageOf, pageWindow, pastEndOffset, withOffset, type ListEnvelope } from '#lib/api/list.ts';
+import { section, type Section } from '#lib/api/gate.ts';
+import { describeMedia, importMedia, importRefusal, parseTags, setMediaPublic, updateMediaDetails, type MediaItem, setFocalPoint, signTransformUrl, transformRequestFrom } from '#lib/api/media.ts';
 import { ApiError } from '@lyeve-labs/client';
-import { PLUGIN } from '$lib/plugin-names';
-import { runs } from '$lib/plugins';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { runs } from '#lib/plugins.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
-export type { MediaItem } from '$lib/api/media';
+export type { MediaItem } from '#lib/api/media.ts';
 
 /**
  * Why no description came back, in the reader's terms. The AI plugin answers

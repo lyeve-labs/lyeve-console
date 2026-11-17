@@ -1,14 +1,14 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { refusalOf, refusalText } from '$lib/api/refusal';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { GATE_OK, gateOf, type Gate } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
-import { createSink, deleteSink, isSinkKind, listSinks, testSink, updateSink, type AuditSink } from '$lib/api/audit-sinks';
-import { asked } from '$lib/server/asked';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { refusalOf, refusalText } from '#lib/api/refusal.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { GATE_OK, gateOf, type Gate } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { createSink, deleteSink, isSinkKind, listSinks, testSink, updateSink, type AuditSink } from '#lib/api/audit-sinks.ts';
+import { asked } from '#lib/server/asked.ts';
 
 const ADMINS = ['admin', 'super_admin'];
 

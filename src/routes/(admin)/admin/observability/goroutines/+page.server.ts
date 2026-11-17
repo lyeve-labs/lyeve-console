@@ -14,13 +14,13 @@ import {
 	type GoroutineEngineViews,
 	type ParallelView,
 	type PoolView,
-} from '$lib/api/goroutine-engine';
-import { forbiddenText } from '$lib/api/gate';
-import { refusalOf } from '$lib/api/refusal';
-import { RUNTIME_FORBIDDEN, parseRuntimeForm, positiveInt, putRuntimeSettings, readRuntime } from '$lib/api/runtime-settings';
-import { conflictText, invalidText } from '$lib/api/runtime-words';
-import { actionError, actionFailure } from '$lib/server/action-error';
-import { authedClient, requireRole } from '$lib/server/authz';
+} from '#lib/api/goroutine-engine.ts';
+import { forbiddenText } from '#lib/api/gate.ts';
+import { refusalOf } from '#lib/api/refusal.ts';
+import { RUNTIME_FORBIDDEN, parseRuntimeForm, positiveInt, putRuntimeSettings, readRuntime } from '#lib/api/runtime-settings.ts';
+import { conflictText, invalidText } from '#lib/api/runtime-words.ts';
+import { actionError, actionFailure } from '#lib/server/action-error.ts';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
 
 const READERS = ['admin', 'super_admin'];
 

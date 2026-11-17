@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Input, SectionHeading, SegmentedControl, Table, CopyField } from '@lyeve-labs/ui-kit';
 	import { Play, Square } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import { streamUrl, parseTopics, STREAM_KEEP, type StreamTransport } from '$lib/api/stream-lab';
-	import { formatTime } from '$lib/format';
+	import { ICON } from '#lib/icon.ts';
+	import { streamUrl, parseTopics, STREAM_KEEP, type StreamTransport } from '#lib/api/stream-lab.ts';
+	import { formatTime } from '#lib/format.ts';
 
 	// A stream is the one lab a form action cannot send: it stays open and
 	// the answer arrives over time. The browser opens it itself, on this

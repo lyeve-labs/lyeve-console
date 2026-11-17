@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, Input, NumberInput, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { RotateCcw } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
-	import CostTabs from '$lib/components/CostTabs.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { RESOURCE_TYPES, type Price, type ResourceType } from '$lib/api/cost';
-	import { formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import CostTabs from '#lib/components/CostTabs.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { RESOURCE_TYPES, type Price, type ResourceType } from '#lib/api/cost.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

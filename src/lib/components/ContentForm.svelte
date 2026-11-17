@@ -2,11 +2,11 @@
 	import { untrack } from 'svelte';
 	import { FormAssist } from '@lyeve-labs/ui-kit';
 	import type { SchemaField } from '@lyeve-labs/client';
-	import { fieldKey } from '$lib/utils/content-form';
-	import { humanizeFieldName } from '$lib/utils/entry-identity';
+	import { fieldKey } from '#lib/utils/content-form.ts';
+	import { humanizeFieldName } from '#lib/utils/entry-identity.ts';
 	import FieldInput from './FieldInput.svelte';
 	import FormErrors from './FormErrors.svelte';
-	import type { MediaChoice } from '$lib/api/media';
+	import type { MediaChoice } from '#lib/api/media.ts';
 	import type { RelationChoices } from './content/relation-choices';
 	import type { InverseEntries } from './content/inverse-entries';
 

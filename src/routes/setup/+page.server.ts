@@ -1,13 +1,13 @@
 import { redirect, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { createClient, ApiError } from '@lyeve-labs/client';
-import { checkRateLimit } from '$lib/server/rate-limit';
-import { claimSetup, getSetupModeStatus } from '$lib/api/setup';
-import { passwordTooLong } from '$lib/api/users';
-import { readEngineSetup, safeNext } from '$lib/server/setup-gate';
-import { LANDING } from '$lib/landing';
-import { setRefreshCookie, setSessionCookie } from '$lib/server/session-cookie';
-import { actionFailure } from '$lib/server/action-error';
+import { checkRateLimit } from '#lib/server/rate-limit.ts';
+import { claimSetup, getSetupModeStatus } from '#lib/api/setup.ts';
+import { passwordTooLong } from '#lib/api/users.ts';
+import { readEngineSetup, safeNext } from '#lib/server/setup-gate.ts';
+import { LANDING } from '#lib/landing.ts';
+import { setRefreshCookie, setSessionCookie } from '#lib/server/session-cookie.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
 
 export const load: PageServerLoad = async ({ fetch, url }) => {
 	const next = safeNext(url.searchParams.get('next'));

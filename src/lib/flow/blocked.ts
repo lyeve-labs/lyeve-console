@@ -9,7 +9,7 @@
  * the plugin out of that message so the banner and the pill can say which.
  */
 
-import type { ValidationError } from '$lib/api/flows';
+import type { ValidationError } from '#lib/api/flows.ts';
 
 /** The static message of a 422 on a run of a blocked flow, verbatim. */
 export const BLOCKED_MESSAGE = 'flow is blocked: a node type it uses is not available on this engine';

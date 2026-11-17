@@ -1,11 +1,11 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { GATE_OK, section, type Gate, type Section } from '$lib/api/gate';
-import { errorCodeOf } from '$lib/api/limits';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { GATE_OK, section, type Gate, type Section } from '#lib/api/gate.ts';
+import { errorCodeOf } from '#lib/api/limits.ts';
 import {
 	ADDRESS_DUPLICATE,
 	ADDRESS_LIST_FULL,
@@ -19,8 +19,8 @@ import {
 	setTenantGlobal,
 	type AddressListRead,
 	type TenantGlobalRead,
-} from '$lib/api/rate-limit';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/rate-limit.ts';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();

@@ -1,6 +1,6 @@
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 import { confirm, toast, type ConfirmOptions } from '@lyeve-labs/ui-kit';
-import { invalidateAll } from '$app/navigation';
+import { refreshAll } from '$app/navigation';
 import { CONFIRM_FIELD, CONFIRMED } from './confirmation';
 
 /**
@@ -39,8 +39,8 @@ import { CONFIRM_FIELD, CONFIRMED } from './confirmation';
 export function submitter(close?: () => void, { reset = true, reloadAfterOutage = false }: { reset?: boolean; reloadAfterOutage?: boolean } = {}) {
 	return tracked(() => async ({ result, update }) => {
 		if (result.type !== 'failure' && result.type !== 'error') close?.();
-		await update({ reset });
-		if (reloadAfterOutage && result.type === 'failure' && result.status >= 500) await invalidateAll();
+		await update({ reset, navigate: false });
+		if (reloadAfterOutage && result.type === 'failure' && result.status >= 500) await refreshAll();
 	});
 }
 
@@ -144,7 +144,7 @@ export function tracked(fn: SubmitFunction) {
 		return async (opts) => {
 			try {
 				if (after) await after(opts);
-				else await opts.update();
+				else await opts.update({ navigate: false });
 			} finally {
 				pending = false;
 			}
@@ -193,7 +193,7 @@ export function confirmed(
 		}
 		formData.set(CONFIRM_FIELD, CONFIRMED);
 		return async ({ result, update }) => {
-			await update();
+			await update({ navigate: false });
 			if (success && result.type === 'success') {
 				toast.success(typeof success === 'string' ? success : success(result.data));
 			}

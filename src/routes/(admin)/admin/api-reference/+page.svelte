@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { ActionData, PageData } from './$types';
-	import type { EndpointDoc, EndpointParam } from '$lib/api/reference';
-	import { VALUES_SHOWN } from '$lib/api/openapi';
-	import { curlFor, gateSentence } from '$lib/api/request-preview';
-	import { isWriteMethod, unfilledParameters, type TryResult } from '$lib/api/try-it';
-	import { enhance } from '$app/forms';
+	import type { EndpointDoc, EndpointParam } from '#lib/api/reference.ts';
+	import { VALUES_SHOWN } from '#lib/api/openapi.ts';
+	import { curlFor, gateSentence } from '#lib/api/request-preview.ts';
+	import { isWriteMethod, unfilledParameters, type TryResult } from '#lib/api/try-it.ts';
+	import { enhance } from '#lib/enhance.ts';
 	import { ChevronDown, ChevronRight, Download, Play } from '@lucide/svelte';
 	import {
 		Alert,
@@ -24,10 +24,10 @@
 		Collapsible,
 		type AccentTone,
 	} from '@lyeve-labs/ui-kit';
-	import ResizableAside from '$lib/components/ResizableAside.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { ICON } from '$lib/icon';
-	import { methodTone } from '$lib/tones';
+	import ResizableAside from '#lib/components/ResizableAside.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import { methodTone } from '#lib/tones.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

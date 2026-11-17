@@ -17,23 +17,23 @@
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
 	import { Database, MessageSquare, Pencil, PlugZap, Plus, Trash2 } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { page } from '$app/state';
-	import { flowBack } from '$lib/flow/back';
+	import { flowBack } from '#lib/flow/back.ts';
 	import { untrack } from 'svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
-	import type { Datasource, DatasourceKind } from '$lib/api/flows';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { useInstance } from '$lib/instance.svelte';
-	import InlineUpgradeLink from '$lib/components/InlineUpgradeLink.svelte';
-	import { confirmed, submitter } from '$lib/forms.svelte';
-	import { formatDuration } from '$lib/flow/time';
-	import { AUTH_TYPES, EMPTY_AUTH, SSL_MODES, authFieldsOf, isAuthType, isSqlKind, secretKept, sslModeFor, type AuthFields } from '$lib/flow/datasources';
-	import { relativeTime, formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import type { Datasource, DatasourceKind } from '#lib/api/flows.ts';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { useInstance } from '#lib/instance.svelte.ts';
+	import InlineUpgradeLink from '#lib/components/InlineUpgradeLink.svelte';
+	import { confirmed, submitter } from '#lib/forms.svelte.ts';
+	import { formatDuration } from '#lib/flow/time.ts';
+	import { AUTH_TYPES, EMPTY_AUTH, SSL_MODES, authFieldsOf, isAuthType, isSqlKind, secretKept, sslModeFor, type AuthFields } from '#lib/flow/datasources.ts';
+	import { relativeTime, formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

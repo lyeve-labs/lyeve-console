@@ -1,9 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	createRegion,
 	deleteRegion,
@@ -13,11 +13,11 @@ import {
 	updateRegion,
 	type Region,
 	type ResidencyReport,
-} from '$lib/api/residency';
-import { type Gate, GATE_OK, gateOf, section } from '$lib/api/gate';
-import { rowsOf } from '$lib/api/list';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/residency.ts';
+import { type Gate, GATE_OK, gateOf, section } from '#lib/api/gate.ts';
+import { rowsOf } from '#lib/api/list.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 /** The most regions the page lists. An instance runs in a handful. */
 const REGION_CAP = 100;

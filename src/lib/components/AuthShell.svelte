@@ -2,8 +2,8 @@
 	import { AuthShell, Logo } from '@lyeve-labs/ui-kit';
 	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
-	import { accentStyle } from '$lib/api/customization';
-	import { pageBrand } from '$lib/brand';
+	import { accentStyle } from '#lib/api/customization.ts';
+	import { pageBrand } from '#lib/brand.ts';
 
 	interface Props {
 		/** The one heading on the page. Sign-in swaps it for the second factor step. */

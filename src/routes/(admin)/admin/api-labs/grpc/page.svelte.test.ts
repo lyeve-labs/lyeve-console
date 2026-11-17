@@ -6,7 +6,7 @@ vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import GrpcLab from './+page.svelte';
-import type { LabResult } from '$lib/api/labs';
+import type { LabResult } from '#lib/api/labs.ts';
 
 afterEach(cleanup);
 

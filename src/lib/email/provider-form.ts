@@ -4,8 +4,8 @@ import {
 	WEBHOOK_EVENTS,
 	type EmailProviderBody,
 	type EmailTransport,
-} from '$lib/api/email';
-import { checked } from '$lib/checkbox';
+} from '#lib/api/email.ts';
+import { checked } from '#lib/checkbox.ts';
 
 const text = (data: FormData, key: string): string => String(data.get(key) ?? '').trim();
 

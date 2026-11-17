@@ -2,26 +2,26 @@ import type { PageServerLoad, Actions, RequestEvent } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { ApiError, type Schema, type SchemaField, type HttpClient } from '@lyeve-labs/client';
 import { getSchema } from '@lyeve-labs/client-rest';
-import { authedClient, exactParse, requireUser, stripProtectedFields, withExactIntegers } from '$lib/server/authz';
-import { actionError, actionFailure } from '$lib/server/action-error';
-import { readError } from '$lib/server/read-error';
-import { readRelationChoices } from '$lib/server/relation-choices';
-import { readEntryLinks, readInverseEntries, setEntryRelations } from '$lib/server/content-relations';
-import { isInverse } from '$lib/relations';
-import { fieldRefusalOf } from '$lib/server/content-validation';
-import { PLUGIN } from '$lib/plugin-names';
-import { runs } from '$lib/plugins';
-import { listMediaChoices, type MediaChoice } from '$lib/api/media';
-import { createComment, setThreadResolved } from '$lib/api/content-comments';
-import { addReleaseItem } from '$lib/api/content-releases';
-import { createTranslation, translationInput, updateTranslation, type TranslationStatus } from '$lib/api/localization';
-import { createAssignment, isTransitionAction, transitionAssignment } from '$lib/api/review';
-import { listPeople } from '$lib/server/people';
-import { listPath, listQueryFrom } from '$lib/utils/entry-view';
-import { loadComments, loadLocalization, loadReleases, loadReview } from '$lib/server/entry-panels';
-import { forbiddenText } from '$lib/api/gate';
-import { UNKNOWN_ACCESS, accessOf, joinAccess, withoutHidden } from '$lib/utils/content-access';
-import { readContentAccess } from '$lib/api/content-access';
+import { authedClient, exactParse, requireUser, stripProtectedFields, withExactIntegers } from '#lib/server/authz.ts';
+import { actionError, actionFailure } from '#lib/server/action-error.ts';
+import { readError } from '#lib/server/read-error.ts';
+import { readRelationChoices } from '#lib/server/relation-choices.ts';
+import { readEntryLinks, readInverseEntries, setEntryRelations } from '#lib/server/content-relations.ts';
+import { isInverse } from '#lib/relations.ts';
+import { fieldRefusalOf } from '#lib/server/content-validation.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { runs } from '#lib/plugins.ts';
+import { listMediaChoices, type MediaChoice } from '#lib/api/media.ts';
+import { createComment, setThreadResolved } from '#lib/api/content-comments.ts';
+import { addReleaseItem } from '#lib/api/content-releases.ts';
+import { createTranslation, translationInput, updateTranslation, type TranslationStatus } from '#lib/api/localization.ts';
+import { createAssignment, isTransitionAction, transitionAssignment } from '#lib/api/review.ts';
+import { listPeople } from '#lib/server/people.ts';
+import { listPath, listQueryFrom } from '#lib/utils/entry-view.ts';
+import { loadComments, loadLocalization, loadReleases, loadReview } from '#lib/server/entry-panels.ts';
+import { forbiddenText } from '#lib/api/gate.ts';
+import { UNKNOWN_ACCESS, accessOf, joinAccess, withoutHidden } from '#lib/utils/content-access.ts';
+import { readContentAccess } from '#lib/api/content-access.ts';
 
 /*
  * Entries live in the admin store (sys_content_entries) and are served by the
@@ -225,7 +225,7 @@ export const load: PageServerLoad = async (event) => {
 			if (err instanceof ApiError && err.status === 403) {
 				const def = await schema.catch(() => null);
 				const subject = def?.display_name || params.schema;
-				error(403, { message: forbiddenText(`entries of ${subject}`), subject });
+				error(403, forbiddenText(`entries of ${subject}`), { subject });
 			}
 			return readError(err, 'Entry not found');
 		}),

@@ -10,9 +10,9 @@
 		namesProblem,
 		type KeyAccess,
 		type ResourceGroup,
-	} from '$lib/api/key-access';
-	import { narrows } from '$lib/narrow';
-	import { plural } from '$lib/format';
+	} from '#lib/api/key-access.ts';
+	import { narrows } from '#lib/narrow.ts';
+	import { plural } from '#lib/format.ts';
 
 	/**
 	 * What a new key may reach: content by schema and action, the schema

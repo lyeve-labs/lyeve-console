@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { PageShell } from '@lyeve-labs/ui-kit';
-	import ObservabilityTabs from '$lib/components/ObservabilityTabs.svelte';
+	import ObservabilityTabs from '#lib/components/ObservabilityTabs.svelte';
 	import type { PageData } from './$types';
 	import LiveLogTail from './LiveLogTail.svelte';
 

@@ -10,10 +10,10 @@
 		CopyField,
 	} from '@lyeve-labs/ui-kit';
 	import { Download, File, FileText, Music, Sparkles, Trash2 } from '@lucide/svelte';
-	import { browser } from '$app/environment';
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import { confirmed } from '$lib/forms.svelte';
+	import { browser } from '$app/env';
+	import { enhance } from '#lib/enhance.ts';
+	import type { SubmitFunction } from '$app/forms';
+	import { confirmed } from '#lib/forms.svelte.ts';
 	import {
 		formatDimensions,
 		mediaFileUrl,
@@ -22,14 +22,14 @@
 		mediaSnippets,
 		type MediaItem,
 		type SignedTransform,
-	} from '$lib/api/media';
-	import type { Refusal } from '$lib/api/refusal';
+	} from '#lib/api/media.ts';
+	import type { Refusal } from '#lib/api/refusal.ts';
 	import FocalPointPicker from './FocalPointPicker.svelte';
 	import TransformUrlBuilder from './TransformUrlBuilder.svelte';
-	import { formatBytes, formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import { formatBytes, formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 	import ImageZoom from './ImageZoom.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
 
 	interface Props {
 		/** The item on show, or null while the drawer is shut. */

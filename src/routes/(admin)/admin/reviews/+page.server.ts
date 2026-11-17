@@ -1,13 +1,13 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { authedClient } from '$lib/server/authz';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { section, type Section } from '$lib/api/gate';
-import { pageOffset, pageNumber, pastEndOffset, withOffset } from '$lib/api/list';
-import { couldNotLoad } from '$lib/outage';
-import { entryTitle } from '$lib/utils/entry-identity';
-import { listAssignments, REVIEW_STATUSES, type ReviewAssignment } from '$lib/api/review';
+import { authedClient } from '#lib/server/authz.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { section, type Section } from '#lib/api/gate.ts';
+import { pageOffset, pageNumber, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { entryTitle } from '#lib/utils/entry-identity.ts';
+import { listAssignments, REVIEW_STATUSES, type ReviewAssignment } from '#lib/api/review.ts';
 import { DEFINITIONS_FAILED, OPERATORS, loadDefinitions, loadPeople, type DefinitionRow } from './reads.server';
 
 /** The engine's page size for the assignment list. */

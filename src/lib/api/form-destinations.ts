@@ -7,8 +7,8 @@
  * place that can say an allowed slug no longer names a flow a form can start.
  */
 import type { HttpClient } from '@lyeve-labs/client';
-import { listFlows, type Flow } from '$lib/api/flows';
-import type { FlowStatus } from '$lib/flow/types';
+import { listFlows, type Flow } from '#lib/api/flows.ts';
+import type { FlowStatus } from '#lib/flow/types.ts';
 
 /** The system event a flow subscribes to so that a form can start it. */
 export const FORM_EVENT = 'builder.form.submitted';

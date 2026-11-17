@@ -5,7 +5,7 @@
  */
 
 import type { DatasourceOption, EventTypes, FlowDefinition, FlowOption, NodeSpec, SchemaOption } from './types';
-import type { Flow, FlowRun, FlowTemplate, Introspection, ValidationError } from '$lib/api/flows';
+import type { Flow, FlowRun, FlowTemplate, Introspection, ValidationError } from '#lib/api/flows.ts';
 
 export const fixtureCatalog: NodeSpec[] = [
 	{

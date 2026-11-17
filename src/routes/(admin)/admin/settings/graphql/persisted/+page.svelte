@@ -14,16 +14,16 @@
 		Textarea,
 	} from '@lyeve-labs/ui-kit';
 	import { Braces, Plus, Power, Trash2 } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { tick } from 'svelte';
-	import { confirmed, drawerFailure, submitter } from '$lib/forms.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GraphqlTabs from '$lib/components/GraphqlTabs.svelte';
-	import type { PersistedQuery } from '$lib/api/graphql';
+	import { confirmed, drawerFailure, submitter } from '#lib/forms.svelte.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GraphqlTabs from '#lib/components/GraphqlTabs.svelte';
+	import type { PersistedQuery } from '#lib/api/graphql.ts';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
-	import { pageHref, pageNumber } from '$lib/api/list';
+	import { ICON } from '#lib/icon.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

@@ -19,19 +19,19 @@
 		type StatusTone,
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import { enhance } from '$app/forms';
+	import type { SubmitFunction } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Key, Plus, Trash2, Ban, Gauge } from '@lucide/svelte';
-	import { formRefusal } from '$lib/api/refusal';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { confirmed, fieldErrors, submitter } from '$lib/forms.svelte';
-	import { narrows } from '$lib/narrow';
-	import { ROLE_OPTIONS, roleTone } from '$lib/roles';
-	import { formatCount, formatDate, plural } from '$lib/format';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { confirmed, fieldErrors, submitter } from '#lib/forms.svelte.ts';
+	import { narrows } from '#lib/narrow.ts';
+	import { ROLE_OPTIONS, roleTone } from '#lib/roles.ts';
+	import { formatCount, formatDate, plural } from '#lib/format.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 	import {
 		LIMIT_FIELDS,
 		MAX_PRIVILEGED_KEY_DAYS,
@@ -44,8 +44,8 @@
 		privilegedExpiryBounds,
 		scopesOf,
 		type KeyLimits,
-	} from '$lib/api/api-keys';
-	import { accessProblem, accessScopes, defaultAccess, describeScopes, groupCatalog } from '$lib/api/key-access';
+	} from '#lib/api/api-keys.ts';
+	import { accessProblem, accessScopes, defaultAccess, describeScopes, groupCatalog } from '#lib/api/key-access.ts';
 	import KeyAccess from './KeyAccess.svelte';
 	import RequestLimits from './RequestLimits.svelte';
 

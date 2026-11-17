@@ -1,8 +1,8 @@
 import type { Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { GRAPHQL_URL, byteLength, graphqlMutates, parseVariables } from '$lib/api/labs';
+import { GRAPHQL_URL, byteLength, graphqlMutates, parseVariables } from '#lib/api/labs.ts';
 import { MAX_BODY_BYTES, send } from '../labs.server';
-import { asked } from '$lib/server/asked';
+import { asked } from '#lib/server/asked.ts';
 
 export const actions: Actions = {
 	graphql: asked(

@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { Card, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
 	import { ChevronRight } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import { adminNav } from '$lib/nav';
-	import { hasLicenseModule } from '$lib/entitlements';
-	import { PLUGIN } from '$lib/plugin-names';
-	import { runs } from '$lib/plugins';
-	import { settingsHub } from '$lib/settings-hub';
+	import { ICON } from '#lib/icon.ts';
+	import { adminNav } from '#lib/nav.ts';
+	import { hasLicenseModule } from '#lib/entitlements.ts';
+	import { PLUGIN } from '#lib/plugin-names.ts';
+	import { runs } from '#lib/plugins.ts';
+	import { settingsHub } from '#lib/settings-hub.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

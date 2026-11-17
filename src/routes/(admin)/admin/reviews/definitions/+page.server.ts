@@ -1,16 +1,16 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail } from '@sveltejs/kit';
 import { getSchemas } from '@lyeve-labs/client-rest';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { parseStages } from '$lib/review/definition-form';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { forbiddenText, section, type Section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
-import { createDefinition, deleteDefinition, type ReviewLimits } from '$lib/api/review';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { parseStages } from '#lib/review/definition-form.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { forbiddenText, section, type Section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { createDefinition, deleteDefinition, type ReviewLimits } from '#lib/api/review.ts';
 import { DEFINITIONS_FAILED, OPERATORS, loadDefinitions, loadPeople, type DefinitionRow } from '../reads.server';
-import { asked } from '$lib/server/asked';
+import { asked } from '#lib/server/asked.ts';
 
 /** What the page renders. */
 export type DefinitionsPage = {

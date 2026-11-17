@@ -1,7 +1,7 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { createClient, type HttpClient } from '@lyeve-labs/client';
-import { refusalAware } from '$lib/api/flows';
-import { authedHeaders } from '$lib/server/authz';
+import { refusalAware } from '#lib/api/flows.ts';
+import { authedHeaders } from '#lib/server/authz.ts';
 
 
 /**

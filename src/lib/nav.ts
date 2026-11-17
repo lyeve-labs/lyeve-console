@@ -54,7 +54,7 @@
  * order is asserted in nav.test.ts.
  */
 
-import { PRODUCT_NAME } from '$lib/brand';
+import { PRODUCT_NAME } from '#lib/brand.ts';
 import type { NavNode, NavTree } from '@lyeve-labs/ui-kit';
 import {
 	Activity,
@@ -124,8 +124,8 @@ import {
 	LockKeyhole,
 	UserLock,
 } from '@lucide/svelte';
-import { PLUGIN, type PluginName } from '$lib/plugin-names';
-import { runs, UNNAMED, type PluginSet } from '$lib/plugins';
+import { PLUGIN, type PluginName } from '#lib/plugin-names.ts';
+import { runs, UNNAMED, type PluginSet } from '#lib/plugins.ts';
 
 /** A heading with nothing under it is not a section, so it is dropped. */
 function group(node: Omit<NavNode, 'children'>, children: NavNode[]): NavNode[] {

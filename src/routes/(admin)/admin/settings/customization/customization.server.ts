@@ -1,9 +1,9 @@
 import { error, type RequestEvent } from '@sveltejs/kit';
-import { authedClient } from '$lib/server/authz';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning, type PluginSet } from '$lib/plugins';
-import { forbiddenText, GATE_OK, gateOf, type Gate } from '$lib/api/gate';
-import { getCustomization, type Customization, type CustomizationSettings } from '$lib/api/customization';
+import { authedClient } from '#lib/server/authz.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning, type PluginSet } from '#lib/plugins.ts';
+import { forbiddenText, GATE_OK, gateOf, type Gate } from '#lib/api/gate.ts';
+import { getCustomization, type Customization, type CustomizationSettings } from '#lib/api/customization.ts';
 
 /*
  * What the four customization tabs share. Brand, Menu and Dashboard write

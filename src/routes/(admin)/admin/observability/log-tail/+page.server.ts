@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-import { forbiddenText } from '$lib/api/gate';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { forbiddenText } from '#lib/api/gate.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 
 const READERS = ['admin', 'super_admin'];
 

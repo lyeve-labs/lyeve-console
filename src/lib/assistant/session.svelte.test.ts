@@ -4,7 +4,7 @@ import { flushSync, tick } from 'svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import { activeAssistForm } from '@lyeve-labs/ui-kit';
 import type { FieldType, SchemaField } from '@lyeve-labs/client';
-import ContentForm from '$lib/components/ContentForm.svelte';
+import ContentForm from '#lib/components/ContentForm.svelte';
 import { ASK_URL, AssistantSession, RUN_URL, pageContext } from './session.svelte';
 import { fakeFetch, frame, refusedWith, sse } from './test-support';
 

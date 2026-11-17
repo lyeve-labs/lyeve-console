@@ -7,12 +7,12 @@ import type { PageData } from './$types';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/schema') } }));
 vi.mock('$app/state', () => state);
-vi.mock('$app/navigation', () => ({ beforeNavigate: vi.fn(), goto: vi.fn(async () => {}), invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ beforeNavigate: vi.fn(), goto: vi.fn(async () => {}), refreshAll: vi.fn(async () => {}) }));
 
 // The builder is tested as a build without the diagram, whatever the tree
 // carries. A case that needs the page's side of the diagram sets the flag.
 const seam = vi.hoisted(() => ({ diagram: false, canvas: null as unknown }));
-vi.mock('$lib/canvas/schema', () => ({
+vi.mock('#lib/canvas/schema.ts', () => ({
 	get SchemaCanvas() {
 		return seam.canvas;
 	},
@@ -22,7 +22,7 @@ vi.mock('$lib/canvas/schema', () => ({
 }));
 
 import SchemaPage from './+page.svelte';
-import { outlineSkips } from '$lib/test-outline';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(() => {
 	cleanup();

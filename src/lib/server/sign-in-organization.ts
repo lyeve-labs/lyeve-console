@@ -1,4 +1,4 @@
-import { organizationFromForm, type Organization } from '$lib/organization';
+import { organizationFromForm, type Organization } from '#lib/organization.ts';
 
 /**
  * Whether the signed-out forms ask for an organization.

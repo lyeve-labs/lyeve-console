@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { NumberInput } from '@lyeve-labs/ui-kit';
-	import { LIMIT_FIELDS, limitOrderProblem, type KeyLimits } from '$lib/api/api-keys';
+	import { LIMIT_FIELDS, limitOrderProblem, type KeyLimits } from '#lib/api/api-keys.ts';
 
 	/**
 	 * A key's three request ceilings side by side, shortest window first, so

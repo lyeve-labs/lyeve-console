@@ -1,15 +1,15 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { checked } from '$lib/checkbox';
-import { alertsFrom, type AlertConfig } from '$lib/api/cron-alerts';
-import { section, type Gate, type Section } from '$lib/api/gate';
-import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
-import { returnAddress } from '$lib/back';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { checked } from '#lib/checkbox.ts';
+import { alertsFrom, type AlertConfig } from '#lib/api/cron-alerts.ts';
+import { section, type Gate, type Section } from '#lib/api/gate.ts';
+import { pageOf, pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
+import { returnAddress } from '#lib/back.ts';
 
 /** The keys that open the drawer, which a write's way back leaves out so the drawer stays shut. */
 const DRAWER_KEYS = ['edit', 'new'];

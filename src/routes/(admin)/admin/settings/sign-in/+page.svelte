@@ -1,11 +1,11 @@
 <script lang="ts">
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import { Button, Card, NumberInput, PageShell, SectionHeading, toast } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import { tracked } from '$lib/forms.svelte';
-	import { PROVIDER_WINDOW_DEFAULT_DAYS, PROVIDER_WINDOW_MAX_DAYS } from '$lib/api/provider-window';
+	import { enhance } from '#lib/enhance.ts';
+	import { tracked } from '#lib/forms.svelte.ts';
+	import { PROVIDER_WINDOW_DEFAULT_DAYS, PROVIDER_WINDOW_MAX_DAYS } from '#lib/api/provider-window.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

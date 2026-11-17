@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { tick, untrack } from 'svelte';
-	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { enhance } from '#lib/enhance.ts';
+	import { refreshAll } from '$app/navigation';
 	import { navigating } from '$app/state';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import {
 		Alert,
 		Badge,
@@ -22,15 +22,15 @@
 		Table,
 	} from '@lyeve-labs/ui-kit';
 	import { Link2, RefreshCw } from '@lucide/svelte';
-	import BuilderConnectionTabs from '$lib/components/BuilderConnectionTabs.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import StepUpField from '$lib/components/admin-tokens/StepUpField.svelte';
-	import { confirmed, tracked } from '$lib/forms.svelte';
-	import { expiresIn, normalizeUserCode, rolesLabel } from '$lib/device-login';
-	import { formatDate, formatDateTime, plural, relativeTime } from '$lib/format';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import BuilderConnectionTabs from '#lib/components/BuilderConnectionTabs.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import StepUpField from '#lib/components/admin-tokens/StepUpField.svelte';
+	import { confirmed, tracked } from '#lib/forms.svelte.ts';
+	import { expiresIn, normalizeUserCode, rolesLabel } from '#lib/device-login.ts';
+	import { formatDate, formatDateTime, plural, relativeTime } from '#lib/format.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 	import {
 		SAID,
 		lifetimesUpTo,
@@ -39,7 +39,7 @@
 		statusOf,
 		type Connection,
 		type ConnectionRequest,
-	} from '$lib/api/connected-editors';
+	} from '#lib/api/connected-editors.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -185,7 +185,7 @@
 				await update({ reset: false });
 				if (kind !== 'lookup' && result.type === 'success') close();
 				// A request someone else decided changed the list behind the drawer.
-				if (result.type === 'failure' && (result.data as Answer | undefined)?.drawer?.decided) await invalidateAll();
+				if (result.type === 'failure' && (result.data as Answer | undefined)?.drawer?.decided) await refreshAll();
 			} finally {
 				pending = null;
 			}

@@ -1,14 +1,14 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireUser } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { flowLoadOutcome } from '$lib/server/flow-load';
-import { checked } from '$lib/checkbox';
-import { couldNotLoad } from '$lib/outage';
-import { GATE_OK, gateOf, type Gate } from '$lib/api/gate';
-import { deleteVariable, listVariables, putVariable, type Variable } from '$lib/api/flows';
-import { pageWindow, pastEndOffset, rowsOf, withOffset } from '$lib/api/list';
-import { asked } from '$lib/server/asked';
+import { authedClient, requireUser } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { flowLoadOutcome } from '#lib/server/flow-load.ts';
+import { checked } from '#lib/checkbox.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { GATE_OK, gateOf, type Gate } from '#lib/api/gate.ts';
+import { deleteVariable, listVariables, putVariable, type Variable } from '#lib/api/flows.ts';
+import { pageWindow, pastEndOffset, rowsOf, withOffset } from '#lib/api/list.ts';
+import { asked } from '#lib/server/asked.ts';
 
 const KEY = /^[a-z][a-z0-9_]{0,39}$/;
 

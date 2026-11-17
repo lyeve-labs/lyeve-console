@@ -14,15 +14,15 @@
 		toast,
 		Pagination,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
-	import { confirmed, tracked } from '$lib/forms.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
+	import { confirmed, tracked } from '#lib/forms.svelte.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { Copy, FlaskConical, Pencil, Plus, Trash2 } from '@lucide/svelte';
-	import { duplicateRow } from '$lib/duplicate';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
+	import { duplicateRow } from '#lib/duplicate.ts';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import {
 		STATUS_LABELS,
 		TRANSITION_LABELS,
@@ -30,11 +30,11 @@
 		movesFrom,
 		statusTone,
 		type Experiment,
-	} from '$lib/api/ab-testing';
-	import { formatDateTime, plural } from '$lib/format';
+	} from '#lib/api/ab-testing.ts';
+	import { formatDateTime, plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

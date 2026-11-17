@@ -8,10 +8,10 @@
  */
 import type { HttpClient } from '@lyeve-labs/client';
 import type { StatusTone } from '@lyeve-labs/ui-kit';
-import type { CustomLink } from '$lib/api/customization';
-import type { MediaKind } from '$lib/api/media';
-import { PLUGIN, type PluginName } from '$lib/plugin-names';
-import { runs, type PluginSet } from '$lib/plugins';
+import type { CustomLink } from '#lib/api/customization.ts';
+import type { MediaKind } from '#lib/api/media.ts';
+import { PLUGIN, type PluginName } from '#lib/plugin-names.ts';
+import { runs, type PluginSet } from '#lib/plugins.ts';
 
 export type WidgetType =
 	| 'entry_counts'

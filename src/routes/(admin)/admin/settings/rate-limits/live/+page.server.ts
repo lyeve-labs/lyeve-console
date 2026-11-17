@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { authedClient } from '$lib/server/authz';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { readStatus, type LimiterState } from '$lib/api/rate-limit';
-import { type Gate, GATE_OK, section, type Section } from '$lib/api/gate';
+import { authedClient } from '#lib/server/authz.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { readStatus, type LimiterState } from '#lib/api/rate-limit.ts';
+import { type Gate, GATE_OK, section, type Section } from '#lib/api/gate.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();

@@ -1,5 +1,5 @@
 import { ApiError } from '@lyeve-labs/client';
-import { invalidateAll } from '$app/navigation';
+import { refreshAll } from '$app/navigation';
 
 /**
  * Sends a request the browser makes to the engine itself, and sends it once
@@ -19,6 +19,6 @@ export async function renewingOnce<T>(call: () => Promise<T>): Promise<T> {
 	}
 	// A reader who stays at the leave prompt cancels the layout's way to sign
 	// in. The call still runs again, so the page has a refusal to show.
-	await invalidateAll().catch(() => undefined);
+	await refreshAll().catch(() => undefined);
 	return call();
 }

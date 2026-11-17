@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Collapsible, Modal } from '@lyeve-labs/ui-kit';
-	import type { Change } from '$lib/schema/editor';
+	import type { Change } from '#lib/schema/editor.ts';
 	import type { DryRunStatement } from '../+page.server';
 
 	/**

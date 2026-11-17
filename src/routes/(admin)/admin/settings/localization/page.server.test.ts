@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const engine = vi.hoisted(() => ({ get: vi.fn(), put: vi.fn() }));
 const gate = vi.hoisted(() => ({ requireUser: vi.fn() }));
 
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	requireUser: gate.requireUser,
 	authedClient: vi.fn(() => engine),
 }));

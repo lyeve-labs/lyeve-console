@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/navigation', () => ({ goto: vi.fn(async () => {}), invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ goto: vi.fn(async () => {}), refreshAll: vi.fn(async () => {}) }));
 const forms = vi.hoisted(() => ({ submits: new Map<string, unknown>() }));
 vi.mock('$app/forms', () => ({
 	enhance: (form: HTMLFormElement, submit: unknown) => {

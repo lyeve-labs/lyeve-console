@@ -1,14 +1,14 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
-import { asked } from '$lib/server/asked';
-import { listPeople } from '$lib/server/people';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { type Gate, section, type Section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+import { authedClient } from '#lib/server/authz.ts';
+import { actionError } from '#lib/server/action-error.ts';
+import { asked } from '#lib/server/asked.ts';
+import { listPeople } from '#lib/server/people.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { type Gate, section, type Section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 import {
 	ADMIN_ENDPOINT,
 	allowMcpAgent,
@@ -19,7 +19,7 @@ import {
 	putMcpSettings,
 	type McpAgents,
 	type McpSettings,
-} from '$lib/api/mcp';
+} from '#lib/api/mcp.ts';
 
 const ABSENT: Gate = { state: 'absent' };
 

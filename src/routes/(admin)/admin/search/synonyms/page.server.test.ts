@@ -4,8 +4,8 @@ import type { Cookies } from '@sveltejs/kit';
 // The session client is real and runs over the event's fetch, so every read
 // and write lands in one call log with the body it would send.
 const authz = vi.hoisted(() => ({ roles: ['admin'] as string[] }));
-vi.mock('$lib/server/authz', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/server/authz')>()),
+vi.mock('#lib/server/authz.ts', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/authz.ts')>()),
 	requireRole: vi.fn(async (_event: unknown, allowed: string[]) => {
 		if (!allowed.some((r) => authz.roles.includes(r))) throw Object.assign(new Error('403'), { status: 403 });
 		return { id: 'u1', roles: authz.roles };

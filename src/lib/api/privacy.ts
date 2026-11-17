@@ -11,7 +11,7 @@
 import { isHttpError, isRedirect } from '@sveltejs/kit';
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
 import { gateOf, type Section } from './gate';
-import type { NotRunningReason } from '$lib/plugins';
+import type { NotRunningReason } from '#lib/plugins.ts';
 
 const FORM_ERASURE_URL = '/api/admin/schemas/form-erasure';
 

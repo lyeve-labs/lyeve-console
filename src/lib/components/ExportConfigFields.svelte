@@ -7,8 +7,8 @@
 	 * and submit under their names.
 	 */
 	import { CheckboxGroup, MultiSelect, RadioGroup, Textarea, Toggle } from '@lyeve-labs/ui-kit';
-	import { EXPORT_ROW_CEILING, FORMATS, FORMAT_LABELS } from '$lib/api/data-export';
-	import { formatCount } from '$lib/format';
+	import { EXPORT_ROW_CEILING, FORMATS, FORMAT_LABELS } from '#lib/api/data-export.ts';
+	import { formatCount } from '#lib/format.ts';
 
 	let {
 		idPrefix,

@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ActionResult, SubmitFunction } from '@sveltejs/kit';
+import type { ActionResult, SubmitFunction } from '$app/forms';
 import { tick } from 'svelte';
 import Page from './+page.svelte';
-import { fixturePrice, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
+import { fixturePrice, fixtureSettings } from '#lib/components/ai/test-support/fixtures.ts';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 // enhance hands back each form's submit function by its action, so a test can
@@ -39,7 +39,7 @@ async function startSave() {
 		result: ActionResult;
 		update: () => Promise<void>;
 	}) => Promise<void>;
-	return (result: ActionResult = { type: 'success', status: 200, data: { key: 'openai/gpt-4o', saved: true } }) =>
+	return (result: ActionResult = { type: 'success', status: 200, location: '/admin/ai/prices', data: { key: 'openai/gpt-4o', saved: true } }) =>
 		callback({ result, update: async () => {} });
 }
 
@@ -141,7 +141,7 @@ describe('AI prices page', () => {
 	it('announces nothing for a failed save', async () => {
 		const view = setup();
 		const finish = await startSave();
-		await finish({ type: 'failure', status: 400, data: { action: 'save', error: 'Enter a model.' } });
+		await finish({ type: 'failure', status: 400, location: '/admin/ai/prices', data: { action: 'save', error: 'Enter a model.' } });
 		expect(view.getByTestId('price-saved').textContent).toBe('');
 	});
 

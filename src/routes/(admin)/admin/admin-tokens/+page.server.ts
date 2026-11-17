@@ -2,7 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { listTenants, type Tenant } from '@lyeve-labs/client-rest';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
 import {
 	allowedIPsProblem,
 	createAdminToken,
@@ -18,12 +18,12 @@ import {
 	type AdminTokenIssued,
 	type AdminTokenRequest,
 	type StepUp,
-} from '$lib/api/admin-tokens';
-import { pageWindow, pastEndOffset, rowsOf, statedTotal, totalOf, withOffset } from '$lib/api/list';
-import { gateOf, section, type Gate, type Section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
-import { rolesInWords } from '$lib/roles';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/admin-tokens.ts';
+import { pageWindow, pastEndOffset, rowsOf, statedTotal, totalOf, withOffset } from '#lib/api/list.ts';
+import { gateOf, section, type Gate, type Section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { rolesInWords } from '#lib/roles.ts';
+import { asked } from '#lib/server/asked.ts';
 
 /** The engine pages this list at fifty and refuses more than a hundred. */
 const PAGE = 50;

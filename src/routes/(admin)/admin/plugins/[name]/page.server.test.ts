@@ -4,7 +4,7 @@ import type { PluginStatusReport } from '@lyeve-labs/client-rest';
 
 const profiler = vi.hoisted(() => ({ listPlugins: vi.fn() }));
 
-vi.mock('$lib/api/profiler', () => profiler);
+vi.mock('#lib/api/profiler.ts', () => profiler);
 
 import { load } from './+page.server';
 

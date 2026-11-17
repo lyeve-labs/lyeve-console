@@ -1,5 +1,5 @@
 <script lang="ts">
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import {
 		Badge,
 		Card,
@@ -12,10 +12,10 @@
 		type StatusTone,
 	} from '@lyeve-labs/ui-kit';
 	import { TrendingUp, Gauge, Globe, Server } from '@lucide/svelte';
-	import { NO_VALUE, formatBytes, formatCount, formatDateTime, formatMillis, formatPercent } from '$lib/format';
+	import { NO_VALUE, formatBytes, formatCount, formatDateTime, formatMillis, formatPercent } from '#lib/format.ts';
 	import type { PageData } from './$types';
 	import type { BreakdownItem, Summary } from '@lyeve-labs/client-rest';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data }: { data: PageData } = $props();
 

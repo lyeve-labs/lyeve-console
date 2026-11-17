@@ -17,26 +17,26 @@
 		Tooltip,
 	} from '@lyeve-labs/ui-kit';
 	import { Database, Plus, Trash2, Upload, Variable, Workflow } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { confirmed, submitter } from '$lib/forms.svelte';
-	import { liveFilter } from '$lib/live-filter.svelte';
-	import { slugify, statusTone, triggerLabel } from '$lib/flow/triggers';
-	import { blockedText } from '$lib/flow/blocked';
-	import { flowGrants } from '$lib/flow/permissions';
-	import type { RefusalNotice } from '$lib/flow/types';
-	import { useInstance } from '$lib/instance.svelte';
-	import InlineUpgradeLink from '$lib/components/InlineUpgradeLink.svelte';
-	import type { Flow, ValidationError } from '$lib/api/flows';
-	import { listQuery } from '$lib/back';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { relativeTime, formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { confirmed, submitter } from '#lib/forms.svelte.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
+	import { slugify, statusTone, triggerLabel } from '#lib/flow/triggers.ts';
+	import { blockedText } from '#lib/flow/blocked.ts';
+	import { flowGrants } from '#lib/flow/permissions.ts';
+	import type { RefusalNotice } from '#lib/flow/types.ts';
+	import { useInstance } from '#lib/instance.svelte.ts';
+	import InlineUpgradeLink from '#lib/components/InlineUpgradeLink.svelte';
+	import type { Flow, ValidationError } from '#lib/api/flows.ts';
+	import { listQuery } from '#lib/back.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { relativeTime, formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

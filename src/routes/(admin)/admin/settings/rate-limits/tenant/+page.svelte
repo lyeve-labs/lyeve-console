@@ -1,8 +1,8 @@
 <script lang="ts">
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import RateLimitTabs from '$lib/components/RateLimitTabs.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import RateLimitTabs from '#lib/components/RateLimitTabs.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		Alert,
 		Badge,
@@ -17,19 +17,19 @@
 		Toggle,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import { confirmed, drawerFailure, tracked } from '$lib/forms.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import { confirmed, drawerFailure, tracked } from '#lib/forms.svelte.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { Gauge, Plus, Trash2 } from '@lucide/svelte';
 	import {
 		addressLimit,
 		rateLabel,
 		type AddressEntry,
 		type AddressList,
-	} from '$lib/api/rate-limit';
-	import { atLimit } from '$lib/api/limits';
-	import { formatCount, plural } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	} from '#lib/api/rate-limit.ts';
+	import { atLimit } from '#lib/api/limits.ts';
+	import { formatCount, plural } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

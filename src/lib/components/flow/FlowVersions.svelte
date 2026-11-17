@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Badge, Button, SectionHeading } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import type { FlowVersion } from '$lib/api/flows';
-	import type { Section } from '$lib/api/gate';
-	import { formatDateTime, relativeTime } from '$lib/format';
+	import { enhance } from '#lib/enhance.ts';
+	import type { FlowVersion } from '#lib/api/flows.ts';
+	import type { Section } from '#lib/api/gate.ts';
+	import { formatDateTime, relativeTime } from '#lib/format.ts';
 
 	interface Props {
 		/** The flow's versions, or the gate when they could not be read. */

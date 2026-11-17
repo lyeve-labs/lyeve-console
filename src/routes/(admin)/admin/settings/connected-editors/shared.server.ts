@@ -3,7 +3,7 @@
  * because neither route file may import the other.
  */
 import { ApiError } from '@lyeve-labs/client';
-import { errorCodeOf } from '$lib/api/limits';
+import { errorCodeOf } from '#lib/api/limits.ts';
 
 /** The roles that manage every connection of the tenant and its settings. */
 export const OWNER_ROLES = ['admin', 'super_admin'];

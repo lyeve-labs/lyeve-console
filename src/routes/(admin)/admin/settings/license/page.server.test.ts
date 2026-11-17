@@ -26,7 +26,7 @@ vi.mock('@lyeve-labs/client-rest', () => {
 
 import { load } from './+page.server';
 import { createClient, ApiError } from '@lyeve-labs/client';
-import type { Entitlements } from '$lib/entitlements';
+import type { Entitlements } from '#lib/entitlements.ts';
 import { getEntitlements, getMe } from '@lyeve-labs/client-rest';
 
 interface CookieStore {

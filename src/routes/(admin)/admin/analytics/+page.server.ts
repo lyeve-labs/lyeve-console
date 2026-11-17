@@ -7,9 +7,9 @@ import {
 	getAgents,
 	getAnomalies
 } from '@lyeve-labs/client-rest';
-import { section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
-import { authedClient, loadUser } from '$lib/server/authz';
+import { section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { authedClient, loadUser } from '#lib/server/authz.ts';
 
 /** What each part of the page says when its read failed for a reason it cannot name. */
 const FAILED = {

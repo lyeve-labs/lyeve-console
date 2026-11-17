@@ -1,12 +1,12 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-import { section } from '$lib/api/gate';
-import { latencyTop } from '$lib/api/observability';
-import { readGoroutineEngine } from '$lib/api/goroutine-engine';
-import { authedClient } from '$lib/server/authz';
-import { goroutineCount } from '$lib/server/goroutines';
-import { couldNotLoad } from '$lib/outage';
-import { rolesInWords } from '$lib/roles';
+import { section } from '#lib/api/gate.ts';
+import { latencyTop } from '#lib/api/observability.ts';
+import { readGoroutineEngine } from '#lib/api/goroutine-engine.ts';
+import { authedClient } from '#lib/server/authz.ts';
+import { goroutineCount } from '#lib/server/goroutines.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { rolesInWords } from '#lib/roles.ts';
 
 /**
  * What the engine answers at /api/admin/pool/health: one flat snapshot of the

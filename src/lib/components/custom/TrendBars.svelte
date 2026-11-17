@@ -6,7 +6,7 @@
 	 * the hover target for its day, and the hidden table carries the same
 	 * numbers for a reader who cannot see the bars.
 	 */
-	import { formatCount, formatDate } from '$lib/format';
+	import { formatCount, formatDate } from '#lib/format.ts';
 
 	let { days, label, until = new Date() }: { days: number[]; label: string; until?: Date } = $props();
 

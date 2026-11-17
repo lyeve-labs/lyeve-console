@@ -1,14 +1,14 @@
 <script lang="ts">
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import { Alert, Badge, Button, Drawer, EmptyState, Input, PageShell, Select, Table, Textarea, Toggle } from '@lyeve-labs/ui-kit';
 	import { MailPlus, Pencil, Plus, Trash2 } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
-	import { confirmed, drawerFailure, submitter } from '$lib/forms.svelte';
+	import { enhance } from '#lib/enhance.ts';
+	import { confirmed, drawerFailure, submitter } from '#lib/forms.svelte.ts';
 	import type { ActionData, PageData } from './$types';
-	import { TRIGGER_EVENT_LABELS, type EmailTrigger } from '$lib/api/email-triggers';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { ICON } from '$lib/icon';
+	import { TRIGGER_EVENT_LABELS, type EmailTrigger } from '#lib/api/email-triggers.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

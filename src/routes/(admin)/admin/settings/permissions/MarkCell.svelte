@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Minus, ShieldCheck } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 	import { applies, schemaLabel, type Action, type RuleMatrix } from './rules.svelte';
 
 	/**

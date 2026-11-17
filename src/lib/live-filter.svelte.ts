@@ -92,9 +92,8 @@ export function liveFilter(loaded: () => string, { name = 'q', delay = SEARCH_DE
 		/** Attach to the GET form. */
 		form(node: HTMLFormElement) {
 			form = node;
-			node.setAttribute('data-sveltekit-keepfocus', '');
+			node.setAttribute('data-sveltekit-reset', 'false');
 			node.setAttribute('data-sveltekit-replacestate', '');
-			node.setAttribute('data-sveltekit-noscroll', '');
 			node.addEventListener('submit', onsubmit);
 			return () => {
 				cancel();

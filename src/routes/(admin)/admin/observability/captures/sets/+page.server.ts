@@ -1,14 +1,14 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { errorCodeOf } from '$lib/api/limits';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { CONFIRM_WRITES, deleteReplaySet, listReplaySets, replaySet, type ReplaySet } from '$lib/api/request-capture';
-import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+import { errorCodeOf } from '#lib/api/limits.ts';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { CONFIRM_WRITES, deleteReplaySet, listReplaySets, replaySet, type ReplaySet } from '#lib/api/request-capture.ts';
+import { type Gate, GATE_OK, gateOf } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();

@@ -11,7 +11,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 }));
 
 import ReleasePage from './+page.svelte';
-import { outlineSkips } from '$lib/test-outline';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(cleanup);
 

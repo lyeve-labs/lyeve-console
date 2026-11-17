@@ -19,25 +19,25 @@
 		Pagination,
 		CopyField,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import { confirmed, drawerFailure, tracked } from '$lib/forms.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import { confirmed, drawerFailure, tracked } from '#lib/forms.svelte.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { KeyRound, Plus, RefreshCw, Trash2 } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { narrows } from '$lib/narrow';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { narrows } from '#lib/narrow.ts';
 	import {
 		MIN_TOKEN_LENGTH,
 		SCIM_BASE_PATH,
 		deprovisionLabel,
 		deprovisionTone,
 		type ScimProvider,
-	} from '$lib/api/scim';
-	import { formatDateTime } from '$lib/format';
+	} from '#lib/api/scim.ts';
+	import { formatDateTime } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

@@ -4,7 +4,7 @@ import type { Cookies } from '@sveltejs/kit';
 // The load function under test. SvelteKit's redirect() throws a Redirect object.
 // We catch it and inspect status/location.
 import { load } from './+layout.server';
-import { BUSY, OUTAGE } from '$lib/outage';
+import { BUSY, OUTAGE } from '#lib/outage.ts';
 
 // helpers
 

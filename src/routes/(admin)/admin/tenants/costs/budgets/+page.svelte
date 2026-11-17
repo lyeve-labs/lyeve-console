@@ -13,19 +13,19 @@
 		Select,
 		Table,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { Coins, Plus, Trash2 } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
-	import CostTabs from '$lib/components/CostTabs.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { confirmed, drawerFailure, submitter } from '$lib/forms.svelte';
-	import { BUDGET_PERIODS, RESOURCE_TYPES, type ResourceType } from '$lib/api/cost';
-	import { formatDate, NO_VALUE } from '$lib/format';
-	import { lastDay } from '$lib/cost/forms';
-	import { ICON } from '$lib/icon';
+	import CostTabs from '#lib/components/CostTabs.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { confirmed, drawerFailure, submitter } from '#lib/forms.svelte.ts';
+	import { BUDGET_PERIODS, RESOURCE_TYPES, type ResourceType } from '#lib/api/cost.ts';
+	import { formatDate, NO_VALUE } from '#lib/format.ts';
+	import { lastDay } from '#lib/cost/forms.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

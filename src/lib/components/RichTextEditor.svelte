@@ -10,7 +10,7 @@
 		Undo2, Redo2,
 	} from '@lucide/svelte';
 	import { Button, Input, assistField, closeDialog, dismissDialog, openDialog } from '@lyeve-labs/ui-kit';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 	import AssistChoice from './AssistChoice.svelte';
 
 	let {

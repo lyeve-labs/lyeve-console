@@ -15,7 +15,7 @@
  */
 import type { HttpClient } from '@lyeve-labs/client';
 import type { ListEnvelope } from './list';
-import { plural } from '$lib/format';
+import { plural } from '#lib/format.ts';
 
 const CAPTURES_URL = '/api/admin/request-captures';
 const CAPTURE_RULES_URL = `${CAPTURES_URL}/rules`;

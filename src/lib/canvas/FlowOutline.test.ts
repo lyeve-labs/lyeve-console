@@ -3,8 +3,8 @@ import { cleanup, fireEvent, render, within } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import FlowOutline from './FlowOutline.svelte';
-import { fixtureCatalog, fixtureRun, joinFlow } from '$lib/flow/fixtures';
-import type { FlowDefinition } from '$lib/flow/types';
+import { fixtureCatalog, fixtureRun, joinFlow } from '#lib/flow/fixtures.ts';
+import type { FlowDefinition } from '#lib/flow/types.ts';
 
 afterEach(cleanup);
 

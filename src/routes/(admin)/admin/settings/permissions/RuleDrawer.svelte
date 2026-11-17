@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { Alert, Autocomplete, Button, CheckboxGroup, Drawer, Input } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { Permission } from '@lyeve-labs/client';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import type { Refusal } from '$lib/api/refusal';
-	import { tracked } from '$lib/forms.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import type { Refusal } from '#lib/api/refusal.ts';
+	import { tracked } from '#lib/forms.svelte.ts';
 	import {
 		ACTIONS,
 		ACTION_LABEL,

@@ -22,7 +22,7 @@ vi.mock('$app/navigation', () => ({
 	afterNavigate: (fn: () => void) => navigation.after.push(fn),
 }));
 vi.mock('$app/paths', () => ({ asset: (path: string) => path }));
-vi.mock('$lib/api/csrf', () => ({ csrfHeaders: () => ({}) }));
+vi.mock('#lib/api/csrf.ts', () => ({ csrfHeaders: () => ({}) }));
 // Additive, not a replacement. A factory returning one export makes every other
 // kit import in the layout undefined, and the shell then fails to render before
 // any assertion runs. Toaster alone is stubbed: it mounts a document-level
@@ -33,7 +33,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 }));
 
 import AdminLayout from './+layout.svelte';
-import { licensingOf, NO_LICENSING } from '$lib/api/license';
+import { licensingOf, NO_LICENSING } from '#lib/api/license.ts';
 import EmptyChildren from './layout-empty-children.test.svelte';
 import UnderRoot from './layout-under-root.test.svelte';
 import FocusChild from './layout-focus-child.test.svelte';

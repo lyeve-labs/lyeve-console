@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 
-vi.mock('$app/navigation', () => ({ invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ refreshAll: vi.fn(async () => {}) }));
 const forms = vi.hoisted(() => ({ submits: [] as SubmitFunction[] }));
 vi.mock('$app/forms', () => ({
 	enhance: (_form: HTMLFormElement, submit: SubmitFunction) => {
@@ -18,7 +18,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 }));
 
 import EventsPage from './+page.svelte';
-import type { EventRow, ReplayRun } from '$lib/api/events';
+import type { EventRow, ReplayRun } from '#lib/api/events.ts';
 
 afterEach(cleanup);
 beforeEach(() => {
@@ -193,7 +193,7 @@ describe('starting a replay', () => {
 		const { after } = await press();
 		const update = vi.fn(async () => {});
 		await (after as unknown as (o: { update: typeof update }) => Promise<void>)({ update });
-		expect(update).toHaveBeenCalledWith({ reset: false });
+		expect(update).toHaveBeenCalledWith({ reset: false, navigate: false });
 	});
 });
 

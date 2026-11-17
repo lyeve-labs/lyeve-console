@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { Alert, Button, Spinner, Textarea } from '@lyeve-labs/ui-kit';
 	import { Check, WandSparkles, X } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import CodeEditor from './CodeEditor.svelte';
-	import Markdown from '$lib/components/Markdown.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import { parseCost, type AssistProblem, type AssistUsage } from '$lib/api/assist';
-	import { AI_OFF_HREF, type AssistantAnswer, type AssistantDraft, type AssistantStatus } from '$lib/flow/assistant';
-	import { formatCount } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import Markdown from '#lib/components/Markdown.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import { parseCost, type AssistProblem, type AssistUsage } from '#lib/api/assist.ts';
+	import { AI_OFF_HREF, type AssistantAnswer, type AssistantDraft, type AssistantStatus } from '#lib/flow/assistant.ts';
+	import { formatCount } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	/**
 	 * The Assistant tab of the editor drawer. The prompt on the left posts to

@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 
 import DevicePage from './+page.svelte';
-import { outlineSkips } from '$lib/test-outline';
-import { OUTAGE } from '$lib/outage';
+import { outlineSkips } from '#lib/test-outline.ts';
+import { OUTAGE } from '#lib/outage.ts';
 
 afterEach(cleanup);
 

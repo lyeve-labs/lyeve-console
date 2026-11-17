@@ -1,6 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, error, redirect } from '@sveltejs/kit';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
 import {
 	listTenants,
 	createTenant,
@@ -9,13 +9,13 @@ import {
 	type Tenant
 } from '@lyeve-labs/client-rest';
 import { ApiError } from '@lyeve-labs/client';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { getProvisioning, tenantRefusal } from '$lib/api/tenants';
-import { refusalText } from '$lib/api/refusal';
-import { section, type Gate, type Section } from '$lib/api/gate';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { getProvisioning, tenantRefusal } from '#lib/api/tenants.ts';
+import { refusalText } from '#lib/api/refusal.ts';
+import { section, type Gate, type Section } from '#lib/api/gate.ts';
+import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 /** The engine's own page size when a request names none. */
 const DEFAULT_LIMIT = 50;

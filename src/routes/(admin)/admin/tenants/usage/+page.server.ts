@@ -1,9 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	getTenantUsage,
 	listQuotas,
@@ -16,12 +16,12 @@ import {
 	type Quota,
 	type QuotaRequest,
 	type TenantUsage,
-} from '$lib/api/usage';
-import { type Gate, GATE_OK, section, type Section } from '$lib/api/gate';
-import { rowsOf, pageWindow, pastEndOffset, statedTotal, totalOf, withOffset } from '$lib/api/list';
-import { listPeople } from '$lib/server/people';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/usage.ts';
+import { type Gate, GATE_OK, section, type Section } from '#lib/api/gate.ts';
+import { rowsOf, pageWindow, pastEndOffset, statedTotal, totalOf, withOffset } from '#lib/api/list.ts';
+import { listPeople } from '#lib/server/people.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 /** What the page says in place of a requests read that failed. */
 const REQUESTS_FAILED = couldNotLoad('the requests for more quota');

@@ -15,7 +15,7 @@ import type { StatusTone } from '@lyeve-labs/ui-kit';
 import { toChannels, type AlertChannels } from './alert-channels';
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
 import { rowsOf, type ListEnvelope } from './list';
-import { plural } from '$lib/format';
+import { plural } from '#lib/format.ts';
 
 const PROBES_URL = '/api/admin/synthetic-monitoring/probes';
 const ALERTS_URL = '/api/admin/synthetic-monitoring/alerts';

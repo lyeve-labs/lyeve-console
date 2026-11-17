@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { PluginDetail } from '$lib/plugin-rows';
-import type { PluginBreakdown } from '$lib/api/profiler';
+import type { PluginDetail } from '#lib/plugin-rows.ts';
+import type { PluginBreakdown } from '#lib/api/profiler.ts';
 
 import PluginDetailPage from './+page.svelte';
 

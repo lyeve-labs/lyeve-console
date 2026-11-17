@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({
 	goto: vi.fn(async () => {}),
-	invalidateAll: vi.fn(async () => {}),
+	refreshAll: vi.fn(async () => {}),
 }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 
@@ -44,7 +44,7 @@ function pager(container: HTMLElement, label: string): HTMLElement | undefined {
 /*
  * `toLocale*` with no locale reads the same row differently in two browsers,
  * and differently again between the server render and the hydrated one. So
- * the Created column formats its date through $lib/format.
+ * the Created column formats its date through #lib/format.
  */
 describe('Users dates', () => {
 	it('renders the created day as an ISO day, whatever zone the reader is in', () => {

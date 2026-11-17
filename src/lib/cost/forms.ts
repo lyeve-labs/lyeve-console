@@ -4,7 +4,7 @@ import {
 	type BudgetInput,
 	type PriceInput,
 	type ResourceType,
-} from '$lib/api/cost';
+} from '#lib/api/cost.ts';
 
 /** A decimal amount as the ledger stores it: digits with an optional fraction. */
 const DECIMAL = /^\d+(\.\d+)?$/;

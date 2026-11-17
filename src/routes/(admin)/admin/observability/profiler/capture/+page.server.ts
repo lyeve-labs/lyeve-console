@@ -1,9 +1,9 @@
 import type { Actions, PageServerLoad } from './$types';
 import { ApiError } from '@lyeve-labs/client';
 import { error, fail } from '@sveltejs/kit';
-import { captureFlamegraph, clampSeconds } from '$lib/api/profiler';
-import { actionFailure } from '$lib/server/action-error';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
+import { captureFlamegraph, clampSeconds } from '#lib/api/profiler.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
 
 // The tab reads nothing. A capture blocks for its window, so it runs only
 // when the reader asks for one, and a profile carries process memory, so the

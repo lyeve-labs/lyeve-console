@@ -2,7 +2,7 @@
 	import { Button } from '@lyeve-labs/ui-kit';
 	import { Pencil, Plus, Trash2 } from '@lucide/svelte';
 	import type { Permission } from '@lyeve-labs/client';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 	import { EXEMPT_ROLE, schemaLabel } from './rules.svelte';
 
 	/**

@@ -162,9 +162,9 @@ describe('a failed preview', () => {
 	it('says so in a toast as well as above the list, and opens no empty preview', async () => {
 		render(TemplatesPage, { props: { data: data(), form: null } });
 		const entry = forms.submits.find((f) => f.node.getAttribute('action') === '?/preview' && f.node.isConnected);
-		const submit = entry?.submit as () => (input: { result: unknown; update: () => Promise<void> }) => Promise<void>;
+		const submit = entry?.submit as () => Promise<(input: { result: unknown; update: () => Promise<void> }) => Promise<void>>;
 		kit.toastError.mockClear();
-		await submit()({ result: { type: 'failure', status: 400, data: { action: 'preview', error: 'Could not render the template.' } }, update: async () => {} });
+		await (await submit())({ result: { type: 'failure', status: 400, data: { action: 'preview', error: 'Could not render the template.' } }, update: async () => {} });
 		expect(kit.toastError).toHaveBeenCalledWith('Could not render the template.');
 		expect(document.body.querySelector('[data-testid="template-preview"]')).toBeNull();
 	});

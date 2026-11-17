@@ -1,15 +1,15 @@
 import type { PageServerLoad } from './$types';
-import { authedClient } from '$lib/server/authz';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { GATE_OK, section, type Gate, type Section } from '$lib/api/gate';
+import { authedClient } from '#lib/server/authz.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { GATE_OK, section, type Gate, type Section } from '#lib/api/gate.ts';
 import {
 	HISTORY_WINDOWS,
 	listAddressEntries,
 	readRefusalHistory,
 	type AddressListRead,
 	type RefusalHistory,
-} from '$lib/api/rate-limit';
+} from '#lib/api/rate-limit.ts';
 
 function windowOf(url: URL): number {
 	const raw = url.searchParams.get('hours') ?? '24';

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@lyeve-labs/client';
 
 const engine = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() }));
-vi.mock('$lib/server/authz', async (importOriginal) => ({
+vi.mock('#lib/server/authz.ts', async (importOriginal) => ({
 	...((await importOriginal()) as object),
 	authedClient: vi.fn(() => engine),
 }));

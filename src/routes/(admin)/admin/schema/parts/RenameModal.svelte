@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Button, Input, Modal, toast } from '@lyeve-labs/ui-kit';
 	import type { Schema } from '@lyeve-labs/client';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import type { SubmitFunction } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
+	import { refreshAll } from '$app/navigation';
 
 	/**
 	 * Renaming moves the table, so it is its own step with its own form, and
@@ -42,7 +42,7 @@
 				onrenamed(from, stored);
 				open = false;
 				toast.success(`Renamed ${from} to ${stored.name}`);
-				await invalidateAll();
+				await refreshAll();
 			} else if (result.type === 'failure') {
 				renameError = String((result.data as { error?: string })?.error ?? 'Could not rename the content type. Try again.');
 			}

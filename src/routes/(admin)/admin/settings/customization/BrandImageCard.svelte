@@ -6,13 +6,13 @@
 <script lang="ts">
 	import { Alert, Button, Card, FileInput, Input, SectionHeading, Spinner } from '@lyeve-labs/ui-kit';
 	import { tick } from 'svelte';
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { ImageOff, Trash2 } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import MediaPicker from '$lib/components/media/MediaPicker.svelte';
-	import { logoProblem } from '$lib/logo';
-	import type { MediaChoice } from '$lib/api/media';
+	import { ICON } from '#lib/icon.ts';
+	import MediaPicker from '#lib/components/media/MediaPicker.svelte';
+	import { logoProblem } from '#lib/logo.ts';
+	import type { MediaChoice } from '#lib/api/media.ts';
 
 	interface Props {
 		kind: 'logo' | 'favicon';

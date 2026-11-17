@@ -43,7 +43,7 @@ export function challengeFrom(body: unknown): CaptchaChallenge | null {
  * visible widget and is keyed by the site key in the script URL itself.
  *
  * Each origin here is also allowed by the console's Content-Security-Policy in
- * svelte.config.js, and a provider added here needs its origins added there.
+ * vite.config.ts, and a provider added here needs its origins added there.
  */
 export function captchaScriptURL(challenge: CaptchaChallenge): string {
 	switch (challenge.provider) {

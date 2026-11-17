@@ -1,7 +1,7 @@
 <script lang="ts">
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		Alert,
 		Badge,
@@ -14,9 +14,9 @@
 		SegmentedControl,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import { confirmed, tracked } from '$lib/forms.svelte';
-	import { CAPTCHA_PROVIDERS, providerLabel, type CaptchaProvider } from '$lib/api/captcha-settings';
+	import { enhance } from '#lib/enhance.ts';
+	import { confirmed, tracked } from '#lib/forms.svelte.ts';
+	import { CAPTCHA_PROVIDERS, providerLabel, type CaptchaProvider } from '#lib/api/captcha-settings.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

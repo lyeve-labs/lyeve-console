@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { authedClient } from '$lib/server/authz';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { readStatus, type GrpcStatus } from '$lib/api/grpc';
-import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
+import { authedClient } from '#lib/server/authz.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { readStatus, type GrpcStatus } from '#lib/api/grpc.ts';
+import { type Gate, GATE_OK, gateOf } from '#lib/api/gate.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins, user } = await event.parent();

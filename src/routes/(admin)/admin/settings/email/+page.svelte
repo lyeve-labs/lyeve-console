@@ -1,6 +1,6 @@
 <script lang="ts">
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		Badge,
 		Button,
@@ -19,15 +19,15 @@
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
 	import { Copy, FileText, Lock, Mail, Pencil, Plus, Terminal, Trash2, MailPlus } from '@lucide/svelte';
-	import { duplicateRow } from '$lib/duplicate';
-	import SettingRow from '$lib/components/SettingRow.svelte';
+	import { duplicateRow } from '#lib/duplicate.ts';
+	import SettingRow from '#lib/components/SettingRow.svelte';
 	import type { ConfigSetting } from './+page.server';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { ActionData, PageData } from './$types';
-	import { API_METHODS, BODY_PLACEHOLDERS, WEBHOOK_EVENTS, webhookPath, type EmailProvider } from '$lib/api/email';
-	import { confirmed, drawerFailure, submitter } from '$lib/forms.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { ICON } from '$lib/icon';
+	import { API_METHODS, BODY_PLACEHOLDERS, WEBHOOK_EVENTS, webhookPath, type EmailProvider } from '#lib/api/email.ts';
+	import { confirmed, drawerFailure, submitter } from '#lib/forms.svelte.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

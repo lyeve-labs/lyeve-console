@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { Badge, Button, Drawer, EmptyState, PageShell, Pagination, Stat, Table } from '@lyeve-labs/ui-kit';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { enhance } from '$app/forms';
-	import { submitter } from '$lib/forms.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { enhance } from '#lib/enhance.ts';
+	import { submitter } from '#lib/forms.svelte.ts';
 	import { ChevronRight, Plus, Server } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
-	import AiSection from '$lib/components/ai/AiSection.svelte';
-	import ProviderForm from '$lib/components/ai/ProviderForm.svelte';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { effectiveGate, PROVIDERS_CAP, providerKindLabel } from '$lib/api/ai';
-	import { formRefusal, type Refusal } from '$lib/api/refusal';
-	import { formatCount } from '$lib/format';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import AiSection from '#lib/components/ai/AiSection.svelte';
+	import ProviderForm from '#lib/components/ai/ProviderForm.svelte';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import { effectiveGate, PROVIDERS_CAP, providerKindLabel } from '#lib/api/ai.ts';
+	import { formRefusal, type Refusal } from '#lib/api/refusal.ts';
+	import { formatCount } from '#lib/format.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

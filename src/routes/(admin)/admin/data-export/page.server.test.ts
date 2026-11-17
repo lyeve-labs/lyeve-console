@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const authz = vi.hoisted(() => ({ requireRole: vi.fn(async () => ({})) }));
-vi.mock('$lib/server/authz', async () => {
+vi.mock('#lib/server/authz.ts', async () => {
 	const { createClient } = await vi.importActual<typeof import('@lyeve-labs/client')>('@lyeve-labs/client');
 	return {
 		requireRole: authz.requireRole,
@@ -16,7 +16,7 @@ const api = vi.hoisted(() => ({
 }));
 
 vi.mock('@lyeve-labs/client-rest', () => ({ getSchemas: api.getSchemas }));
-vi.mock('$lib/api/data-export', async (importOriginal) => ({
+vi.mock('#lib/api/data-export.ts', async (importOriginal) => ({
 	...((await importOriginal()) as object),
 	listJobs: api.listJobs,
 	listSchedules: api.listSchedules,

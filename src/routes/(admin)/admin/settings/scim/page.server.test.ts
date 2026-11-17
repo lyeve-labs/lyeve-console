@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 const authz = vi.hoisted(() => ({ requireRole: vi.fn() }));
-vi.mock('$lib/server/authz', async () => {
+vi.mock('#lib/server/authz.ts', async () => {
 	const { createClient } = await vi.importActual<typeof import('@lyeve-labs/client')>('@lyeve-labs/client');
 	return {
 		requireRole: authz.requireRole,

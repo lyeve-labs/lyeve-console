@@ -5,12 +5,12 @@
 	 * action, so a refusal comes back to this card.
 	 */
 	import { Alert, Button, Card, SectionHeading, SegmentedControl, Select } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { submitter } from '$lib/forms.svelte';
-	import type { Release } from '$lib/api/content-releases';
-	import type { Refusal } from '$lib/api/refusal';
-	import { couldNotLoad } from '$lib/outage';
+	import { enhance } from '#lib/enhance.ts';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import { submitter } from '#lib/forms.svelte.ts';
+	import type { Release } from '#lib/api/content-releases.ts';
+	import type { Refusal } from '#lib/api/refusal.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
 
 	interface Props {
 		releases: Pick<Release, 'id' | 'name' | 'status'>[];

@@ -1,14 +1,14 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient } from '$lib/server/authz';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning, runs } from '$lib/plugins';
-import { describeRefusal } from '$lib/api/admin-tokens';
-import { isOutage, section } from '$lib/api/gate';
-import { errorCodeOf } from '$lib/api/limits';
-import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { normalizeUserCode } from '$lib/device-login';
+import { authedClient } from '#lib/server/authz.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning, runs } from '#lib/plugins.ts';
+import { describeRefusal } from '#lib/api/admin-tokens.ts';
+import { isOutage, section } from '#lib/api/gate.ts';
+import { errorCodeOf } from '#lib/api/limits.ts';
+import { pageOf, pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { normalizeUserCode } from '#lib/device-login.ts';
 import {
 	SAID,
 	WITHHELD,
@@ -23,9 +23,9 @@ import {
 	type Connection,
 	type ConnectionRequest,
 	type ConnectionsGate,
-} from '$lib/api/connected-editors';
+} from '#lib/api/connected-editors.ts';
 import { isOwner, refusalSentence } from './shared.server';
-import { asked } from '$lib/server/asked';
+import { asked } from '#lib/server/asked.ts';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;

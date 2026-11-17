@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushSync, tick } from 'svelte';
 import TemplateDrawer from './TemplateDrawer.svelte';
-import type { MappingTemplate } from '$lib/api/bulk-import';
+import type { MappingTemplate } from '#lib/api/bulk-import.ts';
 
 type After = (o: { result: { type: string }; update: (o?: unknown) => Promise<void> }) => Promise<void>;
 type Submit = (input: { cancel: () => void }) => After | Promise<After>;

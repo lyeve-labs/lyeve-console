@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import CustomBlocks from './CustomBlocks.svelte';
-import type { ResolvedBlock } from '$lib/api/customization';
+import type { ResolvedBlock } from '#lib/api/customization.ts';
 
 afterEach(cleanup);
 

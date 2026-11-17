@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { tracked } from '$lib/forms.svelte';
-	import { crumbsAfter } from '$lib/breadcrumb';
+	import { tracked } from '#lib/forms.svelte.ts';
+	import { crumbsAfter } from '#lib/breadcrumb.ts';
 	import { Alert, Badge, Breadcrumb, Button, Card, Collapsible, PageShell, SectionHeading, Table, Textarea } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { History } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
-	import AiSection from '$lib/components/ai/AiSection.svelte';
-	import { useCaseLabel } from '$lib/components/ai/use-case';
-	import { formatDateTime, plural } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import AiSection from '#lib/components/ai/AiSection.svelte';
+	import { useCaseLabel } from '#lib/components/ai/use-case.ts';
+	import { formatDateTime, plural } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

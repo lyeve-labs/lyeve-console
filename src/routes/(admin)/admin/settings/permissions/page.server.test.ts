@@ -22,13 +22,13 @@ vi.mock('@lyeve-labs/client-rest', () => ({
 }));
 
 const flows = vi.hoisted(() => ({ listAllFlows: vi.fn(async () => [] as { id: string; slug: string; name: string }[]) }));
-vi.mock('$lib/api/flows', () => ({ listAllFlows: flows.listAllFlows }));
+vi.mock('#lib/api/flows.ts', () => ({ listAllFlows: flows.listAllFlows }));
 
 const limits = vi.hoisted(() => ({ getRoleLimits: vi.fn(async (): Promise<{ roles: { limit: number; current: number } }> => ({ roles: { limit: 0, current: 0 } })) }));
-vi.mock('$lib/api/permissions', () => ({ getRoleLimits: limits.getRoleLimits }));
+vi.mock('#lib/api/permissions.ts', () => ({ getRoleLimits: limits.getRoleLimits }));
 
 const session = vi.hoisted(() => ({ user: { roles: ['super_admin'] } as { roles: string[] } }));
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => ({})),
 	requireRole: vi.fn(async () => ({ id: 'u1', roles: ['super_admin'] })),
 	loadUser: vi.fn(async () => session.user),

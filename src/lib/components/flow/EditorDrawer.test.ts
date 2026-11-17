@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import EditorDrawer from './EditorDrawer.svelte';
-import { DRAWER_HEIGHT_KEY } from '$lib/flow/drawer';
+import { DRAWER_HEIGHT_KEY } from '#lib/flow/drawer.ts';
 
 afterEach(cleanup);
 beforeEach(() => {

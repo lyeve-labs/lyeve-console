@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, Input, PageShell, SectionHeading, Textarea } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import CustomizationTabs from '$lib/components/CustomizationTabs.svelte';
+	import { enhance } from '#lib/enhance.ts';
+	import type { SubmitFunction } from '$app/forms';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import CustomizationTabs from '#lib/components/CustomizationTabs.svelte';
 	import BrandImageCard, { type ImageNotice } from './BrandImageCard.svelte';
-	import { accentShades, parseAccent, type Brand } from '$lib/api/customization';
+	import { accentShades, parseAccent, type Brand } from '#lib/api/customization.ts';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

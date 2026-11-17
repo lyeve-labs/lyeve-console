@@ -1,6 +1,6 @@
 <script lang="ts">
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		Alert,
 		Badge,
@@ -13,11 +13,11 @@
 		Select,
 		Tag,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { ArrowDown, ArrowUp, Plus, X } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { ICON } from '$lib/icon';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const pageRefusal = $derived(formRefusal(form));

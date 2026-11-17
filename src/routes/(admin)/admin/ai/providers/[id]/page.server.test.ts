@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { actions, load } from './+page.server';
-import { fixtureProvider, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
-import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '$lib/components/ai/test-support/events';
+import { fixtureProvider, fixtureSettings } from '#lib/components/ai/test-support/fixtures.ts';
+import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '#lib/components/ai/test-support/events.ts';
 
 const id = fixtureProvider.id;
 const path = `/admin/ai/providers/${id}`;

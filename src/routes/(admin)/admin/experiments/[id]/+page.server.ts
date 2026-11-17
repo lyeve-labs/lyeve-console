@@ -1,10 +1,10 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { readError } from '$lib/server/read-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { readError } from '#lib/server/read-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import { ApiError } from '@lyeve-labs/client';
 import {
 	EXPERIMENTS_URL,
@@ -21,10 +21,10 @@ import {
 	type Metric,
 	type MetricType,
 	type Variant,
-} from '$lib/api/ab-testing';
-import { type Gate, GATE_OK, section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/ab-testing.ts';
+import { type Gate, GATE_OK, section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 function metricType(value: string): MetricType | null {
 	return METRIC_TYPES.includes(value as MetricType) ? (value as MetricType) : null;

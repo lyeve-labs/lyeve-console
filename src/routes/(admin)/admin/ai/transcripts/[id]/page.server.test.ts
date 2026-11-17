@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { actions, load } from './+page.server';
-import { fixtureSettings, fixtureTranscript } from '$lib/components/ai/test-support/fixtures';
-import { actionEvent, json, loadEvent, refused } from '$lib/components/ai/test-support/events';
+import { fixtureSettings, fixtureTranscript } from '#lib/components/ai/test-support/fixtures.ts';
+import { actionEvent, json, loadEvent, refused } from '#lib/components/ai/test-support/events.ts';
 
 const id = fixtureTranscript.id;
 const path = `/admin/ai/transcripts/${id}`;

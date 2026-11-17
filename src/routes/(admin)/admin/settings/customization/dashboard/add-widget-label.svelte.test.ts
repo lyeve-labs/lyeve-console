@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // No widget label opens with a name spelled with more than its first capital
 // yet, so one is added here to show how such a label reads in its button.
-vi.mock('$lib/api/custom-dashboard', async (original) => {
-	const real = await original<typeof import('$lib/api/custom-dashboard')>();
+vi.mock('#lib/api/custom-dashboard.ts', async (original) => {
+	const real = await original<typeof import('#lib/api/custom-dashboard.ts')>();
 	const graphql = { ...real.WIDGET_KINDS[0], type: 'text' as const, label: 'GraphQL schema' };
 	return { ...real, WIDGET_KINDS: [...real.WIDGET_KINDS.filter((k) => k.type !== 'text'), graphql] };
 });

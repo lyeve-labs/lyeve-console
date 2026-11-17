@@ -2,8 +2,8 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import VariablesPage from './+page.svelte';
-import type { Entitlements } from '$lib/entitlements';
-import type { Variable } from '$lib/api/flows';
+import type { Entitlements } from '#lib/entitlements.ts';
+import type { Variable } from '#lib/api/flows.ts';
 
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/flows/variables') } }));
 // enhance keeps each form's submit handler, so a case can run the one a

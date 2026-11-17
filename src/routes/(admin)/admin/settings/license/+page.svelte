@@ -10,14 +10,14 @@
 	 */
 	import { Alert, Button, Card, DescriptionList, PageShell, SectionHeading, Textarea } from '@lyeve-labs/ui-kit';
 	import type { ActionData, PageData } from './$types';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Check, Clock, ExternalLink, Shield, TriangleAlert } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import { formatDate, NO_VALUE } from '$lib/format';
-	import { isExternalHref } from '$lib/links';
-	import { linkOf, NO_LICENSING, REL, type LicenseLink } from '$lib/api/license';
-	import { licenseStateLabel, licenseTone, unlicensed } from '$lib/license-state';
-	import { couldNotLoad } from '$lib/outage';
+	import { ICON } from '#lib/icon.ts';
+	import { formatDate, NO_VALUE } from '#lib/format.ts';
+	import { isExternalHref } from '#lib/links.ts';
+	import { linkOf, NO_LICENSING, REL, type LicenseLink } from '#lib/api/license.ts';
+	import { licenseStateLabel, licenseTone, unlicensed } from '#lib/license-state.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

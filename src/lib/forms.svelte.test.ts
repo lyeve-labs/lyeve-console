@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 import { confirmed, drawerFailure, submitter, tracked } from './forms.svelte';
 
 const kit = vi.hoisted(() => ({
 	confirm: vi.fn(async () => true),
 	success: vi.fn(),
 }));
-const nav = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}) }));
-vi.mock('$app/navigation', () => ({ invalidateAll: nav.invalidateAll }));
+const nav = vi.hoisted(() => ({ refreshAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ refreshAll: nav.refreshAll }));
 vi.mock('@lyeve-labs/ui-kit', () => ({
 	confirm: kit.confirm,
 	toast: { success: kit.success },
@@ -70,13 +70,13 @@ describe('submitter', () => {
 	it('applies the result, so the page is not left showing what it submitted', async () => {
 		const s = submitter();
 		const o = await run(s.enhance);
-		expect(o.update).toHaveBeenCalledWith({ reset: true });
+		expect(o.update).toHaveBeenCalledWith({ reset: true, navigate: false });
 	});
 
 	it('keeps the fields of a form whose answer is built from them', async () => {
 		const s = submitter(undefined, { reset: false });
 		const o = await run(s.enhance);
-		expect(o.update).toHaveBeenCalledWith({ reset: false });
+		expect(o.update).toHaveBeenCalledWith({ reset: false, navigate: false });
 	});
 });
 
@@ -87,19 +87,19 @@ describe('submitter after an outage', () => {
 		await (after as (a: unknown) => Promise<void>)(o);
 	}
 
-	beforeEach(() => nav.invalidateAll.mockClear());
+	beforeEach(() => nav.refreshAll.mockClear());
 
 	it('reloads the page data after a 5xx when asked, and not after a refusal', async () => {
 		const s = submitter(undefined, { reloadAfterOutage: true });
 		await fail(s.enhance, 422);
-		expect(nav.invalidateAll).not.toHaveBeenCalled();
+		expect(nav.refreshAll).not.toHaveBeenCalled();
 		await fail(s.enhance, 502);
-		expect(nav.invalidateAll).toHaveBeenCalledTimes(1);
+		expect(nav.refreshAll).toHaveBeenCalledTimes(1);
 	});
 
 	it('leaves the page data alone after a 5xx by default', async () => {
 		await fail(submitter().enhance, 502);
-		expect(nav.invalidateAll).not.toHaveBeenCalled();
+		expect(nav.refreshAll).not.toHaveBeenCalled();
 	});
 });
 
@@ -218,7 +218,7 @@ describe('confirmed', () => {
 		const after = await confirmed('Delete it?', 'Gone.', { confirmLabel: 'Delete', success: 'Deleted it' })(input);
 		await after!(o as never);
 		expect(cancel).not.toHaveBeenCalled();
-		expect(o.update).toHaveBeenCalledWith();
+		expect(o.update).toHaveBeenCalledWith({ navigate: false });
 		expect(kit.success).toHaveBeenCalledWith('Deleted it');
 	});
 

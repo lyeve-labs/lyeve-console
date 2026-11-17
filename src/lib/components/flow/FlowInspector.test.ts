@@ -2,9 +2,9 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import FlowInspector from './FlowInspector.svelte';
-import { fixtureCatalog, fixtureEventTypes, fixtureGroupedEventTypes, fixtureSchemas, joinFlow, withLocked } from '$lib/flow/fixtures';
-import type { ValidationError } from '$lib/api/flows';
-import type { NodeSpec, SchemaOption, Selection } from '$lib/flow/types';
+import { fixtureCatalog, fixtureEventTypes, fixtureGroupedEventTypes, fixtureSchemas, joinFlow, withLocked } from '#lib/flow/fixtures.ts';
+import type { ValidationError } from '#lib/api/flows.ts';
+import type { NodeSpec, SchemaOption, Selection } from '#lib/flow/types.ts';
 
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/flows/f1') } }));
 

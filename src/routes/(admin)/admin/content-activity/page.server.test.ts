@@ -6,7 +6,7 @@ const authz = vi.hoisted(() => ({
 	authedClient: vi.fn(() => engine),
 	loadUser: vi.fn(async () => ({ id: 'u1', roles: ['admin'] })),
 }));
-vi.mock('$lib/server/authz', () => authz);
+vi.mock('#lib/server/authz.ts', () => authz);
 
 const rest = vi.hoisted(() => ({ getSchemas: vi.fn(), listTenants: vi.fn() }));
 vi.mock('@lyeve-labs/client-rest', () => rest);

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, Label, SectionHeading, Tabs, type StatusTone } from '@lyeve-labs/ui-kit';
 	import type { SchemaField } from '@lyeve-labs/client';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { CircleCheck } from '@lucide/svelte';
 	import {
 		completenessOf,
@@ -11,12 +11,12 @@
 		type LocalePreferences,
 		type Translation,
 		type TranslationStatus,
-	} from '$lib/api/localization';
+	} from '#lib/api/localization.ts';
 	import FieldInput from './FieldInput.svelte';
 	import FieldCell from './FieldCell.svelte';
-	import { ICON } from '$lib/icon';
-	import { actionWithQuery } from '$lib/back';
-	import { plural } from '$lib/format';
+	import { ICON } from '#lib/icon.ts';
+	import { actionWithQuery } from '#lib/back.ts';
+	import { plural } from '#lib/format.ts';
 
 	let {
 		fields,

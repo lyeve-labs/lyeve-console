@@ -1,18 +1,19 @@
 import { hostname } from 'node:os';
-import { building, dev } from '$app/environment';
-import { redirect, type Handle, type HandleFetch, type ServerInit } from '@sveltejs/kit';
-import { addressHeaderProblem, cleanupRateLimitStore, WINDOW_MS } from '$lib/server/rate-limit';
-import { setupGateRedirect } from '$lib/server/setup-gate';
-import { limitBody } from '$lib/server/body-limit';
+import { building, dev } from '$app/env';
+import { redirect } from '@sveltejs/kit';
+import type { Handle, HandleFetch, ServerInit } from '@sveltejs/kit/hooks';
+import { addressHeaderProblem, cleanupRateLimitStore, WINDOW_MS } from '#lib/server/rate-limit.ts';
+import { setupGateRedirect } from '#lib/server/setup-gate.ts';
+import { limitBody } from '#lib/server/body-limit.ts';
 import {
 	callerOf,
 	contentApiAddressProblem,
 	engineBaseFor,
 	signEngineRequest
-} from '$lib/server/engine';
-import { relayEngineCookies } from '$lib/server/engine-cookies';
-import { ensureCsrfCookie, sessionToken } from '$lib/server/session-cookie';
-import { refreshSession } from '$lib/server/session-refresh';
+} from '#lib/server/engine.ts';
+import { relayEngineCookies } from '#lib/server/engine-cookies.ts';
+import { ensureCsrfCookie, sessionToken } from '#lib/server/session-cookie.ts';
+import { refreshSession } from '#lib/server/session-refresh.ts';
 
 // A production server that cannot reach the Content API refuses to start.
 // The fallback address is this console's own port in the official image, so
@@ -30,7 +31,7 @@ export const init: ServerInit = () => {
 // grows with every client address, spoofed ones included.
 setInterval(cleanupRateLimitStore, WINDOW_MS).unref();
 
-// The Content-Security-Policy is configured in svelte.config.js (kit.csp), not
+// The Content-Security-Policy is configured in vite.config.ts (csp), not
 // with the headers below, so SvelteKit can attach nonces to its own inline
 // hydration scripts. Setting script-src here would break it.
 export const handle: Handle = async ({ event, resolve }) => {
@@ -65,7 +66,7 @@ function setSecurityHeaders(headers: Headers): void {
 	// login is not a page worth finding. robots.txt says the same to the
 	// crawlers that ask first.
 	headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
-	// HSTS: force HTTPS in production. Gated. $app/environment dev is
+	// HSTS: force HTTPS in production. Gated. $app/env dev is
 	// true during local dev (http://localhost) where the header is harmful.
 	if (!dev) {
 		headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');

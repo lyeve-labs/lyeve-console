@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@lyeve-labs/client';
-import { forbiddenText } from '$lib/api/gate';
+import { forbiddenText } from '#lib/api/gate.ts';
 
 const engine = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() }));
-vi.mock('$lib/server/authz', async (importOriginal) => ({
+vi.mock('#lib/server/authz.ts', async (importOriginal) => ({
 	...((await importOriginal()) as object),
 	authedClient: vi.fn(() => engine),
 	requireRole: vi.fn(async () => ({ id: 'u1', roles: ['admin'] })),
@@ -165,7 +165,7 @@ describe('deleting a definition', () => {
 	});
 
 	it('refuses an editor before it reaches the plugin', async () => {
-		const { requireRole } = await import('$lib/server/authz');
+		const { requireRole } = await import('#lib/server/authz.ts');
 		vi.mocked(requireRole).mockRejectedValueOnce(Object.assign(new Error('403'), { status: 403 }));
 		await expect(actions.delete(actionEvent({ id: 'd1' }))).rejects.toMatchObject({ status: 403 });
 		expect(engine.delete).not.toHaveBeenCalled();

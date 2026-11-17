@@ -1,5 +1,5 @@
 import { motion } from '@lyeve-labs/ui-kit';
-import type { OnNavigate } from '@sveltejs/kit';
+import type { OnNavigate } from '$app/navigation';
 
 /**
  * Set on the element that fades in after a route change. app.css gives `a`

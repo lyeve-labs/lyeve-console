@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { Alert, Button, Card, Input, NumberInput, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Download, Flame } from '@lucide/svelte';
-	import { PROFILE_SECONDS, PROFILE_TYPES } from '$lib/api/profiler';
-	import { NO_VALUE, formatDateTime } from '$lib/format';
-	import ProfilerTabs from '$lib/components/ProfilerTabs.svelte';
+	import { PROFILE_SECONDS, PROFILE_TYPES } from '#lib/api/profiler.ts';
+	import { NO_VALUE, formatDateTime } from '#lib/format.ts';
+	import ProfilerTabs from '#lib/components/ProfilerTabs.svelte';
 	import type { ActionData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { form }: { form: ActionData } = $props();
 

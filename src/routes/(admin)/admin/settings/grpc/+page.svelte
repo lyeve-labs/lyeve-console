@@ -8,9 +8,9 @@
 		SectionHeading,
 		Table,
 	} from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
 	import { Network } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import {
 		HEALTH_LABELS,
 		grpcHealth,
@@ -20,10 +20,10 @@
 		serviceStatusLabel,
 		serviceTone,
 		undeclared,
-	} from '$lib/api/grpc';
-	import { NO_VALUE, plural } from '$lib/format';
+	} from '#lib/api/grpc.ts';
+	import { NO_VALUE, plural } from '#lib/format.ts';
 	import type { PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data }: { data: PageData } = $props();
 

@@ -8,12 +8,12 @@ import {
 	clearSessionCookie,
 	sessionToken,
 	type SessionRead,
-} from '$lib/server/session-cookie';
-import { sessionEndedTarget } from '$lib/server/session-refresh';
-import { refusalOf, refusalText } from '$lib/api/refusal';
-import { BUSY, OUTAGE } from '$lib/outage';
-import { SESSION_ENDED } from '$lib/session';
-import { rolesInWords } from '$lib/roles';
+} from '#lib/server/session-cookie.ts';
+import { sessionEndedTarget } from '#lib/server/session-refresh.ts';
+import { refusalOf, refusalText } from '#lib/api/refusal.ts';
+import { BUSY, OUTAGE } from '#lib/outage.ts';
+import { SESSION_ENDED } from '#lib/session.ts';
+import { rolesInWords } from '#lib/roles.ts';
 
 /** The headers that carry the session, in lower case. Only `authedHeaders` sets them. */
 const SESSION_HEADERS = new Set(['authorization', 'x-csrf-token']);

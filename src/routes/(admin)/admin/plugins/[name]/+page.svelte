@@ -11,17 +11,17 @@
 		Table
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData } from './$types';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { crumbsAfter } from '$lib/breadcrumb';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { crumbsAfter } from '#lib/breadcrumb.ts';
 	import { Activity, ExternalLink, Route, Settings } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import { methodTone } from '$lib/tones';
-	import { isExternalHref } from '$lib/links';
-	import { formatCount, formatBytes, formatDateTime, plural, relativeTime } from '$lib/format';
-	import { couldNotLoad } from '$lib/outage';
-	import { formatNs } from '$lib/api/profiler';
-	import { CATEGORY_LABEL } from '$lib/plugin-categories';
-	import { ROUTE_GROUP_LABEL, STATE_LABEL, STATE_TONE, groupRoutes } from '$lib/plugin-rows';
+	import { ICON } from '#lib/icon.ts';
+	import { methodTone } from '#lib/tones.ts';
+	import { isExternalHref } from '#lib/links.ts';
+	import { formatCount, formatBytes, formatDateTime, plural, relativeTime } from '#lib/format.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
+	import { formatNs } from '#lib/api/profiler.ts';
+	import { CATEGORY_LABEL } from '#lib/plugin-categories.ts';
+	import { ROUTE_GROUP_LABEL, STATE_LABEL, STATE_TONE, groupRoutes } from '#lib/plugin-rows.ts';
 
 	let { data }: { data: PageData } = $props();
 

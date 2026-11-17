@@ -13,10 +13,10 @@
  */
 import { error, isHttpError, isRedirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { forbiddenText, isOutage } from '$lib/api/gate';
-import { BUSY, OUTAGE, couldNotLoad } from '$lib/outage';
-import { ROLES } from '$lib/roles';
-import { SESSION_ENDED } from '$lib/session';
+import { forbiddenText, isOutage } from '#lib/api/gate.ts';
+import { BUSY, OUTAGE, couldNotLoad } from '#lib/outage.ts';
+import { ROLES } from '#lib/roles.ts';
+import { SESSION_ENDED } from '#lib/session.ts';
 
 /** A role name standing as a word of its own, the way the engine writes one. */
 const NAMES_A_ROLE = new RegExp(`\\b(?:${ROLES.join('|')})\\b`);

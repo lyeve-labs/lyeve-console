@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tick } from 'svelte';
 import { setThemePreference } from '@lyeve-labs/ui-kit';
 import AccountPage from './+page.svelte';
-import { outlineSkips } from '$lib/test-outline';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 /**
  * The appearance picker.
@@ -18,7 +18,7 @@ import { outlineSkips } from '$lib/test-outline';
  * answers while both are on screen.
  */
 
-vi.mock('$lib/api/csrf', () => ({ csrfHeaders: () => ({}) }));
+vi.mock('#lib/api/csrf.ts', () => ({ csrfHeaders: () => ({}) }));
 
 const data = { user: { email: 'a@b.c', roles: ['super_admin'] }, remembersDevices: false };
 

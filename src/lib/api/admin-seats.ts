@@ -2,7 +2,7 @@
  * The optional ceiling on admin accounts, as the pages that grant an admin
  * role read it.
  */
-import { ADMIN_SEATS_CAP, refusalOf, type Refusal } from '$lib/api/refusal';
+import { ADMIN_SEATS_CAP, refusalOf, type Refusal } from '#lib/api/refusal.ts';
 
 /**
  * The refusal of a write the engine refused at the admin seat ceiling, or

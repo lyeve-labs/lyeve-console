@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Collapsible, Drawer, FileInput, Panel, SectionHeading, Select, Textarea, toast } from '@lyeve-labs/ui-kit';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { tick } from 'svelte';
-	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
-	import FormErrors from '$lib/components/FormErrors.svelte';
+	import { enhance } from '#lib/enhance.ts';
+	import { refreshAll } from '$app/navigation';
+	import FormErrors from '#lib/components/FormErrors.svelte';
 	import type { ImportPlan } from '../+page.server';
 	import { IMPORT_SOURCES } from '../import-sources';
 
@@ -80,7 +80,7 @@
 					const n = d.plan.schemas.filter((x) => x.action !== 'unchanged').length;
 					importOpen = false;
 					toast.success(n === 1 ? 'Imported one content type' : `Imported ${n} content types`);
-					await invalidateAll();
+					await refreshAll();
 					return;
 				}
 				importPlan = d.plan;

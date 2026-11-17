@@ -1,6 +1,6 @@
 <script lang="ts">
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		Alert,
 		Badge,
@@ -14,17 +14,17 @@
 		confirm as confirmDialog,
 	} from '@lyeve-labs/ui-kit';
 	import { Asterisk, ChevronRight, Plus } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { tick } from 'svelte';
 	import type { PageData, ActionData } from './$types';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import type { Permission } from '@lyeve-labs/client';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { ALL_FLOWS, isFlowResource } from '$lib/flow/permissions';
-	import { ICON } from '$lib/icon';
-	import { drawerFailure } from '$lib/forms.svelte';
-	import { plural } from '$lib/format';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { ALL_FLOWS, isFlowResource } from '#lib/flow/permissions.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { drawerFailure } from '#lib/forms.svelte.ts';
+	import { plural } from '#lib/format.ts';
 	import FieldMaskCell from './FieldMaskCell.svelte';
 	import MarkCell from './MarkCell.svelte';
 	import RoleDrawer from './RoleDrawer.svelte';

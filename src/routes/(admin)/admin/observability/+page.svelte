@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { Alert, Badge, Card, EmptyState, PageShell, SectionHeading, SegmentedControl, Stat, Table, type StatusTone } from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import { Database, Gauge, AlertTriangle, CheckCircle } from '@lucide/svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { LATENCY_TOP_CHOICES } from '$lib/api/observability';
-	import { formatMillis, NO_VALUE } from '$lib/format';
-	import ObservabilityTabs from '$lib/components/ObservabilityTabs.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { LATENCY_TOP_CHOICES } from '#lib/api/observability.ts';
+	import { formatMillis, NO_VALUE } from '#lib/format.ts';
+	import ObservabilityTabs from '#lib/components/ObservabilityTabs.svelte';
 	import type { PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data }: { data: PageData } = $props();
 
@@ -122,7 +122,7 @@
 			{#snippet filters()}
 				<!-- A depth is a page address. It replaces the entry in the history
 				     and keeps the reader where they were on the page. -->
-				<div id="latency-top" data-sveltekit-noscroll data-sveltekit-replacestate>
+				<div id="latency-top" data-sveltekit-reset="false" data-sveltekit-replacestate>
 					<SegmentedControl label="Rows" labelHidden size="sm" options={topOptions} value={String(data.top)} />
 				</div>
 			{/snippet}

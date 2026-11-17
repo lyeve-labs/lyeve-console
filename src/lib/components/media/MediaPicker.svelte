@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Alert, Button, Drawer, EmptyState, SearchInput } from '@lyeve-labs/ui-kit';
 	import { File, Images } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import { mediaFileUrl, mediaKind, type MediaChoice } from '$lib/api/media';
-	import { narrows } from '$lib/narrow';
+	import { ICON } from '#lib/icon.ts';
+	import { mediaFileUrl, mediaKind, type MediaChoice } from '#lib/api/media.ts';
+	import { narrows } from '#lib/narrow.ts';
 
 	/**
 	 * Chooses a published library file for a media field. Only published files

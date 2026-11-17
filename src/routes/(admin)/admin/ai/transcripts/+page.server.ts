@@ -1,10 +1,10 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { authedClient } from '$lib/server/authz';
-import { aiGate } from '$lib/server/ai-load';
-import { GATE_OK, section } from '$lib/api/gate';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { listTranscripts, TRANSCRIPT_KINDS } from '$lib/api/ai';
+import { authedClient } from '#lib/server/authz.ts';
+import { aiGate } from '#lib/server/ai-load.ts';
+import { GATE_OK, section } from '#lib/api/gate.ts';
+import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { listTranscripts, TRANSCRIPT_KINDS } from '#lib/api/ai.ts';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;

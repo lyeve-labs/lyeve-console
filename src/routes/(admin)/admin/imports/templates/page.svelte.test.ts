@@ -6,7 +6,7 @@ vi.mock('$app/navigation', () => ({ invalidate: vi.fn(async () => {}), goto: vi.
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 
 import TemplatesPage from './+page.svelte';
-import { outlineSkips } from '$lib/test-outline';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(cleanup);
 

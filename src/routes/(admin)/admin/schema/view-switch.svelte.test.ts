@@ -4,13 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageData } from './$types';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
-vi.mock('$app/navigation', () => ({ beforeNavigate: vi.fn(), goto: vi.fn(async () => {}), invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ beforeNavigate: vi.fn(), goto: vi.fn(async () => {}), refreshAll: vi.fn(async () => {}) }));
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/schema') } }));
 vi.mock('$app/state', () => state);
 
 // A diagram that draws nothing. The page only needs a canvas to switch to,
 // and the editor it draws beside it is the page's own.
-vi.mock('$lib/canvas/schema', () => ({
+vi.mock('#lib/canvas/schema.ts', () => ({
 	SchemaCanvas: () => ({ reveal() {} }),
 	hasSchemaCanvas: true,
 }));

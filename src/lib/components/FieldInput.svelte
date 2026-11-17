@@ -10,13 +10,13 @@
 		Textarea,
 	} from '@lyeve-labs/ui-kit';
 	import type { SchemaField, Content } from '@lyeve-labs/client';
-	import { entryLabel } from '$lib/utils/entry-identity';
+	import { entryLabel } from '#lib/utils/entry-identity.ts';
 	import RichTextEditor from './RichTextEditor.svelte';
 	import JsonFieldEditor from './JsonFieldEditor.svelte';
 	import MediaPicker from './media/MediaPicker.svelte';
-	import type { MediaChoice } from '$lib/api/media';
-	import { formatCount } from '$lib/format';
-	import { registerOptionLabels } from '$lib/assistant/option-labels';
+	import type { MediaChoice } from '#lib/api/media.ts';
+	import { formatCount } from '#lib/format.ts';
+	import { registerOptionLabels } from '#lib/assistant/option-labels.ts';
 	import type { InverseEntries } from './content/inverse-entries';
 
 	type TextareaEv = Event & { currentTarget: HTMLTextAreaElement };

@@ -1,21 +1,21 @@
 <script lang="ts">
 	import { Badge, Button, Drawer, EmptyState, Input, PageShell, PasswordInput, SearchInput, Table, Toggle, Pagination } from '@lyeve-labs/ui-kit';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
+	import type { SubmitFunction } from '$app/forms';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import { Pencil, Plus, Trash2, Variable as VariableIcon } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { page } from '$app/state';
-	import { flowBack } from '$lib/flow/back';
-	import { confirmed, submitter } from '$lib/forms.svelte';
+	import { flowBack } from '#lib/flow/back.ts';
+	import { confirmed, submitter } from '#lib/forms.svelte.ts';
 	import type { ActionData, PageData } from './$types';
-	import type { Variable } from '$lib/api/flows';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { relativeTime, formatDateTime } from '$lib/format';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
-	import { liveFilter } from '$lib/live-filter.svelte';
+	import type { Variable } from '#lib/api/flows.ts';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { relativeTime, formatDateTime } from '#lib/format.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

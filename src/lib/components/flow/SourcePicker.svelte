@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Input, Select } from '@lyeve-labs/ui-kit';
-	import { CUSTOM, isCustom, type PickerOption } from '$lib/flow/schema';
+	import { CUSTOM, isCustom, type PickerOption } from '#lib/flow/schema.ts';
 
 	/**
 	 * A Select over rows read from the live database, with a free-text escape.

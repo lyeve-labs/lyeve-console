@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ActionResult, SubmitFunction } from '@sveltejs/kit';
+import type { ActionResult, SubmitFunction } from '$app/forms';
 import { tick } from 'svelte';
 import SettingRow from './SettingRow.svelte';
 
@@ -107,7 +107,7 @@ describe('SettingRow', () => {
 		await tick();
 		expect(live.textContent).toBe('');
 
-		await finish({ result: { type: 'success', status: 200 }, update: async () => {} });
+		await finish({ result: { type: 'success', status: 200, location: '/admin/settings' }, update: async () => {} });
 		await view.rerender({ result: { key: 'SMTP_HOST', success: true } });
 		expect(view.getByTestId('setting-saved-SMTP_HOST')).toBe(live);
 		expect(live.textContent).toBe('Saved.');

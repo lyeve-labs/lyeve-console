@@ -4,8 +4,8 @@
  */
 
 import type { HttpClient } from '@lyeve-labs/client';
-import { rowsOf, type ListEnvelope } from '$lib/api/list';
-import { refusalOf, type Refusal } from '$lib/api/refusal';
+import { rowsOf, type ListEnvelope } from '#lib/api/list.ts';
+import { refusalOf, type Refusal } from '#lib/api/refusal.ts';
 
 const BASE = '/api/admin/email/triggers';
 

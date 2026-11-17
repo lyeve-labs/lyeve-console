@@ -1,7 +1,7 @@
 import type { HttpClient } from '@lyeve-labs/client';
-import type { Block, EntryRow, ResolvedBlock } from '$lib/api/customization';
-import { rowsOf, type ListEnvelope } from '$lib/api/list';
-import { UNTITLED } from '$lib/utils/new-entry';
+import type { Block, EntryRow, ResolvedBlock } from '#lib/api/customization.ts';
+import { rowsOf, type ListEnvelope } from '#lib/api/list.ts';
+import { UNTITLED } from '#lib/utils/new-entry.ts';
 
 async function contentRows(client: HttpClient, b: Block): Promise<EntryRow[] | null> {
 	const params = new URLSearchParams({ schema: b.schema ?? '', limit: String(b.limit ?? 5), offset: '0' });

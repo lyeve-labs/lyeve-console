@@ -12,21 +12,21 @@
 		Table,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Building2, Coins, Pencil, Plus, Trash2, ToggleLeft, ToggleRight } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { confirmed, drawerFailure, fieldErrors, tracked } from '$lib/forms.svelte';
-	import { narrows } from '$lib/narrow';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { confirmed, drawerFailure, fieldErrors, tracked } from '#lib/forms.svelte.ts';
+	import { narrows } from '#lib/narrow.ts';
 	import type { PageData, ActionData } from './$types';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import type { Tenant } from '@lyeve-labs/client-rest';
-	import { formatDate, NO_VALUE, plural } from '$lib/format';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { ICON } from '$lib/icon';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { formRefusal } from '$lib/api/refusal';
+	import { formatDate, NO_VALUE, plural } from '#lib/format.ts';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

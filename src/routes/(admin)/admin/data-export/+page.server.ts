@@ -2,10 +2,10 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail, isRedirect, redirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { getSchemas } from '@lyeve-labs/client-rest';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError, actionFailure, tagged } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionError, actionFailure, tagged } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	JOB_STATUSES,
 	cancelJob,
@@ -18,12 +18,12 @@ import {
 	type ExportJob,
 	type ExportSchedule,
 	type JobStatus,
-} from '$lib/api/data-export';
-import { type Gate, GATE_OK, gateOf, section, type Section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
-import { exportConfigFrom } from '$lib/data-export-form';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/data-export.ts';
+import { type Gate, GATE_OK, gateOf, section, type Section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { exportConfigFrom } from '#lib/data-export-form.ts';
+import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { asked } from '#lib/server/asked.ts';
 
 /** The plugin's own 503 when every export slot is taken. */
 const EXPORTS_BUSY = 'too many concurrent exports running, try again later';

@@ -1,13 +1,13 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { getSchemas, listTenants } from '@lyeve-labs/client-rest';
-import { authedClient, loadUser } from '$lib/server/authz';
-import { section, type Section } from '$lib/api/gate';
-import { pageNumber, pageOffset, pastEndOffset, rowsOf, statedTotal, withOffset } from '$lib/api/list';
-import { listActivity, readActivityFilter, type ActivityRow } from '$lib/api/content-history';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { couldNotLoad } from '$lib/outage';
+import { authedClient, loadUser } from '#lib/server/authz.ts';
+import { section, type Section } from '#lib/api/gate.ts';
+import { pageNumber, pageOffset, pastEndOffset, rowsOf, statedTotal, withOffset } from '#lib/api/list.ts';
+import { listActivity, readActivityFilter, type ActivityRow } from '#lib/api/content-history.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 const PAGE_SIZE = 50;
 

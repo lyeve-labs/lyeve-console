@@ -3,7 +3,7 @@
 	// the signed-out cards. A PageShell titles the tab itself, in the format
 	// the root layout states, which is this one.
 	import { page } from '$app/state';
-	import { documentTitle, pageBrand } from '$lib/brand';
+	import { documentTitle, pageBrand } from '#lib/brand.ts';
 
 	interface Props {
 		/** The page's own part of the tab title. Empty leaves the name alone. */

@@ -9,8 +9,8 @@
  */
 
 import type { HttpClient } from '@lyeve-labs/client';
-import { query, rowsOf, statedTotal, type ListEnvelope } from '$lib/api/list';
-import type { Gate } from '$lib/api/gate';
+import { query, rowsOf, statedTotal, type ListEnvelope } from '#lib/api/list.ts';
+import type { Gate } from '#lib/api/gate.ts';
 
 export const PROVIDER_KINDS = ['openai', 'anthropic', 'openai_compatible', 'anthropic_compatible'] as const;
 export type ProviderKind = (typeof PROVIDER_KINDS)[number];

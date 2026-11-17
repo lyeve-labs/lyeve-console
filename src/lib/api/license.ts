@@ -11,7 +11,7 @@
  * on this console.
  */
 import type { HttpClient } from '@lyeve-labs/client';
-import { linkHref } from '$lib/links';
+import { linkHref } from '#lib/links.ts';
 
 export const LICENSE_URL = '/api/admin/license';
 

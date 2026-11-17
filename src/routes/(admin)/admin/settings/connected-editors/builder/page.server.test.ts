@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/server/authz', async () => {
+vi.mock('#lib/server/authz.ts', async () => {
 	const { createClient } = await vi.importActual<typeof import('@lyeve-labs/client')>('@lyeve-labs/client');
 	return { authedClient: (event: { fetch: typeof fetch }) => createClient(event.fetch) };
 });
 
 import { actions, load } from './+page.server';
-import { FORMS_TYPE_TAKEN, SUBMISSIONS_PUBLIC } from '$lib/api/form-destinations';
-import { FORM_KEY_SAID, STATIC_SITES_REFUSED } from '$lib/api/connected-editors';
+import { FORMS_TYPE_TAKEN, SUBMISSIONS_PUBLIC } from '#lib/api/form-destinations.ts';
+import { FORM_KEY_SAID, STATIC_SITES_REFUSED } from '#lib/api/connected-editors.ts';
 
 const BASE = '/api/admin/builder';
 const RUNNING = { state: 'named', running: ['builder'], withheld: [] };

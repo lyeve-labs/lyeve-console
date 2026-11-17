@@ -1,13 +1,13 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient, requireUser } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { flowLoadOutcome } from '$lib/server/flow-load';
-import { couldNotLoad } from '$lib/outage';
-import { GATE_OK, gateOf, type Gate } from '$lib/api/gate';
-import { flowClient } from '$lib/server/flow-client';
-import { checked } from '$lib/checkbox';
+import { authedClient, requireUser } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { flowLoadOutcome } from '#lib/server/flow-load.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { GATE_OK, gateOf, type Gate } from '#lib/api/gate.ts';
+import { flowClient } from '#lib/server/flow-client.ts';
+import { checked } from '#lib/checkbox.ts';
 import {
 	createDatasource,
 	deleteDatasource,
@@ -18,9 +18,9 @@ import {
 	type Datasource,
 	type DatasourceBody,
 	type DatasourceKind,
-} from '$lib/api/flows';
-import { SSL_MODES, authFromForm } from '$lib/flow/datasources';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/flows.ts';
+import { SSL_MODES, authFromForm } from '#lib/flow/datasources.ts';
+import { asked } from '#lib/server/asked.ts';
 
 const KINDS: DatasourceKind[] = ['postgres', 'mysql', 'mssql', 'http', 'google_sheets'];
 

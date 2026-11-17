@@ -7,7 +7,7 @@
  */
 
 import type { HttpClient } from '@lyeve-labs/client';
-import type { FlowDefinition } from '$lib/flow/types';
+import type { FlowDefinition } from '#lib/flow/types.ts';
 
 const CATALOG_URL = '/api/admin/flows/catalog/llm';
 const ASSIST_URL = '/api/admin/ai/assist/flow';

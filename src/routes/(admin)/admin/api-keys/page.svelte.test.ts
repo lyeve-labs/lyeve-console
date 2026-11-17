@@ -29,7 +29,7 @@ async function deleteTitle(): Promise<string> {
 	await submit({ cancel: () => {} });
 	return String((kit.confirm.mock.calls[0] as unknown[] | undefined)?.[0] ?? '');
 }
-vi.mock('$app/navigation', () => ({ goto: vi.fn(), invalidateAll: vi.fn() }));
+vi.mock('$app/navigation', () => ({ goto: vi.fn(), refreshAll: vi.fn() }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://admin/admin/api-keys') } }));
 
 afterEach(() => {

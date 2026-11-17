@@ -30,7 +30,7 @@ async function deleteTitle(): Promise<string> {
 }
 
 import ScimPage from './+page.svelte';
-import type { ScimProvider } from '$lib/api/scim';
+import type { ScimProvider } from '#lib/api/scim.ts';
 
 afterEach(cleanup);
 

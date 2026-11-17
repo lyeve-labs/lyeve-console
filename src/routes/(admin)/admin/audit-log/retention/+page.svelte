@@ -13,12 +13,12 @@
 		Toggle,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import AuditTabs from '$lib/components/AuditTabs.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { confirmed, tracked } from '$lib/forms.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import AuditTabs from '#lib/components/AuditTabs.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { confirmed, tracked } from '#lib/forms.svelte.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { Copy, Lock, Plus, ScrollText, Trash2, Unlock } from '@lucide/svelte';
 	import {
 		activeHolds,
@@ -32,10 +32,10 @@
 		retentionLabel,
 		type LegalHold,
 		type RetentionPolicy,
-	} from '$lib/api/retention';
-	import { formatDateTime, plural } from '$lib/format';
+	} from '#lib/api/retention.ts';
+	import { formatDateTime, plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

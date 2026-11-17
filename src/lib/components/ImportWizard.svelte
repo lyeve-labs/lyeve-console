@@ -3,7 +3,7 @@
 	 * New import, in three steps: where the file comes from and which content
 	 * type it fills, which column fills which field, then a dry run and the
 	 * import itself. The calls carry the file, so they go from the browser to
-	 * the engine (see postImport in $lib/api/bulk-import). Nothing here writes
+	 * the engine (see postImport in #lib/api/bulk-import). Nothing here writes
 	 * until the last button.
 	 */
 	import {
@@ -21,14 +21,14 @@
 		Table,
 	} from '@lyeve-labs/ui-kit';
 	import { Link, Upload } from '@lucide/svelte';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import TransformField from '$lib/components/imports/TransformField.svelte';
-	import { refusalOf, type Refusal } from '$lib/api/refusal';
-	import { errorCodeOf } from '$lib/api/limits';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import TransformField from '#lib/components/imports/TransformField.svelte';
+	import { refusalOf, type Refusal } from '#lib/api/refusal.ts';
+	import { errorCodeOf } from '#lib/api/limits.ts';
 	import { ApiError } from '@lyeve-labs/client';
-	import { renewingOnce } from '$lib/renew';
-	import { couldNotLoad, outageFor } from '$lib/outage';
-	import { SIGN_IN_AGAIN } from '$lib/session';
+	import { renewingOnce } from '#lib/renew.ts';
+	import { couldNotLoad, outageFor } from '#lib/outage.ts';
+	import { SIGN_IN_AGAIN } from '#lib/session.ts';
 	import {
 		IMPORT_FORMATS,
 		IMPORT_FORMAT_LABELS,
@@ -56,9 +56,9 @@
 		type SourceInput,
 		type TransformDraft,
 		type ValidateResult,
-	} from '$lib/api/bulk-import';
-	import { formatBytes, formatCount } from '$lib/format';
-	import { plural } from '$lib/format';
+	} from '#lib/api/bulk-import.ts';
+	import { formatBytes, formatCount } from '#lib/format.ts';
+	import { plural } from '#lib/format.ts';
 
 	let {
 		open = $bindable(false),

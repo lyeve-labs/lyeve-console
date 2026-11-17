@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { HttpClient } from '@lyeve-labs/client';
-import type { Widget } from '$lib/api/custom-dashboard';
+import type { Widget } from '#lib/api/custom-dashboard.ts';
 import { TREND_DAYS, resolveWidgets, trendOf } from './dashboard-widgets';
-import { UNNAMED } from '$lib/plugins';
+import { UNNAMED } from '#lib/plugins.ts';
 
 const NOW = new Date('2026-09-26T12:00:00Z');
 

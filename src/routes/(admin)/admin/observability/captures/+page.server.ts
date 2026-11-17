@@ -1,14 +1,14 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { sessionTenant } from '$lib/server/session-refresh';
-import { actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { MAX_SET_CAPTURES, createReplaySet, listCaptures, type Capture } from '$lib/api/request-capture';
-import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
-import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { couldNotLoad } from '$lib/outage';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { sessionTenant } from '#lib/server/session-refresh.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { MAX_SET_CAPTURES, createReplaySet, listCaptures, type Capture } from '#lib/api/request-capture.ts';
+import { type Gate, GATE_OK, gateOf } from '#lib/api/gate.ts';
+import { pageOf, pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;

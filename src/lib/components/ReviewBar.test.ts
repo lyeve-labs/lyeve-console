@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ReviewAssignment, StageSLA } from '$lib/api/review';
+import type { ReviewAssignment, StageSLA } from '#lib/api/review.ts';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 

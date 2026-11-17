@@ -1,13 +1,13 @@
 import { fail } from '@sveltejs/kit';
 import { ApiError, createClient } from '@lyeve-labs/client';
-import { confirmPasswordReset, RESET_MIN_PASSWORD_LENGTH } from '$lib/api/password-reset';
-import { passwordTooLong } from '$lib/api/users';
-import { actionFailure } from '$lib/server/action-error';
-import { recoveryRefusal } from '$lib/server/recovery';
-import { checkRateLimit } from '$lib/server/rate-limit';
-import { organizationFromUrl } from '$lib/organization';
-import { asksOrganization } from '$lib/server/sign-in-organization';
-import { checked } from '$lib/checkbox';
+import { confirmPasswordReset, RESET_MIN_PASSWORD_LENGTH } from '#lib/api/password-reset.ts';
+import { passwordTooLong } from '#lib/api/users.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { recoveryRefusal } from '#lib/server/recovery.ts';
+import { checkRateLimit } from '#lib/server/rate-limit.ts';
+import { organizationFromUrl } from '#lib/organization.ts';
+import { asksOrganization } from '#lib/server/sign-in-organization.ts';
+import { checked } from '#lib/checkbox.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 const EXPIRED = 'This reset link no longer works. Request a new one.';

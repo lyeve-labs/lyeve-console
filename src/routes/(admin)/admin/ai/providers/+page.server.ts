@@ -1,10 +1,10 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { aiActionError, aiGate } from '$lib/server/ai-load';
-import { GATE_OK, section } from '$lib/api/gate';
-import { readProviderForm } from '$lib/server/ai-provider-form';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { aiActionError, aiGate } from '#lib/server/ai-load.ts';
+import { GATE_OK, section } from '#lib/api/gate.ts';
+import { readProviderForm } from '#lib/server/ai-provider-form.ts';
+import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
 import {
 	aiFreeTier,
 	createProvider,
@@ -14,8 +14,8 @@ import {
 	type AiDashboard,
 	type AiProvider,
 	type ProviderCeiling,
-} from '$lib/api/ai';
-import { refusalOf } from '$lib/api/refusal';
+} from '#lib/api/ai.ts';
+import { refusalOf } from '#lib/api/refusal.ts';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;

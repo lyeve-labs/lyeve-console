@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 
 const authz = vi.hoisted(() => ({ roles: ['super_admin'] as string[] }));
-vi.mock('$lib/server/authz', async (importOriginal) => ({
+vi.mock('#lib/server/authz.ts', async (importOriginal) => ({
 	...((await importOriginal()) as object),
 	requireUser: vi.fn(async () => ({ id: 'u1', roles: authz.roles })),
 }));

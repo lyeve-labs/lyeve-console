@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 
-vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/env', () => ({ browser: true }));
 
 // Each form's submit function, by its action, so a test drives the round
 // trip without the DOM's submit plumbing.
@@ -26,7 +26,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 
 import MediaPreviewDrawer from './MediaPreviewDrawer.svelte';
 import { AUDIO, IMAGE, PDF, TEXT, VIDEO } from './test-support/fixtures';
-import type { MediaItem } from '$lib/api/media';
+import type { MediaItem } from '#lib/api/media.ts';
 
 afterEach(cleanup);
 beforeEach(() => {

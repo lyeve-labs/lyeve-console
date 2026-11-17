@@ -1,5 +1,5 @@
 import { error, type RequestEvent } from '@sveltejs/kit';
-import { CONFIRM_FIELD, CONFIRMED, type Unconfirmed } from '$lib/confirmation';
+import { CONFIRM_FIELD, CONFIRMED, type Unconfirmed } from '#lib/confirmation.ts';
 
 /** The question the page asks when a post arrives without the reader's answer. */
 export type Question = {

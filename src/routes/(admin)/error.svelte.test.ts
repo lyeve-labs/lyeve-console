@@ -12,7 +12,7 @@ vi.mock('$app/paths', () => ({ asset: (path: string) => path }));
 
 import AdminError from './+error.svelte';
 import UnderRootLayout from '../root-layout-page.test.svelte';
-import { OUTAGE } from '$lib/outage';
+import { OUTAGE } from '#lib/outage.ts';
 
 afterEach(cleanup);
 

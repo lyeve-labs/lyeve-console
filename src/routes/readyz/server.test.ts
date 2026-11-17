@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GET } from './+server';
-import { ENGINE_READY_TIMEOUT_MS } from '$lib/server/engine';
+import { ENGINE_READY_TIMEOUT_MS } from '#lib/server/engine.ts';
 
 afterEach(() => {
 	vi.unstubAllGlobals();

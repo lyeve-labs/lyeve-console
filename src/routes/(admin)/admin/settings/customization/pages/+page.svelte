@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, CheckboxGroup, Drawer, EmptyState, Input, PageShell, SectionHeading, Table } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Pencil, Plus, Trash2 } from '@lucide/svelte';
-	import { confirmed, drawerFailure } from '$lib/forms.svelte';
-	import { ICON } from '$lib/icon';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import CustomizationTabs from '$lib/components/CustomizationTabs.svelte';
-	import { slugify, ROLE_CHOICES } from '$lib/api/customization';
+	import { confirmed, drawerFailure } from '#lib/forms.svelte.ts';
+	import { ICON } from '#lib/icon.ts';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import CustomizationTabs from '#lib/components/CustomizationTabs.svelte';
+	import { slugify, ROLE_CHOICES } from '#lib/api/customization.ts';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

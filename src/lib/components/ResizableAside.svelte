@@ -2,8 +2,8 @@
 	import { Button, SectionHeading } from '@lyeve-labs/ui-kit';
 	import { Lock, LockOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from '@lucide/svelte';
 	import { tick, untrack, type Snippet } from 'svelte';
-	import { clampWidth, readAside, safeStorage, writeAside } from '$lib/aside';
-	import { ICON } from '$lib/icon';
+	import { clampWidth, readAside, safeStorage, writeAside } from '#lib/aside.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	/**
 	 * A column docked to one side of a page, with one width discipline for

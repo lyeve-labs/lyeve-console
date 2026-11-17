@@ -16,7 +16,7 @@ import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
 import type { ListEnvelope } from './list';
 import type { Limit } from './limits';
-import { plural } from '$lib/format';
+import { plural } from '#lib/format.ts';
 
 const STATS_URL = '/api/admin/cache/stats';
 const PROVIDERS_URL = '/api/admin/cache/providers';

@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 
 const engine = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() }));
-vi.mock('$lib/server/authz', async (importOriginal) => {
-	const real = await importOriginal<typeof import('$lib/server/authz')>();
+vi.mock('#lib/server/authz.ts', async (importOriginal) => {
+	const real = await importOriginal<typeof import('#lib/server/authz.ts')>();
 	return {
 		...real,
 		requireUser: vi.fn(async () => ({ id: 'u1', roles: ['admin'] }) as never),
@@ -17,7 +17,7 @@ vi.mock('@lyeve-labs/client-rest', () => ({
 }));
 
 import { actions, load } from './+page.server';
-import type { EntryReview } from '$lib/server/entry-panels';
+import type { EntryReview } from '#lib/server/entry-panels.ts';
 
 const A = '11111111-1111-1111-1111-111111111111';
 const B = '22222222-2222-2222-2222-222222222222';

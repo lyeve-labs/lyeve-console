@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button, Input, Table } from '@lyeve-labs/ui-kit';
 	import { Plus, Trash2 } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	/**
 	 * A small table typed in place: editable column headers and cells, rows

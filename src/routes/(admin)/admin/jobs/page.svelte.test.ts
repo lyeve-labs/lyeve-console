@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Entitlements } from '$lib/entitlements';
-import type { Gate } from '$lib/api/gate';
+import type { Entitlements } from '#lib/entitlements.ts';
+import type { Gate } from '#lib/api/gate.ts';
 import JobsPage from './+page.svelte';
 
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/jobs') } }));
@@ -90,7 +90,7 @@ describe('the job drawer', () => {
 		state.page.url = new URL('http://localhost/admin/jobs?offset=50&edit=j1');
 		const { getByRole } = setup({ openJob: job, offset: 50 });
 		await fireEvent.click(getByRole('button', { name: 'Cancel' }));
-		expect(nav.goto).toHaveBeenCalledWith('/admin/jobs?offset=50', expect.objectContaining({ replaceState: true }));
+		expect(nav.goto).toHaveBeenCalledWith('/admin/jobs?offset=50', expect.objectContaining({ replace: true }));
 	});
 
 	it('posts each write with the page the reader had open, less the key that opened the drawer', () => {
@@ -106,7 +106,7 @@ describe('the job drawer', () => {
 		state.page.url = new URL('http://localhost/admin/jobs?edit=j1');
 		const { getByRole } = setup({ openJob: job });
 		await fireEvent.click(getByRole('button', { name: 'Cancel' }));
-		expect(nav.goto).toHaveBeenCalledWith('/admin/jobs', expect.objectContaining({ replaceState: true }));
+		expect(nav.goto).toHaveBeenCalledWith('/admin/jobs', expect.objectContaining({ replace: true }));
 	});
 });
 

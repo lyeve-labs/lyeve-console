@@ -1,5 +1,5 @@
 import type { LayoutServerLoad } from './$types';
-import { readPublicBrand, type PublicBrand } from '$lib/brand';
+import { readPublicBrand, type PublicBrand } from '#lib/brand.ts';
 
 /**
  * The brand for the pages outside the admin frame: sign-in, password reset,

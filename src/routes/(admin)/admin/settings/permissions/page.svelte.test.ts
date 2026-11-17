@@ -2,7 +2,7 @@
 import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Entitlements } from '$lib/entitlements';
+import type { Entitlements } from '#lib/entitlements.ts';
 
 /** The shape `use:enhance` hands its submit function's callback. */
 type EnhanceResult = { type: 'success' | 'failure' | 'error' | 'redirect' };
@@ -188,7 +188,7 @@ describe('permissions page enhance handling', () => {
 
 		// Closing on a failure hides the only place the error can be read.
 		expect(container.querySelector('form[action="?/upsert"]'), 'modal closed over a failed save').toBeTruthy();
-		expect(update).toHaveBeenCalledWith({ reset: false });
+		expect(update).toHaveBeenCalledWith({ reset: false, navigate: false });
 	});
 
 	it('closes the edit modal and reruns load on success', async () => {
@@ -201,7 +201,7 @@ describe('permissions page enhance handling', () => {
 		const update = await runEnhance({ type: 'success' });
 
 		expect(container.querySelector('form[action="?/upsert"]')).toBeNull();
-		expect(update).toHaveBeenCalledWith({ reset: false });
+		expect(update).toHaveBeenCalledWith({ reset: false, navigate: false });
 	});
 
 });
@@ -287,7 +287,7 @@ describe('permissions page new role', () => {
 		const update = await runEnhance({ type: 'failure' });
 
 		expect(container.querySelector('#new-role'), 'modal closed over a refused role').toBeTruthy();
-		expect(update).toHaveBeenCalledWith({ reset: false });
+		expect(update).toHaveBeenCalledWith({ reset: false, navigate: false });
 	});
 
 	it('closes the new role drawer on success', async () => {
@@ -298,7 +298,7 @@ describe('permissions page new role', () => {
 		const update = await runEnhance({ type: 'success' });
 
 		expect(container.querySelector('#new-role')).toBeNull();
-		expect(update).toHaveBeenCalledWith({ reset: false });
+		expect(update).toHaveBeenCalledWith({ reset: false, navigate: false });
 	});
 });
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BUSY, OUTAGE } from '$lib/outage';
+import { BUSY, OUTAGE } from '#lib/outage.ts';
 
 const state = vi.hoisted(() => ({
 	page: { url: new URL('http://admin.test/admin') },

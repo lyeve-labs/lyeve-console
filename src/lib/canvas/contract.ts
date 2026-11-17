@@ -6,8 +6,8 @@
  */
 import type { Component, Snippet } from 'svelte';
 import type { Schema } from '@lyeve-labs/client';
-import type { RunStep, ValidationError } from '$lib/api/flows';
-import type { FlowDefinition, NodeSpec, Selection } from '$lib/flow/types';
+import type { RunStep, ValidationError } from '#lib/api/flows.ts';
+import type { FlowDefinition, NodeSpec, Selection } from '#lib/flow/types.ts';
 
 export interface HistoryState {
 	canUndo: boolean;

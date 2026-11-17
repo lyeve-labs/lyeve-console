@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Collapsible, Panel, Skeleton, type StatusTone } from '@lyeve-labs/ui-kit';
-	import { formatDateTime } from '$lib/format';
+	import { formatDateTime } from '#lib/format.ts';
 	import type { HistoryEntry } from '../+page.server';
 	import type { DdlHistory } from './ddl-history.svelte';
 

@@ -14,18 +14,18 @@
 		Pagination,
 		SearchInput,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { MonitorSmartphone, Trash2 } from '@lucide/svelte';
-	import { confirmed } from '$lib/forms.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { narrows } from '$lib/narrow';
-	import { deviceLabel, deviceName, looksLikeThisDevice, type Device } from '$lib/api/devices';
-	import { formatDateTime } from '$lib/format';
+	import { confirmed } from '#lib/forms.svelte.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { narrows } from '#lib/narrow.ts';
+	import { deviceLabel, deviceName, looksLikeThisDevice, type Device } from '#lib/api/devices.ts';
+	import { formatDateTime } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

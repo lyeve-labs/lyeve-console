@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { Badge, Button, EmptyState, Input, PageShell, Pagination, Select, Table } from '@lyeve-labs/ui-kit';
 	import { ChevronRight, MessagesSquare, Search } from '@lucide/svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import type { PageData } from './$types';
-	import AiSection from '$lib/components/ai/AiSection.svelte';
-	import { useCaseLabel } from '$lib/components/ai/use-case';
-	import { TRANSCRIPT_KINDS } from '$lib/api/ai';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
-	import { liveFilter } from '$lib/live-filter.svelte';
+	import AiSection from '#lib/components/ai/AiSection.svelte';
+	import { useCaseLabel } from '#lib/components/ai/use-case.ts';
+	import { TRANSCRIPT_KINDS } from '#lib/api/ai.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 
 	let { data }: { data: PageData } = $props();
 

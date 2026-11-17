@@ -7,7 +7,7 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { plural } from '$lib/format';
+import { plural } from '#lib/format.ts';
 
 const SINKS_URL = '/api/admin/audit-log/sinks';
 

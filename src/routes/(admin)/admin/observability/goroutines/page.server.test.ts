@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 import { actions, load } from './+page.server';
-import { NO_ENTITLEMENTS } from '$lib/entitlements';
+import { NO_ENTITLEMENTS } from '#lib/entitlements.ts';
 
 type Loaded = Exclude<Awaited<ReturnType<typeof load>>, void>;
 

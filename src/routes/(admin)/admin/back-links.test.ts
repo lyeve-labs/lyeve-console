@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Entitlements } from '$lib/entitlements';
-import { fixtureCatalog, fixtureFlow, fixtureRun, fixtureTemplates } from '$lib/flow/fixtures';
+import type { Entitlements } from '#lib/entitlements.ts';
+import { fixtureCatalog, fixtureFlow, fixtureRun, fixtureTemplates } from '#lib/flow/fixtures.ts';
 
 import ContentCollection from './content/[schema]/+page.svelte';
 import ContentEntry from './content/[schema]/[id]/+page.svelte';
@@ -12,7 +12,7 @@ import FlowDatasources from './flows/datasources/+page.svelte';
 import FlowVariables from './flows/variables/+page.svelte';
 import PluginDetail from './plugins/[name]/+page.svelte';
 import AiProviderDetail from './ai/providers/[id]/+page.svelte';
-import { fixtureProvider, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
+import { fixtureProvider, fixtureSettings } from '#lib/components/ai/test-support/fixtures.ts';
 import SettingsConfiguration from './settings/configuration/+page.svelte';
 import SettingsEmail from './settings/email/+page.svelte';
 import SettingsLicense from './settings/license/+page.svelte';
@@ -41,7 +41,7 @@ vi.mock('$app/navigation', () => ({
 	afterNavigate: vi.fn(),
 	beforeNavigate: vi.fn(),
 	goto: vi.fn(async () => {}),
-	invalidateAll: vi.fn(async () => {}),
+	refreshAll: vi.fn(async () => {}),
 }));
 
 afterEach(cleanup);

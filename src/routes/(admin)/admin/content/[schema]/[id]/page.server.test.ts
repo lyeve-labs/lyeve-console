@@ -5,7 +5,7 @@ import type { Cookies } from '@sveltejs/kit';
 // read and write lands in one call log with the headers it would send. It
 // throws on a non-2xx: a fake that resolved whatever the engine answered would
 // turn a refused write into a passing test.
-vi.mock('$lib/server/authz', async (importOriginal) => ({
+vi.mock('#lib/server/authz.ts', async (importOriginal) => ({
 	...((await importOriginal()) as object),
 	requireUser: vi.fn(async () => ({ id: 'u1', email: 'admin@test.invalid' }) as never),
 	stripProtectedFields: vi.fn((v: unknown) => v)
@@ -18,8 +18,8 @@ vi.mock('@lyeve-labs/client-rest', () => ({
 import { isHttpError } from '@sveltejs/kit';
 import { load, actions } from './+page.server';
 import { getSchema } from '@lyeve-labs/client-rest';
-import { buildFromData, extractM2MRelations, serialize } from '$lib/utils/content-form';
-import type { PluginSet } from '$lib/plugins';
+import { buildFromData, extractM2MRelations, serialize } from '#lib/utils/content-form.ts';
+import type { PluginSet } from '#lib/plugins.ts';
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {

@@ -14,16 +14,16 @@
 		toast,
 	} from '@lyeve-labs/ui-kit';
 	import { Trash2 } from '@lucide/svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { tick } from 'svelte';
-	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
-	import type { Gate } from '$lib/api/gate';
-	import type { SchemaPreset } from '$lib/api/schema-preset-catalog';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import { ICON } from '$lib/icon';
+	import { enhance } from '#lib/enhance.ts';
+	import { refreshAll } from '$app/navigation';
+	import type { Gate } from '#lib/api/gate.ts';
+	import type { SchemaPreset } from '#lib/api/schema-preset-catalog.ts';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import { ICON } from '#lib/icon.ts';
 
 	/**
 	 * The presets are offered from the empty state and from the toolbar, the
@@ -100,7 +100,7 @@
 				importField = String(data?.importField ?? '');
 				// A 5xx may follow a write that landed. SvelteKit reloads the page
 				// data only on a success, so the list is read again here.
-				if (result.status >= 500) await invalidateAll();
+				if (result.status >= 500) await refreshAll();
 				return;
 			} else if (result.type === 'success') {
 				formElement.reset();

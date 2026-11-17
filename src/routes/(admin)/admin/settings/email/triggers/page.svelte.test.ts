@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { EmailTrigger } from '$lib/api/email-triggers';
+import type { EmailTrigger } from '#lib/api/email-triggers.ts';
 
 type Submit = (input: { cancel: () => void; formData: FormData }) => Promise<unknown>;
 const forms = vi.hoisted(() => ({ submits: new Map<HTMLFormElement, unknown>() }));

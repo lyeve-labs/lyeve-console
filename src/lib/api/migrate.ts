@@ -7,7 +7,7 @@
  *
  * These take the client rather than `fetch` because the authenticated client is
  * where the session bearer token and the double-submit CSRF header are joined
- * (`$lib/server/authz`). A wrapper that rebuilt the client from `fetch` would
+ * (`#lib/server/authz.ts`). A wrapper that rebuilt the client from `fetch` would
  * have to restate that, and a write that restates it slightly differently is
  * refused with 403 "csrf token required" rather than failing visibly.
  */

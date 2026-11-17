@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Button, EmptyState, PageShell } from '@lyeve-labs/ui-kit';
 	import { LayoutGrid, Pencil } from '@lucide/svelte';
-	import CustomBlocks from '$lib/components/custom/CustomBlocks.svelte';
-	import { ICON } from '$lib/icon';
+	import CustomBlocks from '#lib/components/custom/CustomBlocks.svelte';
+	import { ICON } from '#lib/icon.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { Alert, Button, Card, CopyField, Input, PageShell, PasswordInput, SectionHeading, Table } from '@lyeve-labs/ui-kit';
 	import type { ActionData, PageData } from './$types';
-	import { enhance } from '$app/forms';
-	import { tracked } from '$lib/forms.svelte';
+	import { enhance } from '#lib/enhance.ts';
+	import { tracked } from '#lib/forms.svelte.ts';
 	import { BookOpen, Check, Key, KeySquare, X } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

@@ -3,8 +3,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import EventTriggerForm from './EventTriggerForm.svelte';
-import { fixtureCatalog, fixtureSchemas } from '$lib/flow/fixtures';
-import type { JsonSchema } from '$lib/flow/types';
+import { fixtureCatalog, fixtureSchemas } from '#lib/flow/fixtures.ts';
+import type { JsonSchema } from '#lib/flow/types.ts';
 
 afterEach(cleanup);
 

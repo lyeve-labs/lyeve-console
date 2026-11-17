@@ -1,4 +1,4 @@
-import type { LocalePreferences } from '$lib/api/localization';
+import type { LocalePreferences } from '#lib/api/localization.ts';
 
 /** A BCP 47 shape the plugin's fallback logic can split: `fr`, `fr-CA`, `zh-Hant-TW`. */
 export const LOCALE_CODE = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;

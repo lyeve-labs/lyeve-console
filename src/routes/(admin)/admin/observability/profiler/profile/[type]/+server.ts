@@ -1,10 +1,10 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { PROFILER_ROOT, clampSeconds, isProfileType } from '$lib/api/profiler';
-import { engineFetch } from '$lib/server/engine';
-import { sessionToken } from '$lib/server/session-cookie';
-import { OUTAGE } from '$lib/outage';
-import { SESSION_ENDED } from '$lib/session';
+import { PROFILER_ROOT, clampSeconds, isProfileType } from '#lib/api/profiler.ts';
+import { engineFetch } from '#lib/server/engine.ts';
+import { sessionToken } from '#lib/server/session-cookie.ts';
+import { OUTAGE } from '#lib/outage.ts';
+import { SESSION_ENDED } from '#lib/session.ts';
 
 /**
  * Proxies a pprof export to the profiler plugin and hands the bytes back as

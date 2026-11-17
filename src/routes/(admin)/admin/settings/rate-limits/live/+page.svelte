@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { Badge, EmptyState, PageShell, SectionHeading, Stat, Table } from '@lyeve-labs/ui-kit';
 	import { Gauge } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import RateLimitTabs from '$lib/components/RateLimitTabs.svelte';
-	import { exhausted, resetsIn, type LimiterState } from '$lib/api/rate-limit';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import RateLimitTabs from '#lib/components/RateLimitTabs.svelte';
+	import { exhausted, resetsIn, type LimiterState } from '#lib/api/rate-limit.ts';
 	import type { PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data }: { data: PageData } = $props();
 

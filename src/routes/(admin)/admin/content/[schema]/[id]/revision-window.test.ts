@@ -3,8 +3,8 @@ import type { Cookies } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 
 const engine = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() }));
-vi.mock('$lib/server/authz', async (importOriginal) => {
-	const real = await importOriginal<typeof import('$lib/server/authz')>();
+vi.mock('#lib/server/authz.ts', async (importOriginal) => {
+	const real = await importOriginal<typeof import('#lib/server/authz.ts')>();
 	return {
 		...real,
 		requireUser: vi.fn(async () => ({ id: 'u1', roles: ['admin'] }) as never),

@@ -5,10 +5,10 @@
  */
 
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
-import { listComments, type EntryComment } from '$lib/api/content-comments';
-import { editable, listReleases, type Release } from '$lib/api/content-releases';
-import { rowsOf } from '$lib/api/list';
-import { getLocales, listTranslations, type LocalePreferences, type Translation } from '$lib/api/localization';
+import { listComments, type EntryComment } from '#lib/api/content-comments.ts';
+import { editable, listReleases, type Release } from '#lib/api/content-releases.ts';
+import { rowsOf } from '#lib/api/list.ts';
+import { getLocales, listTranslations, type LocalePreferences, type Translation } from '#lib/api/localization.ts';
 import {
 	getAssignmentByEntry,
 	getStageSLA,
@@ -16,8 +16,8 @@ import {
 	type ReviewAssignment,
 	type ReviewDefinition,
 	type StageSLA,
-} from '$lib/api/review';
-import { listTenantPeople, type Person } from '$lib/server/people';
+} from '#lib/api/review.ts';
+import { listTenantPeople, type Person } from '#lib/server/people.ts';
 
 /**
  * What the Translations panel renders, or null when it does not render.

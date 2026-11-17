@@ -10,7 +10,7 @@ const api = vi.hoisted(() => ({
 	listAccessLog: vi.fn(),
 }));
 
-vi.mock('$lib/api/pii-mask', async (importOriginal) => ({
+vi.mock('#lib/api/pii-mask.ts', async (importOriginal) => ({
 	...((await importOriginal()) as object),
 	...api,
 }));
@@ -19,7 +19,7 @@ const authz = vi.hoisted(() => ({
 	authedClient: vi.fn(() => ({})),
 	requireRole: vi.fn(async () => ({ id: 'u1', roles: ['admin'] })),
 }));
-vi.mock('$lib/server/authz', () => authz);
+vi.mock('#lib/server/authz.ts', () => authz);
 
 import { actions, load } from './+page.server';
 

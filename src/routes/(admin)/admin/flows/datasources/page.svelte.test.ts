@@ -2,9 +2,9 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import DatasourcesPage from './+page.svelte';
-import type { Entitlements } from '$lib/entitlements';
-import type { Datasource } from '$lib/api/flows';
-import { AUTH_TYPES } from '$lib/flow/datasources';
+import type { Entitlements } from '#lib/entitlements.ts';
+import type { Datasource } from '#lib/api/flows.ts';
+import { AUTH_TYPES } from '#lib/flow/datasources.ts';
 
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/flows/datasources') } }));
 // enhance keeps each form's submit handler, so a case can run the one a
@@ -24,8 +24,8 @@ vi.mock('@lyeve-labs/ui-kit', async (original) => ({
 	confirm: forms.confirm,
 }));
 const upgrade = vi.hoisted(() => ({ link: null as { href: string; label?: string } | null }));
-vi.mock('$lib/instance.svelte', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('$lib/instance.svelte')>();
+vi.mock('#lib/instance.svelte.ts', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('#lib/instance.svelte.ts')>();
 	return {
 		...actual,
 		useInstance: () => ({ ...actual.instanceFrom(() => null), upgradeLink: () => upgrade.link }),

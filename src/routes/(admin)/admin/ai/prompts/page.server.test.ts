@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { load } from './+page.server';
-import { fixtureDefaultPrompt, fixturePrompt } from '$lib/components/ai/test-support/fixtures';
-import type { PromptView } from '$lib/api/ai';
-import { json, loadEvent, refused } from '$lib/components/ai/test-support/events';
+import { fixtureDefaultPrompt, fixturePrompt } from '#lib/components/ai/test-support/fixtures.ts';
+import type { PromptView } from '#lib/api/ai.ts';
+import { json, loadEvent, refused } from '#lib/components/ai/test-support/events.ts';
 
 type Loaded = Exclude<Awaited<ReturnType<typeof load>>, void>;
 

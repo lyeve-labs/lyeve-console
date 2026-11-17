@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { Alert, Button, Card, Drawer, EmptyState, Input, PageShell } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
 	import { ArrowRight, Plus, Shuffle, Trash2 } from '@lucide/svelte';
-	import { confirmed } from '$lib/forms.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import SearchTabs from '$lib/components/SearchTabs.svelte';
-	import { ICON } from '$lib/icon';
-	import { formatCount } from '$lib/format';
+	import { confirmed } from '#lib/forms.svelte.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import SearchTabs from '#lib/components/SearchTabs.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import { formatCount } from '#lib/format.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

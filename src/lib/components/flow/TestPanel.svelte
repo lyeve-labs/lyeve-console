@@ -2,8 +2,8 @@
 	import { Alert, Button, Select, Textarea, Toggle } from '@lyeve-labs/ui-kit';
 	import { Play } from '@lucide/svelte';
 	import RunViewer from './RunViewer.svelte';
-	import type { FlowRun } from '$lib/api/flows';
-	import { ICON } from '$lib/icon';
+	import type { FlowRun } from '#lib/api/flows.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	interface Props {
 		/** The trigger payload as the reader edits it. */

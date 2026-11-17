@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
-import { assertRole, authedClient, loadUser } from '$lib/server/authz';
-import { getSecurityControls } from '$lib/api/security';
-import { section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+import { assertRole, authedClient, loadUser } from '#lib/server/authz.ts';
+import { getSecurityControls } from '#lib/api/security.ts';
+import { section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 export const load: PageServerLoad = async (event) => {
 	// The engine answers super_admin only. Checking first turns a lower role's

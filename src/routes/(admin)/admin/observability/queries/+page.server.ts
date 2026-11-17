@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient } from '$lib/server/authz';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient } from '#lib/server/authz.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	ANALYZABLE,
 	analyzeQueries,
@@ -11,10 +11,10 @@ import {
 	type AnalysisRead,
 	type Dialect,
 	type QueryLogEntry,
-} from '$lib/api/query-monitor';
-import { GATE_OK, gateOf, type Gate } from '$lib/api/gate';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { couldNotLoad } from '$lib/outage';
+} from '#lib/api/query-monitor.ts';
+import { GATE_OK, gateOf, type Gate } from '#lib/api/gate.ts';
+import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 /**
  * Why the capture log was not read. Beside every shared state, the plugin can

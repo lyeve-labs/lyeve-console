@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { PageShell } from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
-	import ObservabilityTabs from '$lib/components/ObservabilityTabs.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
+	import ObservabilityTabs from '#lib/components/ObservabilityTabs.svelte';
 	import type { ActionData, PageData } from './$types';
 	import GoroutineEnginePanel from './GoroutineEnginePanel.svelte';
 	import RuntimeScalingPanel from './RuntimeScalingPanel.svelte';

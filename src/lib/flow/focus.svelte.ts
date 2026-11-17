@@ -7,9 +7,9 @@
  */
 
 import { tick } from 'svelte';
-import { useShell } from '$lib/shell.svelte';
+import { useShell } from '#lib/shell.svelte.ts';
 import { readFocus, writeFocus } from './prefs';
-import { safeStorage } from '$lib/aside';
+import { safeStorage } from '#lib/aside.ts';
 
 /**
  * The editor's focus toggle. Call it while the component initializes, since

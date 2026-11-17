@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, Input, MultiSelect, SectionHeading, Select, Textarea, type StatusTone } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Check, Eye, EyeOff, RotateCcw, X } from '@lucide/svelte';
 	import {
 		actionsFor,
@@ -9,12 +9,12 @@
 		type ReviewStatus,
 		type StageSLA,
 		type TransitionAction,
-	} from '$lib/api/review';
-	import { formatDateTime } from '$lib/format';
-	import { shortId } from '$lib/utils/entry-identity';
-	import { ICON } from '$lib/icon';
-	import { actionWithQuery } from '$lib/back';
-	import { couldNotLoad } from '$lib/outage';
+	} from '#lib/api/review.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { shortId } from '#lib/utils/entry-identity.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { actionWithQuery } from '#lib/back.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
 
 	let {
 		entryId,

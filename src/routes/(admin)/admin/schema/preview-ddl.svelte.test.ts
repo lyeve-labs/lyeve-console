@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, cleanup, fireEvent, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 import type { PageData } from './$types';
 
 // Each form's submit handler, by its action, so a case can hand the page the
@@ -13,8 +13,8 @@ vi.mock('$app/forms', () => ({
 		return { destroy() {} };
 	},
 }));
-vi.mock('$app/navigation', () => ({ beforeNavigate: vi.fn(), goto: vi.fn(async () => {}), invalidateAll: vi.fn(async () => {}) }));
-vi.mock('$lib/canvas/schema', () => ({ SchemaCanvas: null, hasSchemaCanvas: false }));
+vi.mock('$app/navigation', () => ({ beforeNavigate: vi.fn(), goto: vi.fn(async () => {}), refreshAll: vi.fn(async () => {}) }));
+vi.mock('#lib/canvas/schema.ts', () => ({ SchemaCanvas: null, hasSchemaCanvas: false }));
 
 import SchemaPage from './+page.svelte';
 

@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { render, cleanup, fireEvent, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 
-vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/env', () => ({ browser: true }));
 
 /*
  * The submit function is what the delete goes through. enhance awaits it
@@ -17,7 +17,7 @@ vi.mock('$app/forms', () => ({
 		return { destroy() {} };
 	},
 }));
-const nav = vi.hoisted(() => ({ goto: vi.fn(async () => {}), invalidateAll: vi.fn(async () => {}) }));
+const nav = vi.hoisted(() => ({ goto: vi.fn(async () => {}), refreshAll: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => nav);
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/media') } }));
 vi.mock('$app/state', () => state);
@@ -34,10 +34,10 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 
 import MediaPage from './+page.svelte';
 import type { PageData } from './$types';
-import type { MediaItem } from '$lib/api/media';
-import type { Gate } from '$lib/api/gate';
-import { MEDIA_VIEW_KEY } from '$lib/components/media/view-preference';
-import { IMAGE, ONE_OF_EACH, PDF } from '$lib/components/media/test-support/fixtures';
+import type { MediaItem } from '#lib/api/media.ts';
+import type { Gate } from '#lib/api/gate.ts';
+import { MEDIA_VIEW_KEY } from '#lib/components/media/view-preference.ts';
+import { IMAGE, ONE_OF_EACH, PDF } from '#lib/components/media/test-support/fixtures.ts';
 
 afterEach(cleanup);
 beforeEach(() => {
@@ -122,7 +122,7 @@ describe('media library views', () => {
 		setup([], { q: '' });
 		const form = screen.getByLabelText('Search files').closest('form') as HTMLFormElement;
 		expect(form.querySelector('button[type="submit"]')).toBeNull();
-		expect(form.hasAttribute('data-sveltekit-keepfocus')).toBe(true);
+		expect(form.getAttribute('data-sveltekit-reset')).toBe('false');
 	});
 });
 
@@ -206,7 +206,7 @@ describe('media library upload', () => {
 		Object.defineProperty(picker, 'files', { value: [file], configurable: true });
 		await fireEvent.change(picker);
 
-		await waitFor(() => expect(nav.goto).toHaveBeenCalledWith('/admin/media', { invalidateAll: true }));
+		await waitFor(() => expect(nav.goto).toHaveBeenCalledWith('/admin/media', { refreshAll: true }));
 		expect(fetch).toHaveBeenCalledTimes(1);
 		expect((fetch.mock.calls[0] as unknown[])[0]).toBe('/api/admin/media');
 		expect(kit.success).toHaveBeenCalledWith('Uploaded 1 file');
@@ -232,9 +232,9 @@ describe('an upload whose session ended', () => {
 		await pick();
 		await waitFor(() => expect(kit.success).toHaveBeenCalledWith('Uploaded 1 file'));
 		expect(fetch).toHaveBeenCalledTimes(2);
-		expect(nav.invalidateAll).toHaveBeenCalledTimes(1);
+		expect(nav.refreshAll).toHaveBeenCalledTimes(1);
 		expect(nav.goto).toHaveBeenCalledTimes(1);
-		expect(nav.goto).toHaveBeenCalledWith('/admin/media', { invalidateAll: true });
+		expect(nav.goto).toHaveBeenCalledWith('/admin/media', { refreshAll: true });
 		vi.unstubAllGlobals();
 	});
 

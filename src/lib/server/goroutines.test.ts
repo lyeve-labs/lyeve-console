@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { goroutineCount } from '$lib/server/goroutines';
+import { goroutineCount } from '#lib/server/goroutines.ts';
 
 /*
  * The endpoint answers the runtime count alone when no tracker is wired, and

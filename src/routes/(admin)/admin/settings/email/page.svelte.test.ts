@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, within } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ProvidersPage from './+page.svelte';
-import type { EmailProvider } from '$lib/api/email';
+import type { EmailProvider } from '#lib/api/email.ts';
 
 type Submit = (input: { cancel: () => void; formData: FormData }) => Promise<unknown>;
 const forms = vi.hoisted(() => ({ submits: new Map<HTMLFormElement, unknown>() }));

@@ -2,6 +2,7 @@ import type { Schema, SchemaField } from '@lyeve-labs/client';
 import { humanizeFieldName } from './entry-identity';
 import { inverseKey, isInverse } from '../relations';
 import { hides } from './content-access';
+import type { ReadonlyURL } from '$app/state';
 
 /**
  * The view of one content type's entry list: its filter conditions, how they
@@ -413,7 +414,7 @@ export function listPath(schemaName: string): string {
  * back to the list takes. Only the list's own parameters come back, every
  * value of each, so a repeated `in` survives the round trip.
  */
-export function listQueryFrom(url: URL): string {
+export function listQueryFrom(url: ReadonlyURL): string {
 	const params = new URLSearchParams();
 	for (const [name, value] of url.searchParams) {
 		if (VIEW_PARAMS.includes(name) || name === 'q' || name === 'offset' || FILTER_PARAM.test(name)) {

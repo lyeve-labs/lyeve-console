@@ -2,10 +2,10 @@
 	import { FilterChips, SectionHeading, SegmentedControl, Toggle } from '@lyeve-labs/ui-kit';
 	import CodeEditor from './CodeEditor.svelte';
 	import GridEditor from './GridEditor.svelte';
-	import type { JsonSchema } from '$lib/flow/types';
-	import type { ValidationError } from '$lib/api/flows';
-	import { errorsForField, propertyList } from '$lib/flow/schema';
-	import { INLINE_FORMATS, isInlineFormat, previewCount, type InlineFormat } from '$lib/flow/inline';
+	import type { JsonSchema } from '#lib/flow/types.ts';
+	import type { ValidationError } from '#lib/api/flows.ts';
+	import { errorsForField, propertyList } from '#lib/flow/schema.ts';
+	import { INLINE_FORMATS, isInlineFormat, previewCount, type InlineFormat } from '#lib/flow/inline.ts';
 
 	/**
 	 * The inspector for data typed in place. The format decides the editor:

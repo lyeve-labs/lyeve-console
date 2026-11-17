@@ -13,7 +13,7 @@
  * states how many collections there are rather than naming them.
  */
 import type { AuthRequirement, EndpointDoc, EndpointGroup, EndpointParam, HttpMethod } from './reference';
-import { plural } from '$lib/format';
+import { plural } from '#lib/format.ts';
 
 export interface OpenAPIParameter {
 	name: string;

@@ -18,7 +18,7 @@
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
 import { readAll, type ListEnvelope } from './list';
-import { plural } from '$lib/format';
+import { plural } from '#lib/format.ts';
 
 const POLICIES_URL = '/api/admin/retention-policies';
 const HOLDS_URL = '/api/admin/legal-holds';

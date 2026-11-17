@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GET } from './+server';
-import { mockCookies } from '$lib/components/ai/test-support/events';
+import { mockCookies } from '#lib/components/ai/test-support/events.ts';
 
 function event(fetch: typeof globalThis.fetch, format = 'markdown', session = true) {
 	const cookies = mockCookies();

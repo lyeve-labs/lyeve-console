@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { tracked } from '$lib/forms.svelte';
+	import { tracked } from '#lib/forms.svelte.ts';
 	import { Alert, Badge, Breadcrumb, Button, Card, DescriptionList, Input, PageShell, SectionHeading, Tag, confirm as confirmDialog } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { ListTree, ScanSearch, Trash2 } from '@lucide/svelte';
-	import { crumbsAfter } from '$lib/breadcrumb';
+	import { crumbsAfter } from '#lib/breadcrumb.ts';
 	import type { ActionData, PageData } from './$types';
-	import AiSection from '$lib/components/ai/AiSection.svelte';
-	import ProviderForm from '$lib/components/ai/ProviderForm.svelte';
-	import { providerKindLabel, type ModelCapabilities } from '$lib/api/ai';
-	import { formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import AiSection from '#lib/components/ai/AiSection.svelte';
+	import ProviderForm from '#lib/components/ai/ProviderForm.svelte';
+	import { providerKindLabel, type ModelCapabilities } from '#lib/api/ai.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	const back = { href: '/admin/ai/providers', label: 'Providers' };
 	let { data, form }: { data: PageData; form: ActionData } = $props();

@@ -8,7 +8,7 @@
 	 */
 	import { Button, type AssistField } from '@lyeve-labs/ui-kit';
 	import { Check, X } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { field }: { field: AssistField } = $props();
 </script>

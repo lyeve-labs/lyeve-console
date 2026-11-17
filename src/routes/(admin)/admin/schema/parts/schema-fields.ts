@@ -1,5 +1,5 @@
 import type { Schema, SchemaField } from '@lyeve-labs/client';
-import { relationKind } from '$lib/relations';
+import { relationKind } from '#lib/relations.ts';
 
 /** Names a field in a control's accessible name, before it has been named. */
 export function fieldLabel(f: SchemaField): string {

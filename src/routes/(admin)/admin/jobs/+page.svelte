@@ -17,25 +17,25 @@
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { Plus, Trash2, Pencil, Clock, CheckCircle, XCircle, Inbox } from '@lucide/svelte';
 	import type { Job } from './+page.server';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { confirmed, drawerFailure, submitter } from '$lib/forms.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { formRefusal } from '$lib/api/refusal';
-	import { ALERT_PREFIX, hasChannels } from '$lib/api/cron-alerts';
-	import AlertChannelFields from '$lib/components/AlertChannelFields.svelte';
-	import { formatDateTime } from '$lib/format';
-	import { narrows } from '$lib/narrow';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { actionWithQuery, queryWithout, returnAddress } from '$lib/back';
-	import { ICON } from '$lib/icon';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { confirmed, drawerFailure, submitter } from '#lib/forms.svelte.ts';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import { ALERT_PREFIX, hasChannels } from '#lib/api/cron-alerts.ts';
+	import AlertChannelFields from '#lib/components/AlertChannelFields.svelte';
+	import { formatDateTime } from '#lib/format.ts';
+	import { narrows } from '#lib/narrow.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { actionWithQuery, queryWithout, returnAddress } from '#lib/back.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -110,7 +110,7 @@
 	function closeDrawer() {
 		open = false;
 		if (DRAWER_KEYS.some((key) => page.url.searchParams.has(key))) {
-			void goto(returnAddress(page.url, DRAWER_KEYS), { replaceState: true, noScroll: true, keepFocus: true });
+			void goto(returnAddress(page.url, DRAWER_KEYS), { replace: true, reset: false });
 		}
 	}
 

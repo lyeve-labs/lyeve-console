@@ -4,7 +4,7 @@
  * state. Nothing here touches the network.
  */
 
-import type { AssistAnswer, AssistDraft } from '$lib/api/assist';
+import type { AssistAnswer, AssistDraft } from '#lib/api/assist.ts';
 
 export const AI_OFF_HREF = '/admin/ai/settings';
 

@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 import { actions, load, ssr } from './+page.server';
-import { forbiddenText } from '$lib/api/gate';
-import { BUSY, OUTAGE } from '$lib/outage';
-import { blockedFlow, fixtureCatalog, fixtureEventTypes, fixtureFlow, fixtureRun, fixtureTemplates, joinFlow, missingTypeErrors, withLocked } from '$lib/flow/fixtures';
-import type { FlowRun, FlowVersion } from '$lib/api/flows';
-import type { FlowOption, NodeSpec } from '$lib/flow/types';
+import { forbiddenText } from '#lib/api/gate.ts';
+import { BUSY, OUTAGE } from '#lib/outage.ts';
+import { blockedFlow, fixtureCatalog, fixtureEventTypes, fixtureFlow, fixtureRun, fixtureTemplates, joinFlow, missingTypeErrors, withLocked } from '#lib/flow/fixtures.ts';
+import type { FlowRun, FlowVersion } from '#lib/api/flows.ts';
+import type { FlowOption, NodeSpec } from '#lib/flow/types.ts';
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });

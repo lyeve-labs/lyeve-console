@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Button, Collapsible, SearchInput, Spinner } from '@lyeve-labs/ui-kit';
 	import { Plus, RefreshCw } from '@lucide/svelte';
-	import type { IntrospectedTable } from '$lib/api/flows';
-	import { ICON } from '$lib/icon';
+	import type { IntrospectedTable } from '#lib/api/flows.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	/** What the page knows about a datasource's tables, loaded once per datasource. */
 	export interface TablesState {

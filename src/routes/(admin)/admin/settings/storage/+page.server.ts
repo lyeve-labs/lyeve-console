@@ -1,9 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError, actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionError, actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	createProvider,
 	deleteProvider,
@@ -14,10 +14,10 @@ import {
 	testPassed,
 	testProvider,
 	type StorageProvider,
-} from '$lib/api/storage';
-import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
-import { rowsOf } from '$lib/api/list';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/storage.ts';
+import { type Gate, GATE_OK, gateOf } from '#lib/api/gate.ts';
+import { rowsOf } from '#lib/api/list.ts';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins, user } = await event.parent();

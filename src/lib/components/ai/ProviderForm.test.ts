@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import ProviderForm from './ProviderForm.svelte';
-import type { AiProvider } from '$lib/api/ai';
+import type { AiProvider } from '#lib/api/ai.ts';
 
 afterEach(cleanup);
 

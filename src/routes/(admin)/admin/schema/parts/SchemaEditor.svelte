@@ -9,12 +9,12 @@
 	import { tick } from 'svelte';
 	import type { Action } from 'svelte/action';
 	import { BookOpen, ChevronDown, GripVertical, Link2, Pencil, Plus, RefreshCw, Trash2, TriangleAlert } from '@lucide/svelte';
-	import { collectionRoutes } from '$lib/api/collection-api';
-	import { curlFor } from '$lib/api/request-preview';
-	import { RELATION_KINDS, fkColumn, inverseCandidates, isInverse, planRelation, planSchemaRelations, tableName, type RelationType } from '$lib/relations';
-	import { decimalScale, dropUnlocalizableMark, fieldNameTarget, localizableProblem, type Problem } from '$lib/schema/editor';
-	import { ICON } from '$lib/icon';
-	import { methodTone } from '$lib/tones';
+	import { collectionRoutes } from '#lib/api/collection-api.ts';
+	import { curlFor } from '#lib/api/request-preview.ts';
+	import { RELATION_KINDS, fkColumn, inverseCandidates, isInverse, planRelation, planSchemaRelations, tableName, type RelationType } from '#lib/relations.ts';
+	import { decimalScale, dropUnlocalizableMark, fieldNameTarget, localizableProblem, type Problem } from '#lib/schema/editor.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { methodTone } from '#lib/tones.ts';
 	import SchemaHistory from './SchemaHistory.svelte';
 	import type { DdlHistory } from './ddl-history.svelte';
 	import { addField, addRelation, dropInertFlags, fieldLabel, inertFlags, isTimestamp, removeField } from './schema-fields';

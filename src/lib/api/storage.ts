@@ -14,7 +14,7 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { checked } from '$lib/checkbox';
+import { checked } from '#lib/checkbox.ts';
 import { inSentence } from './gate';
 import type { ListEnvelope } from './list';
 

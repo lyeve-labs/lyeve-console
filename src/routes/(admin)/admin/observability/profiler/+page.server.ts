@@ -9,12 +9,12 @@ import {
 	type EndpointDetail,
 	type EndpointStats,
 	type PluginBreakdown,
-} from '$lib/api/profiler';
-import { section, type Section } from '$lib/api/gate';
-import { authedClient, loadUser } from '$lib/server/authz';
-import { couldNotLoad } from '$lib/outage';
+} from '#lib/api/profiler.ts';
+import { section, type Section } from '#lib/api/gate.ts';
+import { authedClient, loadUser } from '#lib/server/authz.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 import { RESET_QUESTION, reset } from './reset.server';
-import { asked } from '$lib/server/asked';
+import { asked } from '#lib/server/asked.ts';
 
 /**
  * What the timings tab renders. Every view is the profiler plugin's, under

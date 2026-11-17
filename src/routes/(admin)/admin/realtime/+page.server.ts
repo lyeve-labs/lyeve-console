@@ -1,16 +1,16 @@
 import type { PageServerLoad } from './$types';
-import { authedClient } from '$lib/server/authz';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient } from '#lib/server/authz.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	getPlatformMetrics,
 	getSocketMetrics,
 	getStreamMetrics,
 	type SocketMetrics,
 	type StreamMetrics,
-} from '$lib/api/realtime';
-import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+} from '#lib/api/realtime.ts';
+import { type Gate, GATE_OK, gateOf } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { user, plugins } = await event.parent();

@@ -8,7 +8,7 @@
 	 * hour, so a quiet hour can still be asked what it held. The table beside
 	 * the bars is the same series for a reader who cannot see them.
 	 */
-	import { formatCount, formatDateTime, formatPercent } from '$lib/format';
+	import { formatCount, formatDateTime, formatPercent } from '#lib/format.ts';
 
 	interface Hour {
 		hour: string;

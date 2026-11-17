@@ -13,14 +13,14 @@
 		Stat,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Scissors, Trash2 } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { formRefusal } from '$lib/api/refusal';
-	import { confirmed, fieldErrors, tracked } from '$lib/forms.svelte';
-	import { formatBytes, formatCount, formatDateTime, formatPercent, plural } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import { confirmed, fieldErrors, tracked } from '#lib/forms.svelte.ts';
+	import { formatBytes, formatCount, formatDateTime, formatPercent, plural } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 	import {
 		HISTORY_READ_FEATURE,
 		MAX_KEEP_DAYS,
@@ -29,7 +29,7 @@
 		type HistoryMode,
 		type PruneResult,
 		type SettingField,
-	} from '$lib/api/content-history';
+	} from '#lib/api/content-history.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

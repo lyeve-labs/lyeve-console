@@ -6,7 +6,7 @@ import type { Cookies } from '@sveltejs/kit';
 // the engine without X-CSRF-Token is refused 403, and a stub that returns a
 // fixed bag would pass whether the action spread it or not.
 const session = vi.hoisted(() => ({ user: { roles: ['super_admin'] } as { roles: string[] } }));
-vi.mock('$lib/server/authz', async (importOriginal) => ({
+vi.mock('#lib/server/authz.ts', async (importOriginal) => ({
 	...((await importOriginal()) as object),
 	requireRole: vi.fn(async () => ({ id: 'u1', role: 'super_admin' })),
 	loadUser: vi.fn(async () => session.user),
@@ -19,7 +19,7 @@ vi.mock('@lyeve-labs/client', async (importOriginal) => ({
 }));
 
 import { actions, load } from './+page.server';
-import { endpointQuery, readFilter } from '$lib/server/audit-filter';
+import { endpointQuery, readFilter } from '#lib/server/audit-filter.ts';
 
 function mockCookies(initial: Record<string, string> = {}): Cookies {
 	return {

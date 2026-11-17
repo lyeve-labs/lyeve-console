@@ -2,16 +2,16 @@
 	import { Alert, Badge, Card, PageShell, SectionHeading, Stat, EmptyState, type StatusTone } from '@lyeve-labs/ui-kit';
 	import { CircleCheck, CircleAlert, CircleX, CircleDashed } from '@lucide/svelte';
 	import type { PageData } from './$types';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import {
 		CONTROL_LABEL,
 		CONTROL_SUMMARY,
 		STATUS_LABEL,
 		type ControlStatus,
 		type SecurityControl,
-	} from '$lib/api/security';
-	import { formatDateTime } from '$lib/format';
-	import { ICON as RUNG } from '$lib/icon';
+	} from '#lib/api/security.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { ICON as RUNG } from '#lib/icon.ts';
 
 	let { data }: { data: PageData } = $props();
 

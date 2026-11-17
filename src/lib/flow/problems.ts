@@ -1,5 +1,5 @@
-import type { ValidationError } from '$lib/api/flows';
-import type { ProblemItem } from '$lib/components/ProblemsMenu.svelte';
+import type { ValidationError } from '#lib/api/flows.ts';
+import type { ProblemItem } from '#lib/components/ProblemsMenu.svelte';
 import { nodeById, specFor } from './graph';
 import { TRIGGER_ID, type FlowDefinition, type NodeSpec } from './types';
 

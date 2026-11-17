@@ -12,7 +12,7 @@ const api = vi.hoisted(() => ({
 	resetProtection: vi.fn(),
 }));
 
-vi.mock('$lib/api/rate-limit', async (importOriginal) => ({
+vi.mock('#lib/api/rate-limit.ts', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
 	...api,
 }));
@@ -22,7 +22,7 @@ const authz = vi.hoisted(() => ({
 	requireRole: vi.fn(),
 }));
 
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => ({})),
 	requireRole: authz.requireRole,
 }));

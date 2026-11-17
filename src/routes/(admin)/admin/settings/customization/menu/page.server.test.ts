@@ -8,17 +8,17 @@ const api = vi.hoisted(() => ({
 
 const client = vi.hoisted(() => ({}));
 
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => client),
 	requireRole: vi.fn(async () => ({ roles: ['admin'] })),
 }));
-vi.mock('$lib/api/customization', async (orig) => ({
-	...(await orig<typeof import('$lib/api/customization')>()),
+vi.mock('#lib/api/customization.ts', async (orig) => ({
+	...(await orig<typeof import('#lib/api/customization.ts')>()),
 	...api,
 }));
 
 import { actions, load } from './+page.server';
-import { requireRole } from '$lib/server/authz';
+import { requireRole } from '#lib/server/authz.ts';
 
 const settings = () => ({
 	brand: { name: 'Old', logo_url: '', accent: '', welcome: '' },

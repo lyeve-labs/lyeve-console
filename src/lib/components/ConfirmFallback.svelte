@@ -5,10 +5,10 @@
   confirmation, so the reader still finishes in two steps.
 -->
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { page } from '$app/state';
 	import { Banner, Button } from '@lyeve-labs/ui-kit';
-	import { CONFIRM_FIELD, CONFIRMED, unconfirmedOf } from '$lib/confirmation';
+	import { CONFIRM_FIELD, CONFIRMED, unconfirmedOf } from '#lib/confirmation.ts';
 
 	const ask = $derived(unconfirmedOf(page.form));
 </script>

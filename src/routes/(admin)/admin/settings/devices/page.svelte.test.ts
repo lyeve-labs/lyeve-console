@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 
 import DevicesPage from './+page.svelte';
-import type { Device } from '$lib/api/devices';
+import type { Device } from '#lib/api/devices.ts';
 
 afterEach(cleanup);
 

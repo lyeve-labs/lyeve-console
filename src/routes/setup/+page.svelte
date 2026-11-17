@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { fieldErrors, submitter } from '$lib/forms.svelte';
-	import { passwordTooLong } from '$lib/api/users';
-	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { fieldErrors, submitter } from '#lib/forms.svelte.ts';
+	import { passwordTooLong } from '#lib/api/users.ts';
+	import { enhance } from '#lib/enhance.ts';
+	import { refreshAll } from '$app/navigation';
 	import {
 		Alert,
 		Button,
@@ -16,10 +16,10 @@
 		Spinner,
 		StepIndicator,
 	} from '@lyeve-labs/ui-kit';
-	import { ICON } from '$lib/icon';
-	import type { SetupModeStatus } from '$lib/api/setup';
+	import { ICON } from '#lib/icon.ts';
+	import type { SetupModeStatus } from '#lib/api/setup.ts';
 	import type { ActionData, PageData } from './$types';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -50,7 +50,7 @@
 	// operator, so it re-runs the load until the state moves on.
 	$effect(() => {
 		if (!polling) return;
-		const id = setInterval(() => void invalidateAll(), POLL_MS);
+		const id = setInterval(() => void refreshAll(), POLL_MS);
 		return () => clearInterval(id);
 	});
 

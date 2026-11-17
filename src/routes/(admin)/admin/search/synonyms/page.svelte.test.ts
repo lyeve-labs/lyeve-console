@@ -6,7 +6,7 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 
 import SynonymsPage from './+page.svelte';
-import { outlineSkips } from '$lib/test-outline';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(cleanup);
 

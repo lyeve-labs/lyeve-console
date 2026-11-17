@@ -11,7 +11,7 @@ vi.mock('$app/forms', () => ({
 		return { destroy() {} };
 	},
 }));
-vi.mock('$app/navigation', () => ({ goto: vi.fn(), invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ goto: vi.fn(), refreshAll: vi.fn(async () => {}) }));
 const app = vi.hoisted(() => ({
 	page: { url: new URL('http://admin/admin/settings/connected-editors/builder') },
 	navigating: { to: null as null | { url: URL } },
@@ -25,9 +25,9 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 });
 
 import Page from './+page.svelte';
-import { invalidateAll } from '$app/navigation';
-import { FORM_KEY_SAID, SAID, STATIC_SITES_REFUSED } from '$lib/api/connected-editors';
-import { FORMS_TYPE_TAKEN, SUBMISSIONS_PUBLIC } from '$lib/api/form-destinations';
+import { refreshAll } from '$app/navigation';
+import { FORM_KEY_SAID, SAID, STATIC_SITES_REFUSED } from '#lib/api/connected-editors.ts';
+import { FORMS_TYPE_TAKEN, SUBMISSIONS_PUBLIC } from '#lib/api/form-destinations.ts';
 
 afterEach(cleanup);
 beforeEach(() => {
@@ -376,14 +376,14 @@ describe('where forms can send', () => {
 		[{ presetCreated: true, presetError: 'created' }, 1],
 		[{ presetError: 'refused' }, 0],
 	])('reloads the page data only when setup created the types and the save after them failed', async (data, reloads) => {
-		vi.mocked(invalidateAll).mockClear();
+		vi.mocked(refreshAll).mockClear();
 		render(Page, { props: props({ settings: { ok: true, value: NONE_ALLOWED }, formsPreset: PRESET }) });
 		const submit = forms.submits.get('?/formsPreset');
 		const after = (await submit?.({ cancel: vi.fn(), formData: new FormData() })) as (opts: unknown) => Promise<void>;
 		const update = vi.fn(async () => {});
 		await after({ result: { type: 'failure', status: 422, data }, update });
 		expect(update).toHaveBeenCalledTimes(1);
-		expect(invalidateAll).toHaveBeenCalledTimes(reloads);
+		expect(refreshAll).toHaveBeenCalledTimes(reloads);
 	});
 
 	it('offers no preset once its submissions type is allowed', () => {

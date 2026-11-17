@@ -11,7 +11,7 @@ vi.mock('$app/forms', () => ({
 		return { destroy() {} };
 	},
 }));
-vi.mock('$app/navigation', () => ({ goto: vi.fn(), invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ goto: vi.fn(), refreshAll: vi.fn(async () => {}) }));
 const app = vi.hoisted(() => ({
 	page: { url: new URL('http://admin/admin/settings/connected-editors') },
 	navigating: { to: null as null | { url: URL } },
@@ -25,7 +25,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 });
 
 import Page from './+page.svelte';
-import { SAID, type Connection, type ConnectionRequest } from '$lib/api/connected-editors';
+import { SAID, type Connection, type ConnectionRequest } from '#lib/api/connected-editors.ts';
 
 afterEach(cleanup);
 beforeEach(() => {
@@ -426,15 +426,15 @@ describe('the approve drawer', () => {
 	});
 
 	it('reloads the list when someone else decided the request first', async () => {
-		const { invalidateAll } = await import('$app/navigation');
-		vi.mocked(invalidateAll).mockClear();
+		const { refreshAll } = await import('$app/navigation');
+		vi.mocked(refreshAll).mockClear();
 		render(Page, { props: props({}, { drawer: { code: 'K7F3-A2M9', request: REQUEST } }) });
 		await tick();
 		const done = (await (forms.submits.get('?/approve') as Submit)({ cancel: vi.fn(), action: new URL('http://a/?/approve') })) as (
 			o: unknown,
 		) => Promise<void>;
 		await done({ result: { type: 'failure', status: 409, data: { drawer: { code: 'K7F3-A2M9', decided: true } } }, update: async () => {} });
-		expect(invalidateAll).toHaveBeenCalledTimes(1);
+		expect(refreshAll).toHaveBeenCalledTimes(1);
 	});
 
 	it('does not draw an answer over a code it did not answer', async () => {

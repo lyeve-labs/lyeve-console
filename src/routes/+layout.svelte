@@ -5,8 +5,8 @@
 	import { page } from '$app/state';
 	import { asset } from '$app/paths';
 	import { onNavigate } from '$app/navigation';
-	import { fadeRouteChange } from '$lib/page-transition';
-	import { documentTitle, pageBrand } from '$lib/brand';
+	import { fadeRouteChange } from '#lib/page-transition.ts';
+	import { documentTitle, pageBrand } from '#lib/brand.ts';
 
 	let { children }: { children: Snippet } = $props();
 
@@ -45,8 +45,8 @@
 	{#if favicon}
 		<link rel="icon" href={favicon} />
 	{:else}
-		<link rel="icon" href={asset('/favicon.ico')} sizes="32x32" />
-		<link rel="icon" href={asset('/favicon.svg')} type="image/svg+xml" />
+		<link rel="icon" href={asset('favicon.ico')} sizes="32x32" />
+		<link rel="icon" href={asset('favicon.svg')} type="image/svg+xml" />
 	{/if}
 </svelte:head>
 

@@ -3,7 +3,7 @@ import { ApiError } from '@lyeve-labs/client';
 import { isRedirect } from '@sveltejs/kit';
 
 const engine = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() }));
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => engine),
 	requireUser: vi.fn(async () => ({ id: 'u1', roles: ['admin'] })),
 }));

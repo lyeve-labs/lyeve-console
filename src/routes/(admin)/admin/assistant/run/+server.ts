@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { authedHeaders } from '$lib/server/authz';
-import { readRun, runTarget } from '$lib/assistant/run';
-import { SESSION_ENDED } from '$lib/session';
+import { authedHeaders } from '#lib/server/authz.ts';
+import { readRun, runTarget } from '#lib/assistant/run.ts';
+import { SESSION_ENDED } from '#lib/session.ts';
 
 /** A write that met no answer may still have landed, so the sentence claims nothing about it. */
 const UNCERTAIN = 'Check whether your change was saved, then try again.';

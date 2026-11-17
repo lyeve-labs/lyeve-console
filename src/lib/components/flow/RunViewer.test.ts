@@ -3,8 +3,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import RunViewer from './RunViewer.svelte';
-import { fixtureRun } from '$lib/flow/fixtures';
-import type { FlowRun, RunStep } from '$lib/api/flows';
+import { fixtureRun } from '#lib/flow/fixtures.ts';
+import type { FlowRun, RunStep } from '#lib/api/flows.ts';
 
 afterEach(cleanup);
 

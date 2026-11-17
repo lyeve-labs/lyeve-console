@@ -10,7 +10,7 @@ import {
 	wireWidget,
 	type Widget,
 } from './custom-dashboard';
-import { UNNAMED } from '$lib/plugins';
+import { UNNAMED } from '#lib/plugins.ts';
 
 describe('custom dashboard helpers', () => {
 	it('offers every widget type the engine accepts, once', () => {

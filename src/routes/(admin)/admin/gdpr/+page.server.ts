@@ -2,14 +2,14 @@ import type { PageServerLoad, Actions } from './$types';
 import { exportSubject, eraseSubject } from '@lyeve-labs/client-rest';
 import { fail, error } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { isOutage } from '$lib/api/gate';
-import { rolesInWords } from '$lib/roles';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning, whyNotRunning } from '$lib/plugins';
-import { installSetting, type Setting } from '$lib/api/privacy';
-import { isStepUpFactor, mailUnavailable, readStepUp, saveStepUp, type StepUp } from '$lib/api/export-step-up';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { isOutage } from '#lib/api/gate.ts';
+import { rolesInWords } from '#lib/roles.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning, whyNotRunning } from '#lib/plugins.ts';
+import { installSetting, type Setting } from '#lib/api/privacy.ts';
+import { isStepUpFactor, mailUnavailable, readStepUp, saveStepUp, type StepUp } from '#lib/api/export-step-up.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const user = await loadUser(event);

@@ -1,16 +1,16 @@
 <script lang="ts">
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import { Alert, Badge, Button, Drawer, EmptyState, Input, Modal, PageShell, SegmentedControl, Select, Table, Textarea, toast } from '@lyeve-labs/ui-kit';
 	import { Eye, Lock, Mail, Pencil, Plus, Trash2 } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { tick } from 'svelte';
-	import { confirmed, drawerFailure, submitter } from '$lib/forms.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { confirmed, drawerFailure, submitter } from '#lib/forms.svelte.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
-	import { REQUIRED_PURPOSE, type EmailTemplate, type TemplateStatus } from '$lib/api/email-templates';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { ICON } from '$lib/icon';
+	import { REQUIRED_PURPOSE, type EmailTemplate, type TemplateStatus } from '#lib/api/email-templates.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

@@ -3,11 +3,11 @@
 	import { Badge, Button, Select, type StatusTone } from '@lyeve-labs/ui-kit';
 	import { StickyNote, X } from '@lucide/svelte';
 	import type { FlowCanvasProps } from './contract';
-	import type { RunStep } from '$lib/api/flows';
-	import { categoryIcon, categoryText } from '$lib/flow/categories';
-	import { formatDuration } from '$lib/flow/time';
-	import { describeError } from '$lib/flow/problems';
-	import { TRIGGER_ID, type FlowDefinition, type FlowEdge, type Port, type Position } from '$lib/flow/types';
+	import type { RunStep } from '#lib/api/flows.ts';
+	import { categoryIcon, categoryText } from '#lib/flow/categories.ts';
+	import { formatDuration } from '#lib/flow/time.ts';
+	import { describeError } from '#lib/flow/problems.ts';
+	import { TRIGGER_ID, type FlowDefinition, type FlowEdge, type Port, type Position } from '#lib/flow/types.ts';
 	import {
 		TRIGGER_OUTPUTS,
 		addEdge,
@@ -25,8 +25,8 @@
 		specFor,
 		toPort,
 		topoDepths,
-	} from '$lib/flow/graph';
-	import { ICON } from '$lib/icon';
+	} from '#lib/flow/graph.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	/**
 	 * The flow as a list, for a build that carries no visual editor. It edits

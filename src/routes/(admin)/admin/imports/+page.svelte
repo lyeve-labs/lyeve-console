@@ -13,18 +13,18 @@
 		Table,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
-	import { enhance } from '$app/forms';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
+	import { enhance } from '#lib/enhance.ts';
 	import { goto, invalidate } from '$app/navigation';
 	import { page } from '$app/state';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { Ban, Download, FileText, Link, ListChecks, Plus, Undo2, Upload } from '@lucide/svelte';
-	import ImportWizard from '$lib/components/ImportWizard.svelte';
-	import ImportTabs from '$lib/components/ImportTabs.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { formRefusal } from '$lib/api/refusal';
-	import { confirmed } from '$lib/forms.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import ImportWizard from '#lib/components/ImportWizard.svelte';
+	import ImportTabs from '#lib/components/ImportTabs.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import { confirmed } from '#lib/forms.svelte.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import {
 		OUTCOME_LABELS,
 		cancelable,
@@ -35,11 +35,11 @@
 		rejectionRate,
 		rollbackable,
 		type ImportJob,
-	} from '$lib/api/bulk-import';
-	import { NO_VALUE, formatCount, formatDateTime, plural } from '$lib/format';
+	} from '#lib/api/bulk-import.ts';
+	import { NO_VALUE, formatCount, formatDateTime, plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 	import ImportRowsDrawer from './ImportRowsDrawer.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -71,7 +71,7 @@
 	}
 
 	function detailHref(id: string): string {
-		const q = new URLSearchParams(page.url.searchParams);
+		const q = new URLSearchParams(page.url.search);
 		q.set('job', id);
 		return `?${q}`;
 	}
@@ -80,9 +80,9 @@
 		detailOpen = data.detail !== null;
 	});
 	function closeDetail() {
-		const q = new URLSearchParams(page.url.searchParams);
+		const q = new URLSearchParams(page.url.search);
 		q.delete('job');
-		void goto(`?${q}`, { replaceState: true, noScroll: true, keepFocus: true });
+		void goto(`?${q}`, { replace: true, reset: false });
 	}
 
 	function cancel(j: ImportJob): SubmitFunction {

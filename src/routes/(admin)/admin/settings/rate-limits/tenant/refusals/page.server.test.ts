@@ -6,12 +6,12 @@ const api = vi.hoisted(() => ({
 	readRefusalHistory: vi.fn(),
 }));
 
-vi.mock('$lib/api/rate-limit', async (importOriginal) => ({
+vi.mock('#lib/api/rate-limit.ts', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
 	...api,
 }));
 
-vi.mock('$lib/server/authz', () => ({ authedClient: vi.fn(() => ({})) }));
+vi.mock('#lib/server/authz.ts', () => ({ authedClient: vi.fn(() => ({})) }));
 
 import { load } from './+page.server';
 

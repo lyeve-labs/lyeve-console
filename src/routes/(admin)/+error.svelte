@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { PageShell } from '@lyeve-labs/ui-kit';
-	import ErrorPanel from '$lib/components/ErrorPanel.svelte';
-	import { BUSY, OUTAGE } from '$lib/outage';
+	import ErrorPanel from '#lib/components/ErrorPanel.svelte';
+	import { BUSY, OUTAGE } from '#lib/outage.ts';
 
 	// SvelteKit passes no props to +error.svelte. The status and the error body
 	// are only reachable through the page state.

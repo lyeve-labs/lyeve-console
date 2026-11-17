@@ -1,9 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	generateFeed,
 	isAlreadyRunning,
@@ -13,8 +13,8 @@ import {
 	type AbStats,
 	readTrending,
 	type TrendingItem,
-} from '$lib/api/recommendations';
-import { type Gate, GATE_OK, section, type Section } from '$lib/api/gate';
+} from '#lib/api/recommendations.ts';
+import { type Gate, GATE_OK, section, type Section } from '#lib/api/gate.ts';
 
 /** An account the preview can run for. */
 interface Reader {

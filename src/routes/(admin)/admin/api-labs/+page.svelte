@@ -12,15 +12,15 @@
 		Textarea,
 		confirm as confirmDialog,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { Play, Terminal } from '@lucide/svelte';
-	import { RISK_LABELS, pathParams, riskOf, riskTone, type LabEndpoint, type LabResult } from '$lib/api/labs';
-	import { httpStatusTone } from '$lib/tones';
+	import { RISK_LABELS, pathParams, riskOf, riskTone, type LabEndpoint, type LabResult } from '#lib/api/labs.ts';
+	import { httpStatusTone } from '#lib/tones.ts';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
-	import ApiLabsTabs from '$lib/components/ApiLabsTabs.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import ApiLabsTabs from '#lib/components/ApiLabsTabs.svelte';
 	import LabAnswer from './LabAnswer.svelte';
 	import NoSandbox from './NoSandbox.svelte';
 

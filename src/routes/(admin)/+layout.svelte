@@ -16,23 +16,23 @@
 		activeAssistForm,
 	} from '@lyeve-labs/ui-kit';
 	import { BookOpen, LifeBuoy, LogOut, MonitorSmartphone, Settings, ShieldCheck, Sparkles } from '@lucide/svelte';
-	import AssistantPanel from '$lib/components/assistant/AssistantPanel.svelte';
-	import { AssistantSession, pageContext } from '$lib/assistant/session.svelte';
-	import { ICON } from '$lib/icon';
-	import ConfirmFallback from '$lib/components/ConfirmFallback.svelte';
-	import DbStatus from '$lib/components/DbStatus.svelte';
-	import RouteProgress from '$lib/components/RouteProgress.svelte';
-	import NotRunning from '$lib/components/NotRunning.svelte';
-	import { appName, brandOf } from '$lib/brand';
-	import { adminNav, adminSection, customizeNav, pageLabel, pagePlugin } from '$lib/nav';
-	import { accentStyle } from '$lib/api/customization';
-	import { provideShell } from '$lib/shell.svelte';
-	import { provideInstance } from '$lib/instance.svelte';
-	import { hasLicenseModule } from '$lib/entitlements';
-	import { PLUGIN } from '$lib/plugin-names';
-	import { notRunning, runs, whyNotRunning, UNNAMED } from '$lib/plugins';
-	import { rolesLabel } from '$lib/device-login';
-	import { couldNotLoad } from '$lib/outage';
+	import AssistantPanel from '#lib/components/assistant/AssistantPanel.svelte';
+	import { AssistantSession, pageContext } from '#lib/assistant/session.svelte.ts';
+	import { ICON } from '#lib/icon.ts';
+	import ConfirmFallback from '#lib/components/ConfirmFallback.svelte';
+	import DbStatus from '#lib/components/DbStatus.svelte';
+	import RouteProgress from '#lib/components/RouteProgress.svelte';
+	import NotRunning from '#lib/components/NotRunning.svelte';
+	import { appName, brandOf } from '#lib/brand.ts';
+	import { adminNav, adminSection, customizeNav, pageLabel, pagePlugin } from '#lib/nav.ts';
+	import { accentStyle } from '#lib/api/customization.ts';
+	import { provideShell } from '#lib/shell.svelte.ts';
+	import { provideInstance } from '#lib/instance.svelte.ts';
+	import { hasLicenseModule } from '#lib/entitlements.ts';
+	import { PLUGIN } from '#lib/plugin-names.ts';
+	import { notRunning, runs, whyNotRunning, UNNAMED } from '#lib/plugins.ts';
+	import { rolesLabel } from '#lib/device-login.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
 	import type { LayoutData } from './$types';
 	import type { Snippet } from 'svelte';
 
@@ -43,7 +43,7 @@
 	const plugins = $derived(data.plugins ?? UNNAMED);
 	const operator = $derived(data.user.roles.includes('admin') || data.user.roles.includes('super_admin'));
 
-	// The tree is data in $lib/nav.ts, so the grouping and the role gate can be
+	// The tree is data in #lib/nav.ts, so the grouping and the role gate can be
 	// asserted without rendering the shell.
 	// The running plugins decide which entries exist at all: a plugin that does
 	// not run for this tenant has no menu row rather than a row that leads to a

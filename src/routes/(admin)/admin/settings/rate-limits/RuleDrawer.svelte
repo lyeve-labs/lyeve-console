@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { Autocomplete, Button, Drawer, Input, RadioGroup, Toggle, toast } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import { tracked } from '$lib/forms.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import { duplicateRow } from '$lib/duplicate';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import type { KeyBy, RateRule } from '$lib/api/rate-limit';
-	import type { RouteOption } from '$lib/api/route-options';
+	import { enhance } from '#lib/enhance.ts';
+	import { tracked } from '#lib/forms.svelte.ts';
+	import type { SubmitFunction } from '$app/forms';
+	import { duplicateRow } from '#lib/duplicate.ts';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import type { KeyBy, RateRule } from '#lib/api/rate-limit.ts';
+	import type { RouteOption } from '#lib/api/route-options.ts';
 
 	interface Props {
 		/** A failure of this drawer's own save that came back after it opened. */

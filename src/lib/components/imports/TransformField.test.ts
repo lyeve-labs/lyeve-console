@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import TransformField from './TransformField.svelte';
-import type { TransformDraft } from '$lib/api/bulk-import';
+import type { TransformDraft } from '#lib/api/bulk-import.ts';
 
 afterEach(cleanup);
 

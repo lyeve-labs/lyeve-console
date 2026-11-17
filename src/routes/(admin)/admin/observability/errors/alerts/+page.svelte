@@ -10,14 +10,14 @@
 		SectionHeading,
 		SegmentedControl,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import AlertChannelFields from '$lib/components/AlertChannelFields.svelte';
-	import { submitter } from '$lib/forms.svelte';
-	import { formRefusal } from '$lib/api/refusal';
-	import { SETTINGS_CHANNEL_PREFIX } from '$lib/api/error-tracking';
+	import { enhance } from '#lib/enhance.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import AlertChannelFields from '#lib/components/AlertChannelFields.svelte';
+	import { submitter } from '#lib/forms.svelte.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import { SETTINGS_CHANNEL_PREFIX } from '#lib/api/error-tracking.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

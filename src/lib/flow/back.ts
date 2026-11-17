@@ -1,4 +1,5 @@
-import type { BackLink } from '$lib/back';
+import type { BackLink } from '#lib/back.ts';
+import type { ReadonlyURL } from '$app/state';
 
 const FLOWS: BackLink = { href: '/admin/flows', label: 'Flows' };
 
@@ -16,7 +17,7 @@ export function fromFlow(href: string, flowId: string): string {
  * to the list they would have to find it in again. Only an id shaped like one
  * is honored, so the parameter cannot point the link anywhere else.
  */
-export function flowBack(url: URL): BackLink {
+export function flowBack(url: ReadonlyURL): BackLink {
 	const id = url.searchParams.get(FROM_FLOW);
 	if (!id || !/^[A-Za-z0-9_-]{1,64}$/.test(id)) return FLOWS;
 	return { href: `/admin/flows/${id}`, label: 'Flow editor' };

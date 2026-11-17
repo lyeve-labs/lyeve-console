@@ -17,19 +17,19 @@
 		type StatusTone,
 	} from '@lyeve-labs/ui-kit';
 	import { tick } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { page } from '$app/state';
 	import { ScrollText, Download, Trash2 } from '@lucide/svelte';
-	import AuditTabs from '$lib/components/AuditTabs.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { NO_VALUE, formatDateTime, plural } from '$lib/format';
-	import { actionWithQuery, listQuery, queryWithout } from '$lib/back';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import AuditTabs from '#lib/components/AuditTabs.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { NO_VALUE, formatDateTime, plural } from '#lib/format.ts';
+	import { actionWithQuery, listQuery, queryWithout } from '#lib/back.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
-	import { pageNumber, pageOffset } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
-	import { liveFilter } from '$lib/live-filter.svelte';
+	import { pageNumber, pageOffset } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

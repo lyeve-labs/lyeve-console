@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { actions, load } from './+page.server';
-import { fixtureLocalProvider, fixtureProvider, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
-import type { AiProvider } from '$lib/api/ai';
-import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '$lib/components/ai/test-support/events';
+import { fixtureLocalProvider, fixtureProvider, fixtureSettings } from '#lib/components/ai/test-support/fixtures.ts';
+import type { AiProvider } from '#lib/api/ai.ts';
+import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '#lib/components/ai/test-support/events.ts';
 
 type Loaded = Exclude<Awaited<ReturnType<typeof load>>, void>;
 

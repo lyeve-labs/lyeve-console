@@ -1,14 +1,14 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { authedClient } from '$lib/server/authz';
+import { authedClient } from '#lib/server/authz.ts';
 import { ApiError } from '@lyeve-labs/client';
 import { getPluginSchema } from '@lyeve-labs/client-rest';
-import { pluginSettings } from '$lib/config-forms';
-import { sessionToken } from '$lib/server/session-cookie';
-import { SESSION_ENDED } from '$lib/session';
-import { actionError } from '$lib/server/action-error';
-import { section, type Section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+import { pluginSettings } from '#lib/config-forms.ts';
+import { sessionToken } from '#lib/server/session-cookie.ts';
+import { SESSION_ENDED } from '#lib/session.ts';
+import { actionError } from '#lib/server/action-error.ts';
+import { section, type Section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 export interface ConfigSetting {
 	key: string;

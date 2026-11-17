@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
 import { asked } from './asked';
-import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
+import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 
 const QUESTION = { question: 'Delete this webhook?', detail: 'This cannot be undone.', label: 'Delete' };
 

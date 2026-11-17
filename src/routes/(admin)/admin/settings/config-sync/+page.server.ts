@@ -1,8 +1,8 @@
 import type { Actions, PageServerLoad } from './$types';
 import { error, fail, type RequestEvent } from '@sveltejs/kit';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
-import { actionError, actionFailure } from '$lib/server/action-error';
-import { refusalOf, refusalText } from '$lib/api/refusal';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
+import { actionError, actionFailure } from '#lib/server/action-error.ts';
+import { refusalOf, refusalText } from '#lib/api/refusal.ts';
 import {
 	MIN_PASSPHRASE,
 	applyConfig,
@@ -11,8 +11,8 @@ import {
 	exportConfig,
 	parseBundle,
 	type SyncRequest,
-} from '$lib/api/config-sync';
-import { forbiddenText } from '$lib/api/gate';
+} from '#lib/api/config-sync.ts';
+import { forbiddenText } from '#lib/api/gate.ts';
 
 /**
  * Config sync has no read of its own: every route is a POST, and an export

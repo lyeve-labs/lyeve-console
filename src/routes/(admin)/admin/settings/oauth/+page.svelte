@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formRefusal } from '$lib/api/refusal';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		Badge,
 		Button,
@@ -17,14 +17,14 @@
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { OAuthProvider } from '@lyeve-labs/client';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import { enhance } from '$app/forms';
-	import { confirmed, drawerFailure, tracked } from '$lib/forms.svelte';
+	import type { SubmitFunction } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
+	import { confirmed, drawerFailure, tracked } from '#lib/forms.svelte.ts';
 	import { KeyRound, Pencil, Plus, Trash2 } from '@lucide/svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { ICON } from '$lib/icon';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

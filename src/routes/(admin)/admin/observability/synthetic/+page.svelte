@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formRefusal } from '$lib/api/refusal';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		Alert,
 		Badge,
@@ -20,16 +20,16 @@
 		SearchInput,
 		SegmentedControl,
 	} from '@lyeve-labs/ui-kit';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { enhance } from '$app/forms';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { enhance } from '#lib/enhance.ts';
 	import { goto } from '$app/navigation';
-	import { confirmed, submitter, tracked } from '$lib/forms.svelte';
-	import AlertChannelFields from '$lib/components/AlertChannelFields.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { confirmed, submitter, tracked } from '#lib/forms.svelte.ts';
+	import AlertChannelFields from '#lib/components/AlertChannelFields.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import type { SubmitFunction } from '$app/forms';
 	import { BellRing, Pencil, Play, Plus, Radar, Trash2 } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import {
 		PROBE_HEALTH_LABELS,
 		PROBE_TYPES,
@@ -45,11 +45,11 @@
 		runGoingOnText,
 		type Probe,
 		type ProbeType,
-	} from '$lib/api/synthetic';
-	import { formatDateTime, plural } from '$lib/format';
+	} from '#lib/api/synthetic.ts';
+	import { formatDateTime, plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	// A failure from a drawer stays in that drawer. The channels drawer marks
@@ -81,9 +81,8 @@
 	function closeChannels() {
 		channelsOpen = false;
 		void goto(`${base}?${new URLSearchParams({ limit: String(data.limit), offset: String(data.offset) })}`, {
-			replaceState: true,
-			noScroll: true,
-			keepFocus: true,
+			replace: true,
+			reset: false,
 		});
 	}
 	const channelsSubmit = submitter(closeChannels);

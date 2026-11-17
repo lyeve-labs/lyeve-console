@@ -18,8 +18,8 @@
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
 import { query, type ListEnvelope } from './list';
-import { formatBytes, formatCount } from '$lib/format';
-import { shortId } from '$lib/utils/entry-identity';
+import { formatBytes, formatCount } from '#lib/format.ts';
+import { shortId } from '#lib/utils/entry-identity.ts';
 
 const QUOTAS_URL = '/api/admin/quotas';
 const REQUESTS_URL = '/api/admin/quota-requests';

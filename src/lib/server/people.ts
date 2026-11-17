@@ -1,5 +1,5 @@
 import type { HttpClient } from '@lyeve-labs/client';
-import { listTenantMembers } from '$lib/api/tenant-access';
+import { listTenantMembers } from '#lib/api/tenant-access.ts';
 
 /**
  * An account as a column names it and a picker offers it. The tenant is empty

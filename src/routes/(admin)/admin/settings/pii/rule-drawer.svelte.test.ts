@@ -2,9 +2,9 @@
 import { render, cleanup, fireEvent, screen } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 
-vi.mock('$app/navigation', () => ({ invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ refreshAll: vi.fn(async () => {}) }));
 
 /*
  * The rule form's submit function decides whether the drawer closes. It is

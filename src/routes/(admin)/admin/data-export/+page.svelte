@@ -18,15 +18,15 @@
 		Table,
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
-	import { enhance } from '$app/forms';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
+	import { enhance } from '#lib/enhance.ts';
 	import { invalidate } from '$app/navigation';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { CalendarClock, Download, Pause, Play, Plus, Search, Trash2, X } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import ExportConfigFields from '$lib/components/ExportConfigFields.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import ExportConfigFields from '#lib/components/ExportConfigFields.svelte';
 	import {
 		CRON_PRESETS,
 		EXPORT_ROW_CEILING,
@@ -40,13 +40,13 @@
 		scheduleState,
 		stageText,
 		type ExportSchedule,
-	} from '$lib/api/data-export';
-	import { jobTone } from '$lib/tones';
-	import { NO_VALUE, formatBytes, formatCount, formatDateTime } from '$lib/format';
-	import { confirmed, submitter } from '$lib/forms.svelte';
+	} from '#lib/api/data-export.ts';
+	import { jobTone } from '#lib/tones.ts';
+	import { NO_VALUE, formatBytes, formatCount, formatDateTime } from '#lib/format.ts';
+	import { confirmed, submitter } from '#lib/forms.svelte.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

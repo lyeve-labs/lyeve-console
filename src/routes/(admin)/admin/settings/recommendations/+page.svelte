@@ -13,11 +13,11 @@
 		Stat,
 		Table,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { RefreshCw, Sparkles, UserSearch } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
 	import {
 		hasUsers,
 		score,
@@ -26,10 +26,10 @@
 		splitIsSkewed,
 		type FeedEntry,
 		INTEGRATION_EXAMPLE,
-	} from '$lib/api/recommendations';
-	import { formatMillis, formatPercent, plural } from '$lib/format';
+	} from '#lib/api/recommendations.ts';
+	import { formatMillis, formatPercent, plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

@@ -6,7 +6,7 @@ vi.hoisted(() => {
 	process.env.LYEVE_CONSOLE_KEY = '0123456789abcdef0123456789abcdef';
 	process.env.CORE_INTERNAL_URL = 'http://engine.internal:3001';
 });
-vi.mock('$app/environment', () => ({ dev: false }));
+vi.mock('$app/env', () => ({ dev: false }));
 
 import { handleFetch } from './hooks.server';
 import {
@@ -14,7 +14,7 @@ import {
 	CONSOLE_SIGNATURE_HEADER,
 	CONSOLE_TIME_HEADER,
 	consoleSignature
-} from '$lib/server/engine';
+} from '#lib/server/engine.ts';
 
 async function call(url: string, headers: Record<string, string> = {}, browser?: string): Promise<Request> {
 	const sent: Request[] = [];
@@ -110,7 +110,7 @@ describe('handleFetch key names', () => {
 		for (const [name, value] of Object.entries(env)) vi.stubEnv(name, value);
 		vi.resetModules();
 		const hook = (await import('./hooks.server')).handleFetch;
-		const sign = (await import('$lib/server/engine')).consoleSignature;
+		const sign = (await import('#lib/server/engine.ts')).consoleSignature;
 		const sent: Request[] = [];
 		await hook({
 			request: new Request('https://admin.example.com/api/admin/users'),

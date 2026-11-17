@@ -12,17 +12,17 @@
 		Table,
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { Cable, PlugZap, Unplug } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { confirmed } from '$lib/forms.svelte';
-	import { AGENTS_CAP, agentKindLabel, type McpAgent } from '$lib/api/mcp';
-	import { LIFTS, type Refusal } from '$lib/api/refusal';
-	import { formatDateTime, plural } from '$lib/format';
-	import { ICON } from '$lib/icon';
-	import { ROLES } from '$lib/roles';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import { confirmed } from '#lib/forms.svelte.ts';
+	import { AGENTS_CAP, agentKindLabel, type McpAgent } from '#lib/api/mcp.ts';
+	import { LIFTS, type Refusal } from '#lib/api/refusal.ts';
+	import { formatDateTime, plural } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { ROLES } from '#lib/roles.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

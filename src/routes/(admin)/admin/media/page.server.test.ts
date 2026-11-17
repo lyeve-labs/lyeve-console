@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 
-vi.mock('$lib/server/authz', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/server/authz')>()),
+vi.mock('#lib/server/authz.ts', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/authz.ts')>()),
 	requireUser: vi.fn(async () => ({ id: 'u1', roles: ['admin'] })),
 }));
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
 import { actions, load } from './+page.server';
-import { signedIn } from '$lib/server/test-support/signed-in';
+import { signedIn } from '#lib/server/test-support/signed-in.ts';
 import { headerOf, json, mockCookies, OPENAPI, sendEvent } from '../lab-events.test-support';
 
 /*

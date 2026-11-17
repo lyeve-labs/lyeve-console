@@ -15,14 +15,14 @@ import {
 	type DestinationRead,
 	type ExporterHealth,
 	type SaveDestination,
-} from '$lib/api/telemetry';
-import { errorCodeOf } from '$lib/api/limits';
-import { refusalOf, refusalText } from '$lib/api/refusal';
-import { actionError, actionFailure } from '$lib/server/action-error';
-import { forbiddenText, section, type Section } from '$lib/api/gate';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/telemetry.ts';
+import { errorCodeOf } from '#lib/api/limits.ts';
+import { refusalOf, refusalText } from '#lib/api/refusal.ts';
+import { actionError, actionFailure } from '#lib/server/action-error.ts';
+import { forbiddenText, section, type Section } from '#lib/api/gate.ts';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 const READERS = ['admin', 'super_admin'];
 

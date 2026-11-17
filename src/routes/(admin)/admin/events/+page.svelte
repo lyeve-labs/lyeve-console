@@ -16,21 +16,21 @@
 		Pagination,
 		confirm,
 	} from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
-	import { enhance } from '$app/forms';
-	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import { browserOffset } from '$lib/utils/wall-clock';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
+	import { enhance } from '#lib/enhance.ts';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
+	import type { SubmitFunction } from '$app/forms';
+	import { browserOffset } from '#lib/utils/wall-clock.ts';
 	import { History, Rss, Search } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { didFire, failedOnly, progressOf } from '$lib/api/events';
-	import { jobTone } from '$lib/tones';
-	import { NO_VALUE, formatDateTime } from '$lib/format';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { didFire, failedOnly, progressOf } from '#lib/api/events.ts';
+	import { jobTone } from '#lib/tones.ts';
+	import { NO_VALUE, formatDateTime } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

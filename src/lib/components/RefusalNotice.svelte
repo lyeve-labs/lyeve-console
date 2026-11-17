@@ -7,9 +7,9 @@
 	 * stale one here.
 	 */
 	import { Alert, Button } from '@lyeve-labs/ui-kit';
-	import { useInstance } from '$lib/instance.svelte';
-	import UpgradeLink from '$lib/components/UpgradeLink.svelte';
-	import { LICENSE_PAGE, refusalText, refusalTitle, upgradeWords, type Refusal } from '$lib/api/refusal';
+	import { useInstance } from '#lib/instance.svelte.ts';
+	import UpgradeLink from '#lib/components/UpgradeLink.svelte';
+	import { LICENSE_PAGE, refusalText, refusalTitle, upgradeWords, type Refusal } from '#lib/api/refusal.ts';
 
 	let {
 		refusal,

@@ -181,7 +181,7 @@ describe('content index search', () => {
 		const { container } = render(ContentIndex, { props: { data: data({ query: 'po' }) } });
 		const form = container.querySelector('input[name="q"]')?.closest('form') as HTMLFormElement;
 		expect(form.querySelector('button[type="submit"]')).toBeNull();
-		expect(form.hasAttribute('data-sveltekit-keepfocus')).toBe(true);
+		expect(form.getAttribute('data-sveltekit-reset')).toBe('false');
 		expect((form.querySelector('input[name="q"]') as HTMLInputElement).value).toBe('po');
 	});
 });

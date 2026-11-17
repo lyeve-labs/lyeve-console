@@ -4,8 +4,8 @@ const engine = vi.hoisted(() => ({ get: vi.fn() }));
 const session = vi.hoisted(() => ({ user: { id: 'u1', roles: ['super_admin'] } as { id: string; roles: string[] } }));
 
 // The role check is the real one, so the load's own refusal is what is tested.
-vi.mock('$lib/server/authz', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/server/authz')>()),
+vi.mock('#lib/server/authz.ts', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/authz.ts')>()),
 	authedClient: vi.fn(() => engine),
 	loadUser: vi.fn(async () => session.user),
 }));

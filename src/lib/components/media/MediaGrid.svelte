@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Card } from '@lyeve-labs/ui-kit';
-	import type { MediaItem } from '$lib/api/media';
-	import { formatBytes } from '$lib/format';
+	import type { MediaItem } from '#lib/api/media.ts';
+	import { formatBytes } from '#lib/format.ts';
 	import MediaThumb from './MediaThumb.svelte';
 
 	interface Props {

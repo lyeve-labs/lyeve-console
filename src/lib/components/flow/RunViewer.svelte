@@ -2,10 +2,10 @@
 	import { Alert, Badge, Button, CopyButton, SectionHeading, SegmentedControl, type StatusTone } from '@lyeve-labs/ui-kit';
 	import { RotateCw } from '@lucide/svelte';
 	import JsonTree from './JsonTree.svelte';
-	import type { FlowRun, RunStep } from '$lib/api/flows';
-	import { formatDuration } from '$lib/flow/time';
-	import { statusTone } from '$lib/flow/triggers';
-	import { ICON } from '$lib/icon';
+	import type { FlowRun, RunStep } from '#lib/api/flows.ts';
+	import { formatDuration } from '#lib/flow/time.ts';
+	import { statusTone } from '#lib/flow/triggers.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	interface Props {
 		/** The run as the plugin served it. */

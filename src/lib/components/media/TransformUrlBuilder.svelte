@@ -4,13 +4,13 @@
 	 * refusal the engine sends renders as a notice.
 	 */
 	import { Alert, CopyField, Button, NumberInput, RadioGroup, SectionHeading, SegmentedControl, Select, Toggle } from '@lyeve-labs/ui-kit';
-	import { browser } from '$app/environment';
-	import { enhance } from '$app/forms';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { submitter } from '$lib/forms.svelte';
-	import type { FocalPoint, SignedTransform } from '$lib/api/media';
-	import type { Refusal } from '$lib/api/refusal';
-	import { formatDateTime } from '$lib/format';
+	import { browser } from '$app/env';
+	import { enhance } from '#lib/enhance.ts';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import { submitter } from '#lib/forms.svelte.ts';
+	import type { FocalPoint, SignedTransform } from '#lib/api/media.ts';
+	import type { Refusal } from '#lib/api/refusal.ts';
+	import { formatDateTime } from '#lib/format.ts';
 
 	interface Props {
 		id: string;

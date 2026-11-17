@@ -3,7 +3,7 @@ import { ApiError } from '@lyeve-labs/client';
 
 const engine = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() }));
 const authz = vi.hoisted(() => ({ roles: ['super_admin'] as string[] }));
-vi.mock('$lib/server/authz', async (importOriginal) => ({
+vi.mock('#lib/server/authz.ts', async (importOriginal) => ({
 	...((await importOriginal()) as object),
 	authedClient: vi.fn(() => engine),
 	requireRole: vi.fn(async (_event: unknown, allowed: string[]) => {

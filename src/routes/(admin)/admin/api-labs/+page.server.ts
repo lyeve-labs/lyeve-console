@@ -1,12 +1,12 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { staticGroups, type EndpointGroup } from '$lib/api/reference';
-import { buildReference, type OpenAPIDocument } from '$lib/api/openapi';
+import { staticGroups, type EndpointGroup } from '#lib/api/reference.ts';
+import { buildReference, type OpenAPIDocument } from '#lib/api/openapi.ts';
 import type { HttpClient } from '@lyeve-labs/client';
-import { authedClient } from '$lib/server/authz';
-import { buildPath, buildQuery, byteLength, findEndpoint, labEndpoints, riskOf } from '$lib/api/labs';
+import { authedClient } from '#lib/server/authz.ts';
+import { buildPath, buildQuery, byteLength, findEndpoint, labEndpoints, riskOf } from '#lib/api/labs.ts';
 import { MAX_BODY_BYTES, send } from './labs.server';
-import { asked } from '$lib/server/asked';
+import { asked } from '#lib/server/asked.ts';
 
 /**
  * The endpoints a lab may send, read from the engine every time.

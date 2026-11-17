@@ -1,11 +1,11 @@
 import type { Actions, PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-import { readMemoryTrend } from '$lib/api/profiler';
-import { section } from '$lib/api/gate';
-import { authedClient, loadUser } from '$lib/server/authz';
-import { couldNotLoad } from '$lib/outage';
+import { readMemoryTrend } from '#lib/api/profiler.ts';
+import { section } from '#lib/api/gate.ts';
+import { authedClient, loadUser } from '#lib/server/authz.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 import { RESET_QUESTION, reset } from '../reset.server';
-import { asked } from '$lib/server/asked';
+import { asked } from '#lib/server/asked.ts';
 
 // The snapshots describe the whole process, so the tab is a super admin's,
 // like the rest of the profiler.

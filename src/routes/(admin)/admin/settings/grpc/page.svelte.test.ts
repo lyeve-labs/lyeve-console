@@ -2,10 +2,10 @@
 import { render, cleanup } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/navigation', () => ({ invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ refreshAll: vi.fn(async () => {}) }));
 
 import GrpcPage from './+page.svelte';
-import type { GrpcStatus } from '$lib/api/grpc';
+import type { GrpcStatus } from '#lib/api/grpc.ts';
 
 afterEach(cleanup);
 

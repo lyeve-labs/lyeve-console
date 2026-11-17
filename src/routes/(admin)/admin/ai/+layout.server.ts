@@ -1,8 +1,8 @@
 import type { LayoutServerLoad } from './$types';
-import { authedClient, loadUser } from '$lib/server/authz';
-import { aiSettingsGate } from '$lib/server/ai-load';
-import { GATE_OK, section } from '$lib/api/gate';
-import { getAiSettings, type AiGate } from '$lib/api/ai';
+import { authedClient, loadUser } from '#lib/server/authz.ts';
+import { aiSettingsGate } from '#lib/server/ai-load.ts';
+import { GATE_OK, section } from '#lib/api/gate.ts';
+import { getAiSettings, type AiGate } from '#lib/api/ai.ts';
 
 /**
  * The tenant switch, read once for every tab. It is the one route the switch

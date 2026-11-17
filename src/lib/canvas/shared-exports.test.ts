@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import * as graph from '$lib/flow/graph';
-import * as types from '$lib/flow/types';
-import * as fixtures from '$lib/flow/fixtures';
-import * as categories from '$lib/flow/categories';
-import * as time from '$lib/flow/time';
-import * as relations from '$lib/relations';
-import * as icon from '$lib/icon';
+import * as graph from '#lib/flow/graph.ts';
+import * as types from '#lib/flow/types.ts';
+import * as fixtures from '#lib/flow/fixtures.ts';
+import * as categories from '#lib/flow/categories.ts';
+import * as time from '#lib/flow/time.ts';
+import * as relations from '#lib/relations.ts';
+import * as icon from '#lib/icon.ts';
 
 /**
  * Every runtime name the visual editors import from the admin's library, read
@@ -17,7 +17,7 @@ import * as icon from '$lib/icon';
  */
 const USED: [string, Record<string, unknown>, string[]][] = [
 	[
-		'$lib/flow/graph',
+		'#lib/flow/graph.ts',
 		graph,
 		[
 			'TRIGGER_OUTPUTS',
@@ -42,16 +42,16 @@ const USED: [string, Record<string, unknown>, string[]][] = [
 			'updateNote',
 		],
 	],
-	['$lib/flow/types', types, ['TRIGGER_ID']],
+	['#lib/flow/types.ts', types, ['TRIGGER_ID']],
 	[
-		'$lib/flow/fixtures',
+		'#lib/flow/fixtures.ts',
 		fixtures,
 		['blockedFlow', 'fixtureCatalog', 'fixtureFlow', 'fixtureRun', 'fixtureTemplates', 'joinFlow', 'missingTypeErrors', 'respondingFlow'],
 	],
-	['$lib/flow/categories', categories, ['categoryIcon', 'categoryStripe', 'categoryText']],
-	['$lib/flow/time', time, ['formatDuration']],
-	['$lib/relations', relations, ['pivotTable', 'relationKind', 'tableName']],
-	['$lib/icon', icon, ['ICON']],
+	['#lib/flow/categories.ts', categories, ['categoryIcon', 'categoryStripe', 'categoryText']],
+	['#lib/flow/time.ts', time, ['formatDuration']],
+	['#lib/relations.ts', relations, ['pivotTable', 'relationKind', 'tableName']],
+	['#lib/icon.ts', icon, ['ICON']],
 ];
 
 describe('the library names the visual editors import', () => {

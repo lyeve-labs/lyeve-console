@@ -15,12 +15,12 @@
 		Pagination,
 		type StatusTone,
 	} from '@lyeve-labs/ui-kit';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import OlderHidden from '$lib/components/OlderHidden.svelte';
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import OlderHidden from '#lib/components/OlderHidden.svelte';
+	import { enhance } from '#lib/enhance.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { BellRing, BugOff, CheckCheck, CircleCheck, EyeOff, RotateCcw, UserPlus } from '@lucide/svelte';
 	import {
 		alertStatus,
@@ -34,12 +34,12 @@
 		type AlertStatus,
 		type ErrorAlert,
 		type TriageAction,
-	} from '$lib/api/error-tracking';
-	import { formRefusal } from '$lib/api/refusal';
-	import { formatCount, formatDateTime } from '$lib/format';
+	} from '#lib/api/error-tracking.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import { formatCount, formatDateTime } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

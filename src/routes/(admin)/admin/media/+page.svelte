@@ -12,32 +12,32 @@
 		SegmentedControl,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { csrfHeaders } from '$lib/api/csrf';
-	import { SIGN_IN_AGAIN } from '$lib/session';
-	import { renewingOnce } from '$lib/renew';
-	import type { MediaItem } from '$lib/api/media';
-	import { pageHref, pageNumber } from '$lib/api/list';
+	import { csrfHeaders } from '#lib/api/csrf.ts';
+	import { SIGN_IN_AGAIN } from '#lib/session.ts';
+	import { renewingOnce } from '#lib/renew.ts';
+	import type { MediaItem } from '#lib/api/media.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
 	import type { PageData, ActionData } from './$types';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { goto } from '$app/navigation';
 	import { onMount, tick } from 'svelte';
 	import { Image, Link, LayoutGrid, List, Upload } from '@lucide/svelte';
-	import MediaGrid from '$lib/components/media/MediaGrid.svelte';
-	import MediaTable from '$lib/components/media/MediaTable.svelte';
-	import MediaPreviewDrawer from '$lib/components/media/MediaPreviewDrawer.svelte';
+	import MediaGrid from '#lib/components/media/MediaGrid.svelte';
+	import MediaTable from '#lib/components/media/MediaTable.svelte';
+	import MediaPreviewDrawer from '#lib/components/media/MediaPreviewDrawer.svelte';
 	import {
 		readMediaView,
 		writeMediaView,
 		type MediaView,
-	} from '$lib/components/media/view-preference';
-	import { ICON } from '$lib/icon';
-	import { formRefusal } from '$lib/api/refusal';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { plural } from '$lib/format';
-	import { tracked } from '$lib/forms.svelte';
-	import { liveFilter } from '$lib/live-filter.svelte';
+	} from '#lib/components/media/view-preference.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { plural } from '#lib/format.ts';
+	import { tracked } from '#lib/forms.svelte.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -157,7 +157,7 @@
 		// first unfiltered page. Going there rather than reloading in place is
 		// what makes it visible from page three or from inside a search.
 		if (uploaded > 0) {
-			await goto('/admin/media', { invalidateAll: true });
+			await goto('/admin/media', { refreshAll: true });
 			toast.success(`Uploaded ${uploaded} ${plural(uploaded, 'file')}`);
 		}
 	}

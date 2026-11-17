@@ -1,6 +1,6 @@
 import type { Permission, Schema } from '@lyeve-labs/client';
-import type { FlowOption } from '$lib/flow/types';
-import { ALL_FLOWS, flowResource, flowResourceLabel, isFlowResource } from '$lib/flow/permissions';
+import type { FlowOption } from '#lib/flow/types.ts';
+import { ALL_FLOWS, flowResource, flowResourceLabel, isFlowResource } from '#lib/flow/permissions.ts';
 
 /*
  * How the permission rules read: which rule applies where, what each cell of

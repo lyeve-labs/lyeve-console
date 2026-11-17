@@ -1,13 +1,13 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireUser } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { getLocales, putLocales, type LocalePreferences } from '$lib/api/localization';
-import { parsePreferences } from '$lib/localization/preferences';
-import { section, type Section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+import { authedClient, requireUser } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { getLocales, putLocales, type LocalePreferences } from '#lib/api/localization.ts';
+import { parsePreferences } from '#lib/localization/preferences.ts';
+import { section, type Section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();

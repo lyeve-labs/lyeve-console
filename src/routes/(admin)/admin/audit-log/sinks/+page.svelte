@@ -15,14 +15,14 @@
 		SegmentedControl,
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Pencil, Plus, Radio, Send, Trash2 } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
-	import AuditTabs from '$lib/components/AuditTabs.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { confirmed, drawerFailure, fieldErrors, submitter } from '$lib/forms.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import AuditTabs from '#lib/components/AuditTabs.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { confirmed, drawerFailure, fieldErrors, submitter } from '#lib/forms.svelte.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		SINK_KINDS,
 		SINK_KIND_LABELS,
@@ -31,9 +31,9 @@
 		sinkTone,
 		type AuditSink,
 		type SinkKind,
-	} from '$lib/api/audit-sinks';
-	import { formatDateTime, plural } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	} from '#lib/api/audit-sinks.ts';
+	import { formatDateTime, plural } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

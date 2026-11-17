@@ -13,12 +13,12 @@
 		Toggle,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import { confirmed, tracked } from '$lib/forms.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import { confirmed, tracked } from '#lib/forms.svelte.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { Globe, MapPin, Pencil, Plus, Trash2 } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import {
 		REGION_STATE_LABELS,
 		occupancy,
@@ -29,10 +29,10 @@
 		reportIsPartial,
 		unassigned,
 		type Region,
-	} from '$lib/api/residency';
-	import { formatDateTime, plural } from '$lib/format';
+	} from '#lib/api/residency.ts';
+	import { formatDateTime, plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

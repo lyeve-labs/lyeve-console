@@ -1,8 +1,8 @@
 import { confirm, toast } from '@lyeve-labs/ui-kit';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 import { invalidate } from '$app/navigation';
-import { MIGRATIONS_DEPENDENCY } from '$lib/api/migrate';
-import { appliedMessage } from '$lib/schema/editor';
+import { MIGRATIONS_DEPENDENCY } from '#lib/api/migrate.ts';
+import { appliedMessage } from '#lib/schema/editor.ts';
 import type { HistoryEntry } from '../+page.server';
 
 export type HistoryView = { name: string; entries: HistoryEntry[]; pending: number; limit: number };

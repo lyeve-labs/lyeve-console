@@ -1,10 +1,10 @@
 import type { Actions, PageServerLoad } from './$types';
 import { error, fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient, requireUser } from '$lib/server/authz';
-import { aiActionError, aiGate } from '$lib/server/ai-load';
-import { GATE_OK, section } from '$lib/api/gate';
-import { getTranscript, recapTranscript } from '$lib/api/ai';
+import { authedClient, requireUser } from '#lib/server/authz.ts';
+import { aiActionError, aiGate } from '#lib/server/ai-load.ts';
+import { GATE_OK, section } from '#lib/api/gate.ts';
+import { getTranscript, recapTranscript } from '#lib/api/ai.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { aiSettings } = await event.parent();

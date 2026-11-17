@@ -9,8 +9,8 @@ const state = vi.hoisted(() => ({
 vi.mock('$app/state', () => state);
 
 import RootError from './+error.svelte';
-import { BUSY, OUTAGE } from '$lib/outage';
-import { outlineSkips } from '$lib/test-outline';
+import { BUSY, OUTAGE } from '#lib/outage.ts';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(cleanup);
 

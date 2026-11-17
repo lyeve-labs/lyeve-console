@@ -11,7 +11,7 @@ const authz = vi.hoisted(() => ({
 	requireRole: vi.fn(async () => ({ id: 'u1', roles: ['super_admin'] })),
 	loadUser: vi.fn(async () => ({ id: 'u1', roles: ['super_admin'] })),
 }));
-vi.mock('$lib/server/authz', () => authz);
+vi.mock('#lib/server/authz.ts', () => authz);
 
 import { actions, load } from './+page.server';
 

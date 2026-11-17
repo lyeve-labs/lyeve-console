@@ -11,15 +11,15 @@
 		Textarea,
 		confirm as confirmDialog,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
-	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { enhance } from '#lib/enhance.ts';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { Network, Play } from '@lucide/svelte';
-	import { grpcRouteParams, grpcRouteTakesBody, type LabResult } from '$lib/api/labs';
+	import { grpcRouteParams, grpcRouteTakesBody, type LabResult } from '#lib/api/labs.ts';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ApiLabsTabs from '$lib/components/ApiLabsTabs.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ApiLabsTabs from '#lib/components/ApiLabsTabs.svelte';
 	import LabAnswer from '../LabAnswer.svelte';
 	import NoSandbox from '../NoSandbox.svelte';
 

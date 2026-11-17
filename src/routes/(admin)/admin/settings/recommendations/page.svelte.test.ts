@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 
 import RecommendationsPage from './+page.svelte';
-import type { AbStats } from '$lib/api/recommendations';
-import { outlineSkips } from '$lib/test-outline';
+import type { AbStats } from '#lib/api/recommendations.ts';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(cleanup);
 

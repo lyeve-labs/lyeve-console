@@ -2,16 +2,16 @@
 	import { Alert, Card, Breadcrumb, Button, PageShell, Select } from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { SchemaField } from '@lyeve-labs/client';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { page } from '$app/state';
 	import { Globe } from '@lucide/svelte';
-	import { crumbsAfter } from '$lib/breadcrumb';
-	import { listPath, listQueryFrom } from '$lib/utils/entry-view';
-	import { buildEmpty, validate, serialize, extractM2MRelations } from '$lib/utils/content-form';
-	import ContentForm from '$lib/components/ContentForm.svelte';
-	import { ICON } from '$lib/icon';
-	import { couldNotLoad } from '$lib/outage';
-	import { tracked } from '$lib/forms.svelte';
+	import { crumbsAfter } from '#lib/breadcrumb.ts';
+	import { listPath, listQueryFrom } from '#lib/utils/entry-view.ts';
+	import { buildEmpty, validate, serialize, extractM2MRelations } from '#lib/utils/content-form.ts';
+	import ContentForm from '#lib/components/ContentForm.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
+	import { tracked } from '#lib/forms.svelte.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

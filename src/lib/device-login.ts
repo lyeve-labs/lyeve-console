@@ -4,7 +4,7 @@
  * shows for a request.
  */
 
-import { plural } from '$lib/format';
+import { plural } from '#lib/format.ts';
 
 /** The characters a user code is drawn from. 0, O, 1, I and L read alike and are left out. */
 const USER_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';

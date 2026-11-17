@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Collapsible, SearchInput, Tooltip } from '@lyeve-labs/ui-kit';
 	import { Lock, StickyNote } from '@lucide/svelte';
-	import { isLocked, type NodeSpec } from '$lib/flow/types';
-	import { CATEGORY_ORDER, categoryIcon, categoryLabel, categoryText, pluginLabel } from '$lib/flow/categories';
-	import { ICON } from '$lib/icon';
+	import { isLocked, type NodeSpec } from '#lib/flow/types.ts';
+	import { CATEGORY_ORDER, categoryIcon, categoryLabel, categoryText, pluginLabel } from '#lib/flow/categories.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	interface Props {
 		catalog: NodeSpec[];

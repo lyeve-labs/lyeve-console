@@ -2,17 +2,17 @@
 	import { Badge, Button, Drawer, EmptyState, Table } from '@lyeve-labs/ui-kit';
 	import type { WebhookDelivery } from '@lyeve-labs/client';
 	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { CheckCircle, XCircle, History, RotateCcw } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import type { Section } from '$lib/api/gate';
-	import { formRefusal, refusalText, type Refusal } from '$lib/api/refusal';
-	import { formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
-	import { eventTone } from '$lib/tones';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import type { Section } from '#lib/api/gate.ts';
+	import { formRefusal, refusalText, type Refusal } from '#lib/api/refusal.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { eventTone } from '#lib/tones.ts';
 
 	interface Props {
 		/** The page's one action result, which carries each retry. */
@@ -33,9 +33,9 @@
 	// Closing takes the webhook out of the address, or the next load would
 	// open its history again.
 	function close() {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.delete('deliveries');
-		void goto(`${next.pathname}${next.search}`, { noScroll: true, keepFocus: true });
+		void goto(`${next.pathname}${next.search}`, { reset: false });
 	}
 
 	let retryResults = $state<Record<string, { success: boolean; message: string }>>({});

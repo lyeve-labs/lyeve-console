@@ -12,7 +12,7 @@
  */
 import type { HttpClient } from '@lyeve-labs/client';
 import type { PluginStatus, PluginStatusReport } from '@lyeve-labs/client-rest';
-import { readRunningPlugins, runningFromStatus, type RunningRead } from '$lib/api/plugins-running';
+import { readRunningPlugins, runningFromStatus, type RunningRead } from '#lib/api/plugins-running.ts';
 
 /** What the shell knows about the plugins that run. */
 export type PluginSet =

@@ -1,4 +1,6 @@
+import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vitest/config';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -12,8 +14,70 @@ const allowedHosts = (process.env.DEV_ALLOWED_HOSTS ?? '')
   .map((h) => h.trim())
   .filter(Boolean);
 
+// The captcha providers' own origins, from each one's published CSP guidance.
+const CAPTCHA_SCRIPT_ORIGINS = [
+	'https://challenges.cloudflare.com',
+	'https://hcaptcha.com',
+	'https://*.hcaptcha.com',
+	'https://www.google.com/recaptcha/',
+	'https://www.gstatic.com/recaptcha/',
+] as const;
+const CAPTCHA_FRAME_ORIGINS = [
+	'https://challenges.cloudflare.com',
+	'https://hcaptcha.com',
+	'https://*.hcaptcha.com',
+	'https://www.google.com/recaptcha/',
+	'https://recaptcha.google.com/recaptcha/',
+] as const;
+
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()],
+	plugins: [
+		tailwindcss(),
+		sveltekit({
+			// Throw on an accessibility warning rather than printing one. The
+			// application has none, so the gate fires only on a new one.
+			//
+			// Both spellings are tested. Svelte 5 spells every warning code in
+			// snake_case, so a gate written as startsWith('a11y-') would match
+			// nothing and reject nothing while still reading as a working gate.
+			onwarn: (warning, handler) => {
+				if (/^a11y[-_]/.test(warning.code ?? '')) {
+					throw new Error(`a11y violation: ${warning.code}: ${warning.message}`);
+				}
+				handler?.(warning);
+			},
+			preprocess: vitePreprocess(),
+			adapter: adapter(),
+			// The visual editors are a separate package built into the console,
+			// and they still import its modules through $lib. SvelteKit 3 keeps
+			// that name only as an alias, which goes once the editors import
+			// through #lib.
+			alias: { $lib: 'src/lib' },
+			// CSP via SvelteKit so its inline hydration scripts get nonces automatically.
+			// The fonts ship with the build, so no font origin is allowed. The sign-in
+			// challenge loads its widget from whichever provider the captcha plugin
+			// is configured for (Turnstile, hCaptcha or
+			// reCAPTCHA), so those origins are allowed for scripts and frames. The list
+			// matches captchaScriptURL in src/lib/captcha.ts. Everything else is locked
+			// to 'self'.
+			csp: {
+				mode: 'auto',
+				directives: {
+					'default-src': ['self'],
+					'script-src': ['self', ...CAPTCHA_SCRIPT_ORIGINS],
+					'style-src': ['self', 'unsafe-inline', 'https://hcaptcha.com', 'https://*.hcaptcha.com'],
+					'font-src': ['self', 'data:'],
+					'img-src': ['self', 'data:'],
+					'connect-src': ['self', 'https://hcaptcha.com', 'https://*.hcaptcha.com'],
+					'frame-src': [...CAPTCHA_FRAME_ORIGINS],
+					'frame-ancestors': ['none'],
+					'form-action': ['self'],
+					'base-uri': ['self'],
+					'object-src': ['none']
+				}
+			}
+		}),
+	],
 	// Never emit source maps in the production bundle. They expose original
 	// TypeScript source to anyone who can reach the built assets.
 	build: { sourcemap: false },

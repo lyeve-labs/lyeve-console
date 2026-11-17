@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { POST } from './+server';
-import { mockCookies } from '$lib/components/ai/test-support/events';
+import { mockCookies } from '#lib/components/ai/test-support/events.ts';
 
 const ORIGIN = 'http://localhost';
 

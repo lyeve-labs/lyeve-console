@@ -1,6 +1,6 @@
-import { CONDITION_OPS, type ConditionOp, type StageCondition, type StageInput } from '$lib/api/review';
-import { text } from '$lib/api/narrow';
-import { couldNotLoad } from '$lib/outage';
+import { CONDITION_OPS, type ConditionOp, type StageCondition, type StageInput } from '#lib/api/review.ts';
+import { text } from '#lib/api/narrow.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 /** The SLA ceiling the plugin accepts, in seconds: ten days. */
 export const MAX_SLA_SECONDS = 864000;

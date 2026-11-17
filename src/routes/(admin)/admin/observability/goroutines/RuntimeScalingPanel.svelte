@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Alert, Button, Card, NumberInput, SectionHeading, SegmentedControl, Stat } from '@lyeve-labs/ui-kit';
 	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
-	import { formRefusal } from '$lib/api/refusal';
+	import { enhance } from '#lib/enhance.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		FACTS,
 		MEMORY_MB_MIN,
@@ -24,12 +24,12 @@
 		type Recommended,
 		type RuntimeSetting,
 		type RuntimeSettingsMap,
-	} from '$lib/api/runtime-settings';
-	import { factText, recommendationText, warningText } from '$lib/api/runtime-words';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { formatCount } from '$lib/format';
-	import { fieldErrors } from '$lib/forms.svelte';
+	} from '#lib/api/runtime-settings.ts';
+	import { factText, recommendationText, warningText } from '#lib/api/runtime-words.ts';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { formatCount } from '#lib/format.ts';
+	import { fieldErrors } from '#lib/forms.svelte.ts';
 	import type { ActionData, PageData } from './$types';
 
 	interface Props {
@@ -248,7 +248,7 @@
 					{#if !read.replicas?.known || (coresFact && !coresFact.known)}
 						<!-- The typed values are query parameters, so the recommendations
 						     reload through the page load and survive a refresh. -->
-						<form method="GET" class="flex flex-col gap-4" data-sveltekit-noscroll data-sveltekit-keepfocus aria-label="Refine the recommendations">
+						<form method="GET" class="flex flex-col gap-4" data-sveltekit-reset="false" aria-label="Refine the recommendations">
 							{#if !read.replicas?.known}
 								<p class="text-sm text-muted" data-testid="runtime-replicas-unknown">
 									Recommendations assume one replica. Enter the number of replicas you run if you run more.

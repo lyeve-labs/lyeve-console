@@ -5,18 +5,18 @@
 	import EventTriggerForm from './EventTriggerForm.svelte';
 	import InlineDataEditor from './InlineDataEditor.svelte';
 	import type { TablesState } from './TablesPanel.svelte';
-	import { isLocked, type DatasourceOption, type EventTypes, type FlowDefinition, type FlowOption, type NodeSpec, type SchemaOption, type Selection } from '$lib/flow/types';
-	import { findEdge, fromPort, nodeById, removeEdge, removeNodes, removeNote, specFor, toPort, updateNode } from '$lib/flow/graph';
-	import { categoryIcon, categoryText, pluginLabel } from '$lib/flow/categories';
-	import type { ValidationError } from '$lib/api/flows';
-	import { hasKnownKey, isLockedOption } from '$lib/flow/schema';
-	import { isInlineDataSchema } from '$lib/flow/inline';
-	import { isEventTriggerSchema } from '$lib/flow/events';
-	import { flowEndpoints, slugError, type FlowEndpoint } from '$lib/flow/endpoints';
-	import { FILL_NODE } from '$lib/flow/fill';
-	import { ICON } from '$lib/icon';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { GATE_OK, type Gate } from '$lib/api/gate';
+	import { isLocked, type DatasourceOption, type EventTypes, type FlowDefinition, type FlowOption, type NodeSpec, type SchemaOption, type Selection } from '#lib/flow/types.ts';
+	import { findEdge, fromPort, nodeById, removeEdge, removeNodes, removeNote, specFor, toPort, updateNode } from '#lib/flow/graph.ts';
+	import { categoryIcon, categoryText, pluginLabel } from '#lib/flow/categories.ts';
+	import type { ValidationError } from '#lib/api/flows.ts';
+	import { hasKnownKey, isLockedOption } from '#lib/flow/schema.ts';
+	import { isInlineDataSchema } from '#lib/flow/inline.ts';
+	import { isEventTriggerSchema } from '#lib/flow/events.ts';
+	import { flowEndpoints, slugError, type FlowEndpoint } from '#lib/flow/endpoints.ts';
+	import { FILL_NODE } from '#lib/flow/fill.ts';
+	import { ICON } from '#lib/icon.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { GATE_OK, type Gate } from '#lib/api/gate.ts';
 
 	interface Props {
 		definition: FlowDefinition;

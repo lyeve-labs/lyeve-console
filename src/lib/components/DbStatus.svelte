@@ -23,13 +23,13 @@
 	 */
 	import { Badge, Button, Modal } from '@lyeve-labs/ui-kit';
 	import { CircleAlert, CircleCheck, CircleHelp } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import { enhance } from '$app/forms';
-	import { invalidate, invalidateAll } from '$app/navigation';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import { MIGRATIONS_DEPENDENCY, type PendingStatement } from '$lib/api/migrate';
-	import { overlayClosed } from '$lib/overlay';
-	import { plural } from '$lib/format';
+	import { ICON } from '#lib/icon.ts';
+	import { enhance } from '#lib/enhance.ts';
+	import { invalidate, refreshAll } from '$app/navigation';
+	import type { SubmitFunction } from '$app/forms';
+	import { MIGRATIONS_DEPENDENCY, type PendingStatement } from '#lib/api/migrate.ts';
+	import { overlayClosed } from '#lib/overlay.ts';
+	import { plural } from '#lib/format.ts';
 
 	interface Props {
 		/** Migrations waiting to be applied, or null when the engine did not answer. */
@@ -79,7 +79,7 @@
 			 * so the shell's data is invalidated instead and the reader keeps
 			 * their place.
 			 */
-			await invalidateAll();
+			await refreshAll();
 		};
 	};
 

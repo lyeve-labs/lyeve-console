@@ -1,18 +1,18 @@
 import { redirect, fail } from '@sveltejs/kit';
-import { authedClient, sessionUser } from '$lib/server/authz';
+import { authedClient, sessionUser } from '#lib/server/authz.ts';
 import type { PageServerLoad, Actions } from './$types';
 import { createClient, ApiError } from '@lyeve-labs/client';
 import { mfaVerify, isMFAChallenge, type LoginResponse } from '@lyeve-labs/client-rest';
-import { checkRateLimit } from '$lib/server/rate-limit';
-import { clientAddressOf } from '$lib/server/engine';
-import { secondFactorFailure } from '$lib/server/second-factor';
-import { clearSessionCookie, setRefreshCookie, setSessionCookie, sessionToken } from '$lib/server/session-cookie';
-import { adminReturnPath } from '$lib/server/local-path';
-import { LANDING } from '$lib/landing';
-import { challengeFrom } from '$lib/captcha';
-import { organizationFromUrl } from '$lib/organization';
-import { askedOrganization, asksOrganization } from '$lib/server/sign-in-organization';
-import { outageFor } from '$lib/outage';
+import { checkRateLimit } from '#lib/server/rate-limit.ts';
+import { clientAddressOf } from '#lib/server/engine.ts';
+import { secondFactorFailure } from '#lib/server/second-factor.ts';
+import { clearSessionCookie, setRefreshCookie, setSessionCookie, sessionToken } from '#lib/server/session-cookie.ts';
+import { adminReturnPath } from '#lib/server/local-path.ts';
+import { LANDING } from '#lib/landing.ts';
+import { challengeFrom } from '#lib/captcha.ts';
+import { organizationFromUrl } from '#lib/organization.ts';
+import { askedOrganization, asksOrganization } from '#lib/server/sign-in-organization.ts';
+import { outageFor } from '#lib/outage.ts';
 
 const SIGN_IN_UNAVAILABLE = outageFor('you cannot sign in yet');
 

@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { formRefusal } from '$lib/api/refusal';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import { Alert, Button, Card, CopyButton, CopyField, Input, PageShell, PasswordInput, Skeleton } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Shield } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import type { ActionData, PageData } from './$types';
-	import { tracked } from '$lib/forms.svelte';
-	import { couldNotLoad } from '$lib/outage';
-	import { ICON } from '$lib/icon';
-	import { passkeyFailure, provePasskey, type ProofOptions } from '$lib/passkey-proof';
+	import { tracked } from '#lib/forms.svelte.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { passkeyFailure, provePasskey, type ProofOptions } from '#lib/passkey-proof.ts';
 	import { tick } from 'svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/sve
 import { flushSync, tick } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Schema } from '@lyeve-labs/client';
-import type { Problem } from '$lib/schema/editor';
+import type { Problem } from '#lib/schema/editor.ts';
 import { DdlHistory } from './ddl-history.svelte';
 import SchemaEditor from './SchemaEditor.svelte';
 

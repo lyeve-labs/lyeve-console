@@ -1,7 +1,7 @@
 /**
  * The editor's per-viewer preferences: focus mode, and the storage keys and
  * bounds the two side panels are given. ResizableAside does the panels' own
- * reading and writing through $lib/aside. SidePanel hands it PANEL and
+ * reading and writing through #lib/aside. SidePanel hands it PANEL and
  * PANEL_KEY from here so both panels agree on their defaults.
  *
  * Browser storage can be absent or throw (a private window, cleared site
