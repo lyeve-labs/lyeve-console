@@ -10,7 +10,8 @@ import { FOCUS_KEY } from '$lib/flow/prefs';
 import { SHELL_KEY, type Shell } from '$lib/shell.svelte';
 import { outlineSkips } from '$lib/test-outline';
 
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/flows/f1') } }));
+const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/flows/f1') } }));
+vi.mock('$app/state', () => state);
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 const nav = vi.hoisted(() => ({ guard: null as null | ((n: unknown) => void), invalidateAll: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => ({
@@ -73,6 +74,7 @@ function refusingTestFetch(body: unknown) {
 }
 let fetchMock: ReturnType<typeof validFetch> | ReturnType<typeof refusingTestFetch> = validFetch();
 beforeEach(() => {
+	state.page.url = new URL('http://localhost/admin/flows/f1');
 	kit.confirm.mockReset();
 	kit.confirm.mockResolvedValue(false);
 	fetchMock = validFetch();
@@ -476,6 +478,14 @@ describe('flow editor page', () => {
 			const form = container.querySelector('form[action="?/import"]') as HTMLFormElement;
 			expect(form).toBeTruthy();
 			expect(new FormData(form).get('slug')).toBe(fixtureFlow.slug);
+		});
+	});
+
+	describe('deleting the flow', () => {
+		it('posts with the page query, so the delete returns to the list the flow was opened from', () => {
+			state.page.url = new URL('http://localhost/admin/flows/f1?status=active&q=sync');
+			const { container } = setup();
+			expect(container.querySelector('form[action$="/delete"]')?.getAttribute('action')).toBe('?status=active&q=sync&/delete');
 		});
 	});
 

@@ -2,7 +2,7 @@
 	import { Alert, Badge, Button, EmptyState, PageShell, Pagination, Table, confirm, toast } from '@lyeve-labs/ui-kit';
 	import { BookOpen, Download, Keyboard, LayoutGrid, LayoutTemplate, PanelLeft, Play, Upload, Workflow } from '@lucide/svelte';
 	import { page } from '$app/state';
-	import { listBack } from '$lib/back';
+	import { actionWithQuery, listBack, queryWithout } from '$lib/back';
 	import { enhance } from '$app/forms';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { createClient } from '@lyeve-labs/client';
@@ -897,7 +897,13 @@
 
 	<FlowImportDrawer bind:open={showImport} slug={data.flow.slug} failure={importFailure} {enableLink} />
 
-	<form method="POST" action="?/delete" use:enhance={deleteFlow.enhance} bind:this={deleteFlowForm} class="hidden"></form>
+	<form
+		method="POST"
+		action={actionWithQuery('delete', queryWithout(page.url))}
+		use:enhance={deleteFlow.enhance}
+		bind:this={deleteFlowForm}
+		class="hidden"
+	></form>
 {:else}
 	<PageShell title="Flows" documentTitle={`${data.flow?.name ?? 'Flow'} - Flows`} width="wide">
 		<NotEnabled
