@@ -7,6 +7,7 @@
 		Checkbox,
 		DateTimePicker,
 		EmptyState,
+		FilterChips,
 		Input,
 		PageShell,
 		SearchInput,
@@ -21,7 +22,7 @@
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { browserOffset } from '#lib/utils/wall-clock.ts';
-	import { History, Rss, Search } from '@lucide/svelte';
+	import { History, Rss } from '@lucide/svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
@@ -30,12 +31,12 @@
 	import { NO_VALUE, formatDateTime } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { listQuery } from '#lib/back.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let narrow = $state('');
-	let failedFirst = $state(false);
 	// A replay is rehearsed by default. It publishes every event in the window
 	// again to everything that listens, and nothing undoes that.
 	let dryRun = $state(true);
@@ -72,15 +73,16 @@
 		};
 	};
 
-	const pool = $derived(failedFirst ? failedOnly(data.events) : data.events);
-	const visible = $derived(
-		narrow.trim()
-			? pool.filter((e) =>
-					`${e.topic} ${e.event_type} ${e.source} ${e.schema_name}`
-						.toLowerCase()
-						.includes(narrow.trim().toLowerCase()),
-				)
-			: pool,
+	// The engine searches and filters the whole log, so a match past the first
+	// page shows on the first. Both live in the URL, so the pager, a reload and
+	// a shared link keep them.
+	const live = liveFilter(() => data.q);
+	const filtered = $derived(data.q !== '' || data.failed !== '');
+	const failedOptions = $derived(
+		[
+			{ value: '', label: 'All' },
+			{ value: '1', label: 'With errors' },
+		].map((o) => ({ ...o, href: `/admin/events${listQuery({ failed: o.value, q: data.q })}` })),
 	);
 
 	const failures = $derived(failedOnly(data.events).length);
@@ -113,7 +115,7 @@
 		{/if}
 
 		<div class="grid gap-4 sm:grid-cols-3">
-			<Stat size="sm" mono label="Recorded" value={data.total} />
+			<Stat size="sm" mono label={filtered ? 'Matching' : 'Recorded'} value={data.total} />
 			<!-- The log is read a page at a time and the engine counts no errors
 			     of its own, so this figure covers the rows on this page only. -->
 			<Stat
@@ -224,7 +226,34 @@
 		<section class="flex flex-col gap-4">
 			<SectionHeading level={2}>Published</SectionHeading>
 
-			{#if data.events.length === 0}
+			{#if data.events.length > 0 || filtered}
+				<form method="GET" {@attach live.form}>
+					{#if data.failed}<input type="hidden" name="failed" value={data.failed} />{/if}
+					<ListToolbar label="Filter published events">
+						{#snippet search()}
+							<label for="event-search" class="sr-only">Search events</label>
+							<SearchInput
+								id="event-search"
+								name="q"
+								bind:value={live.value}
+								oninput={live.input}
+								placeholder="Topic, type or source"
+							/>
+						{/snippet}
+						{#snippet filters()}
+							<FilterChips label="Errors" value={data.failed} options={failedOptions} />
+						{/snippet}
+					</ListToolbar>
+				</form>
+			{/if}
+
+			{#if data.events.length === 0 && filtered}
+				<EmptyState title="No events match these filters" description="Clear the search or show every event.">
+					{#snippet action()}
+						<Button variant="secondary" href="/admin/events">Clear filters</Button>
+					{/snippet}
+				</EmptyState>
+			{:else if data.events.length === 0}
 				<EmptyState
 					title="No events yet"
 					description="Events appear here when a plugin or a flow publishes one."
@@ -234,20 +263,6 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<ListToolbar label="Filter published events">
-					{#snippet search()}
-						<label for="event-narrow" class="sr-only">Search this page</label>
-						<SearchInput
-							id="event-narrow"
-							bind:value={narrow}
-							placeholder="Topic, type or source on this page"
-						/>
-					{/snippet}
-					{#snippet filters()}
-						<Checkbox bind:checked={failedFirst} label="Only events with errors" />
-					{/snippet}
-				</ListToolbar>
-
 				<Table label="Published">
 					<thead>
 						<tr>
@@ -259,7 +274,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each visible as row (row.id)}
+						{#each data.events as row (row.id)}
 							<tr>
 								<td data-cell="nowrap" class="text-xs text-faint"
 									>{formatDateTime(row.published_at)}</td
@@ -283,19 +298,11 @@
 					count={data.events.length}
 					total={data.total ?? undefined}
 					noun="events"
-					href={pageHref('/admin/events', data.limit)}
+					href={pageHref('/admin/events', data.limit, {
+						...(data.failed ? { failed: data.failed } : {}),
+						...(data.q ? { q: data.q } : {}),
+					})}
 				/>
-
-				{#if visible.length === 0}
-					<EmptyState
-						title="No events on this page match these filters"
-						description="Clear the filter to see the rest."
-					>
-						{#snippet iconSnippet()}
-							<Search size={ICON.lg} />
-						{/snippet}
-					</EmptyState>
-				{/if}
 			{/if}
 		</section>
 	{/if}

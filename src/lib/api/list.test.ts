@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { query, readAll, totalOf } from './list';
+import { chipOf, query, readAll, searchOf, totalOf } from './list';
 
 describe('totalOf', () => {
 	it('prefers the envelope count over the page length', () => {
@@ -65,5 +65,30 @@ describe('readAll', () => {
 		const { asked, read } = pages([2, 2, 2]);
 		await readAll(read, 2, Infinity, (rows) => rows.includes(3));
 		expect(asked).toEqual([0, 2]);
+	});
+});
+
+describe('searchOf', () => {
+	const at = (q: string) => new URL(`http://localhost/x?q=${encodeURIComponent(q)}`);
+
+	it('trims the search', () => {
+		expect(searchOf(at('  acme '))).toBe('acme');
+	});
+
+	it('counts characters, not code units, against the limit', () => {
+		expect(searchOf(at('\u{1F600}'.repeat(200)))).toBe('\u{1F600}'.repeat(200));
+	});
+
+	it('reads a search past 200 characters as none', () => {
+		expect(searchOf(at('a'.repeat(201)))).toBe('');
+	});
+});
+
+describe('chipOf', () => {
+	it('keeps a value the list offers and drops any other', () => {
+		const url = new URL('http://localhost/x?status=enabled&role=nobody');
+		expect(chipOf(url, 'status', ['enabled', 'disabled'])).toBe('enabled');
+		expect(chipOf(url, 'role', ['admin'])).toBe('');
+		expect(chipOf(url, 'show', ['open'])).toBe('');
 	});
 });

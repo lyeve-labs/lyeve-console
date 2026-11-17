@@ -12,7 +12,7 @@ import {
 	type IdempotencyStats,
 } from '#lib/api/idempotency.ts';
 import { type Gate, GATE_OK, gateOf } from '#lib/api/gate.ts';
-import { pageOf, pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { chipOf, pageOf, pageWindow, pastEndOffset, searchOf, withOffset } from '#lib/api/list.ts';
 import { couldNotLoad } from '#lib/outage.ts';
 import { asked } from '#lib/server/asked.ts';
 
@@ -22,6 +22,9 @@ const MAX_LIMIT = 200;
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();
 	const { limit, offset } = pageWindow(event.url, DEFAULT_LIMIT, MAX_LIMIT);
+	const q = searchOf(event.url);
+	// All is the plugin's default, so the address carries only the narrowing values.
+	const show = chipOf(event.url, 'show', ['open', 'stored']);
 
 	const client = authedClient(event);
 	let keys: IdempotencyKey[] = [];
@@ -31,7 +34,7 @@ export const load: PageServerLoad = async (event) => {
 	let gate: Gate = notRunning(plugins, PLUGIN.idempotency) ? { state: 'absent' } : GATE_OK;
 	if (gate.state === 'ok') {
 		try {
-			const page = pageOf(await listKeys(client, limit + 1, offset), limit, offset);
+			const page = pageOf(await listKeys(client, limit + 1, offset, { q, show }), limit, offset);
 			keys = page.rows;
 			total = page.total;
 			hasMore = page.hasMore;
@@ -64,6 +67,8 @@ export const load: PageServerLoad = async (event) => {
 		limit,
 		offset,
 		hasMore,
+		q,
+		show,
 		stats: stats.value,
 		statsRead: stats.read,
 		statsGate: stats.gate,

@@ -12,6 +12,7 @@
  * one, and because a replay that fans out cannot be taken back.
  */
 import type { HttpClient } from '@lyeve-labs/client';
+import { query } from '#lib/api/list.ts';
 
 const EVENTS_URL = '/api/admin/events';
 const REPLAY_URL = '/api/admin/events/replay';
@@ -53,12 +54,19 @@ interface Page<T> {
 	total_count?: number;
 }
 
+/** The log's filters: a search over the topic, type, source and content type, and `failed=1` for events whose publish recorded an error. */
+export interface EventFilter {
+	q?: string;
+	failed?: string;
+}
+
 export async function listEvents(
 	client: HttpClient,
 	limit: number,
 	offset: number,
+	filter: EventFilter = {},
 ): Promise<Page<EventRow>> {
-	return client.get<Page<EventRow>>(`${EVENTS_URL}?limit=${limit}&offset=${offset}`);
+	return client.get<Page<EventRow>>(`${EVENTS_URL}${query({ limit, offset, q: filter.q, failed: filter.failed })}`);
 }
 
 export async function listReplays(

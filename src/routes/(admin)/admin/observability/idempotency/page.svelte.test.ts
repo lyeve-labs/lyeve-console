@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, cleanup, fireEvent } from '@testing-library/svelte';
+import { render, cleanup } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IdempotencyKey } from '#lib/api/idempotency.ts';
 
@@ -46,6 +46,8 @@ const props = (over: Record<string, unknown> = {}) => ({
 		limit: 50,
 		offset: 0,
 		hasMore: false,
+		q: '',
+		show: '',
 		stats: { total: 2, completed: 1, in_flight: 1 },
 		statsRead: true,
 		gate: { state: 'ok' },
@@ -65,21 +67,18 @@ describe('releasing a key', () => {
 });
 
 describe('the key toolbar', () => {
-	it('narrows the rows on this page by key or path', async () => {
-		const { container } = render(IdempotencyPage, { props: props() });
-		await fireEvent.input(container.querySelector('#key-narrow') as HTMLInputElement, { target: { value: 'invoice' } });
-		const rows = [...container.querySelectorAll('tbody tr')].map((r) => r.textContent ?? '');
-		expect(rows).toHaveLength(1);
-		expect(rows[0]).toContain('invoice-9');
+	it('offers to clear filters that match nothing, rather than saying no key was sent', () => {
+		const { container } = render(IdempotencyPage, { props: props({ keys: [], total: 0, q: 'invoice', show: 'open' }) });
+		expect(container.textContent).toContain('No keys match these filters');
+		expect(container.textContent).not.toContain('Keys appear here');
+		expect(container.querySelector('a[href="/admin/observability/idempotency"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 
-	it('shows only the keys that have not finished', async () => {
-		const { container } = render(IdempotencyPage, { props: props() });
-		const segment = [...container.querySelectorAll('[role="radio"]')].find((el) => el.textContent?.includes('Not finished'));
-		await fireEvent.click(segment as HTMLElement);
-		const rows = [...container.querySelectorAll('tbody tr')].map((r) => r.textContent ?? '');
-		expect(rows).toHaveLength(1);
-		expect(rows[0]).toContain('order-17');
+	it('keeps the search on each show link', () => {
+		const { container } = render(IdempotencyPage, { props: props({ q: 'invoice' }) });
+		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+		expect(hrefs).toContain('/admin/observability/idempotency?show=open&q=invoice');
+		expect(hrefs).toContain('/admin/observability/idempotency?q=invoice');
 	});
 });
 
@@ -95,6 +94,6 @@ describe('a refused counters read', () => {
 describe('the key search box', () => {
 	it('is named for a screen reader', () => {
 		const { container } = render(IdempotencyPage, { props: props() });
-		expect(container.querySelector('label[for="key-narrow"]')?.textContent).toBe('Search this page');
+		expect(container.querySelector('label[for="key-search"]')?.textContent).toBe('Search keys');
 	});
 });

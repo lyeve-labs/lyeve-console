@@ -11,6 +11,7 @@
  * tenant's, which the plugin decides, not this page.
  */
 import type { HttpClient } from '@lyeve-labs/client';
+import { query } from '#lib/api/list.ts';
 
 const RULES_URL = '/api/admin/pii/rules';
 const ACCESS_LOG_URL = '/api/admin/pii/access-log';
@@ -130,8 +131,9 @@ export async function listAccessLog(
 	client: HttpClient,
 	limit: number,
 	offset: number,
+	q = '',
 ): Promise<Page<AccessEntry>> {
-	return client.get<Page<AccessEntry>>(`${ACCESS_LOG_URL}?limit=${limit}&offset=${offset}`);
+	return client.get<Page<AccessEntry>>(`${ACCESS_LOG_URL}${query({ limit, offset, q })}`);
 }
 
 /**

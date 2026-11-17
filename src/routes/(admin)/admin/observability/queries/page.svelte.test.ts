@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, cleanup, fireEvent } from '@testing-library/svelte';
+import { render, cleanup } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({
@@ -37,6 +37,7 @@ const props = (over: Record<string, unknown> = {}) => ({
 		total: 1,
 		limit: 50,
 		offset: 0,
+		q: '',
 		gate: { state: 'ok' },
 		dialect: null,
 		analysis: null,
@@ -217,20 +218,25 @@ describe('Slow queries analysis', () => {
 describe('Slow queries filter', () => {
 	// The table head and the pager stood above the empty state, so an empty
 	// table read as a page of rows that failed to draw.
-	it('draws no table or pager when nothing on the page matches', async () => {
-		const { container } = render(QueriesPage, { props: props() });
-		const input = container.querySelector('#query-narrow') as HTMLInputElement;
-		await fireEvent.input(input, { target: { value: 'no such statement' } });
+	it('draws no table or pager when the search matches nothing', () => {
+		const { container } = render(QueriesPage, { props: props({ entries: [], total: 0, q: 'no such statement' }) });
 
-		expect(container.textContent).toContain('No statements on this page match this search');
+		expect(container.textContent).toContain('No statements match this search');
+		expect(container.querySelector('a[href="/admin/observability/queries"]')?.textContent?.trim()).toBe('Clear filters');
 		expect(container.querySelector('table')).toBeNull();
 		expect(container.querySelector('nav[aria-label*="agination" i]')).toBeNull();
+	});
+
+	it('keeps the search on the pager', () => {
+		const { container } = render(QueriesPage, { props: props({ q: 'sys_content', total: 120 }) });
+		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
+		expect(hrefs.some((h) => h.includes('q=sys_content') && h.includes('offset=50'))).toBe(true);
 	});
 });
 
 describe('the search box', () => {
 	it('is named for a screen reader', () => {
 		const { container } = render(QueriesPage, { props: props() });
-		expect(container.querySelector('label[for="query-narrow"]')?.textContent).toBe('Search this page');
+		expect(container.querySelector('label[for="query-search"]')?.textContent).toBe('Search captured statements');
 	});
 });
