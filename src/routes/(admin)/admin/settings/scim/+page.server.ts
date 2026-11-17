@@ -14,7 +14,7 @@ import {
 	type ScimProvider,
 } from '#lib/api/scim.ts';
 import { type Gate, GATE_OK, gateOf, section } from '#lib/api/gate.ts';
-import { pageOf, pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { pageOf, pageWindow, pastEndOffset, searchOf, withOffset } from '#lib/api/list.ts';
 import { listProviders as listSamlProviders } from '#lib/api/saml.ts';
 import { asked } from '#lib/server/asked.ts';
 
@@ -46,6 +46,7 @@ async function samlLink(event: Parameters<PageServerLoad>[0], plugins: Parameter
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();
 	const { limit, offset } = pageWindow(event.url, DEFAULT_LIMIT, MAX_LIMIT);
+	const q = searchOf(event.url);
 
 	// The shell says why the page is unavailable while its plugin does not run.
 	if (notRunning(plugins, PLUGIN.scim)) {
@@ -55,6 +56,7 @@ export const load: PageServerLoad = async (event) => {
 			limit,
 			offset,
 			hasMore: false,
+			q,
 			gate: { state: 'absent' } as Gate,
 			saml: { state: 'off' } as SamlLink,
 		};
@@ -62,7 +64,7 @@ export const load: PageServerLoad = async (event) => {
 
 	const client = authedClient(event);
 	const read = await section(
-		listProviders(client, limit + 1, offset).then((res) => pageOf(res, limit, offset)),
+		listProviders(client, limit + 1, offset, q).then((res) => pageOf(res, limit, offset)),
 		'Could not load SCIM connections.',
 	);
 	if (read.ok) {
@@ -77,6 +79,7 @@ export const load: PageServerLoad = async (event) => {
 		limit,
 		offset,
 		hasMore: read.ok && read.value.hasMore,
+		q,
 		gate: read.ok ? GATE_OK : read.gate,
 		saml,
 	};

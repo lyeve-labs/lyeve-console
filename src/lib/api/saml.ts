@@ -20,7 +20,7 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import type { ListEnvelope } from './list';
+import { query, type ListEnvelope } from './list';
 import { plural } from '#lib/format.ts';
 
 const PROVIDERS_URL = '/api/admin/saml-providers';
@@ -87,9 +87,10 @@ export interface SamlTemplate {
 export async function listProviders(
 	client: HttpClient,
 	limit: number,
-	offset: number
+	offset: number,
+	q = ''
 ): Promise<ListEnvelope<SamlProvider>> {
-	return client.get<ListEnvelope<SamlProvider>>(`${PROVIDERS_URL}?limit=${limit}&offset=${offset}`);
+	return client.get<ListEnvelope<SamlProvider>>(`${PROVIDERS_URL}${query({ limit, offset, q })}`);
 }
 
 export async function listTemplates(client: HttpClient): Promise<SamlTemplate[]> {

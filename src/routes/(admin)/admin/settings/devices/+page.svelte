@@ -20,12 +20,12 @@
 	import { confirmed } from '#lib/forms.svelte.ts';
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
-	import { narrows } from '#lib/narrow.ts';
 	import { deviceLabel, deviceName, looksLikeThisDevice, type Device } from '#lib/api/devices.ts';
 	import { formatDateTime } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
 	import { ICON } from '#lib/icon.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -37,12 +37,9 @@
 		data.devices.find((d) => looksLikeThisDevice(d, data.userAgent)) ?? null,
 	);
 
-	// The endpoint takes no search, so the box narrows the page on screen and
-	// the pager below still walks every device.
-	let query = $state('');
-	const visible = $derived(
-		data.devices.filter((d) => narrows(query, deviceLabel(d), d.user_agent ? deviceName(d.user_agent) : '')),
-	);
+	// The plugin searches every device by its name and the browser it was
+	// trusted from, so a match past the first page shows on the first.
+	const live = liveFilter(() => data.q);
 
 	const trustThis: SubmitFunction = () => {
 		const subject = label;
@@ -123,7 +120,30 @@
 		<section class="flex flex-col gap-4">
 			<SectionHeading level={2}>Your trusted devices</SectionHeading>
 
-			{#if data.devices.length === 0}
+			{#if data.devices.length > 0 || data.q}
+				<form method="GET" {@attach live.form}>
+					<ListToolbar label="Filter devices">
+						{#snippet search()}
+							<label for="device-search" class="sr-only">Search devices</label>
+							<SearchInput
+								id="device-search"
+								name="q"
+								bind:value={live.value}
+								oninput={live.input}
+								placeholder="Name or browser"
+							/>
+						{/snippet}
+					</ListToolbar>
+				</form>
+			{/if}
+
+			{#if data.devices.length === 0 && data.q}
+				<EmptyState title="No devices match this search" description="Clear the search to see every device.">
+					{#snippet action()}
+						<Button variant="secondary" href="/admin/settings/devices">Clear filters</Button>
+					{/snippet}
+				</EmptyState>
+			{:else if data.devices.length === 0}
 				<EmptyState
 					title="No trusted devices yet"
 					description="Every sign-in to your account is treated as coming from a new device."
@@ -133,72 +153,59 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<ListToolbar label="Filter devices">
-					{#snippet search()}
-						<label for="device-search" class="sr-only">Search this page</label>
-						<SearchInput id="device-search" bind:value={query} placeholder="Name or browser on this page" />
-					{/snippet}
-				</ListToolbar>
-				{#if visible.length === 0}
-					<EmptyState
-						title="No devices match this search"
-						description="The search covers this page only. Clear it, or go to the next page."
-					/>
-				{:else}
-					<Table label="Your trusted devices">
-						<thead>
+				<Table label="Your trusted devices">
+					<thead>
+						<tr>
+							<th scope="col">Device</th>
+							<th scope="col">Last seen</th>
+							<th scope="col">Added</th>
+							<th scope="col"><span class="sr-only">Actions</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each data.devices as d (d.id)}
 							<tr>
-								<th scope="col">Device</th>
-								<th scope="col">Last seen</th>
-								<th scope="col">Added</th>
-								<th scope="col"><span class="sr-only">Actions</span></th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each visible as d (d.id)}
-								<tr>
-									<td data-cell="nowrap">
-										<div class="flex items-center gap-2">
-											<span class="font-medium text-fg">{deviceLabel(d)}</span>
-											{#if looksLikeThisDevice(d, data.userAgent)}
-												<!-- Matched on the user agent, which two identical
-												     browsers share, so it claims a resemblance and
-												     not an identity. -->
-												<Badge tone="brand">Looks like this one</Badge>
-											{/if}
-										</div>
-										{#if d.user_agent}
-											<div class="text-xs text-faint" title={d.user_agent}>
-												{deviceName(d.user_agent)}
-											</div>
+								<td data-cell="nowrap">
+									<div class="flex items-center gap-2">
+										<span class="font-medium text-fg">{deviceLabel(d)}</span>
+										{#if looksLikeThisDevice(d, data.userAgent)}
+											<!-- Matched on the user agent, which two identical
+											     browsers share, so it claims a resemblance and
+											     not an identity. -->
+											<Badge tone="brand">Looks like this one</Badge>
 										{/if}
-									</td>
-									<td data-cell="nowrap" class="text-xs text-faint">
-										{formatDateTime(d.last_seen_at)}
-									</td>
-									<td data-cell="nowrap" class="text-xs text-faint">
-										{formatDateTime(d.created_at)}
-									</td>
-									<td data-cell="nowrap">
-										<div class="flex justify-end">
-											<form method="POST" action="?/untrust" use:enhance={forget(d)}>
-												<input type="hidden" name="id" value={d.id} />
-												<Button
-													variant="ghost"
-													size="sm"
-													type="submit"
-													aria-label="Forget {deviceLabel(d)}"
-												>
-													<Trash2 size={ICON.sm} class="text-danger" />
-												</Button>
-											</form>
+									</div>
+									{#if d.user_agent}
+										<div class="text-xs text-faint" title={d.user_agent}>
+											{deviceName(d.user_agent)}
 										</div>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</Table>
-				{/if}
+									{/if}
+								</td>
+								<td data-cell="nowrap" class="text-xs text-faint">
+									{formatDateTime(d.last_seen_at)}
+								</td>
+								<td data-cell="nowrap" class="text-xs text-faint">
+									{formatDateTime(d.created_at)}
+								</td>
+								<td data-cell="nowrap">
+									<div class="flex justify-end">
+										<form method="POST" action="?/untrust" use:enhance={forget(d)}>
+											<input type="hidden" name="id" value={d.id} />
+											<Button
+												variant="ghost"
+												size="sm"
+												type="submit"
+												aria-label="Forget {deviceLabel(d)}"
+											>
+												<Trash2 size={ICON.sm} class="text-danger" />
+											</Button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</Table>
 				<Pagination
 					page={pageNumber(data.offset, data.limit)}
 					perPage={data.limit}
@@ -206,7 +213,7 @@
 					total={data.total ?? undefined}
 					hasNext={data.hasMore}
 					noun="devices"
-					href={pageHref('/admin/settings/devices', data.limit)}
+					href={pageHref('/admin/settings/devices', data.limit, data.q ? { q: data.q } : {})}
 				/>
 			{/if}
 		</section>

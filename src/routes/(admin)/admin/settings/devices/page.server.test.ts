@@ -28,6 +28,21 @@ describe('devices load', () => {
 		const out = (await load(event({ data: [], total_count: 0 }, ''))) as { devices: unknown[] };
 		expect(out.devices).toEqual([]);
 	});
+
+	it('sends the search to the engine and back to the page', async () => {
+		const ev = event({ data: [], total_count: 0 }, '?q=edge');
+		const out = (await load(ev)) as { q: string };
+		const asked = new URL(String((ev as { fetch: { mock: { calls: unknown[][] } } }).fetch.mock.calls[0][0]), 'http://e');
+		expect(asked.searchParams.get('q')).toBe('edge');
+		expect(out.q).toBe('edge');
+	});
+
+	it('does not send a search the engine would refuse', async () => {
+		const ev = event({ data: [], total_count: 0 }, `?q=${'a'.repeat(201)}`);
+		const out = (await load(ev)) as { q: string };
+		expect(String((ev as { fetch: { mock: { calls: unknown[][] } } }).fetch.mock.calls[0][0])).not.toContain('q=');
+		expect(out.q).toBe('');
+	});
 });
 
 type Call = { method: string; path: string; body: unknown };

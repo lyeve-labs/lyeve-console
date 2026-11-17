@@ -26,7 +26,6 @@
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
-	import { narrows } from '#lib/narrow.ts';
 	import {
 		MIN_TOKEN_LENGTH,
 		SCIM_BASE_PATH,
@@ -37,6 +36,7 @@
 	import { formatDateTime } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -51,10 +51,9 @@
 	// admin is shown the list and no control that would only be refused.
 	const canWrite = $derived(data.user.roles.includes('super_admin'));
 
-	// The endpoint takes no search, so the box narrows the page on screen and
-	// the pager below still walks every connection.
-	let query = $state('');
-	const visible = $derived(data.providers.filter((p) => narrows(query, p.name)));
+	// The plugin searches every connection by name, so a match past the first
+	// page shows on the first.
+	const live = liveFilter(() => data.q);
 
 	const DEPROVISION_OPTIONS = [
 		{
@@ -177,7 +176,30 @@
 		<section class="flex flex-col gap-4">
 			<SectionHeading level={2}>Connections</SectionHeading>
 
-			{#if data.providers.length === 0}
+			{#if data.providers.length > 0 || data.q}
+				<form method="GET" {@attach live.form}>
+					<ListToolbar label="Filter connections">
+						{#snippet search()}
+							<label for="scim-search" class="sr-only">Search connections</label>
+							<SearchInput
+								id="scim-search"
+								name="q"
+								bind:value={live.value}
+								oninput={live.input}
+								placeholder="Connection name"
+							/>
+						{/snippet}
+					</ListToolbar>
+				</form>
+			{/if}
+
+			{#if data.providers.length === 0 && data.q}
+				<EmptyState title="No connections match this search" description="Clear the search to see every connection.">
+					{#snippet action()}
+						<Button variant="secondary" href="/admin/settings/scim">Clear filters</Button>
+					{/snippet}
+				</EmptyState>
+			{:else if data.providers.length === 0}
 				<EmptyState
 					title="No connections yet"
 					description={canWrite ? 'Add a connection to let an identity provider manage accounts here.' : 'Ask a super admin to add a connection, which lets an identity provider manage accounts here.'}
@@ -194,75 +216,62 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<ListToolbar label="Filter connections">
-					{#snippet search()}
-						<label for="scim-search" class="sr-only">Search this page</label>
-						<SearchInput id="scim-search" bind:value={query} placeholder="Connection name on this page" />
-					{/snippet}
-				</ListToolbar>
-				{#if visible.length === 0}
-					<EmptyState
-						title="No connections match this search"
-						description="The search covers this page only. Clear it, or go to the next page."
-					/>
-				{:else}
-					<Table label="Connections">
-						<thead>
+				<Table label="Connections">
+					<thead>
+						<tr>
+							<th scope="col">Connection</th>
+							<th scope="col">Deprovisioned accounts are</th>
+							<th scope="col">Created</th>
+							<th scope="col"><span class="sr-only">Actions</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each data.providers as p (p.id)}
 							<tr>
-								<th scope="col">Connection</th>
-								<th scope="col">Deprovisioned accounts are</th>
-								<th scope="col">Created</th>
-								<th scope="col"><span class="sr-only">Actions</span></th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each visible as p (p.id)}
-								<tr>
-									<td data-cell="nowrap">
-										<div class="flex items-center gap-2">
-											<span class="font-medium text-fg">{p.name}</span>
-											<Badge tone={p.enabled ? 'success' : 'neutral'} dot>
-												{p.enabled ? 'Enabled' : 'Disabled'}
-											</Badge>
-										</div>
-									</td>
-									<td data-cell="nowrap">
-										<Badge tone={deprovisionTone(p)}>{deprovisionLabel(p)}</Badge>
-									</td>
-									<td data-cell="nowrap" class="text-xs text-faint">
-										{formatDateTime(p.created_at)}
-									</td>
-									<td data-cell="nowrap">
-										{#if canWrite}
-											<div class="flex items-center justify-end gap-1">
+								<td data-cell="nowrap">
+									<div class="flex items-center gap-2">
+										<span class="font-medium text-fg">{p.name}</span>
+										<Badge tone={p.enabled ? 'success' : 'neutral'} dot>
+											{p.enabled ? 'Enabled' : 'Disabled'}
+										</Badge>
+									</div>
+								</td>
+								<td data-cell="nowrap">
+									<Badge tone={deprovisionTone(p)}>{deprovisionLabel(p)}</Badge>
+								</td>
+								<td data-cell="nowrap" class="text-xs text-faint">
+									{formatDateTime(p.created_at)}
+								</td>
+								<td data-cell="nowrap">
+									{#if canWrite}
+										<div class="flex items-center justify-end gap-1">
+											<Button
+												variant="ghost"
+												size="sm"
+												aria-label="Rotate the token for {p.name}"
+												title="Rotate token"
+												onclick={() => openRotate(p)}
+											>
+												<RefreshCw size={ICON.sm} />
+											</Button>
+											<form method="POST" action="?/delete" use:enhance={removeConnection(p)}>
+												<input type="hidden" name="id" value={p.id} />
 												<Button
 													variant="ghost"
 													size="sm"
-													aria-label="Rotate the token for {p.name}"
-													title="Rotate token"
-													onclick={() => openRotate(p)}
+													type="submit"
+													aria-label="Delete {p.name}"
 												>
-													<RefreshCw size={ICON.sm} />
+													<Trash2 size={ICON.sm} class="text-danger" />
 												</Button>
-												<form method="POST" action="?/delete" use:enhance={removeConnection(p)}>
-													<input type="hidden" name="id" value={p.id} />
-													<Button
-														variant="ghost"
-														size="sm"
-														type="submit"
-														aria-label="Delete {p.name}"
-													>
-														<Trash2 size={ICON.sm} class="text-danger" />
-													</Button>
-												</form>
-											</div>
-										{/if}
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</Table>
-				{/if}
+											</form>
+										</div>
+									{/if}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</Table>
 				<Pagination
 					page={pageNumber(data.offset, data.limit)}
 					perPage={data.limit}
@@ -270,7 +279,7 @@
 					total={data.total ?? undefined}
 					hasNext={data.hasMore}
 					noun="connections"
-					href={pageHref('/admin/settings/scim', data.limit)}
+					href={pageHref('/admin/settings/scim', data.limit, data.q ? { q: data.q } : {})}
 				/>
 			{/if}
 		</section>

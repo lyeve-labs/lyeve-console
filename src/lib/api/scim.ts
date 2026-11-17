@@ -17,7 +17,7 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import type { ListEnvelope } from './list';
+import { query, type ListEnvelope } from './list';
 
 const PROVIDERS_URL = '/api/admin/scim/providers';
 export const SCIM_BASE_PATH = '/api/v1/scim/v2';
@@ -58,9 +58,10 @@ export interface ScimProvider {
 export async function listProviders(
 	client: HttpClient,
 	limit: number,
-	offset: number
+	offset: number,
+	q = ''
 ): Promise<ListEnvelope<ScimProvider>> {
-	return client.get<ListEnvelope<ScimProvider>>(`${PROVIDERS_URL}?limit=${limit}&offset=${offset}`);
+	return client.get<ListEnvelope<ScimProvider>>(`${PROVIDERS_URL}${query({ limit, offset, q })}`);
 }
 
 export interface CreateScimProvider {

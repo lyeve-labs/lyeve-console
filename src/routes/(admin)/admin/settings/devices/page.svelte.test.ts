@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, cleanup, fireEvent } from '@testing-library/svelte';
+import { render, cleanup } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
@@ -36,6 +36,7 @@ const props = (over: Record<string, unknown> = {}, form: unknown = null) => ({
 		total: 1,
 		limit: 25,
 		offset: 0,
+		q: '',
 		hasMore: false,
 		userAgent: EDGE_WIN,
 		gate: { state: 'ok' },
@@ -164,20 +165,15 @@ describe('the empty state', () => {
 });
 
 describe('the search', () => {
-	it('narrows the page to the devices that match and keeps the pager', async () => {
-		const { container, getByPlaceholderText } = render(DevicesPage, {
-			props: props({
-				devices: [device(), device({ id: 'd2', label: 'Edge box', user_agent: EDGE_WIN })],
-				total: 40,
-				hasMore: true,
-			}),
-		});
-		await fireEvent.input(getByPlaceholderText('Name or browser on this page'), { target: { value: 'edge' } });
-		expect(said(container)).toContain('Edge box');
-		expect(said(container)).not.toContain('Work laptop');
+	it('keeps the search on the pager', () => {
+		const { container } = render(DevicesPage, { props: props({ total: 40, hasMore: true, q: 'edge' }) });
+		expect(container.querySelector('a[href="/admin/settings/devices?q=edge&limit=25&offset=25"]')).toBeTruthy();
+	});
 
-		await fireEvent.input(getByPlaceholderText('Name or browser on this page'), { target: { value: 'nothing like it' } });
+	it('offers to clear a search that matches nothing, rather than saying no device is trusted', () => {
+		const { container } = render(DevicesPage, { props: props({ devices: [], total: 0, q: 'nothing like it' }) });
 		expect(said(container)).toContain('No devices match this search');
-		expect(container.querySelector('a[href="/admin/settings/devices?limit=25&offset=25"]')).toBeTruthy();
+		expect(said(container)).not.toContain('treated as coming from a new device');
+		expect(container.querySelector('a[href="/admin/settings/devices"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 });

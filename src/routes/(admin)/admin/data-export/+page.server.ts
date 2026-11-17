@@ -22,7 +22,7 @@ import {
 import { type Gate, GATE_OK, gateOf, section, type Section } from '#lib/api/gate.ts';
 import { couldNotLoad } from '#lib/outage.ts';
 import { exportConfigFrom } from '#lib/data-export-form.ts';
-import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { pageWindow, pastEndOffset, searchOf, withOffset } from '#lib/api/list.ts';
 import { asked } from '#lib/server/asked.ts';
 
 /** The plugin's own 503 when every export slot is taken. */
@@ -54,13 +54,14 @@ export const load: PageServerLoad = async (event) => {
 	// list nothing, so the page lists every job instead.
 	const named = event.url.searchParams.get('status') ?? '';
 	const status: JobStatus | '' = JOB_STATUSES.find((s) => s === named) ?? '';
+	const q = searchOf(event.url);
 
 	// The shell says why the page is unavailable while its plugin does not run.
 	if (notRunning(plugins, PLUGIN.dataExport)) {
 		const gate: Gate = { state: 'absent' };
 		const schedules: Section<ExportSchedule[]> = { ok: false, gate };
 		const schemas: Section<string[]> = { ok: false, gate };
-		return { jobs: [] as ExportJob[], schedules, schemas, total: 0, limit, offset, status, gate };
+		return { jobs: [] as ExportJob[], schedules, schemas, total: 0, limit, offset, status, q, gate };
 	}
 
 	const client = authedClient(event);
@@ -68,7 +69,7 @@ export const load: PageServerLoad = async (event) => {
 	let total = 0;
 	let gate: Gate = GATE_OK;
 	try {
-		const page = await listJobs(client, limit, offset, status);
+		const page = await listJobs(client, limit, offset, status, q);
 		jobs = page.data;
 		total = Math.max(page.total_count, offset + jobs.length);
 		const back = pastEndOffset(jobs.length, limit, offset, page.total_count);
@@ -96,7 +97,7 @@ export const load: PageServerLoad = async (event) => {
 				])
 			: [unread(), unread()];
 
-	return { jobs, schedules, schemas, total, limit, offset, status, gate };
+	return { jobs, schedules, schemas, total, limit, offset, status, q, gate };
 };
 
 export const actions: Actions = {

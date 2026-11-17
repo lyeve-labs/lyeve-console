@@ -54,6 +54,21 @@ describe('SCIM load', () => {
 			location: '/admin/settings/scim?offset=0&limit=25',
 		});
 	});
+
+	it('sends the search to the engine and back to the page', async () => {
+		const ev = event({ data: [], total_count: 0 }, '?q=azure');
+		const out = (await load(ev)) as { q: string };
+		const asked = new URL(String((ev as { fetch: { mock: { calls: unknown[][] } } }).fetch.mock.calls[0][0]), 'http://e');
+		expect(asked.searchParams.get('q')).toBe('azure');
+		expect(out.q).toBe('azure');
+	});
+
+	it('does not send a search the engine would refuse', async () => {
+		const ev = event({ data: [], total_count: 0 }, `?q=${'a'.repeat(201)}`);
+		const out = (await load(ev)) as { q: string };
+		expect(String((ev as { fetch: { mock: { calls: unknown[][] } } }).fetch.mock.calls[0][0])).not.toContain('q=');
+		expect(out.q).toBe('');
+	});
 });
 
 type Call = { method: string; path: string; body: unknown };

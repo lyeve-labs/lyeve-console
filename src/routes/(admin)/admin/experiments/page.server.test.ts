@@ -72,6 +72,20 @@ describe('experiments list', () => {
 			location: expect.stringContaining('offset=25'),
 		});
 	});
+
+	it('sends the search to the engine and back to the page', async () => {
+		engine.get.mockResolvedValue({ data: [], total_count: 0 });
+		const out = (await load(loadEvent('http://localhost/admin/experiments?q=checkout'))) as { q: string };
+		expect(new URL(String(engine.get.mock.calls[0][0]), 'http://e').searchParams.get('q')).toBe('checkout');
+		expect(out.q).toBe('checkout');
+	});
+
+	it('does not send a search the engine would refuse', async () => {
+		engine.get.mockResolvedValue({ data: [], total_count: 0 });
+		const out = (await load(loadEvent(`http://localhost/admin/experiments?q=${'a'.repeat(201)}`))) as { q: string };
+		expect(String(engine.get.mock.calls[0][0])).not.toContain('q=');
+		expect(out.q).toBe('');
+	});
 });
 
 // The drawer reads only a failure tagged as a save, so each failure is tagged.

@@ -14,7 +14,7 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { rowsOf, type ListEnvelope } from './list';
+import { query, rowsOf, type ListEnvelope } from './list';
 
 export const EXPERIMENTS_URL = '/api/admin/ab/experiments';
 
@@ -92,11 +92,10 @@ export interface ExperimentResults {
 export async function listExperiments(
 	client: HttpClient,
 	limit: number,
-	offset: number
+	offset: number,
+	q = ''
 ): Promise<ListEnvelope<Experiment>> {
-	return client.get<ListEnvelope<Experiment>>(
-		`${EXPERIMENTS_URL}?limit=${limit}&offset=${offset}`
-	);
+	return client.get<ListEnvelope<Experiment>>(`${EXPERIMENTS_URL}${query({ limit, offset, q })}`);
 }
 
 /**
