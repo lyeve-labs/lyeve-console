@@ -53,7 +53,7 @@ const webhook = {
 function setup(roles: string[] = ['super_admin']) {
 	return render(WebhooksPage, {
 		props: {
-			data: { webhooks: { ok: true, value: [webhook] }, schemas: { ok: true, value: [] }, entitlements, user: { roles } },
+			data: { q: '', status: '', webhooks: { ok: true, value: [webhook] }, schemas: { ok: true, value: [] }, entitlements, user: { roles } },
 			form: null,
 		} as never,
 	});
@@ -170,6 +170,8 @@ describe('the webhook drawer and the failures of other actions', () => {
 	const props = (form: unknown) =>
 		({
 			data: {
+				q: '',
+				status: '',
 				webhooks: { ok: true, value: [webhook] },
 				schemas: { ok: true, value: [] },
 				entitlements,
@@ -202,7 +204,7 @@ describe('the webhook drawer and the failures of other actions', () => {
 describe('the result of a webhook test', () => {
 	const props = (form: unknown) =>
 		({
-			data: { webhooks: { ok: true, value: [webhook] }, schemas: { ok: true, value: [] }, entitlements, user: { roles: ['admin'] } },
+			data: { q: '', status: '', webhooks: { ok: true, value: [webhook] }, schemas: { ok: true, value: [] }, entitlements, user: { roles: ['admin'] } },
 			form,
 		}) as never;
 
@@ -223,7 +225,7 @@ describe('the result of a webhook test', () => {
 describe('a rotated signing secret', () => {
 	const props = (form: unknown) =>
 		({
-			data: { webhooks: { ok: true, value: [webhook] }, schemas: { ok: true, value: [] }, entitlements, user: { roles: ['super_admin'] } },
+			data: { q: '', status: '', webhooks: { ok: true, value: [webhook] }, schemas: { ok: true, value: [] }, entitlements, user: { roles: ['super_admin'] } },
 			form,
 		}) as never;
 
@@ -282,7 +284,7 @@ describe('a rotated signing secret', () => {
 describe('the failures of the history and the queue', () => {
 	const props = (form: unknown) =>
 		({
-			data: { webhooks: { ok: true, value: [webhook] }, schemas: { ok: true, value: [] }, entitlements, user: { roles: ['admin'] } },
+			data: { q: '', status: '', webhooks: { ok: true, value: [webhook] }, schemas: { ok: true, value: [] }, entitlements, user: { roles: ['admin'] } },
 			form,
 		}) as never;
 
@@ -299,5 +301,41 @@ describe('the failures of the history and the queue', () => {
 		const { getByRole } = render(WebhooksPage, { props: props(null) });
 		expect(getByRole('link', { name: 'Delivery history for Ship it' }).getAttribute('href')).toContain('deliveries=w1');
 		expect(getByRole('link', { name: /dead letters/i }).getAttribute('href')).toContain('dead=1');
+	});
+});
+
+describe('the webhook search and status filter', () => {
+	function filtered(rows: unknown[], q: string, status: string) {
+		return render(WebhooksPage, {
+			props: {
+				data: {
+					webhooks: { ok: true, value: rows },
+					schemas: { ok: true, value: [] },
+					entitlements,
+					user: { roles: ['super_admin'] },
+					limit: 50,
+					offset: 0,
+					total: 120,
+					hasMore: true,
+					q,
+					status,
+				},
+				form: null,
+			} as never,
+		});
+	}
+
+	it('keeps the search on each status link and the pager', () => {
+		const { container } = filtered([webhook], 'ship', 'enabled');
+		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
+		expect(hrefs).toContain('/admin/webhooks?status=disabled&q=ship');
+		expect(hrefs.some((h) => h.startsWith('/admin/webhooks?status=enabled&q=ship&') && h.includes('offset=50'))).toBe(true);
+	});
+
+	it('offers to clear filters that match nothing, rather than offering a first webhook', () => {
+		const { container } = filtered([], 'nothing like it', '');
+		expect(container.textContent).toContain('No webhooks match these filters');
+		expect(container.textContent).not.toContain('No webhooks yet');
+		expect(container.querySelector('a[href="/admin/webhooks"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 });

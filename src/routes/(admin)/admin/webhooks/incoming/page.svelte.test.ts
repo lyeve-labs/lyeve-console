@@ -23,6 +23,8 @@ function setup(over: Record<string, unknown> = {}, form: unknown = null) {
 	return render(IncomingPage, {
 		props: {
 			data: {
+				q: '',
+				status: '',
 				incomingWebhooks: { ok: true, value: [stripe] },
 				schemas: { ok: true, value: [{ name: 'orders' }] },
 				entitlements,
@@ -40,12 +42,19 @@ function setup(over: Record<string, unknown> = {}, form: unknown = null) {
 }
 
 describe('the incoming webhook search', () => {
-	it('says it covers this page only, in its label, its placeholder and when nothing matches', async () => {
-		const { container, getByLabelText } = setup();
-		const search = getByLabelText('Search this page') as HTMLInputElement;
-		expect(search.getAttribute('placeholder')).toBe('Name, content type or ID on this page');
-		await fireEvent.input(search, { target: { value: 'nothing like it' } });
-		expect(container.textContent).toContain('No incoming webhooks on this page match these filters');
+	it('offers to clear filters that match nothing, rather than offering a first endpoint', () => {
+		const { container, getByLabelText } = setup({ incomingWebhooks: { ok: true, value: [] }, total: 0, q: 'nothing like it' });
+		expect(getByLabelText('Search incoming webhooks').getAttribute('placeholder')).toBe('Name, content type or ID');
+		expect(container.textContent).toContain('No incoming webhooks match these filters');
+		expect(container.textContent).not.toContain('No incoming webhooks yet');
+		expect(container.querySelector('a[href="/admin/webhooks/incoming"]')?.textContent?.trim()).toBe('Clear filters');
+	});
+
+	it('keeps the search on each status link and the pager', () => {
+		const { container } = setup({ q: 'stripe', status: 'enabled', total: 120, hasMore: true });
+		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
+		expect(hrefs).toContain('/admin/webhooks/incoming?status=disabled&q=stripe');
+		expect(hrefs.some((h) => h.startsWith('/admin/webhooks/incoming?status=enabled&q=stripe&') && h.includes('offset=50'))).toBe(true);
 	});
 });
 
@@ -106,6 +115,8 @@ describe('the incoming webhook drawer and the failures of other actions', () => 
 		await fireEvent.click(getByRole('button', { name: 'Edit Stripe' }));
 		await rerender({
 			data: {
+				q: '',
+				status: '',
 				incomingWebhooks: { ok: true, value: [stripe] },
 				schemas: { ok: true, value: [{ name: 'orders' }] },
 				entitlements,

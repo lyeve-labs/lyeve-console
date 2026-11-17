@@ -11,7 +11,7 @@ import { authedClient, requireRole } from '#lib/server/authz.ts';
 import { actionFailure, tagged } from '#lib/server/action-error.ts';
 import { checked } from '#lib/checkbox.ts';
 import { section, type Section } from '#lib/api/gate.ts';
-import { pageOf, pageWindow, pastEndOffset, withOffset, type ListEnvelope } from '#lib/api/list.ts';
+import { chipOf, pageOf, pageWindow, pastEndOffset, query, searchOf, withOffset, type ListEnvelope } from '#lib/api/list.ts';
 import { asked } from '#lib/server/asked.ts';
 
 /** The page size when a request names none. */
@@ -39,13 +39,15 @@ export const load: PageServerLoad = async (event) => {
 	const { url } = event;
 	const client = authedClient(event);
 	const { limit, offset } = pageWindow(url, DEFAULT_LIMIT, MAX_LIMIT);
+	const q = searchOf(url);
+	const status = chipOf(url, 'status', ['enabled', 'disabled']);
 
 	// Read from the client rather than through the list helper, which drops the
 	// envelope that carries the row count and the license flag.
 	const [read, schemas] = await Promise.all([
 		section(
 			client.get<(ListEnvelope<IncomingWebhook> & { licensed?: unknown }) | IncomingWebhook[]>(
-				`/api/admin/incoming-webhooks?limit=${limit + 1}&offset=${offset}`
+				`/api/admin/incoming-webhooks${query({ limit: limit + 1, offset, q, status })}`
 			),
 			LIST_FAILED
 		),
@@ -53,7 +55,7 @@ export const load: PageServerLoad = async (event) => {
 	]);
 
 	if (!read.ok) {
-		return { incomingWebhooks: read, schemas, limit, offset, total: null, hasMore: false, licensed: null };
+		return { incomingWebhooks: read, schemas, limit, offset, q, status, total: null, hasMore: false, licensed: null };
 	}
 
 	const page = pageOf<IncomingWebhook>(read.value, limit, offset);
@@ -69,6 +71,8 @@ export const load: PageServerLoad = async (event) => {
 		schemas,
 		limit,
 		offset,
+		q,
+		status,
 		total: page.total,
 		hasMore: page.hasMore,
 		licensed

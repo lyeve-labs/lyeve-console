@@ -6,7 +6,7 @@ import { actionFailure } from '#lib/server/action-error.ts';
 import { checked } from '#lib/checkbox.ts';
 import { alertsFrom, type AlertConfig } from '#lib/api/cron-alerts.ts';
 import { section, type Gate, type Section } from '#lib/api/gate.ts';
-import { pageOf, pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { chipOf, pageOf, pageWindow, pastEndOffset, query, searchOf, withOffset } from '#lib/api/list.ts';
 import { couldNotLoad } from '#lib/outage.ts';
 import { asked } from '#lib/server/asked.ts';
 import { returnAddress } from '#lib/back.ts';
@@ -48,13 +48,13 @@ const LIST_FAILED = couldNotLoad('jobs');
 async function listJobs(
 	client: HttpClient,
 	limit: number,
-	offset: number
+	offset: number,
+	q: string,
+	status: string
 ): Promise<Job[]> {
 	// GET /api/admin/jobs returns a bare array. Reading a `jobs` wrapper that
 	// is not there resolves to undefined and renders an empty list.
-	const res = await client.get<Job[] | { jobs: Job[] }>(
-		`/api/admin/jobs?limit=${limit}&offset=${offset}`
-	);
+	const res = await client.get<Job[] | { jobs: Job[] }>(`/api/admin/jobs${query({ limit, offset, q, status })}`);
 	return Array.isArray(res) ? res : (res?.jobs ?? []);
 }
 
@@ -64,6 +64,8 @@ export const load: PageServerLoad = async (event) => {
 	if (!user.roles.includes('super_admin')) error(403, 'Only a super admin can open this page.');
 	const client = authedClient(event);
 	const { limit, offset } = pageWindow(url, DEFAULT_LIMIT, MAX_LIMIT);
+	const q = searchOf(url);
+	const status = chipOf(url, 'status', ['enabled', 'disabled']);
 
 	/*
 	 * Neither shape this endpoint answers with carries a row count, so there is
@@ -72,10 +74,10 @@ export const load: PageServerLoad = async (event) => {
 	 * next page exists and nothing more, and it is dropped before the page sees
 	 * it.
 	 */
-	const read = await section(listJobs(client, limit + 1, offset), LIST_FAILED);
+	const read = await section(listJobs(client, limit + 1, offset, q, status), LIST_FAILED);
 	// The page draws the gate in place of the list. Nothing was read, so the
 	// drawer stays shut whatever the address asks for.
-	if (!read.ok) return { jobs: read, limit, offset, hasMore: false, openNew: false, openJob: null, openGate: null };
+	if (!read.ok) return { jobs: read, limit, offset, q, status, hasMore: false, openNew: false, openJob: null, openGate: null };
 	const page = pageOf<Job>(read.value, limit, offset);
 	const back = pastEndOffset(page.rows.length, limit, offset, null);
 	if (back !== null) redirect(307, withOffset(url, back));
@@ -96,7 +98,7 @@ export const load: PageServerLoad = async (event) => {
 	// Typed, because a bare literal widens `ok` to boolean and the page could
 	// no longer tell the two cases apart.
 	const jobs: Section<Job[]> = { ok: true, value: page.rows };
-	return { jobs, limit, offset, hasMore: page.hasMore, openNew, openJob, openGate };
+	return { jobs, limit, offset, q, status, hasMore: page.hasMore, openNew, openJob, openGate };
 };
 
 /** The job a link names, or why the drawer cannot open on it. An answer without a job is one that was not found. */

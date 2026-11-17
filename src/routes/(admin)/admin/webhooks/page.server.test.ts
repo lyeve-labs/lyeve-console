@@ -76,6 +76,27 @@ describe('admin/webhooks/+page.server.ts load', () => {
 		expect(webhookCall(seen)).toContain('offset=0');
 	});
 
+	it('sends the search and the status to the engine and back to the page', async () => {
+		const { seen, event } = loadEvent({ data: hooks(1), total_count: 1 }, '?q=ship&status=disabled');
+
+		const result = (await load(event)) as Loaded;
+
+		const asked = new URL(webhookCall(seen), 'http://e');
+		expect(asked.searchParams.get('q')).toBe('ship');
+		expect(asked.searchParams.get('status')).toBe('disabled');
+		expect(result).toMatchObject({ q: 'ship', status: 'disabled' });
+	});
+
+	it('drops a status it does not offer and a search the engine would refuse', async () => {
+		const { seen, event } = loadEvent({ data: hooks(1), total_count: 1 }, `?status=failing&q=${'a'.repeat(201)}`);
+
+		const result = (await load(event)) as Loaded;
+
+		expect(webhookCall(seen)).not.toContain('status=');
+		expect(webhookCall(seen)).not.toContain('q=');
+		expect(result).toMatchObject({ q: '', status: '' });
+	});
+
 	it('carries the window the request named', async () => {
 		const { seen, event } = loadEvent(hooks(5), '?limit=10&offset=30');
 

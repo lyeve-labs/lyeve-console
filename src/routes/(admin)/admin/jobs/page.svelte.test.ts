@@ -36,7 +36,7 @@ const job = {
 function setup(extra: Record<string, unknown> = {}, form: Record<string, unknown> | null = null) {
 	return render(JobsPage, {
 		props: {
-			data: { jobs: { ok: true, value: [job] }, limit: 50, offset: 0, hasMore: false, openNew: false, openJob: null, entitlements, ...extra },
+			data: { jobs: { ok: true, value: [job] }, limit: 50, offset: 0, q: '', status: '', hasMore: false, openNew: false, openJob: null, entitlements, ...extra },
 			form,
 		} as never,
 	});
@@ -111,13 +111,19 @@ describe('the job drawer', () => {
 });
 
 describe('the job list toolbar', () => {
-	it('narrows the page by the typed fragment', async () => {
-		const other = { ...job, id: 'j2', name: 'Weekly digest', schedule: '0 9 * * 1' };
-		const { container } = setup({ jobs: { ok: true, value: [job, other] } });
-		const box = container.querySelector('#job-search') as HTMLInputElement;
-		await fireEvent.input(box, { target: { value: 'digest' } });
-		const names = [...container.querySelectorAll('tbody td p.font-medium')].map((p) => p.textContent);
-		expect(names).toEqual(['Weekly digest']);
+	it('keeps the search on each status link and the pager', () => {
+		const { container } = setup({ q: 'digest', status: 'enabled', hasMore: true });
+		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
+		expect(hrefs).toContain('/admin/jobs?status=disabled&q=digest');
+		expect(hrefs.some((h) => h.startsWith('/admin/jobs?status=enabled&q=digest&') && h.includes('offset=50'))).toBe(true);
+	});
+
+	it('offers to clear filters that match nothing, rather than offering a first job', () => {
+		const { container } = setup({ jobs: { ok: true, value: [] }, q: 'nothing like it' });
+		expect(container.textContent).toContain('No jobs match these filters');
+		expect(container.textContent).not.toContain('No jobs yet');
+		expect(container.querySelector('#job-search')).toBeTruthy();
+		expect(container.querySelector('a[href="/admin/jobs"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 });
 

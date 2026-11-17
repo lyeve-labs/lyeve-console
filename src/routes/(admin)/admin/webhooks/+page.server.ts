@@ -7,7 +7,7 @@ import { deleteWebhook, testWebhook, listDeliveries, rotateSecret, retryDelivery
 import { actionFailure, tagged } from '#lib/server/action-error.ts';
 import { createWebhookRecord, updateWebhookRecord, webhookBodyFrom } from '#lib/api/webhook-options.ts';
 import { section, type Section } from '#lib/api/gate.ts';
-import { pageOf, pageWindow, pastEndOffset, rowsOf, statedTotal, withOffset, type ListEnvelope } from '#lib/api/list.ts';
+import { chipOf, pageOf, pageWindow, pastEndOffset, query, rowsOf, searchOf, statedTotal, withOffset, type ListEnvelope } from '#lib/api/list.ts';
 import { asked } from '#lib/server/asked.ts';
 
 /** The page size when a request names none. */
@@ -82,6 +82,8 @@ export const load: PageServerLoad = async (event) => {
 	const { url } = event;
 	const client = authedClient(event);
 	const { limit, offset } = pageWindow(url, DEFAULT_LIMIT, MAX_LIMIT);
+	const q = searchOf(url);
+	const status = chipOf(url, 'status', ['enabled', 'disabled']);
 
 	/*
 	 * Read straight from the client rather than through listWebhooks, which
@@ -92,7 +94,7 @@ export const load: PageServerLoad = async (event) => {
 	const [read, schemas, deliveries, deadLetters] = await Promise.all([
 		section(
 			client.get<ListEnvelope<Webhook> | Webhook[]>(
-				`/api/admin/webhooks?limit=${limit + 1}&offset=${offset}`
+				`/api/admin/webhooks${query({ limit: limit + 1, offset, q, status })}`
 			),
 			LIST_FAILED
 		),
@@ -102,7 +104,7 @@ export const load: PageServerLoad = async (event) => {
 	]);
 
 	// The page draws the gate in place of the list, so nothing is paged.
-	if (!read.ok) return { webhooks: read, schemas, limit, offset, total: null, hasMore: false, deliveries, deadLetters };
+	if (!read.ok) return { webhooks: read, schemas, limit, offset, q, status, total: null, hasMore: false, deliveries, deadLetters };
 
 	const page = pageOf<Webhook>(read.value, limit, offset);
 	const back = pastEndOffset(page.rows.length, limit, offset, page.total);
@@ -115,6 +117,8 @@ export const load: PageServerLoad = async (event) => {
 		schemas,
 		limit,
 		offset,
+		q,
+		status,
 		total: page.total,
 		hasMore: page.hasMore,
 		deliveries,

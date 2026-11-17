@@ -13,7 +13,7 @@
 		Pagination,
 		PasswordInput,
 		SearchInput,
-		SegmentedControl,
+		FilterChips,
 		Select,
 		Textarea,
 		Toggle
@@ -25,8 +25,9 @@
 	import { Plus, Pencil, Trash2, ArrowDownToLine } from '@lucide/svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';
-	import { narrows } from '#lib/narrow.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { listQuery } from '#lib/back.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -90,20 +91,17 @@
 		open = true;
 	}
 
-	// The endpoint takes no search, so the box narrows what is on screen.
-	let query = $state('');
-	let status = $state('');
-	const STATUSES = [
-		{ value: '', label: 'All' },
-		{ value: 'enabled', label: 'Enabled' },
-		{ value: 'disabled', label: 'Disabled' },
-	];
-	const visible = $derived(
-		rows.filter(
-			(wh) =>
-				narrows(query, wh.name, wh.schema_name, wh.id) &&
-				(status === '' || (status === 'enabled') === wh.enabled)
-		)
+	// The plugin searches and filters every incoming webhook, so a match past
+	// the first page shows on the first. Both live in the URL, so the pager and
+	// a reload keep them.
+	const live = liveFilter(() => data.q);
+	const filtered = $derived(Boolean(data.q || data.status));
+	const statusOptions = $derived(
+		[
+			{ value: '', label: 'All' },
+			{ value: 'enabled', label: 'Enabled' },
+			{ value: 'disabled', label: 'Disabled' },
+		].map((o) => ({ ...o, href: `/admin/webhooks/incoming${listQuery({ status: o.value, q: data.q })}` })),
 	);
 </script>
 
@@ -141,7 +139,35 @@
 			title="Incoming webhooks"
 			absent="Incoming webhooks are not included in this build."
 		/>
-	{:else if data.incomingWebhooks.value.length === 0}
+	{:else}
+		{#if rows.length > 0 || filtered}
+			<form method="GET" {@attach live.form}>
+				{#if data.status}<input type="hidden" name="status" value={data.status} />{/if}
+				<ListToolbar label="Filter incoming webhooks">
+					{#snippet search()}
+						<label for="incoming-search" class="sr-only">Search incoming webhooks</label>
+						<SearchInput
+							id="incoming-search"
+							name="q"
+							bind:value={live.value}
+							oninput={live.input}
+							placeholder="Name, content type or ID"
+						/>
+					{/snippet}
+					{#snippet filters()}
+						<FilterChips label="Status" value={data.status} options={statusOptions} />
+					{/snippet}
+				</ListToolbar>
+			</form>
+		{/if}
+
+		{#if rows.length === 0 && filtered}
+			<EmptyState level={2} title="No incoming webhooks match these filters" description="Clear the search or choose another status.">
+				{#snippet action()}
+					<Button variant="secondary" href="/admin/webhooks/incoming">Clear filters</Button>
+				{/snippet}
+			</EmptyState>
+		{:else if rows.length === 0}
 		<EmptyState
 			level={2}
 			title="No incoming webhooks yet"
@@ -157,22 +183,9 @@
 				{/if}
 			{/snippet}
 		</EmptyState>
-	{:else}
-		<ListToolbar label="Filter incoming webhooks">
-			{#snippet search()}
-				<label for="incoming-search" class="sr-only">Search this page</label>
-				<SearchInput id="incoming-search" bind:value={query} placeholder="Name, content type or ID on this page" />
-			{/snippet}
-			{#snippet filters()}
-				<SegmentedControl label="Status" labelHidden bind:value={status} options={STATUSES} />
-			{/snippet}
-		</ListToolbar>
-
-		{#if visible.length === 0}
-			<EmptyState level={2} title="No incoming webhooks on this page match these filters" description="Clear the search and the status filter, or go to another page." />
 		{:else}
 		<div class="flex flex-col gap-3">
-			{#each visible as wh (wh.id)}
+			{#each rows as wh (wh.id)}
 				<Card>
 					<div class="flex items-center gap-4">
 						<div class="min-w-0 flex-1">
@@ -230,7 +243,6 @@
 				</Card>
 			{/each}
 		</div>
-		{/if}
 		<Pagination
 			page={pageNumber(data.offset, data.limit)}
 			perPage={data.limit}
@@ -238,8 +250,12 @@
 			total={data.total ?? undefined}
 			hasNext={data.hasMore}
 			noun="incoming webhooks"
-			href={pageHref('/admin/webhooks/incoming', data.limit)}
+			href={pageHref('/admin/webhooks/incoming', data.limit, {
+				...(data.status ? { status: data.status } : {}),
+				...(data.q ? { q: data.q } : {}),
+			})}
 		/>
+		{/if}
 	{/if}
 </PageShell>
 
