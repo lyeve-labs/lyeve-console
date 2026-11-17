@@ -292,15 +292,15 @@
 			{:else}
 				<ListToolbar label="Filter providers">
 					{#snippet search()}
-						<label for="saml-search" class="sr-only">Search providers</label>
-						<SearchInput id="saml-search" bind:value={narrow} placeholder="Name or entity ID" />
+						<label for="saml-search" class="sr-only">Search this page</label>
+						<SearchInput id="saml-search" bind:value={narrow} placeholder="Name or entity ID on this page" />
 					{/snippet}
 				</ListToolbar>
 
 				{#if visible.length === 0}
 					<EmptyState
-						title="No providers match this search"
-						description="The search covers each provider's name and entity ID."
+						title="No providers on this page match these filters"
+						description="The search covers this page only. Clear it or go to another page."
 					>
 						{#snippet iconSnippet()}
 							<ShieldCheck size={ICON.lg} />

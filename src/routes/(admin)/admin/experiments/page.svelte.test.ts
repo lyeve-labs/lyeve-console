@@ -69,7 +69,15 @@ describe('the moves on a row', () => {
 	// draws the transitions the engine accepts and no others.
 	it('names the search box by a label, not by its placeholder', () => {
 		const { getByLabelText } = render(ExperimentsPage, { props: props() });
-		expect(getByLabelText('Search experiments').tagName).toBe('INPUT');
+		expect(getByLabelText('Search this page').tagName).toBe('INPUT');
+	});
+
+	it('says the search covers this page only, in its placeholder and when nothing matches', async () => {
+		const { container, getByLabelText } = render(ExperimentsPage, { props: props() });
+		const search = getByLabelText('Search this page') as HTMLInputElement;
+		expect(search.getAttribute('placeholder')).toBe('Name or description on this page');
+		await fireEvent.input(search, { target: { value: 'nothing like it' } });
+		expect(said(container)).toContain('No experiments on this page match these filters');
 	});
 
 	it('offers pause and stop while running, and never resume', () => {

@@ -110,6 +110,12 @@ describe('analytics destinations', () => {
 		expect(document.body.textContent).toContain('is unavailable');
 	});
 
+	it('says a filtered queue matched nothing and offers to clear the filter', () => {
+		setup({ deliveries: { data: [], licensed: true }, status: 'failed' });
+		expect(document.body.textContent).toContain('No deliveries match these filters');
+		expect(screen.getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/analytics-destinations');
+	});
+
 	it('says nothing is owed when the queue is empty', () => {
 		setup({ deliveries: { data: [], licensed: true } });
 		expect(document.body.textContent).toContain('No deliveries owed');

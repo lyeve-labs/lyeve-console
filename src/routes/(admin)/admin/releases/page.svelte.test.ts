@@ -47,9 +47,10 @@ describe('the releases list', () => {
 		expect(screen.getAllByRole('button', { name: /new release/i })).toHaveLength(2);
 	});
 
-	it('says a filtered list is empty for its status, without a create offer of its own', () => {
+	it('says a filtered list matched nothing and offers to clear the filter, without a create offer of its own', () => {
 		render(ReleasesPage, { props: props({ releases: [], total: 0, status: 'scheduled' }) });
-		expect(screen.getByText('No releases with this status')).toBeTruthy();
+		expect(screen.getByText('No releases match these filters')).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/releases');
 		expect(screen.getAllByRole('button', { name: /new release/i })).toHaveLength(1);
 	});
 

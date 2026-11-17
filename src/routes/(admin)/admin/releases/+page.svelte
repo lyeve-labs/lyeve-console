@@ -74,14 +74,16 @@
 		{#if data.releases.length === 0}
 			<EmptyState
 				level={2}
-				title={data.status ? 'No releases with this status' : 'No releases yet'}
+				title={data.status ? 'No releases match these filters' : 'No releases yet'}
 				description={data.status
 					? 'Choose another status to see the rest.'
 					: 'Create a release to publish several entries together.'}
 			>
 				{#snippet iconSnippet()}<CalendarClock size={ICON.lg} />{/snippet}
 				{#snippet action()}
-					{#if !data.status}
+					{#if data.status}
+						<Button variant="secondary" href="/admin/releases">Clear filters</Button>
+					{:else}
 						<Button variant="secondary" onclick={openCreate}><Plus size={ICON.sm} /> New release</Button>
 					{/if}
 				{/snippet}

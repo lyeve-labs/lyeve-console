@@ -330,8 +330,8 @@ describe('the drawer', () => {
 describe('the pager', () => {
 	it('stays when nothing on this page matches the search', async () => {
 		const { container } = render(SamlPage, { props: props({ total: 60, hasMore: true }) });
-		await fireEvent.input(screen.getByPlaceholderText('Name or entity ID'), { target: { value: 'nothing like it' } });
-		expect(said(container)).toContain('No providers match this search');
+		await fireEvent.input(screen.getByPlaceholderText('Name or entity ID on this page'), { target: { value: 'nothing like it' } });
+		expect(said(container)).toContain('No providers on this page match these filters');
 		expect(container.querySelector('a[href="/admin/settings/saml?limit=25&offset=25"]')).toBeTruthy();
 	});
 });

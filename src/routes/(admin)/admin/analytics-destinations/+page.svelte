@@ -224,13 +224,13 @@
 					title="the deliveries"
 					absent="The delivery queue needs a newer version of the analytics plugin."
 				/>
+			{:else if data.deliveries.data.length === 0 && data.status}
+				<EmptyState title="No deliveries match these filters" description="Choose another status to see the rest.">
+					{#snippet iconSnippet()}<Inbox size={ICON.lg} />{/snippet}
+					{#snippet action()}<Button variant="secondary" href={base}>Clear filters</Button>{/snippet}
+				</EmptyState>
 			{:else if data.deliveries.data.length === 0}
-				<EmptyState
-					title="No deliveries owed"
-					description={data.status
-						? 'No deliveries have this status. Choose All to see the rest.'
-						: 'Every destination has accepted every event sent to it.'}
-				>
+				<EmptyState title="No deliveries owed" description="Every destination has accepted every event sent to it.">
 					{#snippet iconSnippet()}<Inbox size={ICON.lg} />{/snippet}
 				</EmptyState>
 			{:else}

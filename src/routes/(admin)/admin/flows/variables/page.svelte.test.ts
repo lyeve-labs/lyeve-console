@@ -164,14 +164,15 @@ describe('variables page', () => {
 
 describe('variables search', () => {
 	it('searches by the address and says when nothing matches', () => {
-		const { container, getByLabelText } = render(VariablesPage, {
+		const { container, getByLabelText, getByRole } = render(VariablesPage, {
 			props: { data: { variables: [], total: 0, q: 'zz', limit: 50, offset: 0, locked: false, gate: { state: 'ok' }, user: { roles: ['admin'] }, entitlements: licensed }, form: null } as never,
 		});
 		const form = container.querySelector('[data-testid="variable-filters"]') as HTMLFormElement;
 		expect(form.getAttribute('method')).toBe('GET');
 		expect((getByLabelText('Search variables') as HTMLInputElement).value).toBe('zz');
-		expect(container.textContent).toContain('No variables match');
+		expect(container.textContent).toContain('No variables match these filters');
 		expect(container.textContent).not.toContain('No variables yet');
+		expect(getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/flows/variables');
 	});
 });
 

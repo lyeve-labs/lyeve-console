@@ -2,6 +2,7 @@
 	import {
 		Alert,
 		Badge,
+		Button,
 		EmptyState,
 		FilterChips,
 		PageShell,
@@ -124,13 +125,13 @@
 				title="Review assignments"
 				absent="Review assignments are not included in this build."
 			/>
+		{:else if assignmentRows.length === 0 && data.status}
+			<EmptyState title="No assignments match these filters" description="Choose another status to see the rest.">
+				{#snippet iconSnippet()}<ClipboardCheck size={ICON.lg} />{/snippet}
+				{#snippet action()}<Button variant="secondary" href="/admin/reviews">Clear filters</Button>{/snippet}
+			</EmptyState>
 		{:else if assignmentRows.length === 0}
-			<EmptyState
-				title="Nothing under review"
-				description={data.status
-					? 'No assignments have this status. Choose another status to see the rest.'
-					: 'Entries appear here when you start a review from the entry editor.'}
-			>
+			<EmptyState title="Nothing under review" description="Entries appear here when you start a review from the entry editor.">
 				{#snippet iconSnippet()}<ClipboardCheck size={ICON.lg} />{/snippet}
 			</EmptyState>
 		{:else}
