@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listBack, listQuery } from './back';
+import { actionWithQuery, listBack, listQuery, queryWithout, returnAddress } from './back';
 
 describe('listBack', () => {
 	it('returns the bare list when the detail URL carries no filter', () => {
@@ -32,5 +32,46 @@ describe('listQuery', () => {
 		expect(listQuery({ status: 'active', q: '', limit: 25, offset: 50 })).toBe(
 			'?status=active&limit=25&offset=50',
 		);
+	});
+});
+
+describe('queryWithout', () => {
+	it('keeps every other key, repeated values included, and drops the named ones', () => {
+		const url = new URL('http://localhost/admin/jobs?offset=50&edit=j1&tag=a&tag=b');
+		expect(queryWithout(url, ['edit', 'new'])).toBe('?offset=50&tag=a&tag=b');
+	});
+
+	it('drops the name of the action a form posted to', () => {
+		const url = new URL('http://localhost/admin/audit-log?q=alice&/prune');
+		expect(queryWithout(url)).toBe('?q=alice');
+	});
+
+	it('is empty when nothing is left', () => {
+		expect(queryWithout(new URL('http://localhost/admin/jobs?new=1'), ['new'])).toBe('');
+	});
+});
+
+describe('actionWithQuery', () => {
+	it('is the bare action when the page carries no query', () => {
+		expect(actionWithQuery('prune', '')).toBe('?/prune');
+	});
+
+	it('names the action after the query, so the action request still carries it', () => {
+		const action = actionWithQuery('prune', '?q=alice&action=user.login');
+		expect(action).toBe('?q=alice&action=user.login&/prune');
+		const posted = new URL(action, 'http://localhost/admin/audit-log?q=alice&action=user.login');
+		expect(posted.searchParams.get('q')).toBe('alice');
+		expect([...posted.searchParams.keys()].find((key) => key.startsWith('/'))).toBe('/prune');
+	});
+});
+
+describe('returnAddress', () => {
+	it('returns to the address the action was posted from, less the action and the dropped keys', () => {
+		const url = new URL('http://localhost/admin/jobs?offset=50&edit=j1&/update');
+		expect(returnAddress(url, ['edit', 'new'])).toBe('/admin/jobs?offset=50');
+	});
+
+	it('is the bare path when nothing is kept', () => {
+		expect(returnAddress(new URL('http://localhost/admin/jobs?/create'))).toBe('/admin/jobs');
 	});
 });

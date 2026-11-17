@@ -5,9 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SubmitFunction } from '@sveltejs/kit';
 import type { Entitlements } from '$lib/entitlements';
 
-vi.mock('$app/state', () => ({
-	page: { url: new URL('http://localhost/admin/audit-log') },
-}));
+const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/audit-log') } }));
+vi.mock('$app/state', () => state);
 
 /*
  * The submit function is the unit under test for the prune gate: enhance awaits
@@ -38,6 +37,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 import AuditLogPage from './+page.svelte';
 
 beforeEach(() => {
+	state.page.url = new URL('http://localhost/admin/audit-log');
 	forms.submits = [];
 	kit.openDialog.mockReset();
 	kit.openDialog.mockResolvedValue(false);
@@ -151,6 +151,13 @@ describe('Audit log prune', () => {
 		expect(prune.className).toContain('text-sm');
 		// Retention is a tab of its own, so only the entries render here.
 		expect([...document.querySelectorAll('h2')].map((h) => h.textContent?.trim())).toEqual(['Entries']);
+	});
+
+	it('posts with the filters and the page the reader has open, so the list comes back as it was', () => {
+		state.page.url = new URL('http://localhost/admin/audit-log?q=alice&action=user.login&offset=50&pruned=3');
+		setup();
+		const form = document.querySelector('form.hidden[method="POST"]') as HTMLFormElement;
+		expect(form.getAttribute('action')).toBe('?q=alice&action=user.login&offset=50&/prune');
 	});
 
 	it('is withheld from an admin who cannot prune', () => {
