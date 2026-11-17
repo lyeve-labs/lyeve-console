@@ -1,6 +1,6 @@
 import type { HttpClient } from '@lyeve-labs/client';
 import type { APIKey, CreateAPIKeyResponse } from '@lyeve-labs/client';
-import type { ListEnvelope } from './list';
+import { query, type ListEnvelope } from './list';
 
 const KEYS_URL = '/api/admin/api-keys';
 
@@ -13,9 +13,10 @@ const KEYS_URL = '/api/admin/api-keys';
 export function listKeys(
 	client: HttpClient,
 	limit = 50,
-	offset = 0
+	offset = 0,
+	filter: { q?: string; status?: string } = {}
 ): Promise<ListEnvelope<APIKey> | APIKey[]> {
-	return client.get<ListEnvelope<APIKey> | APIKey[]>(`${KEYS_URL}?limit=${limit}&offset=${offset}`);
+	return client.get<ListEnvelope<APIKey> | APIKey[]>(`${KEYS_URL}${query({ limit, offset, q: filter.q, status: filter.status })}`);
 }
 
 export interface KeyInput {

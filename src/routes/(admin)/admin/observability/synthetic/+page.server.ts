@@ -14,6 +14,7 @@ import {
 	listOpenAlerts,
 	listProbes,
 	probeHealth,
+	probeTarget,
 	probeType,
 	putProbeChannels,
 	readProbeLimits,
@@ -39,7 +40,7 @@ const CHANNEL_PREFIX = 'channel_';
  * A refused or failed read is said in the drawer rather than as no channels.
  */
 type ChannelsFor = { probe: Probe; read: ProbeChannels | null; gate: Gate } | null;
-import { pageOf, pageWindow, pastEndOffset, rowsOf, withOffset } from '#lib/api/list.ts';
+import { chipOf, pageOf, pageWindow, pastEndOffset, rowsOf, searchOf, withOffset } from '#lib/api/list.ts';
 import { couldNotLoad } from '#lib/outage.ts';
 import { asked } from '#lib/server/asked.ts';
 
@@ -127,6 +128,13 @@ const REQUIRED_TARGET: Readonly<Record<string, { field: keyof ProbeConfig; says:
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();
 	const { limit, offset } = pageWindow(event.url, DEFAULT_LIMIT, MAX_LIMIT);
+	const q = searchOf(event.url);
+	const show = chipOf(event.url, 'show', ['failing', 'paused']);
+	// The plugin takes no search, so the probes are matched here, before the
+	// page is cut, by name, target and state.
+	const needle = q.toLowerCase();
+	const matches = (p: Probe) =>
+		(!show || probeHealth(p) === show) && (!needle || `${p.name} ${probeTarget(p)}`.toLowerCase().includes(needle));
 
 	const unread = {
 		probes: [] as Probe[],
@@ -134,6 +142,8 @@ export const load: PageServerLoad = async (event) => {
 		total: null as number | null,
 		limit,
 		offset,
+		q,
+		show,
 		hasMore: false,
 		channelsFor: null as ChannelsFor,
 		limits: null as ProbeLimits | null,
@@ -156,8 +166,9 @@ export const load: PageServerLoad = async (event) => {
 		// window it was asked for, so the page is cut here, and every count
 		// covers every probe rather than the rows on this page.
 		every = read.value;
-		total = read.value.length;
-		probes = read.value.slice(offset, offset + limit);
+		const kept = read.value.filter(matches);
+		total = kept.length;
+		probes = kept.slice(offset, offset + limit);
 		hasMore = offset + probes.length < total;
 		counts = {
 			failing: read.value.filter((p) => probeHealth(p) === 'failing').length,
@@ -166,7 +177,7 @@ export const load: PageServerLoad = async (event) => {
 	} else {
 		const page = pageOf(read.value, limit, offset);
 		every = page.rows;
-		probes = page.rows;
+		probes = page.rows.filter(matches);
 		total = page.total;
 		hasMore = page.hasMore;
 	}
@@ -196,7 +207,7 @@ export const load: PageServerLoad = async (event) => {
 		readProbeLimits(client).catch(() => null),
 	]);
 
-	return { probes, alerts, total, limit, offset, hasMore, gate: GATE_OK, channelsFor, limits, counts };
+	return { probes, alerts, total, limit, offset, q, show, hasMore, gate: GATE_OK, channelsFor, limits, counts };
 };
 
 async function save(event: Parameters<Actions[string]>[0], id: string | null) {

@@ -18,7 +18,7 @@
 		Pagination,
 		RadioGroup,
 		SearchInput,
-		SegmentedControl,
+		FilterChips,
 	} from '@lyeve-labs/ui-kit';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import { enhance } from '#lib/enhance.ts';
@@ -49,6 +49,8 @@
 	import { formatDateTime, plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { listQuery } from '#lib/back.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -105,14 +107,17 @@
 	const wholeList = $derived(!!data.counts || (data.offset === 0 && !data.hasMore));
 	const pageNote = $derived(wholeList ? undefined : `of the ${data.probes.length} on this page`);
 
-	let narrow = $state('');
-	let showing = $state<'all' | 'failing' | 'paused'>('all');
-	const visible = $derived(
-		data.probes.filter((p) => {
-			if (showing !== 'all' && probeHealth(p) !== showing) return false;
-			const term = narrow.trim().toLowerCase();
-			return !term || `${p.name} ${probeTarget(p)}`.toLowerCase().includes(term);
-		}),
+	// The load matches every probe before it cuts the page, so a match past
+	// the first page shows on the first. Both live in the URL, so the pager and
+	// a reload keep them.
+	const live = liveFilter(() => data.q);
+	const filtered = $derived(Boolean(data.q || data.show));
+	const showOptions = $derived(
+		[
+			{ value: '', label: 'All' },
+			{ value: 'failing', label: 'Failing' },
+			{ value: 'paused', label: 'Paused' },
+		].map((o) => ({ ...o, href: `/admin/observability/synthetic${listQuery({ show: o.value, q: data.q })}` })),
 	);
 
 	let open = $state(false);
@@ -316,7 +321,34 @@
 		<section class="flex flex-col gap-4">
 			<SectionHeading level={2}>Probes</SectionHeading>
 
-			{#if data.probes.length === 0}
+			{#if data.probes.length > 0 || filtered}
+				<form method="GET" {@attach live.form}>
+					{#if data.show}<input type="hidden" name="show" value={data.show} />{/if}
+					<ListToolbar label="Filter probes">
+						{#snippet search()}
+							<label for="probe-search" class="sr-only">Search probes</label>
+							<SearchInput
+								id="probe-search"
+								name="q"
+								bind:value={live.value}
+								oninput={live.input}
+								placeholder="Name or target"
+							/>
+						{/snippet}
+						{#snippet filters()}
+							<FilterChips label="Show" value={data.show} options={showOptions} />
+						{/snippet}
+					</ListToolbar>
+				</form>
+			{/if}
+
+			{#if data.probes.length === 0 && filtered}
+				<EmptyState title="No probes match these filters" description="Clear the search or show every probe.">
+					{#snippet action()}
+						<Button variant="secondary" href="/admin/observability/synthetic">Clear filters</Button>
+					{/snippet}
+				</EmptyState>
+			{:else if data.probes.length === 0}
 				<EmptyState
 					title="No probes yet"
 					description="Create a probe to check this engine on a schedule."
@@ -331,129 +363,102 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<ListToolbar label="Filter probes">
-					{#snippet search()}
-						<label for="probe-narrow" class="sr-only">Search this page</label>
-						<SearchInput id="probe-narrow" bind:value={narrow} placeholder="Name or target on this page" />
-					{/snippet}
-					{#snippet filters()}
-						<SegmentedControl
-							label="Show"
-							labelHidden
-							size="sm"
-							bind:value={showing}
-							options={[
-								{ value: 'all', label: 'All' },
-								{ value: 'failing', label: 'Failing' },
-								{ value: 'paused', label: 'Paused' },
-							]}
-						/>
-					{/snippet}
-				</ListToolbar>
-				{#if visible.length === 0}
-					<EmptyState title="No probes on this page match these filters" description="Clear the filter to see the rest.">
-						{#snippet iconSnippet()}
-							<Radar size={ICON.lg} />
-						{/snippet}
-						{#snippet action()}
-							<Button variant="secondary" onclick={() => { narrow = ''; showing = 'all'; }}>Clear the filter</Button>
-						{/snippet}
-					</EmptyState>
-				{:else}
-					<Table label="Probes">
-						<thead>
+				<Table label="Probes">
+					<thead>
+						<tr>
+							<th scope="col">Probe</th>
+							<th scope="col">State</th>
+							<th scope="col">Runs</th>
+							<th scope="col">Last run</th>
+							<th scope="col"><span class="sr-only">Actions</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each data.probes as p (p.id)}
 							<tr>
-								<th scope="col">Probe</th>
-								<th scope="col">State</th>
-								<th scope="col">Runs</th>
-								<th scope="col">Last run</th>
-								<th scope="col"><span class="sr-only">Actions</span></th>
+								<td>
+									<div class="font-medium text-fg">{p.name}</div>
+									<div class="text-xs text-faint">
+										{PROBE_TYPE_LABELS[p.type] ?? p.type}
+									</div>
+									<div class="max-w-md truncate font-mono text-xs text-faint" title={probeTarget(p)}>
+										{probeTarget(p)}
+									</div>
+								</td>
+								<td data-cell="nowrap">
+									<Badge tone={probeTone(probeHealth(p))} dot>
+										{PROBE_HEALTH_LABELS[probeHealth(p)]}
+									</Badge>
+									<div class="text-xs text-faint">
+										Alerts after {p.alert_threshold}
+									</div>
+								</td>
+								<td data-cell="nowrap" class="text-xs text-faint">
+									{everyLabel(p.interval_seconds)}
+								</td>
+								<td data-cell="nowrap" class="text-xs text-faint">
+									{p.last_run_at ? formatDateTime(p.last_run_at) : 'Never'}
+								</td>
+								<td data-cell="nowrap">
+									<div class="flex items-center justify-end gap-1">
+										<form method="POST" action="?/run" use:enhance={runNow(p)}>
+											<input type="hidden" name="id" value={p.id} />
+											<Button
+												variant="ghost"
+												size="sm"
+												type="submit"
+												aria-label="Run {p.name} now"
+												title="Run now"
+											>
+												<Play size={ICON.sm} />
+											</Button>
+										</form>
+										<Button
+											variant="ghost"
+											size="sm"
+											href={channelsHref(p.id)}
+											aria-label="Notice channels for {p.name}"
+											title="Notice channels"
+										>
+											<BellRing size={ICON.sm} />
+										</Button>
+										<Button
+											variant="ghost"
+											size="sm"
+											aria-label="Edit {p.name}"
+											onclick={() => openEdit(p)}
+										>
+											<Pencil size={ICON.sm} />
+										</Button>
+										<form method="POST" action="?/delete" use:enhance={removeProbe(p)}>
+											<input type="hidden" name="id" value={p.id} />
+											<Button
+												variant="ghost"
+												size="sm"
+												type="submit"
+												aria-label="Delete {p.name}"
+											>
+												<Trash2 size={ICON.sm} class="text-danger" />
+											</Button>
+										</form>
+									</div>
+								</td>
 							</tr>
-						</thead>
-						<tbody>
-							{#each visible as p (p.id)}
-								<tr>
-									<td>
-										<div class="font-medium text-fg">{p.name}</div>
-										<div class="text-xs text-faint">
-											{PROBE_TYPE_LABELS[p.type] ?? p.type}
-										</div>
-										<div class="max-w-md truncate font-mono text-xs text-faint" title={probeTarget(p)}>
-											{probeTarget(p)}
-										</div>
-									</td>
-									<td data-cell="nowrap">
-										<Badge tone={probeTone(probeHealth(p))} dot>
-											{PROBE_HEALTH_LABELS[probeHealth(p)]}
-										</Badge>
-										<div class="text-xs text-faint">
-											Alerts after {p.alert_threshold}
-										</div>
-									</td>
-									<td data-cell="nowrap" class="text-xs text-faint">
-										{everyLabel(p.interval_seconds)}
-									</td>
-									<td data-cell="nowrap" class="text-xs text-faint">
-										{p.last_run_at ? formatDateTime(p.last_run_at) : 'Never'}
-									</td>
-									<td data-cell="nowrap">
-										<div class="flex items-center justify-end gap-1">
-											<form method="POST" action="?/run" use:enhance={runNow(p)}>
-												<input type="hidden" name="id" value={p.id} />
-												<Button
-													variant="ghost"
-													size="sm"
-													type="submit"
-													aria-label="Run {p.name} now"
-													title="Run now"
-												>
-													<Play size={ICON.sm} />
-												</Button>
-											</form>
-											<Button
-												variant="ghost"
-												size="sm"
-												href={channelsHref(p.id)}
-												aria-label="Notice channels for {p.name}"
-												title="Notice channels"
-											>
-												<BellRing size={ICON.sm} />
-											</Button>
-											<Button
-												variant="ghost"
-												size="sm"
-												aria-label="Edit {p.name}"
-												onclick={() => openEdit(p)}
-											>
-												<Pencil size={ICON.sm} />
-											</Button>
-											<form method="POST" action="?/delete" use:enhance={removeProbe(p)}>
-												<input type="hidden" name="id" value={p.id} />
-												<Button
-													variant="ghost"
-													size="sm"
-													type="submit"
-													aria-label="Delete {p.name}"
-												>
-													<Trash2 size={ICON.sm} class="text-danger" />
-												</Button>
-											</form>
-										</div>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</Table>
-					<Pagination
-						page={pageNumber(data.offset, data.limit)}
-						perPage={data.limit}
-						count={data.probes.length}
-						total={data.total ?? undefined}
-						hasNext={data.hasMore}
-						noun="probes"
-						href={pageHref('/admin/observability/synthetic', data.limit)}
-					/>
-				{/if}
+						{/each}
+					</tbody>
+				</Table>
+				<Pagination
+					page={pageNumber(data.offset, data.limit)}
+					perPage={data.limit}
+					count={data.probes.length}
+					total={data.total ?? undefined}
+					hasNext={data.hasMore}
+					noun="probes"
+					href={pageHref('/admin/observability/synthetic', data.limit, {
+						...(data.show ? { show: data.show } : {}),
+						...(data.q ? { q: data.q } : {}),
+					})}
+				/>
 			{/if}
 		</section>
 	{/if}

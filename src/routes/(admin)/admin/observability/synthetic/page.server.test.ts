@@ -241,6 +241,29 @@ describe('a plugin that answers every probe', () => {
 		expect(out.counts?.paused).toBe(3);
 	});
 
+	it('finds a probe past the first page by name and state, and keeps counting every probe', async () => {
+		engine.get.mockImplementation(async (url: string) => {
+			if (url.includes('/probes')) return many;
+			if (url.includes('/alerts')) return [];
+			throw new ApiError(404, 'not found', {});
+		});
+		const out = (await load(loadEvent('?limit=25&q=PROBE%202&show=paused'))) as Loaded;
+		expect(out.probes.map((p: { id: string }) => p.id)).toEqual(['p20']);
+		expect(out.total).toBe(1);
+		expect(out).toMatchObject({ q: 'PROBE 2', show: 'paused' });
+		expect(out.counts?.paused).toBe(3);
+	});
+
+	it('drops a show value it does not offer and a search past the engine limit', async () => {
+		engine.get.mockImplementation(async (url: string) => {
+			if (url.includes('/probes')) return many;
+			if (url.includes('/alerts')) return [];
+			throw new ApiError(404, 'not found', {});
+		});
+		const out = (await load(loadEvent(`?limit=25&show=passing&q=${'a'.repeat(201)}`))) as Loaded;
+		expect(out).toMatchObject({ q: '', show: '', total: 30 });
+	});
+
 	it('sends an offset past every probe back to the last page', async () => {
 		engine.get.mockImplementation(async (url: string) => {
 			if (url.includes('/probes')) return many;

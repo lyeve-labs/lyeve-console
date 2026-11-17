@@ -57,6 +57,8 @@ const props = (over: Record<string, unknown> = {}, form: unknown = null) => ({
 		total: 1,
 		limit: 25,
 		offset: 0,
+		q: '',
+		show: '',
 		hasMore: false,
 		gate: { state: 'ok' },
 		licensed: true,
@@ -281,15 +283,11 @@ describe('the tiles', () => {
 });
 
 describe('the probe toolbar', () => {
-	it('narrows the rows on this page by name', async () => {
-		const { container } = render(SyntheticPage, {
-			props: props({ probes: [probe({ id: 'a', name: 'Homepage' }), probe({ id: 'b', name: 'Checkout' })], total: 2 }),
-		});
-		const input = container.querySelector('#probe-narrow') as HTMLInputElement;
-		await fireEvent.input(input, { target: { value: 'check' } });
-		const rows = [...container.querySelectorAll('tbody tr')].map((r) => r.textContent ?? '');
-		expect(rows).toHaveLength(1);
-		expect(rows[0]).toContain('Checkout');
+	it('keeps the search on each show link and the pager', () => {
+		const { container } = render(SyntheticPage, { props: props({ total: 60, hasMore: true, q: 'check', show: 'failing' }) });
+		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
+		expect(hrefs).toContain('/admin/observability/synthetic?show=paused&q=check');
+		expect(hrefs.some((h) => h.startsWith('/admin/observability/synthetic?show=failing&q=check&') && h.includes('offset=25'))).toBe(true);
 	});
 });
 
@@ -329,11 +327,12 @@ describe('a failed row action', () => {
 });
 
 describe('a filter that matches nothing', () => {
-	it('draws no table or pager above the empty state', async () => {
-		const { container } = render(SyntheticPage, { props: props() });
-		await fireEvent.input(container.querySelector('#probe-narrow') as HTMLInputElement, { target: { value: 'no such probe' } });
-		expect(said(container)).toContain('No probes on this page match these filters');
+	it('draws no table or pager above the empty state, and offers to clear the filters', () => {
+		const { container } = render(SyntheticPage, { props: props({ probes: [], total: 0, q: 'no such probe' }) });
+		expect(said(container)).toContain('No probes match these filters');
+		expect(said(container)).not.toContain('No probes yet');
 		expect(container.querySelector('table')).toBeNull();
+		expect(container.querySelector('a[href="/admin/observability/synthetic"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 });
 
@@ -386,6 +385,6 @@ describe('editing a probe whose secrets no read returns', () => {
 describe('the probe search box', () => {
 	it('is named for a screen reader', () => {
 		const { container } = render(SyntheticPage, { props: props() });
-		expect(container.querySelector('label[for="probe-narrow"]')?.textContent).toBe('Search this page');
+		expect(container.querySelector('label[for="probe-search"]')?.textContent).toBe('Search probes');
 	});
 });

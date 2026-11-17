@@ -62,6 +62,8 @@ function setup(keys: unknown[] | { ok: false; gate: unknown }, over: Record<stri
 		total: Array.isArray(keys) ? keys.length : 0,
 		limit: 50,
 		offset: 0,
+		q: '',
+		status: '',
 		schemaNames: ['pages', 'posts'],
 		catalog: {
 			actions: ['read', 'create', 'update', 'delete'],
@@ -204,11 +206,18 @@ describe('API keys page', () => {
 		expect(queryByRole('button', { name: /New key/ })).toBeNull();
 	});
 
-	it('keeps the pager when nothing on this page matches the search', async () => {
-		const { container, getByPlaceholderText } = setup([key({})], { total: 120, offset: 0, limit: 50 });
-		await fireEvent.input(getByPlaceholderText('Name, role or content type on this page'), { target: { value: 'nothing like it' } });
-		expect(container.textContent).toContain('No keys on this page match these filters');
-		expect(container.querySelector('a[href="/admin/api-keys?limit=50&offset=50"]')).toBeTruthy();
+	it('keeps the search on each status link and the pager', () => {
+		const { container } = setup([key({})], { total: 120, q: 'deploy', status: 'active' });
+		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
+		expect(hrefs).toContain('/admin/api-keys?status=revoked&q=deploy');
+		expect(container.querySelector('a[href="/admin/api-keys?status=active&q=deploy&limit=50&offset=50"]')).toBeTruthy();
+	});
+
+	it('offers to clear filters that match nothing, rather than inviting a first key', () => {
+		const { container } = setup([], { q: 'nothing like it' });
+		expect(container.textContent).toContain('No keys match these filters');
+		expect(container.textContent).not.toContain('No API keys yet');
+		expect(container.querySelector('a[href="/admin/api-keys"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 
 	it('says the usage is unknown when its read failed, not that there was none', () => {

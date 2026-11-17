@@ -13,7 +13,7 @@
 		PageShell,
 		Progress,
 		SearchInput,
-		SegmentedControl,
+		FilterChips,
 		Pagination,
 		Table,
 		type StatusTone,
@@ -27,10 +27,11 @@
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import { confirmed, fieldErrors, submitter } from '#lib/forms.svelte.ts';
-	import { narrows } from '#lib/narrow.ts';
 	import { ROLE_OPTIONS, roleTone } from '#lib/roles.ts';
 	import { formatCount, formatDate, plural } from '#lib/format.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { listQuery } from '#lib/back.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 	import {
 		LIMIT_FIELDS,
@@ -185,20 +186,17 @@
 		);
 	}
 
-	// The endpoint takes no search, so the box narrows the page on screen.
-	let query = $state('');
-	let status = $state('');
-	const STATUSES = [
-		{ value: '', label: 'All' },
-		{ value: 'active', label: 'Active' },
-		{ value: 'revoked', label: 'Revoked' },
-	];
-	const visible = $derived(
-		keys.filter(
-			(k) =>
-				narrows(query, k.name, k.roles.join(' '), k.schemas.join(' ')) &&
-				(status === '' || (status === 'active') === k.enabled)
-		)
+	// The plugin searches and filters every key, so a match past the first
+	// page shows on the first. Both live in the URL, so the pager and a reload
+	// keep them.
+	const live = liveFilter(() => data.q);
+	const filtered = $derived(Boolean(data.q || data.status));
+	const statusOptions = $derived(
+		[
+			{ value: '', label: 'All' },
+			{ value: 'active', label: 'Active' },
+			{ value: 'revoked', label: 'Revoked' },
+		].map((o) => ({ ...o, href: `/admin/api-keys${listQuery({ status: o.value, q: data.q })}` })),
 	);
 
 	const create = submitter(() => (showCreate = false));
@@ -231,7 +229,35 @@
 
 	{#if !data.keys.ok}
 		<GateNotice gate={data.keys.gate} title="API keys" absent="API keys are not included in this build." />
-	{:else if keys.length === 0}
+	{:else}
+		{#if keys.length > 0 || filtered}
+			<form method="GET" {@attach live.form}>
+				{#if data.status}<input type="hidden" name="status" value={data.status} />{/if}
+				<ListToolbar label="Filter API keys">
+					{#snippet search()}
+						<label for="key-search" class="sr-only">Search API keys</label>
+						<SearchInput
+							id="key-search"
+							name="q"
+							bind:value={live.value}
+							oninput={live.input}
+							placeholder="Name, role or content type"
+						/>
+					{/snippet}
+					{#snippet filters()}
+						<FilterChips label="Status" value={data.status} options={statusOptions} />
+					{/snippet}
+				</ListToolbar>
+			</form>
+		{/if}
+
+		{#if keys.length === 0 && filtered}
+			<EmptyState title="No keys match these filters" description="Clear the search or choose another status.">
+				{#snippet action()}
+					<Button variant="secondary" href="/admin/api-keys">Clear filters</Button>
+				{/snippet}
+			</EmptyState>
+		{:else if keys.length === 0}
 		<EmptyState
 			title="No API keys yet"
 			description="Create a key to allow external services to authenticate."
@@ -256,22 +282,6 @@
 				The admin API refuses a key with an admin role. Move automation that calls it to <a class="underline" href="/admin/admin-tokens">admin tokens</a>. These keys still work on the content API.
 			</Alert>
 		{/if}
-		<ListToolbar label="Filter API keys">
-			{#snippet search()}
-				<label for="key-search" class="sr-only">Search this page</label>
-				<SearchInput id="key-search" bind:value={query} placeholder="Name, role or content type on this page" />
-			{/snippet}
-			{#snippet filters()}
-				<SegmentedControl label="Status" labelHidden bind:value={status} options={STATUSES} />
-			{/snippet}
-		</ListToolbar>
-
-		{#if visible.length === 0}
-			<EmptyState
-				title="No keys on this page match these filters"
-				description="Clear the search and the status filter, or go to another page."
-			/>
-		{:else}
 		<Table label="API keys">
 			<thead>
 				<tr>
@@ -287,7 +297,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each visible as key (key.id)}
+				{#each keys as key (key.id)}
 					{@const pct = usagePct(key.id)}
 					{@const u = data.usageMap?.[key.id]}
 					<tr>
@@ -398,17 +408,18 @@
 				{/each}
 			</tbody>
 		</Table>
-		{/if}
-		<!-- The search narrows this page only, so the pager stays when nothing on
-		     it matches: the next page may hold the key. -->
 		<Pagination
 			page={pageNumber(data.offset, data.limit)}
 			perPage={data.limit}
 			count={keys.length}
 			total={data.total ?? undefined}
 			noun="keys"
-			href={pageHref('/admin/api-keys', data.limit)}
+			href={pageHref('/admin/api-keys', data.limit, {
+				...(data.status ? { status: data.status } : {}),
+				...(data.q ? { q: data.q } : {}),
+			})}
 		/>
+		{/if}
 	{/if}
 </PageShell>
 

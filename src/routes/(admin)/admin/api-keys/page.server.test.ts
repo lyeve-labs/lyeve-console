@@ -37,6 +37,26 @@ describe('API keys load', () => {
 		});
 	});
 
+	it('sends the search and the status to the engine and back to the page', async () => {
+		const asked: string[] = [];
+		const answer = (path: string) => (asked.push(path), path.startsWith('/api/admin/api-keys') ? json({ data: [], total_count: 0 }) : json({}));
+		const out = (await load(event(answer, '?q=deploy&status=revoked'))) as Loaded;
+		const url = new URL(asked.find((p) => p.startsWith('/api/admin/api-keys'))!, 'http://e');
+		expect(url.searchParams.get('q')).toBe('deploy');
+		expect(url.searchParams.get('status')).toBe('revoked');
+		expect(out).toMatchObject({ q: 'deploy', status: 'revoked' });
+	});
+
+	it('drops a status it does not offer and a search the engine would refuse', async () => {
+		const asked: string[] = [];
+		const answer = (path: string) => (asked.push(path), path.startsWith('/api/admin/api-keys') ? json({ data: [], total_count: 0 }) : json({}));
+		const out = (await load(event(answer, `?status=expired&q=${'a'.repeat(201)}`))) as Loaded;
+		const url = asked.find((p) => p.startsWith('/api/admin/api-keys'))!;
+		expect(url).not.toContain('status=');
+		expect(url).not.toContain('q=');
+		expect(out).toMatchObject({ q: '', status: '' });
+	});
+
 	it('marks the usage unknown when its read failed, and absent when the route is missing', async () => {
 		const failing = (path: string) => {
 			if (path.startsWith('/api/admin/api-keys')) return json({ data: [key], total_count: 1 });
