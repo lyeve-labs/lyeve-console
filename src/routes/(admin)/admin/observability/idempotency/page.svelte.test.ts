@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IdempotencyKey } from '$lib/api/idempotency';
+import type { IdempotencyKey } from '#lib/api/idempotency.ts';
 
 type Submit = (input: { cancel: () => void }) => Promise<unknown>;
 const forms = vi.hoisted(() => ({ submits: [] as unknown[] }));

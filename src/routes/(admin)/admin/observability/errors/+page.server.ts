@@ -1,9 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	ALERT_STATUSES,
 	acknowledge,
@@ -17,10 +17,10 @@ import {
 	type ErrorAlert,
 	type ErrorCode,
 	type EventPage,
-} from '$lib/api/error-tracking';
-import { type Gate, GATE_OK, section } from '$lib/api/gate';
-import { pageWindow, pastEndOffset, rowsOf, withOffset } from '$lib/api/list';
-import { couldNotLoad } from '$lib/outage';
+} from '#lib/api/error-tracking.ts';
+import { type Gate, GATE_OK, section } from '#lib/api/gate.ts';
+import { pageWindow, pastEndOffset, rowsOf, withOffset } from '#lib/api/list.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;

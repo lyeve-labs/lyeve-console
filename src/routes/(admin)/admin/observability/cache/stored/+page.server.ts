@@ -1,15 +1,15 @@
 import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { sessionTenant } from '$lib/server/session-refresh';
-import { actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { flushAll, flushTag, listEntries, type CacheEntry } from '$lib/api/cache';
-import { type Gate, GATE_OK, section } from '$lib/api/gate';
-import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { sessionTenant } from '#lib/server/session-refresh.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { flushAll, flushTag, listEntries, type CacheEntry } from '#lib/api/cache.ts';
+import { type Gate, GATE_OK, section } from '#lib/api/gate.ts';
+import { pageOf, pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;

@@ -1,7 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { actionError } from '$lib/server/action-error';
-import { forbiddenText, gateOf, type Gate, type Section } from '$lib/api/gate';
+import { actionError } from '#lib/server/action-error.ts';
+import { forbiddenText, gateOf, type Gate, type Section } from '#lib/api/gate.ts';
 
 /** The roles every tenant costs page and write admits. */
 export const OPERATOR_ROLES = ['admin', 'super_admin'];

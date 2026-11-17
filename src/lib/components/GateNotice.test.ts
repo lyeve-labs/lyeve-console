@@ -2,8 +2,8 @@
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import GateNotice from './GateNotice.svelte';
-import type { Gate } from '$lib/api/gate';
-import { BUSY } from '$lib/outage';
+import type { Gate } from '#lib/api/gate.ts';
+import { BUSY } from '#lib/outage.ts';
 
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/cache?tab=rules&offset=50#top') } }));
 vi.mock('$app/state', () => state);

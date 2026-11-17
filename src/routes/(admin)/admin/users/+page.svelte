@@ -18,21 +18,21 @@
 		toast,
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 	import { KeyRound, Pencil, Plus, Trash2, Users } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { formRefusal } from '$lib/api/refusal';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { confirmed, fieldErrors, tracked } from '$lib/forms.svelte';
-	import { narrows } from '$lib/narrow';
-	import { ROLE_OPTIONS, roleTone } from '$lib/roles';
-	import { passkeysRemovedText } from '$lib/api/users';
-	import { formatDate } from '$lib/format';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { confirmed, fieldErrors, tracked } from '#lib/forms.svelte.ts';
+	import { narrows } from '#lib/narrow.ts';
+	import { ROLE_OPTIONS, roleTone } from '#lib/roles.ts';
+	import { passkeysRemovedText } from '#lib/api/users.ts';
+	import { formatDate } from '#lib/format.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	type User = Extract<PageData['users'], { ok: true }>['value'][number];
 
@@ -140,7 +140,7 @@
 			if (result.type === 'success') {
 				passwordOpen = false;
 				newPassword = '';
-				await invalidateAll();
+				await refreshAll();
 				const removed = passkeysRemovedText((result.data as { passkeysRemoved?: number } | undefined)?.passkeysRemoved);
 				toast.success(`Password set for ${subject}. Their sessions have ended.${removed ? ` ${removed}` : ''}`);
 			} else {
@@ -156,7 +156,7 @@
 		return async ({ result, update }) => {
 			if (result.type === 'success') {
 				open = false;
-				await invalidateAll();
+				await refreshAll();
 				toast.success(`${verb} ${subject}`);
 			} else {
 				await update();

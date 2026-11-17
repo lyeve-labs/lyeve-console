@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 import { actions, load } from './+page.server';
-import type { PluginSet } from '$lib/plugins';
-import type { EmailProvider } from '$lib/api/email';
+import type { PluginSet } from '#lib/plugins.ts';
+import type { EmailProvider } from '#lib/api/email.ts';
 import type { ConfigSetting } from './+page.server';
 
 type Loaded = Exclude<Awaited<ReturnType<typeof load>>, void>;

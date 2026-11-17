@@ -6,7 +6,7 @@ vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/observability/errors/alerts') } }));
 
 import SpikePage from './+page.svelte';
-import { outlineSkips } from '$lib/test-outline';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(cleanup);
 

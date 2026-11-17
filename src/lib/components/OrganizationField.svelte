@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Input } from '@lyeve-labs/ui-kit';
-	import { ORGANIZATION_FROM_LINK_HINT, ORGANIZATION_HINT } from '$lib/organization';
+	import { ORGANIZATION_FROM_LINK_HINT, ORGANIZATION_HINT } from '#lib/organization.ts';
 
 	interface Props {
 		/** The organization the link to this page named, or an empty string. */

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { File, FileText, Film, Image, Music } from '@lucide/svelte';
-	import { brokenImage } from '$lib/broken-image';
-	import { mediaKind, mediaThumbnailUrl, type MediaItem, type MediaKind } from '$lib/api/media';
+	import { brokenImage } from '#lib/broken-image.ts';
+	import { mediaKind, mediaThumbnailUrl, type MediaItem, type MediaKind } from '#lib/api/media.ts';
 
 	interface Props {
 		item: MediaItem;

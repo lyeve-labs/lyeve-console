@@ -18,12 +18,12 @@
 		confirm as confirmDialog,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { ArrowDown, ArrowUp, Eye, LayoutDashboard, Plus, RotateCcw, Trash2 } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import DashboardWidgets from '$lib/components/custom/DashboardWidgets.svelte';
-	import { ROLE_CHOICES } from '$lib/api/customization';
+	import { ICON } from '#lib/icon.ts';
+	import DashboardWidgets from '#lib/components/custom/DashboardWidgets.svelte';
+	import { ROLE_CHOICES } from '#lib/api/customization.ts';
 	import {
 		MAX_WIDGETS,
 		MAX_WIDGET_ROWS,
@@ -39,14 +39,14 @@
 		type WidgetType,
 		type WidgetWidth,
 		type WidgetWindow,
-	} from '$lib/api/custom-dashboard';
-	import { formatDateTime, plural } from '$lib/format';
-	import { inSentence } from '$lib/api/gate';
-	import type { ResolvedWidget } from '$lib/api/custom-dashboard';
+	} from '#lib/api/custom-dashboard.ts';
+	import { formatDateTime, plural } from '#lib/format.ts';
+	import { inSentence } from '#lib/api/gate.ts';
+	import type { ResolvedWidget } from '#lib/api/custom-dashboard.ts';
 	import type { PageData, ActionData } from './$types';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import CustomizationTabs from '$lib/components/CustomizationTabs.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import CustomizationTabs from '#lib/components/CustomizationTabs.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -147,14 +147,14 @@
 		saving = true;
 		return async ({ update }) => {
 			saving = false;
-			await update({ reset: false, invalidateAll: true });
+			await update({ reset: false, refreshAll: true });
 		};
 	};
 	const runPreview: SubmitFunction = () => {
 		previewing = true;
 		return async ({ update }) => {
 			previewing = false;
-			await update({ reset: false, invalidateAll: false });
+			await update({ reset: false, refreshAll: false });
 		};
 	};
 	const confirmReset: SubmitFunction = async ({ cancel, formData }) => {
@@ -168,7 +168,7 @@
 			return;
 		}
 		formData.set(CONFIRM_FIELD, CONFIRMED);
-		return async ({ update }) => update({ reset: false, invalidateAll: true });
+		return async ({ update }) => update({ reset: false, refreshAll: true });
 	};
 </script>
 

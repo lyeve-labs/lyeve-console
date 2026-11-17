@@ -43,7 +43,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Alert } from '@lyeve-labs/ui-kit';
-	import { CAPTCHA_ACTION, captchaScriptURL, type CaptchaChallenge } from '$lib/captcha';
+	import { CAPTCHA_ACTION, captchaScriptURL, type CaptchaChallenge } from '#lib/captcha.ts';
 
 	interface Props {
 		challenge: CaptchaChallenge;

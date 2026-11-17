@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import NodePalette from './NodePalette.svelte';
-import { builtinCatalog, fixtureCatalog, withLocked } from '$lib/flow/fixtures';
+import { builtinCatalog, fixtureCatalog, withLocked } from '#lib/flow/fixtures.ts';
 
 afterEach(cleanup);
 

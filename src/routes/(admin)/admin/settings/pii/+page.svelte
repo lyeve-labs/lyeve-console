@@ -13,23 +13,23 @@
 		Textarea,
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
 	import { enhance } from '$app/forms';
 	import { Copy, Pencil, Plus, Search, ShieldCheck, Trash2 } from '@lucide/svelte';
-	import { duplicateRow } from '$lib/duplicate';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import PiiTabs from '$lib/components/PiiTabs.svelte';
+	import { duplicateRow } from '#lib/duplicate.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import PiiTabs from '#lib/components/PiiTabs.svelte';
 	import {
 		inApplyOrder,
 		overriddenPresets,
 		shortPattern,
 		type CustomRule,
-	} from '$lib/api/pii-mask';
-	import { plural } from '$lib/format';
-	import { confirmed } from '$lib/forms.svelte';
+	} from '#lib/api/pii-mask.ts';
+	import { plural } from '#lib/format.ts';
+	import { confirmed } from '#lib/forms.svelte.ts';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

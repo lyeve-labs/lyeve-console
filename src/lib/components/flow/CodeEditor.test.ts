@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import CodeEditor from './CodeEditor.svelte';
-import { fixtureIntrospection } from '$lib/flow/fixtures';
+import { fixtureIntrospection } from '#lib/flow/fixtures.ts';
 
 afterEach(cleanup);
 

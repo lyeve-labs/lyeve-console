@@ -14,12 +14,12 @@
 		confirm,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { Download } from '@lucide/svelte';
 	import type { ActionData } from './$types';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { fieldErrors } from '$lib/forms.svelte';
-	import { featureName, formRefusal } from '$lib/api/refusal';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import { fieldErrors } from '#lib/forms.svelte.ts';
+	import { featureName, formRefusal } from '#lib/api/refusal.ts';
 	import {
 		ACTION_LABELS,
 		MIN_PASSPHRASE,
@@ -31,9 +31,9 @@
 		type ApplyResult,
 		type ConfigBundle,
 		type SyncPlan,
-	} from '$lib/api/config-sync';
-	import { formatDateTime, plural } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	} from '#lib/api/config-sync.ts';
+	import { formatDateTime, plural } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { form }: { form: ActionData } = $props();
 

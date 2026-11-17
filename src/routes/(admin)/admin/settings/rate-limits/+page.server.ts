@@ -1,10 +1,10 @@
-import { readRouteOptions, routeOptions } from '$lib/api/route-options';
+import { readRouteOptions, routeOptions } from '#lib/api/route-options.ts';
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	createRule,
 	deleteRule,
@@ -18,11 +18,11 @@ import {
 	updateRule,
 	type RateLimitOverview,
 	type RateRule,
-} from '$lib/api/rate-limit';
-import { type Gate, GATE_OK, section, type Section } from '$lib/api/gate';
-import { pageOf, pageWindow, pastEndOffset, withOffset, type PagedList } from '$lib/api/list';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/rate-limit.ts';
+import { type Gate, GATE_OK, section, type Section } from '#lib/api/gate.ts';
+import { pageOf, pageWindow, pastEndOffset, withOffset, type PagedList } from '#lib/api/list.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;

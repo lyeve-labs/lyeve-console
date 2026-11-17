@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { Alert, Badge, Card, EmptyState, PageShell, SectionHeading, SegmentedControl, Stat, Table, type StatusTone } from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import { Database, Gauge, AlertTriangle, CheckCircle } from '@lucide/svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { LATENCY_TOP_CHOICES } from '$lib/api/observability';
-	import { formatMillis, NO_VALUE } from '$lib/format';
-	import ObservabilityTabs from '$lib/components/ObservabilityTabs.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { LATENCY_TOP_CHOICES } from '#lib/api/observability.ts';
+	import { formatMillis, NO_VALUE } from '#lib/format.ts';
+	import ObservabilityTabs from '#lib/components/ObservabilityTabs.svelte';
 	import type { PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data }: { data: PageData } = $props();
 

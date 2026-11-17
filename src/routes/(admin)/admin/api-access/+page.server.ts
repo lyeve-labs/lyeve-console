@@ -1,7 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, loadUser } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { authedClient, loadUser } from '#lib/server/authz.ts';
+import { actionError } from '#lib/server/action-error.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const user = await loadUser(event);

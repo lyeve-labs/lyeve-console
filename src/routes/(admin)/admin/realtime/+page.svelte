@@ -8,13 +8,13 @@
 		Stat,
 		Table,
 	} from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
 	import { Radio, Satellite, Users } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { inUse, tenantLoad, uptimeSince, type StreamMetrics } from '$lib/api/realtime';
-	import { NO_VALUE, formatCount } from '$lib/format';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { inUse, tenantLoad, uptimeSince, type StreamMetrics } from '#lib/api/realtime.ts';
+	import { NO_VALUE, formatCount } from '#lib/format.ts';
 	import type { PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data }: { data: PageData } = $props();
 

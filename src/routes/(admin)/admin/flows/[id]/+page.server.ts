@@ -2,18 +2,18 @@ import type { Actions, PageServerLoad } from './$types';
 import { error, fail, redirect, type ActionFailure } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { getSchemas } from '@lyeve-labs/client-rest';
-import { listBack } from '$lib/back';
+import { listBack } from '#lib/back.ts';
 import { FLOW_LIST_KEYS } from '../list-keys';
-import { authedClient, authedHeaders, requireUser } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
-import { readImportForm } from '$lib/server/flow-import';
-import { flowClient } from '$lib/server/flow-client';
-import { forbiddenFailure } from '$lib/server/flow-forbidden';
-import { refusalFailure } from '$lib/server/flow-refusal';
-import { assistRefusal, catalogFor, refusalStatus } from '$lib/server/flow-assist';
-import { CatalogError, assistFlow, explainFlow, getLLMCatalog, type AssistProblem } from '$lib/api/assist';
-import { clearSessionCookie } from '$lib/server/session-cookie';
-import { readError } from '$lib/server/read-error';
+import { authedClient, authedHeaders, requireUser } from '#lib/server/authz.ts';
+import { actionError } from '#lib/server/action-error.ts';
+import { readImportForm } from '#lib/server/flow-import.ts';
+import { flowClient } from '#lib/server/flow-client.ts';
+import { forbiddenFailure } from '#lib/server/flow-forbidden.ts';
+import { refusalFailure } from '#lib/server/flow-refusal.ts';
+import { assistRefusal, catalogFor, refusalStatus } from '#lib/server/flow-assist.ts';
+import { CatalogError, assistFlow, explainFlow, getLLMCatalog, type AssistProblem } from '#lib/api/assist.ts';
+import { clearSessionCookie } from '#lib/server/session-cookie.ts';
+import { readError } from '#lib/server/read-error.ts';
 import {
 	ImportError,
 	FlowRefusal,
@@ -40,14 +40,14 @@ import {
 	type FlowVersion,
 	deleteTemplate,
 	saveTemplate,
-} from '$lib/api/flows';
-import { unfillableFields } from '$lib/flow/fill';
-import { emptyDefinition, type FlowDefinition, type SchemaOption } from '$lib/flow/types';
-import { normalizeDefinition } from '$lib/flow/graph';
+} from '#lib/api/flows.ts';
+import { unfillableFields } from '#lib/flow/fill.ts';
+import { emptyDefinition, type FlowDefinition, type SchemaOption } from '#lib/flow/types.ts';
+import { normalizeDefinition } from '#lib/flow/graph.ts';
 import type { HttpClient } from '@lyeve-labs/client';
-import { pageWindow, pastEndOffset, rowsOf, withOffset, type PagedList } from '$lib/api/list';
-import { GATE_OK, gateOf, section, type Gate, type Section } from '$lib/api/gate';
-import type { NodeSpec } from '$lib/flow/types';
+import { pageWindow, pastEndOffset, rowsOf, withOffset, type PagedList } from '#lib/api/list.ts';
+import { GATE_OK, gateOf, section, type Gate, type Section } from '#lib/api/gate.ts';
+import type { NodeSpec } from '#lib/flow/types.ts';
 
 /**
  * The page renders in the browser only. Its flow editor then never

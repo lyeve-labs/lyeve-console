@@ -1,22 +1,22 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireUser } from '$lib/server/authz';
-import { actionError, actionFailure, tagged } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireUser } from '#lib/server/authz.ts';
+import { actionError, actionFailure, tagged } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	createEmailProvider,
 	deleteEmailProvider,
 	listEmailProviders,
 	updateEmailProvider,
 	type EmailProvider,
-} from '$lib/api/email';
-import { parseProvider } from '$lib/email/provider-form';
+} from '#lib/api/email.ts';
+import { parseProvider } from '#lib/email/provider-form.ts';
 import { ApiError } from '@lyeve-labs/client';
-import { sessionToken } from '$lib/server/session-cookie';
-import { SESSION_ENDED } from '$lib/session';
-import { section, type Section } from '$lib/api/gate';
-import { asked } from '$lib/server/asked';
+import { sessionToken } from '#lib/server/session-cookie.ts';
+import { SESSION_ENDED } from '#lib/session.ts';
+import { section, type Section } from '#lib/api/gate.ts';
+import { asked } from '#lib/server/asked.ts';
 
 /**
  * The engine config keys that make up the fallback transport.

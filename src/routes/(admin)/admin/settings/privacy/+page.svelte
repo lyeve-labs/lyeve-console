@@ -10,15 +10,15 @@
 		SegmentedControl,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import NotRunning from '$lib/components/NotRunning.svelte';
-	import { PLUGIN } from '$lib/plugin-names';
-	import { formRefusal, type Refusal } from '$lib/api/refusal';
-	import { tracked } from '$lib/forms.svelte';
-	import { ROLES } from '$lib/roles';
-	import { ALWAYS_EXPORT, NO_TENANT, sectionOption, type FormErasureMode } from '$lib/api/privacy';
+	import type { SubmitFunction } from '$app/forms';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import NotRunning from '#lib/components/NotRunning.svelte';
+	import { PLUGIN } from '#lib/plugin-names.ts';
+	import { formRefusal, type Refusal } from '#lib/api/refusal.ts';
+	import { tracked } from '#lib/forms.svelte.ts';
+	import { ROLES } from '#lib/roles.ts';
+	import { ALWAYS_EXPORT, NO_TENANT, sectionOption, type FormErasureMode } from '#lib/api/privacy.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

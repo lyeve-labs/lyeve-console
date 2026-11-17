@@ -8,7 +8,7 @@ const client = vi.hoisted(() => ({
 // Reads and writes share one session client, as they do in the load and the
 // action. Writes land in `client` and reads in `reads`.
 // The strip is the real one, so a test sees what reaches the engine.
-vi.mock('$lib/server/authz', async (importActual) => ({
+vi.mock('#lib/server/authz.ts', async (importActual) => ({
 	requireUser: vi.fn(async () => ({ id: 'u1' })),
 	// The read of the type's access goes to `access`, so the other reads
 	// keep their order in `reads`.
@@ -16,7 +16,7 @@ vi.mock('$lib/server/authz', async (importActual) => ({
 		post: client.post,
 		get: (path: string) => (path.includes('/content/access?') ? access.get(path) : reads.get(path)),
 	})),
-	stripProtectedFields: (await importActual<typeof import('$lib/server/authz')>()).stripProtectedFields,
+	stripProtectedFields: (await importActual<typeof import('#lib/server/authz.ts')>()).stripProtectedFields,
 }));
 
 /** actionError relays a 4xx reason only when the throw is the client's own
@@ -56,7 +56,7 @@ const relations = vi.hoisted(() => ({
 		async (_event: unknown, _entryID: string, _byField: Record<string, string[]>): Promise<string | null> => null,
 	),
 }));
-vi.mock('$lib/server/content-relations', () => relations);
+vi.mock('#lib/server/content-relations.ts', () => relations);
 
 import { isHttpError, isRedirect } from '@sveltejs/kit';
 import { actions, load } from './+page.server';

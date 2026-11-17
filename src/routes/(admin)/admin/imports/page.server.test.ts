@@ -13,20 +13,20 @@ const api = vi.hoisted(() => ({
 	deleteTemplate: vi.fn(),
 }));
 
-vi.mock('$lib/api/bulk-import', async (importOriginal) => ({
+vi.mock('#lib/api/bulk-import.ts', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
 	...api,
 }));
 
 vi.mock('@lyeve-labs/client-rest', () => ({ getSchemas: vi.fn(async () => []) }));
 
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => ({})),
 	requireRole: vi.fn(async () => ({ id: 'u1', roles: ['admin'] })),
 }));
 
 import { load, actions } from './+page.server';
-import { requireRole } from '$lib/server/authz';
+import { requireRole } from '#lib/server/authz.ts';
 
 type Loaded = Exclude<Awaited<ReturnType<typeof load>>, void>;
 

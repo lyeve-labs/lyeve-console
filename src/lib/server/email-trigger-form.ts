@@ -1,4 +1,4 @@
-import type { EmailTriggerInput } from '$lib/api/email-triggers';
+import type { EmailTriggerInput } from '#lib/api/email-triggers.ts';
 
 /** Reads the trigger form. The recipients arrive as one comma-separated line. */
 export function readTriggerForm(data: FormData): { input: EmailTriggerInput } | { error: string } {

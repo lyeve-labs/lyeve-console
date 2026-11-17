@@ -13,14 +13,14 @@ const api = vi.hoisted(() => ({
 	replaySet: vi.fn(),
 }));
 
-vi.mock('$lib/api/request-capture', async (importOriginal) => ({
+vi.mock('#lib/api/request-capture.ts', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
 	...api,
 }));
 
 const authz = vi.hoisted(() => ({ roles: ['admin'] as string[] }));
 
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => ({})),
 	requireRole: vi.fn(async (_event: unknown, allowed: string[]) => {
 		if (!allowed.some((r) => authz.roles.includes(r))) throw new Error('403');

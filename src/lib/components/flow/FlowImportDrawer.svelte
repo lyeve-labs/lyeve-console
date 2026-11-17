@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { Button, Drawer, FileInput, Textarea } from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { submitter } from '$lib/forms.svelte';
-	import type { InstanceLink } from '$lib/instance.svelte';
-	import type { RefusalNotice } from '$lib/flow/types';
-	import InlineUpgradeLink from '$lib/components/InlineUpgradeLink.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { submitter } from '#lib/forms.svelte.ts';
+	import type { InstanceLink } from '#lib/instance.svelte.ts';
+	import type { RefusalNotice } from '#lib/flow/types.ts';
+	import InlineUpgradeLink from '#lib/components/InlineUpgradeLink.svelte';
 
 	/** An import's own failure. The page picks it out of the form result every action shares. */
 	export interface ImportFailure {

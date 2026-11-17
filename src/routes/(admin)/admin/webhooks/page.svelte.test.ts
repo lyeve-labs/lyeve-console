@@ -2,7 +2,7 @@
 import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Entitlements } from '$lib/entitlements';
+import type { Entitlements } from '#lib/entitlements.ts';
 
 /*
  * enhance hands each form's submit function over here, so a test can run the

@@ -1,6 +1,6 @@
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 import { confirm, toast, type ConfirmOptions } from '@lyeve-labs/ui-kit';
-import { invalidateAll } from '$app/navigation';
+import { refreshAll } from '$app/navigation';
 import { CONFIRM_FIELD, CONFIRMED } from './confirmation';
 
 /**
@@ -40,7 +40,7 @@ export function submitter(close?: () => void, { reset = true, reloadAfterOutage 
 	return tracked(() => async ({ result, update }) => {
 		if (result.type !== 'failure' && result.type !== 'error') close?.();
 		await update({ reset });
-		if (reloadAfterOutage && result.type === 'failure' && result.status >= 500) await invalidateAll();
+		if (reloadAfterOutage && result.type === 'failure' && result.status >= 500) await refreshAll();
 	});
 }
 

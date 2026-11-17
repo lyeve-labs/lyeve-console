@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { Alert, Badge, Button, EmptyState, PageShell, SectionHeading, Stat, Table, toast } from '@lyeve-labs/ui-kit';
-	import CacheTabs from '$lib/components/CacheTabs.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import CacheTabs from '#lib/components/CacheTabs.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { Database, RotateCcw } from '@lucide/svelte';
 	import {
 		CIRCUIT_LABELS,
@@ -17,10 +17,10 @@
 		trippedProviders,
 		underPressure,
 		type CacheProvider,
-	} from '$lib/api/cache';
-	import { plural } from '$lib/format';
+	} from '#lib/api/cache.ts';
+	import { plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

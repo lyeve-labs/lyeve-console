@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { load } from './+page.server';
-import { fixtureTranscript } from '$lib/components/ai/test-support/fixtures';
-import { json, loadEvent, refused } from '$lib/components/ai/test-support/events';
+import { fixtureTranscript } from '#lib/components/ai/test-support/fixtures.ts';
+import { json, loadEvent, refused } from '#lib/components/ai/test-support/events.ts';
 
 type Loaded = Exclude<Awaited<ReturnType<typeof load>>, void>;
 

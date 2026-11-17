@@ -2,9 +2,9 @@
 	import { Alert, Badge, Button, EmptyState, Input, SectionHeading, SegmentedControl, Table } from '@lyeve-labs/ui-kit';
 	import { onMount } from 'svelte';
 	import { Activity, RefreshCw, Trash2 } from '@lucide/svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { LOG_LEVELS, formatTime, logLevelLabel, logLevelTone } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { LOG_LEVELS, formatTime, logLevelLabel, logLevelTone } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	interface Props {
 		/** Whether the logging plugin runs, so there is a tail to follow. */

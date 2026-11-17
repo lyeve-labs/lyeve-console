@@ -12,7 +12,7 @@ import {
 	stripProtectedFields,
 	withExactIntegers,
 } from './authz';
-import { BUSY, OUTAGE } from '$lib/outage';
+import { BUSY, OUTAGE } from '#lib/outage.ts';
 
 // event stub
 

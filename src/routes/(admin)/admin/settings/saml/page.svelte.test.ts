@@ -30,7 +30,7 @@ async function deleteTitle(): Promise<string> {
 }
 
 import SamlPage from './+page.svelte';
-import type { SamlProvider } from '$lib/api/saml';
+import type { SamlProvider } from '#lib/api/saml.ts';
 
 afterEach(cleanup);
 

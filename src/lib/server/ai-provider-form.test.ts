@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readProviderForm } from './ai-provider-form';
-import type { AiProvider } from '$lib/api/ai';
+import type { AiProvider } from '#lib/api/ai.ts';
 
 function form(fields: Record<string, string | string[]>): FormData {
 	const data = new FormData();

@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
-import { UNNAMED } from '$lib/plugins';
+import { UNNAMED } from '#lib/plugins.ts';
 
 /**
  * Every page load reads the engine as the session that opened the page, with
@@ -111,7 +111,7 @@ async function engineCalls(page: string) {
 describe('page loads read as the session', () => {
 	// The menu tab's load builds its choices from the nav, whose icon imports
 	// take longer than one case's budget to load on a cold worker.
-	beforeAll(() => import('$lib/nav'), 60_000);
+	beforeAll(() => import('#lib/nav.ts'), 60_000);
 
 	it.each(PAGES)('%s sends the session headers on every read', async (page) => {
 		const calls = await engineCalls(page);

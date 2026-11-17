@@ -5,8 +5,8 @@
 	import { page } from '$app/state';
 	import { asset } from '$app/paths';
 	import { onNavigate } from '$app/navigation';
-	import { fadeRouteChange } from '$lib/page-transition';
-	import { documentTitle, pageBrand } from '$lib/brand';
+	import { fadeRouteChange } from '#lib/page-transition.ts';
+	import { documentTitle, pageBrand } from '#lib/brand.ts';
 
 	let { children }: { children: Snippet } = $props();
 

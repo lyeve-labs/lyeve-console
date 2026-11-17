@@ -10,17 +10,17 @@
 		Table,
 		confirm as confirmDialog,
 	} from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
 	import { enhance } from '$app/forms';
-	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import { Gauge, Puzzle, RotateCcw } from '@lucide/svelte';
-	import { formatNs, latencyTone, type EndpointStats } from '$lib/api/profiler';
-	import { NO_VALUE, formatBytes, formatTime } from '$lib/format';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ProfilerTabs from '$lib/components/ProfilerTabs.svelte';
+	import { formatNs, latencyTone, type EndpointStats } from '#lib/api/profiler.ts';
+	import { NO_VALUE, formatBytes, formatTime } from '#lib/format.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ProfilerTabs from '#lib/components/ProfilerTabs.svelte';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
-	import { httpStatusTone } from '$lib/tones';
+	import { ICON } from '#lib/icon.ts';
+	import { httpStatusTone } from '#lib/tones.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

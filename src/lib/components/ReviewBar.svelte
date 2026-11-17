@@ -9,12 +9,12 @@
 		type ReviewStatus,
 		type StageSLA,
 		type TransitionAction,
-	} from '$lib/api/review';
-	import { formatDateTime } from '$lib/format';
-	import { shortId } from '$lib/utils/entry-identity';
-	import { ICON } from '$lib/icon';
-	import { actionWithQuery } from '$lib/back';
-	import { couldNotLoad } from '$lib/outage';
+	} from '#lib/api/review.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { shortId } from '#lib/utils/entry-identity.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { actionWithQuery } from '#lib/back.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
 
 	let {
 		entryId,

@@ -1,9 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	createTemplate,
 	deleteTemplate,
@@ -11,10 +11,10 @@ import {
 	type FieldMapping,
 	type ImportSchema,
 	type SaveMappingTemplate,
-} from '$lib/api/bulk-import';
-import { type Gate, GATE_OK, type Section } from '$lib/api/gate';
+} from '#lib/api/bulk-import.ts';
+import { type Gate, GATE_OK, type Section } from '#lib/api/gate.ts';
 import { readSchemas, readTemplates } from '../reads.server';
-import { asked } from '$lib/server/asked';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();

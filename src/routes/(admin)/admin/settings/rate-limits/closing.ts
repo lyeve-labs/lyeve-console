@@ -1,4 +1,4 @@
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 import { toast } from '@lyeve-labs/ui-kit';
 
 /** Closes a drawer unless its save failed, so a refusal shows inside it, and toasts a success. */

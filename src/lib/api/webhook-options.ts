@@ -7,7 +7,7 @@
  * read and an edit of the name keeps the options.
  */
 import type { HttpClient, Webhook } from '@lyeve-labs/client';
-import { checked } from '$lib/checkbox';
+import { checked } from '#lib/checkbox.ts';
 
 /** A webhook as the engine answers it, options included. */
 export interface WebhookRecord extends Webhook {

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { PageShell } from '@lyeve-labs/ui-kit';
 	import type { PageData } from './$types';
-	import StreamLab from '$lib/components/labs/StreamLab.svelte';
-	import ApiLabsTabs from '$lib/components/ApiLabsTabs.svelte';
+	import StreamLab from '#lib/components/labs/StreamLab.svelte';
+	import ApiLabsTabs from '#lib/components/ApiLabsTabs.svelte';
 	import NoSandbox from '../NoSandbox.svelte';
 
 	let { data }: { data: PageData } = $props();

@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 import { confirmed, drawerFailure, submitter, tracked } from './forms.svelte';
 
 const kit = vi.hoisted(() => ({
 	confirm: vi.fn(async () => true),
 	success: vi.fn(),
 }));
-const nav = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}) }));
-vi.mock('$app/navigation', () => ({ invalidateAll: nav.invalidateAll }));
+const nav = vi.hoisted(() => ({ refreshAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ refreshAll: nav.refreshAll }));
 vi.mock('@lyeve-labs/ui-kit', () => ({
 	confirm: kit.confirm,
 	toast: { success: kit.success },
@@ -87,19 +87,19 @@ describe('submitter after an outage', () => {
 		await (after as (a: unknown) => Promise<void>)(o);
 	}
 
-	beforeEach(() => nav.invalidateAll.mockClear());
+	beforeEach(() => nav.refreshAll.mockClear());
 
 	it('reloads the page data after a 5xx when asked, and not after a refusal', async () => {
 		const s = submitter(undefined, { reloadAfterOutage: true });
 		await fail(s.enhance, 422);
-		expect(nav.invalidateAll).not.toHaveBeenCalled();
+		expect(nav.refreshAll).not.toHaveBeenCalled();
 		await fail(s.enhance, 502);
-		expect(nav.invalidateAll).toHaveBeenCalledTimes(1);
+		expect(nav.refreshAll).toHaveBeenCalledTimes(1);
 	});
 
 	it('leaves the page data alone after a 5xx by default', async () => {
 		await fail(submitter().enhance, 502);
-		expect(nav.invalidateAll).not.toHaveBeenCalled();
+		expect(nav.refreshAll).not.toHaveBeenCalled();
 	});
 });
 

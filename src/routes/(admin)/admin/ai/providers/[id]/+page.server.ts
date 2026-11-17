@@ -1,12 +1,12 @@
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient, requireRole, requireUser } from '$lib/server/authz';
-import { aiActionError, aiGate } from '$lib/server/ai-load';
-import { GATE_OK, section } from '$lib/api/gate';
-import { readProviderForm } from '$lib/server/ai-provider-form';
-import { couldNotLoad } from '$lib/outage';
-import { deleteProvider, getCapabilities, getProvider, listModels, updateProvider, type AiProvider } from '$lib/api/ai';
+import { authedClient, requireRole, requireUser } from '#lib/server/authz.ts';
+import { aiActionError, aiGate } from '#lib/server/ai-load.ts';
+import { GATE_OK, section } from '#lib/api/gate.ts';
+import { readProviderForm } from '#lib/server/ai-provider-form.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { deleteProvider, getCapabilities, getProvider, listModels, updateProvider, type AiProvider } from '#lib/api/ai.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { aiSettings } = await event.parent();

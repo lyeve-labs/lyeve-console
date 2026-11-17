@@ -10,16 +10,16 @@
 		Select,
 		Table,
 	} from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
 	import { Activity } from '@lucide/svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import TelemetryTabs from '$lib/components/TelemetryTabs.svelte';
-	import { familiesMatching, formatMetricValue, labelText } from '$lib/api/telemetry';
-	import { PLUGIN } from '$lib/plugin-names';
-	import { rowFor } from '$lib/plugin-rows';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import TelemetryTabs from '#lib/components/TelemetryTabs.svelte';
+	import { familiesMatching, formatMetricValue, labelText } from '#lib/api/telemetry.ts';
+	import { PLUGIN } from '#lib/plugin-names.ts';
+	import { rowFor } from '#lib/plugin-rows.ts';
 	import type { PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data }: { data: PageData } = $props();
 

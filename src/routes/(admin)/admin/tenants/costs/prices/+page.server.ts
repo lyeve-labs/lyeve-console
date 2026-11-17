@@ -1,12 +1,12 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import type { Section } from '$lib/api/gate';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { deletePrice, isResourceType, listPrices, putPrice, type Price } from '$lib/api/cost';
-import { parsePrice } from '$lib/cost/forms';
-import { couldNotLoad } from '$lib/outage';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import type { Section } from '#lib/api/gate.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { deletePrice, isResourceType, listPrices, putPrice, type Price } from '#lib/api/cost.ts';
+import { parsePrice } from '#lib/cost/forms.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 import { OPERATOR_ROLES, UNREAD, ledgerReader, refusal, refuseBelowAdmin } from '../costs.server';
 
 type PricesPage = {

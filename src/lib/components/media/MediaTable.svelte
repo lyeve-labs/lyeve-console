@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Table } from '@lyeve-labs/ui-kit';
-	import { mediaKind, mediaKindLabel, type MediaItem } from '$lib/api/media';
-	import { formatBytes, formatDateTime } from '$lib/format';
+	import { mediaKind, mediaKindLabel, type MediaItem } from '#lib/api/media.ts';
+	import { formatBytes, formatDateTime } from '#lib/format.ts';
 	import MediaThumb from './MediaThumb.svelte';
 
 	interface Props {

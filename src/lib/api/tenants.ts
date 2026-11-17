@@ -3,8 +3,8 @@
  * list, the create, the update and the delete the client package covers.
  */
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
-import { refusalOf, type Refusal } from '$lib/api/refusal';
-import { linkHref } from '$lib/links';
+import { refusalOf, type Refusal } from '#lib/api/refusal.ts';
+import { linkHref } from '#lib/links.ts';
 
 /** What the plugin says about creating a tenant on this instance. */
 export interface Provisioning {

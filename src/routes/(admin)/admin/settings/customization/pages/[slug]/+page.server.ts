@@ -1,17 +1,17 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { listSchemaNames } from '$lib/api/search-settings';
-import { readError } from '$lib/server/read-error';
-import { forbiddenText, GATE_OK, section } from '$lib/api/gate';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { listSchemaNames } from '#lib/api/search-settings.ts';
+import { readError } from '#lib/server/read-error.ts';
+import { forbiddenText, GATE_OK, section } from '#lib/api/gate.ts';
 import {
 	deleteCustomPage,
 	getCustomPage,
 	saveCustomPage,
 	type CustomPage,
-} from '$lib/api/customization';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/customization.ts';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { user, customization } = await event.parent();

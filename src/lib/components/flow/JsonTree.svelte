@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { ChevronDown, ChevronRight } from '@lucide/svelte';
 	import JsonTree from './JsonTree.svelte';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	/**
 	 * A JSON value as a tree: objects and lists fold, scalars print. The two

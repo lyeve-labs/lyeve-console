@@ -4,15 +4,15 @@
 	import { enhance } from '$app/forms';
 	import { Download, Trash2, FileJson } from '@lucide/svelte';
 	import type { DsarExportResult, DsarEraseResult } from '@lyeve-labs/client-rest';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import NotRunning from '$lib/components/NotRunning.svelte';
-	import { PLUGIN } from '$lib/plugin-names';
-	import { formRefusal } from '$lib/api/refusal';
-	import { ICON } from '$lib/icon';
-	import { tracked } from '$lib/forms.svelte';
-	import { plural } from '$lib/format';
-	import type { StepUpFactor } from '$lib/api/export-step-up';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import NotRunning from '#lib/components/NotRunning.svelte';
+	import { PLUGIN } from '#lib/plugin-names.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { tracked } from '#lib/forms.svelte.ts';
+	import { plural } from '#lib/format.ts';
+	import type { StepUpFactor } from '#lib/api/export-step-up.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 
 import StoragePage from './+page.svelte';
-import type { StorageProvider } from '$lib/api/storage';
-import { outlineSkips } from '$lib/test-outline';
+import type { StorageProvider } from '#lib/api/storage.ts';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(cleanup);
 

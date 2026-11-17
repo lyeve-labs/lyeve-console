@@ -12,13 +12,13 @@
 		Table,
 		Pagination,
 	} from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
 	import { goto } from '$app/navigation';
 	import { Lightbulb, RefreshCw, Search, Timer } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import { page } from '$app/state';
-	import { OUTAGE } from '$lib/outage';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
+	import { OUTAGE } from '#lib/outage.ts';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import {
 		ANALYZABLE,
 		callerOf,
@@ -27,11 +27,11 @@
 		oneLine,
 		type Dialect,
 		type QueryLogEntry,
-	} from '$lib/api/query-monitor';
-	import { NO_VALUE, formatDateTime, formatMillis } from '$lib/format';
+	} from '#lib/api/query-monitor.ts';
+	import { NO_VALUE, formatDateTime, formatMillis } from '#lib/format.ts';
 	import type { PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data }: { data: PageData } = $props();
 

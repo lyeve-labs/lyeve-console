@@ -1,21 +1,21 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	listEvents,
 	listReplays,
 	startReplay,
 	type EventRow,
 	type ReplayRun,
-} from '$lib/api/events';
-import { type Gate, GATE_OK, section, type Section } from '$lib/api/gate';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { instantFromWallClock } from '$lib/utils/wall-clock';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/events.ts';
+import { type Gate, GATE_OK, section, type Section } from '#lib/api/gate.ts';
+import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { instantFromWallClock } from '#lib/utils/wall-clock.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 199;

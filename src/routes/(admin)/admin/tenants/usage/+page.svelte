@@ -17,17 +17,17 @@
 		Pagination,
 		SearchInput,
 	} from '@lyeve-labs/ui-kit';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { narrows } from '$lib/narrow';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { narrows } from '#lib/narrow.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import { tick } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { Check, Gauge, Pencil, Plus, X } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { drawerFailure, fieldErrors, submitter } from '$lib/forms.svelte';
-	import { formRefusal, refusalText, type Refusal } from '$lib/api/refusal';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { drawerFailure, fieldErrors, submitter } from '#lib/forms.svelte.ts';
+	import { formRefusal, refusalText, type Refusal } from '#lib/api/refusal.ts';
 	import {
 		blocked,
 		bytesToGib,
@@ -44,11 +44,11 @@
 		usedPct,
 		type Quota,
 		type QuotaRequest,
-	} from '$lib/api/usage';
-	import { formatBytes, formatDateTime, formatCount, plural } from '$lib/format';
+	} from '#lib/api/usage.ts';
+	import { formatBytes, formatDateTime, formatCount, plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	// The plugin serves every quota write to a super admin only. An admin reads

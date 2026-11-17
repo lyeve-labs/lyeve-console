@@ -5,9 +5,9 @@ import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 // whatever value env.dev has at the moment it's called.
 const env = vi.hoisted(() => ({ dev: true, building: false }));
 
-vi.mock('$app/environment', () => env);
+vi.mock('$app/env', () => env);
 
-import { authedHeaders } from '$lib/server/authz';
+import { authedHeaders } from '#lib/server/authz.ts';
 import { actions as magicLink } from './routes/auth/magic-link/verify/+page.server';
 // SvelteKit's own request cookie jar, so a cookie set in handle is read back
 // the way a load reads it.
@@ -17,14 +17,14 @@ import { add_cookies_to_headers, get_cookies } from '../node_modules/@sveltejs/k
 type Hooks = typeof import('./hooks.server');
 let handle: Hooks['handle'];
 let init: Hooks['init'];
-let setupGateRedirect: typeof import('$lib/server/setup-gate').setupGateRedirect;
+let setupGateRedirect: typeof import('#lib/server/setup-gate.ts').setupGateRedirect;
 
 // The setup gate caches a ready engine in its module, so every case loads the
 // hooks and the gate afresh.
 beforeEach(async () => {
 	vi.resetModules();
 	({ handle, init } = await import('./hooks.server'));
-	({ setupGateRedirect } = await import('$lib/server/setup-gate'));
+	({ setupGateRedirect } = await import('#lib/server/setup-gate.ts'));
 });
 
 // helpers

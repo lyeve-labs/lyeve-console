@@ -6,7 +6,7 @@ vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import LabsPage from './+page.svelte';
-import type { LabEndpoint, LabResult } from '$lib/api/labs';
+import type { LabEndpoint, LabResult } from '#lib/api/labs.ts';
 
 afterEach(cleanup);
 

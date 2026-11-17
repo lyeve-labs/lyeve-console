@@ -1,12 +1,12 @@
 import type { LayoutServerLoad } from './$types';
 import type { HttpClient, Schema, SchemaField } from '@lyeve-labs/client';
 import { getSchema } from '@lyeve-labs/client-rest';
-import type { RelationChoices } from '$lib/components/content/relation-choices';
-import { authedClient } from '$lib/server/authz';
-import { readRelationChoices } from '$lib/server/relation-choices';
-import { MAX_PATH_RELATIONS, filterKeys, type Definitions } from '$lib/utils/entry-view';
-import { UNKNOWN_ACCESS, may, withoutHidden, type TypeAccess } from '$lib/utils/content-access';
-import { readContentAccess } from '$lib/api/content-access';
+import type { RelationChoices } from '#lib/components/content/relation-choices.ts';
+import { authedClient } from '#lib/server/authz.ts';
+import { readRelationChoices } from '#lib/server/relation-choices.ts';
+import { MAX_PATH_RELATIONS, filterKeys, type Definitions } from '#lib/utils/entry-view.ts';
+import { UNKNOWN_ACCESS, may, withoutHidden, type TypeAccess } from '#lib/utils/content-access.ts';
+import { readContentAccess } from '#lib/api/content-access.ts';
 
 /** The entry list. The editor pages under it have no filters. */
 const LIST_ROUTE = '/(admin)/admin/content/[schema]';

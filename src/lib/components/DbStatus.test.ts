@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ActionResult, SubmitFunction } from '@sveltejs/kit';
+import type { ActionResult, SubmitFunction } from '$app/forms';
 
-const nav = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}), invalidate: vi.fn(async (_dep: string) => {}) }));
+const nav = vi.hoisted(() => ({ refreshAll: vi.fn(async () => {}), invalidate: vi.fn(async (_dep: string) => {}) }));
 vi.mock('$app/navigation', () => nav);
 
 /*
@@ -31,7 +31,7 @@ const queue = [
 
 beforeEach(() => {
 	forms.submits = [];
-	nav.invalidateAll.mockClear();
+	nav.refreshAll.mockClear();
 	nav.invalidate.mockClear();
 });
 
@@ -145,7 +145,7 @@ describe('DbStatus', () => {
 		await submit({ type: 'failure', status: 400, data: { error: 'migration 059 failed' } });
 
 		await waitFor(() => expect(screen.getByText('migration 059 failed')).toBeTruthy());
-		expect(nav.invalidateAll).not.toHaveBeenCalled();
+		expect(nav.refreshAll).not.toHaveBeenCalled();
 	});
 
 	it('falls back to a message of its own when the action names none', async () => {
@@ -234,7 +234,7 @@ describe('DbStatus', () => {
 
 		await submit({ type: 'redirect', status: 303, location: '/admin/schema' });
 
-		expect(nav.invalidateAll).toHaveBeenCalledTimes(1);
+		expect(nav.refreshAll).toHaveBeenCalledTimes(1);
 		expect(screen.queryByText('Could not apply the migrations. Check your connection and try again.')).toBeNull();
 	});
 });

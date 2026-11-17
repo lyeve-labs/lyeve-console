@@ -20,10 +20,10 @@
 	import { enhance } from '$app/forms';
 	import { CalendarClock, FileText, Pencil, Plus, Send, Trash2, X } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { fieldErrors, submitter } from '$lib/forms.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { fieldErrors, submitter } from '#lib/forms.svelte.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		CONFLICT_LABELS,
 		STATUS_LABELS,
@@ -31,11 +31,11 @@
 		editable,
 		statusTone,
 		type ReleaseConflict,
-	} from '$lib/api/content-releases';
-	import { formatDateTime, plural } from '$lib/format';
-	import { couldNotLoad } from '$lib/outage';
-	import { shortId } from '$lib/utils/entry-identity';
-	import { ICON } from '$lib/icon';
+	} from '#lib/api/content-releases.ts';
+	import { formatDateTime, plural } from '#lib/format.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
+	import { shortId } from '#lib/utils/entry-identity.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { actions, load } from './+page.server';
-import { fixturePrompt, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
-import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '$lib/components/ai/test-support/events';
+import { fixturePrompt, fixtureSettings } from '#lib/components/ai/test-support/fixtures.ts';
+import { actionEvent, formOf, json, loadEvent, refused, sentBody } from '#lib/components/ai/test-support/events.ts';
 
 const path = '/admin/ai/prompts/summarize';
 const params = { use_case: 'summarize' };

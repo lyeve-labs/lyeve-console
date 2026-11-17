@@ -12,9 +12,9 @@
 		ShieldOff,
 	} from '@lucide/svelte';
 	import { page } from '$app/state';
-	import { ICON } from '$lib/icon';
-	import { BUSY, OUTAGE } from '$lib/outage';
-	import { SESSION_ENDED } from '$lib/session';
+	import { ICON } from '#lib/icon.ts';
+	import { BUSY, OUTAGE } from '#lib/outage.ts';
+	import { SESSION_ENDED } from '#lib/session.ts';
 
 	/**
 	 * What the reader is told when a page cannot be served.

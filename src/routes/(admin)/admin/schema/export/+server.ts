@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { authedHeaders } from '$lib/server/authz';
+import { authedHeaders } from '#lib/server/authz.ts';
 
 /**
  * Every content type as one file, for moving them to another instance.

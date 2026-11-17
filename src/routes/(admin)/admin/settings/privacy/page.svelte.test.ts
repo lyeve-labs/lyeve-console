@@ -7,7 +7,7 @@ vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://admin/admin/settings/privacy') } }));
 
 import PrivacyPage from './+page.svelte';
-import { NO_TENANT } from '$lib/api/privacy';
+import { NO_TENANT } from '#lib/api/privacy.ts';
 
 afterEach(cleanup);
 

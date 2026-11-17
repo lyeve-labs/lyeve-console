@@ -9,13 +9,13 @@
 		PARALLEL_MAX_CONCURRENT,
 		PARALLEL_TIMEOUT_MAX,
 		POOL_SIZE,
-	} from '$lib/api/goroutine-engine';
-	import { formRefusal } from '$lib/api/refusal';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { NO_VALUE, formatGoDuration } from '$lib/format';
+	} from '#lib/api/goroutine-engine.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { NO_VALUE, formatGoDuration } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
 	import type { TunableForm } from './+page.server';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	interface Props {
 		/** What the page load read from the goroutine engine plugin. */

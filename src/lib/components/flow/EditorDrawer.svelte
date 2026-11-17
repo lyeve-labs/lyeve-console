@@ -2,8 +2,8 @@
 	import { Button, Tabs } from '@lyeve-labs/ui-kit';
 	import { ChevronDown, ChevronUp } from '@lucide/svelte';
 	import type { Snippet } from 'svelte';
-	import { clampDrawerHeight, readDrawerHeight, writeDrawerHeight } from '$lib/flow/drawer';
-	import { ICON } from '$lib/icon';
+	import { clampDrawerHeight, readDrawerHeight, writeDrawerHeight } from '#lib/flow/drawer.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	/**
 	 * A pane docked to the bottom of the editor. The kit's Drawer docks to a

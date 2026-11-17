@@ -1,8 +1,8 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { getRanking, type RankingConfig } from '@lyeve-labs/client-rest';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
+import { actionError } from '#lib/server/action-error.ts';
 import {
 	getPublicSchemas,
 	listSchemaNames,
@@ -10,9 +10,9 @@ import {
 	reindexSearch,
 	setDefaultRanking,
 	setPublicSchemas,
-} from '$lib/api/search-settings';
-import { section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+} from '#lib/api/search-settings.ts';
+import { section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 import { attempt } from '../attempt.server';
 
 export const load: PageServerLoad = async (event) => {

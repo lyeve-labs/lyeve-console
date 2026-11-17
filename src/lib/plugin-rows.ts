@@ -15,10 +15,10 @@ import type {
 	PluginStatus,
 	PluginStatusReport,
 } from '@lyeve-labs/client-rest';
-import { SERVING_PHASES } from '$lib/api/plugins-running';
-import { linkHref } from '$lib/links';
-import { CATEGORY_ORDER, categoryOf, type CategoryKey } from '$lib/plugin-categories';
-import { text } from '$lib/api/narrow';
+import { SERVING_PHASES } from '#lib/api/plugins-running.ts';
+import { linkHref } from '#lib/links.ts';
+import { CATEGORY_ORDER, categoryOf, type CategoryKey } from '#lib/plugin-categories.ts';
+import { text } from '#lib/api/narrow.ts';
 
 export type { PluginManifest, PluginRoute };
 

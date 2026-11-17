@@ -1,7 +1,7 @@
 import type { HttpClient } from '@lyeve-labs/client';
-import { section, type Section } from '$lib/api/gate';
-import { NO_VALUE, formatBytes, formatCount } from '$lib/format';
-import type { Params, RecommendationWarning } from '$lib/api/runtime-words';
+import { section, type Section } from '#lib/api/gate.ts';
+import { NO_VALUE, formatBytes, formatCount } from '#lib/format.ts';
+import type { Params, RecommendationWarning } from '#lib/api/runtime-words.ts';
 
 /**
  * The engine's runtime and scaling settings, as served under

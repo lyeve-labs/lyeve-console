@@ -336,7 +336,7 @@ const PAGE_PADDING = /\b(?:[\w-]+:)*p[xytrbl]?-[\d.]+(?:\/\d+)?\b/g;
  * and a page that forgets it renders against the left edge of the window.
  * `w-screen` is the same decision written as a width.
  */
-/** The rungs $lib/icon.ts declares. Kept here as numbers so the lint needs no import. */
+/** The rungs #lib/icon.ts declares. Kept here as numbers so the lint needs no import. */
 const ICON_RUNGS = new Set([12, 14, 16, 20, 40]);
 
 /** A component sized as an icon, by a number or a rung. */
@@ -734,14 +734,14 @@ export const rules = [
      * `toLocaleString()` with no locale renders 1,234 in one browser and 1.234
      * in another, and the second reads as a fraction. Naming 'en-US' at the
      * call site fixes that one number and leaves the next one to remember.
-     * `$lib/format.ts` holds the formatter, built once.
+     * `#lib/format.ts` holds the formatter, built once.
      */
     test: (src) =>
       // A call carrying an options object is formatting a date or a currency
       // and has chosen its shape on purpose. The subject here is a bare number
       // grouped at the call site, with a locale or without one.
       [...src.matchAll(/\.toLocaleString\(\s*(?:'[^']*'|"[^"]*")?\s*\)/g)].map(
-        () => 'toLocaleString groups a number by hand; use formatCount from $lib/format',
+        () => 'toLocaleString groups a number by hand; use formatCount from #lib/format',
       ),
   },
   {
@@ -756,12 +756,12 @@ export const rules = [
      * zone and unlabeled. The stream lab stamped each event that way beside a
      * console that prints UTC everywhere else. `undefined` in the locale's
      * place is the same call, and so is a formatter built with no locale.
-     * `$lib/format.ts` holds the one presentation: formatDate, formatDateTime
+     * `#lib/format.ts` holds the one presentation: formatDate, formatDateTime
      * and formatTime.
      */
     test: (src) =>
       [...src.matchAll(/\.(toLocaleDateString|toLocaleTimeString)\(\s*(?:\)|undefined\b)|\b(Intl\.DateTimeFormat)\(\s*(?:\)|undefined\b)/g)].map(
-        (m) => `${m[1] ?? m[2]} with no locale renders per browser; use formatDate, formatDateTime or formatTime from $lib/format`,
+        (m) => `${m[1] ?? m[2]} with no locale renders per browser; use formatDate, formatDateTime or formatTime from #lib/format`,
       ),
   },
   {
@@ -865,7 +865,7 @@ export const rules = [
      *
      * A size picked per icon drifts, so the same row action ends up a pixel
      * apart on neighboring list pages. A size set by `h-4 w-4` reads as a
-     * class and not as a size. `$lib/icon.ts` names the five rungs and says
+     * class and not as a size. `#lib/icon.ts` names the five rungs and says
      * what each is for. An icon on a line of text matches that text.
      */
     test: (src) => {
@@ -879,8 +879,8 @@ export const rules = [
         if (size) {
           found.push(
             ICON_RUNGS.has(Number(size[1]))
-              ? `size={${size[1]}} names a number; pass ICON.xs|sm|md|lg from $lib/icon`
-              : `size={${size[1]}} is not a rung; $lib/icon.ts names 12, 14, 16, 20 and 40`,
+              ? `size={${size[1]}} names a number; pass ICON.xs|sm|md|lg from #lib/icon`
+              : `size={${size[1]}} is not a rung; #lib/icon.ts names 12, 14, 16, 20 and 40`,
           );
         }
         const cls = /class="[^"]*\bh-(\d(?:\.\d)?) w-\1\b/.exec(el.attrs);
@@ -1082,7 +1082,7 @@ export const rules = [
       );
       const footerRanges = snippetRanges('footer');
       const emptyRanges = snippetRanges('action');
-      // A size names a rung through $lib/icon, so these read the name.
+      // A size names a rung through #lib/icon, so these read the name.
       const ICON = (inner) =>
         /<[A-Z]\w*\b[^>]*(?:\bsize=\{(?:\d+|ICON\.\w+|RUNG\.\w+)\}|\bclass="[^"]*\bh-\d)/.test(inner);
       const ICON_14 = (inner) =>

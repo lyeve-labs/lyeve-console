@@ -1,7 +1,7 @@
 <script lang="ts">
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { filtersText, keptJSON, type WebhookRecord } from '$lib/api/webhook-options';
-	import { formRefusal, type Refusal } from '$lib/api/refusal';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { filtersText, keptJSON, type WebhookRecord } from '#lib/api/webhook-options.ts';
+	import { formRefusal, type Refusal } from '#lib/api/refusal.ts';
 	import {
 		Alert,
 		Badge,
@@ -27,8 +27,8 @@
 	import type { Webhook } from '@lyeve-labs/client';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import { confirmed, drawerFailure, fieldErrors, submitter } from '$lib/forms.svelte';
+	import type { SubmitFunction } from '$app/forms';
+	import { confirmed, drawerFailure, fieldErrors, submitter } from '#lib/forms.svelte.ts';
 	import {
 		Plus,
 		Copy,
@@ -42,13 +42,13 @@
 		KeyRound,
 		Skull
 	} from '@lucide/svelte';
-	import { duplicateRow } from '$lib/duplicate';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { narrows } from '$lib/narrow';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
-	import { eventTone } from '$lib/tones';
+	import { duplicateRow } from '#lib/duplicate.ts';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { narrows } from '#lib/narrow.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { eventTone } from '#lib/tones.ts';
 	import { page } from '$app/state';
 	import DeliveriesDrawer from './DeliveriesDrawer.svelte';
 	import DeadLetterDrawer from './DeadLetterDrawer.svelte';

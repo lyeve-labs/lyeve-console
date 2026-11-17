@@ -1,14 +1,14 @@
-import { authedClient, loadUser } from '$lib/server/authz';
+import { authedClient, loadUser } from '#lib/server/authz.ts';
 import type { LayoutServerLoad } from './$types';
 import { getEntitlements, getPluginStatus, type PluginStatusReport } from '@lyeve-labs/client-rest';
-import { NO_ENTITLEMENTS, type LicenseEntitlements } from '$lib/entitlements';
-import { MIGRATIONS_DEPENDENCY, pendingMigrations, type PendingStatement } from '$lib/api/migrate';
-import { getCustomization, NO_CUSTOMIZATION, type Customization } from '$lib/api/customization';
-import { brandOf } from '$lib/brand';
-import { NO_LICENSING, readLicensing } from '$lib/api/license';
-import { readRunningPlugins, runningFromStatus, type RunningRead } from '$lib/api/plugins-running';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning, pluginSetOf } from '$lib/plugins';
+import { NO_ENTITLEMENTS, type LicenseEntitlements } from '#lib/entitlements.ts';
+import { MIGRATIONS_DEPENDENCY, pendingMigrations, type PendingStatement } from '#lib/api/migrate.ts';
+import { getCustomization, NO_CUSTOMIZATION, type Customization } from '#lib/api/customization.ts';
+import { brandOf } from '#lib/brand.ts';
+import { NO_LICENSING, readLicensing } from '#lib/api/license.ts';
+import { readRunningPlugins, runningFromStatus, type RunningRead } from '#lib/api/plugins-running.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning, pluginSetOf } from '#lib/plugins.ts';
 
 /**
  * Roles the engine lets read and apply the DDL queue. The queue holds every

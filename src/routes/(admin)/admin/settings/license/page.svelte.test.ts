@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
-import { STOCK_BRAND } from '$lib/brand';
+import { STOCK_BRAND } from '#lib/brand.ts';
 import { render, cleanup } from '@testing-library/svelte';
-import { NO_CUSTOMIZATION } from '$lib/api/customization';
-import { licensingOf, NO_LICENSING, type Licensing } from '$lib/api/license';
-import { UNNAMED } from '$lib/plugins';
+import { NO_CUSTOMIZATION } from '#lib/api/customization.ts';
+import { licensingOf, NO_LICENSING, type Licensing } from '#lib/api/license.ts';
+import { UNNAMED } from '#lib/plugins.ts';
 import { afterEach, describe, expect, it } from 'vitest';
 import LicensePage from './+page.svelte';
 import type { User } from '@lyeve-labs/client';
-import type { LicenseEntitlements } from '$lib/entitlements';
+import type { LicenseEntitlements } from '#lib/entitlements.ts';
 
 afterEach(cleanup);
 

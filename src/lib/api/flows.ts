@@ -8,8 +8,8 @@
  */
 
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
-import { query, readAll, rowsOf, statedTotal, type ListEnvelope } from '$lib/api/list';
-import type { EventTypes, FlowDefinition, FlowOption, FlowStatus, NodeSpec } from '$lib/flow/types';
+import { query, readAll, rowsOf, statedTotal, type ListEnvelope } from '#lib/api/list.ts';
+import type { EventTypes, FlowDefinition, FlowOption, FlowStatus, NodeSpec } from '#lib/flow/types.ts';
 import { count } from './narrow';
 
 export interface LastRun {

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Button } from '@lyeve-labs/ui-kit';
-	import { invalidate, invalidateAll } from '$app/navigation';
+	import { invalidate, refreshAll } from '$app/navigation';
 	import { RefreshCw } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	// Reloads the page's data and spins while the load runs. A page that polls
 	// under a dependency names it, so the button reloads what the poll reloads.
@@ -12,7 +12,7 @@
 	async function refresh() {
 		pending = true;
 		try {
-			await (dependency ? invalidate(dependency) : invalidateAll());
+			await (dependency ? invalidate(dependency) : refreshAll());
 		} finally {
 			pending = false;
 		}

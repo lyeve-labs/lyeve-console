@@ -1,14 +1,14 @@
 import type { Actions, PageServerLoad } from './$types';
 import { error, fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient } from '$lib/server/authz';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning, runs } from '$lib/plugins';
-import { forbiddenText, gateOf, GATE_OK, isOutage, section, type Gate, type Section } from '$lib/api/gate';
-import { bodyString, errorCodeOf } from '$lib/api/limits';
+import { authedClient } from '#lib/server/authz.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning, runs } from '#lib/plugins.ts';
+import { forbiddenText, gateOf, GATE_OK, isOutage, section, type Gate, type Section } from '#lib/api/gate.ts';
+import { bodyString, errorCodeOf } from '#lib/api/limits.ts';
 import type { HttpClient } from '@lyeve-labs/client';
 import { getSchemas } from '@lyeve-labs/client-rest';
-import { applySchemaPreset, readSchemaPresets } from '$lib/api/schema-preset-catalog';
+import { applySchemaPreset, readSchemaPresets } from '#lib/api/schema-preset-catalog.ts';
 import {
 	FORMS_PRESET,
 	FORMS_TYPE,
@@ -22,7 +22,7 @@ import {
 	type FormSchemaOption,
 	type FormSchemaRow,
 	type SubmissionsState,
-} from '$lib/api/form-destinations';
+} from '#lib/api/form-destinations.ts';
 import {
 	LIFETIMES,
 	SAID,
@@ -39,9 +39,9 @@ import {
 	type Settings,
 	type SettingsPatch,
 	type SiteOption,
-} from '$lib/api/connected-editors';
+} from '#lib/api/connected-editors.ts';
 import { OWNER_ROLES, isOwner, refusalSentence } from '../shared.server';
-import { asked } from '$lib/server/asked';
+import { asked } from '#lib/server/asked.ts';
 
 /** Every content type with what the form settings need of it. */
 async function formSchemaRows(client: HttpClient): Promise<FormSchemaRow[]> {

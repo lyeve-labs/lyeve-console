@@ -7,7 +7,7 @@ const nav = vi.hoisted(() => ({ goto: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => nav);
 
 import SyntheticPage from './+page.svelte';
-import type { Probe, ProbeAlert } from '$lib/api/synthetic';
+import type { Probe, ProbeAlert } from '#lib/api/synthetic.ts';
 
 afterEach(cleanup);
 

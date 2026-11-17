@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Button, Drawer, Input } from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import type { Refusal } from '$lib/api/refusal';
-	import { tracked } from '$lib/forms.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import type { Refusal } from '#lib/api/refusal.ts';
+	import { tracked } from '#lib/forms.svelte.ts';
 
 	/**
 	 * The new role drawer. A role exists on this screen only once it has a

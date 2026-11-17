@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { error, isHttpError, redirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { readError } from './read-error';
-import { BUSY, OUTAGE } from '$lib/outage';
+import { BUSY, OUTAGE } from '#lib/outage.ts';
 
 const NOT_FOUND = 'Webhook not found';
 

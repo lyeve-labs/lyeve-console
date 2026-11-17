@@ -1,21 +1,21 @@
 <script lang="ts">
 	import { Badge, Button, Drawer, EmptyState, Pagination, Table, confirm } from '@lyeve-labs/ui-kit';
 	import type { DeadLetter } from '@lyeve-labs/client';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { RotateCcw, Skull, Trash2, XCircle } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import type { Section } from '$lib/api/gate';
-	import { formRefusal, refusalText, type Refusal } from '$lib/api/refusal';
-	import { pageNumber } from '$lib/api/list';
-	import { formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
-	import { eventTone } from '$lib/tones';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import type { Section } from '#lib/api/gate.ts';
+	import { formRefusal, refusalText, type Refusal } from '#lib/api/refusal.ts';
+	import { pageNumber } from '#lib/api/list.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { eventTone } from '#lib/tones.ts';
 
 	interface Props {
 		/** The page's one action result, which carries each replay or dismissal. */

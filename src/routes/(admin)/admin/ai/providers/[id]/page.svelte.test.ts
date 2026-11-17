@@ -2,8 +2,8 @@
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Page from './+page.svelte';
-import { fixtureLocalProvider, fixtureProvider, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
-import { outlineSkips } from '$lib/test-outline';
+import { fixtureLocalProvider, fixtureProvider, fixtureSettings } from '#lib/components/ai/test-support/fixtures.ts';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));

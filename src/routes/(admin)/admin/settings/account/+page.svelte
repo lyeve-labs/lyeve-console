@@ -12,8 +12,8 @@
 		type ThemePreference,
 	} from '@lyeve-labs/ui-kit';
 	import { Monitor, MonitorSmartphone, Moon, ShieldCheck, Sun } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import { roleTone } from '$lib/roles';
+	import { ICON } from '#lib/icon.ts';
+	import { roleTone } from '#lib/roles.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

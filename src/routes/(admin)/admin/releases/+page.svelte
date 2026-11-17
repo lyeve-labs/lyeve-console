@@ -3,15 +3,15 @@
 	import { enhance } from '$app/forms';
 	import { CalendarClock, Plus } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { fieldErrors, submitter } from '$lib/forms.svelte';
-	import { formRefusal } from '$lib/api/refusal';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { STATUS_LABELS, statusTone } from '$lib/api/content-releases';
-	import { formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { fieldErrors, submitter } from '#lib/forms.svelte.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { STATUS_LABELS, statusTone } from '#lib/api/content-releases.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

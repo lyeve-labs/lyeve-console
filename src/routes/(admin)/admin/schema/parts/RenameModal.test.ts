@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 
 const forms = vi.hoisted(() => ({ handlers: new Map<string, SubmitFunction>() }));
 vi.mock('$app/forms', () => ({
@@ -11,7 +11,7 @@ vi.mock('$app/forms', () => ({
 		return { destroy() {} };
 	},
 }));
-const nav = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}) }));
+const nav = vi.hoisted(() => ({ refreshAll: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => nav);
 
 import RenameModal from './RenameModal.svelte';
@@ -19,7 +19,7 @@ import RenameModal from './RenameModal.svelte';
 afterEach(cleanup);
 beforeEach(() => {
 	forms.handlers.clear();
-	nav.invalidateAll.mockClear();
+	nav.refreshAll.mockClear();
 });
 
 async function answer(result: unknown) {
@@ -66,7 +66,7 @@ describe('RenameModal', () => {
 		await answer({ type: 'success', data: { from: 'posts', saved: stored } });
 		expect(onrenamed).toHaveBeenCalledWith('posts', stored);
 		expect(screen.queryByRole('dialog', { name: 'Rename posts' })).toBeNull();
-		expect(nav.invalidateAll).toHaveBeenCalled();
+		expect(nav.refreshAll).toHaveBeenCalled();
 	});
 
 	it('shows the refusal on the field and stays open', async () => {

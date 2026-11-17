@@ -5,7 +5,7 @@
  */
 
 import type { HttpClient } from '@lyeve-labs/client';
-import { rowsOf, type ListEnvelope } from '$lib/api/list';
+import { rowsOf, type ListEnvelope } from '#lib/api/list.ts';
 
 const BASE = '/api/admin/email-templates';
 

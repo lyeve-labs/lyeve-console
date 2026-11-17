@@ -6,8 +6,8 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { TrendPoint } from '@lyeve-labs/client-rest';
-import { trafficTone, type Window } from '$lib/dashboard';
-import { formatPercent, plural } from '$lib/format';
+import { trafficTone, type Window } from '#lib/dashboard.ts';
+import { formatPercent, plural } from '#lib/format.ts';
 
 /** One hour of traffic, with the gaps the engine leaves already filled. */
 export interface TrafficHour {

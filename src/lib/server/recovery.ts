@@ -1,6 +1,6 @@
 import { ApiError } from '@lyeve-labs/client';
-import { inSentence } from '$lib/api/gate';
-import { outageFor } from '$lib/outage';
+import { inSentence } from '#lib/api/gate.ts';
+import { outageFor } from '#lib/outage.ts';
 
 /**
  * The sentence a signed-out recovery page shows for an engine refusal that is

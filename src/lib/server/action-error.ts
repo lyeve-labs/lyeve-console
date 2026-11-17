@@ -1,7 +1,7 @@
 import { fail, type ActionFailure } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { refusalOf, refusalText } from '$lib/api/refusal';
-import { errorCodeOf } from '$lib/api/limits';
+import { refusalOf, refusalText } from '#lib/api/refusal.ts';
+import { errorCodeOf } from '#lib/api/limits.ts';
 
 /**
  * Turns a thrown request error into a message worth showing the operator.

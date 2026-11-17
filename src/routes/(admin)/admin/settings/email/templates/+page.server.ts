@@ -1,11 +1,11 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient, requireUser } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { section, type Section } from '$lib/api/gate';
+import { authedClient, requireUser } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { section, type Section } from '#lib/api/gate.ts';
 import {
 	SAMPLE_VARS,
 	TEMPLATE_KEY,
@@ -20,8 +20,8 @@ import {
 	type TemplateLimits,
 	type TemplateStarter,
 	type TemplateStatus,
-} from '$lib/api/email-templates';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/email-templates.ts';
+import { asked } from '#lib/server/asked.ts';
 
 const STATUSES: TemplateStatus[] = ['draft', 'active', 'archived'];
 

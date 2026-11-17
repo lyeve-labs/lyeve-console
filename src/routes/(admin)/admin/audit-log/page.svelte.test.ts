@@ -2,8 +2,8 @@
 import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
-import type { Entitlements } from '$lib/entitlements';
+import type { SubmitFunction } from '$app/forms';
+import type { Entitlements } from '#lib/entitlements.ts';
 
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/audit-log') } }));
 vi.mock('$app/state', () => state);

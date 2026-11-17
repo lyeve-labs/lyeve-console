@@ -1,4 +1,4 @@
-import type { GoroutineSnapshot } from '$lib/api/goroutine-engine';
+import type { GoroutineSnapshot } from '#lib/api/goroutine-engine.ts';
 
 export type { GoroutineSnapshot };
 

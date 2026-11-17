@@ -1,11 +1,11 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { getLoggingLevels, getLoggingConfig, getLogVolume } from '@lyeve-labs/client-rest';
-import { section } from '$lib/api/gate';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { LOG_DEFAULT_LIMIT, LOG_MAX_LIMIT, searchLogEntries } from '$lib/api/logs';
-import { authedClient, loadUser } from '$lib/server/authz';
-import { couldNotLoad } from '$lib/outage';
+import { section } from '#lib/api/gate.ts';
+import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { LOG_DEFAULT_LIMIT, LOG_MAX_LIMIT, searchLogEntries } from '#lib/api/logs.ts';
+import { authedClient, loadUser } from '#lib/server/authz.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { url } = event;

@@ -1,17 +1,17 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { getMe } from '@lyeve-labs/client-rest';
-import { authedClient, sessionUser } from '$lib/server/authz';
-import { clearSessionCookie, sessionToken } from '$lib/server/session-cookie';
+import { authedClient, sessionUser } from '#lib/server/authz.ts';
+import { clearSessionCookie, sessionToken } from '#lib/server/session-cookie.ts';
 import {
 	approveDeviceLogin,
 	denyDeviceLogin,
 	getDeviceLogin,
 	type DeviceLoginRequest,
 	type DeviceStepUp,
-} from '$lib/api/device-login';
-import { describeRefusal } from '$lib/api/admin-tokens';
-import { refusalOf, refusalText } from '$lib/api/refusal';
+} from '#lib/api/device-login.ts';
+import { describeRefusal } from '#lib/api/admin-tokens.ts';
+import { refusalOf, refusalText } from '#lib/api/refusal.ts';
 import {
 	canApprove,
 	isStepUpRefusal,
@@ -19,7 +19,7 @@ import {
 	normalizeUserCode,
 	outcomeForRefusal,
 	type DeviceOutcome,
-} from '$lib/device-login';
+} from '#lib/device-login.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 /**

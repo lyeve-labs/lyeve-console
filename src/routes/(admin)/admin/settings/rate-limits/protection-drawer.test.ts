@@ -2,7 +2,7 @@
 import { render, cleanup } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Protection } from '$lib/api/rate-limit';
+import type { Protection } from '#lib/api/rate-limit.ts';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 

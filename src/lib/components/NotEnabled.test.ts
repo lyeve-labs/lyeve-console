@@ -3,7 +3,7 @@ import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import NotEnabled from './NotEnabled.svelte';
 import Host from './not-enabled-host.test.svelte';
-import { licensingOf, NO_LICENSING } from '$lib/api/license';
+import { licensingOf, NO_LICENSING } from '#lib/api/license.ts';
 
 afterEach(cleanup);
 

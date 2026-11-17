@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { Alert, Button, EmptyState, PageShell, Table } from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { Pencil, Plus, Rows3, Trash2 } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ImportTabs from '$lib/components/ImportTabs.svelte';
-	import { formRefusal } from '$lib/api/refusal';
-	import { confirmed, drawerFailure } from '$lib/forms.svelte';
-	import { transformLabel, type MappingTemplate } from '$lib/api/bulk-import';
-	import { NO_VALUE } from '$lib/format';
-	import { couldNotLoad } from '$lib/outage';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ImportTabs from '#lib/components/ImportTabs.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import { confirmed, drawerFailure } from '#lib/forms.svelte.ts';
+	import { transformLabel, type MappingTemplate } from '#lib/api/bulk-import.ts';
+	import { NO_VALUE } from '#lib/format.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 	import TemplateDrawer from './TemplateDrawer.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

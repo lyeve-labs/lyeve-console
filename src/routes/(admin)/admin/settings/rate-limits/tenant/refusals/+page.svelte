@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { EmptyState, PageShell, SectionHeading, SegmentedControl, Table } from '@lyeve-labs/ui-kit';
 	import { ShieldBan } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import RateLimitTabs from '$lib/components/RateLimitTabs.svelte';
-	import { HISTORY_WINDOWS, refusalKindLabel, refusalTotals } from '$lib/api/rate-limit';
-	import { formatCount, formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import RateLimitTabs from '#lib/components/RateLimitTabs.svelte';
+	import { HISTORY_WINDOWS, refusalKindLabel, refusalTotals } from '#lib/api/rate-limit.ts';
+	import { formatCount, formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

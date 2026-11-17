@@ -2,15 +2,15 @@ import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { ApiError, type Schema, type HttpClient } from '@lyeve-labs/client';
 import { getSchemas, getSchemaStats } from '@lyeve-labs/client-rest';
-import { authedClient, authedHeaders, loadUser, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
-import { retryBusy } from '$lib/server/retry-busy';
-import { bundleContentType, readImportForm } from '$lib/server/flow-import';
+import { authedClient, authedHeaders, loadUser, requireRole } from '#lib/server/authz.ts';
+import { actionError } from '#lib/server/action-error.ts';
+import { retryBusy } from '#lib/server/retry-busy.ts';
+import { bundleContentType, readImportForm } from '#lib/server/flow-import.ts';
 import { IMPORT_SOURCES } from './import-sources';
-import { applySchemaPreset, deleteSchemaPreset, importSchemaPreset, readSchemaPresets, saveSchemaPreset, type SchemaPreset } from '$lib/api/schema-preset-catalog';
-import { NO_CANVAS, parsePositions, readCanvasLayout, saveCanvasLayout, type CanvasLayout } from '$lib/api/schema-canvas-layout';
-import { refusalOf, refusalText } from '$lib/api/refusal';
-import { section, type Gate } from '$lib/api/gate';
+import { applySchemaPreset, deleteSchemaPreset, importSchemaPreset, readSchemaPresets, saveSchemaPreset, type SchemaPreset } from '#lib/api/schema-preset-catalog.ts';
+import { NO_CANVAS, parsePositions, readCanvasLayout, saveCanvasLayout, type CanvasLayout } from '#lib/api/schema-canvas-layout.ts';
+import { refusalOf, refusalText } from '#lib/api/refusal.ts';
+import { section, type Gate } from '#lib/api/gate.ts';
 
 /**
  * The page renders in the browser only. Its diagram editor then never

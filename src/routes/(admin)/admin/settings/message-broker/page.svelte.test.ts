@@ -2,10 +2,10 @@
 import { render, cleanup } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/navigation', () => ({ invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ refreshAll: vi.fn(async () => {}) }));
 
 import BrokerPage from './+page.svelte';
-import type { BrokerStatus } from '$lib/api/messagebroker';
+import type { BrokerStatus } from '#lib/api/messagebroker.ts';
 
 afterEach(cleanup);
 

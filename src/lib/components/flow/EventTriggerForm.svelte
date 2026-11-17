@@ -2,9 +2,9 @@
 	import { SegmentedControl } from '@lyeve-labs/ui-kit';
 	import { Database, Webhook } from '@lucide/svelte';
 	import NodeConfigForm from './NodeConfigForm.svelte';
-	import type { JsonSchema, SchemaOption, SystemEvent } from '$lib/flow/types';
-	import type { ValidationError } from '$lib/api/flows';
-	import { eventKindOf, kindSchema, switchKind, type EventKind } from '$lib/flow/events';
+	import type { JsonSchema, SchemaOption, SystemEvent } from '#lib/flow/types.ts';
+	import type { ValidationError } from '#lib/api/flows.ts';
+	import { eventKindOf, kindSchema, switchKind, type EventKind } from '#lib/flow/events.ts';
 
 	/**
 	 * The event trigger: a choice between a content event, which names a

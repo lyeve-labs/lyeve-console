@@ -16,7 +16,7 @@
 		customExpiryBounds,
 		customExpiryProblem,
 		endOfDayRFC3339,
-	} from '$lib/api/admin-tokens';
+	} from '#lib/api/admin-tokens.ts';
 
 	interface Props {
 		id: string;

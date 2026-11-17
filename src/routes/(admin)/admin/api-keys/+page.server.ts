@@ -1,9 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, error, redirect } from '@sveltejs/kit';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
 import { revokeAPIKey, deleteAPIKey } from '@lyeve-labs/client-rest';
 import type { APIKey } from '@lyeve-labs/client';
-import { actionFailure, tagged } from '$lib/server/action-error';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
 import {
 	createKey,
 	keyExpiryProblem,
@@ -13,14 +13,14 @@ import {
 	listKeys,
 	parseLimits,
 	setLimits,
-} from '$lib/api/api-keys';
-import { cleanScopes, fetchKeyScopeCatalog } from '$lib/api/key-access';
-import { listSchemaNames } from '$lib/api/search-settings';
-import { pageWindow, pastEndOffset, rowsOf, statedTotal, totalOf, withOffset } from '$lib/api/list';
-import { section, type Section } from '$lib/api/gate';
-import { rolesInWords } from '$lib/roles';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/api-keys.ts';
+import { cleanScopes, fetchKeyScopeCatalog } from '#lib/api/key-access.ts';
+import { listSchemaNames } from '#lib/api/search-settings.ts';
+import { pageWindow, pastEndOffset, rowsOf, statedTotal, totalOf, withOffset } from '#lib/api/list.ts';
+import { section, type Section } from '#lib/api/gate.ts';
+import { rolesInWords } from '#lib/roles.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 /**
  * A failed write tagged with the action that made it. Every action answers

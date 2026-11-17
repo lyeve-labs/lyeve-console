@@ -4,13 +4,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({
 	goto: vi.fn(async () => {}),
-	invalidateAll: vi.fn(async () => {}),
+	refreshAll: vi.fn(async () => {}),
 }));
 
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/observability/queries?offset=50') } }));
 
 import QueriesPage from './+page.svelte';
-import type { AnalysisRead, NoPlansReason, QueryLogEntry } from '$lib/api/query-monitor';
+import type { AnalysisRead, NoPlansReason, QueryLogEntry } from '#lib/api/query-monitor.ts';
 
 afterEach(cleanup);
 

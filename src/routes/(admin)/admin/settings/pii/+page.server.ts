@@ -1,13 +1,13 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { checked } from '$lib/checkbox';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { createRule, deleteRule, getRules, testRule, updateRule, type RuleCatalog } from '$lib/api/pii-mask';
-import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
-import { asked } from '$lib/server/asked';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { checked } from '#lib/checkbox.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { createRule, deleteRule, getRules, testRule, updateRule, type RuleCatalog } from '#lib/api/pii-mask.ts';
+import { type Gate, GATE_OK, gateOf } from '#lib/api/gate.ts';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();

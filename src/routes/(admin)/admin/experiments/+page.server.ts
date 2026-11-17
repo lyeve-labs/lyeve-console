@@ -1,9 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	createExperiment,
 	deleteExperiment,
@@ -12,11 +12,11 @@ import {
 	updateExperiment,
 	type Experiment,
 	type Transition,
-} from '$lib/api/ab-testing';
-import { type Gate, GATE_OK, section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
-import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/ab-testing.ts';
+import { type Gate, GATE_OK, section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { pageOf, pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { asked } from '#lib/server/asked.ts';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;

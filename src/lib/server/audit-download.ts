@@ -1,8 +1,8 @@
 import { error, type RequestEvent } from '@sveltejs/kit';
-import { sessionToken } from '$lib/server/session-cookie';
-import { engineFetch } from '$lib/server/engine';
-import { exportBody, readFilter } from '$lib/server/audit-filter';
-import { OUTAGE } from '$lib/outage';
+import { sessionToken } from '#lib/server/session-cookie.ts';
+import { engineFetch } from '#lib/server/engine.ts';
+import { exportBody, readFilter } from '#lib/server/audit-filter.ts';
+import { OUTAGE } from '#lib/outage.ts';
 
 /**
  * Proxy one of the engine's audit exports and hand the bytes back as the

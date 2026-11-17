@@ -23,7 +23,7 @@
  */
 import { createHash } from 'node:crypto';
 import { redirect, type RequestEvent } from '@sveltejs/kit';
-import { clientAddressOf } from '$lib/server/engine';
+import { clientAddressOf } from '#lib/server/engine.ts';
 import {
 	clearRefreshCookie,
 	clearSessionCookie,
@@ -32,7 +32,7 @@ import {
 	setRefreshCookie,
 	setSessionCookie,
 	type SessionRead,
-} from '$lib/server/session-cookie';
+} from '#lib/server/session-cookie.ts';
 
 /** How long before its expiry a session token is traded. */
 const AHEAD_MS = 2 * 60 * 1000;

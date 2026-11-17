@@ -19,14 +19,14 @@
 		toast,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { Inbox, Pencil, Plus, RotateCw, Share2, Trash2 } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import { confirmed, submitter } from '$lib/forms.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import { confirmed, submitter } from '#lib/forms.svelte.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		CONFIG_FIELDS,
 		MAX_ATTEMPTS,
@@ -37,11 +37,11 @@
 		retryText,
 		type Provider,
 		type ProviderType,
-	} from '$lib/api/analytics-destinations';
-	import { formatDateTime, NO_VALUE } from '$lib/format';
-	import { shortId } from '$lib/utils/entry-identity';
-	import { ICON } from '$lib/icon';
-	import { couldNotLoad } from '$lib/outage';
+	} from '#lib/api/analytics-destinations.ts';
+	import { formatDateTime, NO_VALUE } from '#lib/format.ts';
+	import { shortId } from '#lib/utils/entry-identity.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

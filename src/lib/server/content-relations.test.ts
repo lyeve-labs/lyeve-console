@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/server/authz', () => ({ authedHeaders: () => ({ Authorization: 'Bearer tok' }) }));
+vi.mock('#lib/server/authz.ts', () => ({ authedHeaders: () => ({ Authorization: 'Bearer tok' }) }));
 
 import { setEntryRelations, setRelations, RelationWriteError } from './content-relations';
 

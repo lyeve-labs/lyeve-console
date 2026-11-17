@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
-import { requireRole } from '$lib/server/authz';
-import { proxyAuditDownload } from '$lib/server/audit-download';
+import { requireRole } from '#lib/server/authz.ts';
+import { proxyAuditDownload } from '#lib/server/audit-download.ts';
 
 /**
  * The caller's own tenant. Admin-gated, matching the engine's route.

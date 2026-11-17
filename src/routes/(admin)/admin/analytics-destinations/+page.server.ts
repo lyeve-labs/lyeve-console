@@ -1,11 +1,11 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { GATE_OK, gateOf, inSentence, type Gate } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { GATE_OK, gateOf, inSentence, type Gate } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 import {
 	CONFIG_FIELDS,
 	DELIVERY_LIMIT,
@@ -25,8 +25,8 @@ import {
 	type Provider,
 	type ProviderInput,
 	type ProviderType,
-} from '$lib/api/analytics-destinations';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/analytics-destinations.ts';
+import { asked } from '#lib/server/asked.ts';
 
 function statusOf(url: URL): DeliveryStatus | '' {
 	const s = url.searchParams.get('status') ?? '';

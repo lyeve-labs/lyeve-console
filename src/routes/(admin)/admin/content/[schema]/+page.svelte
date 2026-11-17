@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { couldNotLoad } from '$lib/outage';
+	import { couldNotLoad } from '#lib/outage.ts';
 	import {
 		Alert,
 		Autocomplete,
@@ -21,23 +21,23 @@
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { Schema, SchemaField } from '@lyeve-labs/client';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import type { RelationChoices } from '$lib/components/content/relation-choices';
+	import type { SubmitFunction } from '$app/forms';
+	import type { RelationChoices } from '#lib/components/content/relation-choices.ts';
 	import { tick, untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
-	import { confirmed } from '$lib/forms.svelte';
-	import { pageNumber, pageOffset } from '$lib/api/list';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
+	import { confirmed } from '#lib/forms.svelte.ts';
+	import { pageNumber, pageOffset } from '#lib/api/list.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import { ArrowDown, ArrowUp, Plus, RotateCcw, Trash2, Inbox, X } from '@lucide/svelte';
-	import { crumbsAfter } from '$lib/breadcrumb';
-	import FieldCell from '$lib/components/FieldCell.svelte';
-	import { entryTitle, humanizeFieldName, shortId } from '$lib/utils/entry-identity';
-	import { formatCount, formatDate, plural } from '$lib/format';
-	import { ICON } from '$lib/icon';
-	import { SEARCH_DELAY, liveFilter } from '$lib/live-filter.svelte';
-	import { hides, may } from '$lib/utils/content-access';
+	import { crumbsAfter } from '#lib/breadcrumb.ts';
+	import FieldCell from '#lib/components/FieldCell.svelte';
+	import { entryTitle, humanizeFieldName, shortId } from '#lib/utils/entry-identity.ts';
+	import { formatCount, formatDate, plural } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { SEARCH_DELAY, liveFilter } from '#lib/live-filter.svelte.ts';
+	import { hides, may } from '#lib/utils/content-access.ts';
 	import {
 		FAMILY_OPS,
 		columnChoices,
@@ -59,7 +59,7 @@
 		type FilterOp,
 		type Match,
 		type View,
-	} from '$lib/utils/entry-view';
+	} from '#lib/utils/entry-view.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

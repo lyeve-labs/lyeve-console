@@ -11,13 +11,13 @@
 		Pagination,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import { confirmed, drawerFailure } from '$lib/forms.svelte';
-	import { plural } from '$lib/format';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { confirmed, drawerFailure } from '#lib/forms.svelte.ts';
+	import { plural } from '#lib/format.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { Copy, Gauge, Pencil, Plus, RotateCcw, Trash2 } from '@lucide/svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import RateLimitTabs from '$lib/components/RateLimitTabs.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import RateLimitTabs from '#lib/components/RateLimitTabs.svelte';
 	import {
 		audienceLabel,
 		blocksEverything,
@@ -27,10 +27,10 @@
 		windowLabel,
 		type Protection,
 		type RateRule,
-	} from '$lib/api/rate-limit';
+	} from '#lib/api/rate-limit.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 	import RuleDrawer from './RuleDrawer.svelte';
 	import GlobalDrawer from './GlobalDrawer.svelte';
 	import ProtectionDrawer from './ProtectionDrawer.svelte';

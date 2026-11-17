@@ -6,8 +6,8 @@
 	 * in each lab's page.
 	 */
 	import { Alert, Badge, CopyButton, SectionHeading, Table } from '@lyeve-labs/ui-kit';
-	import { documentedStatus, statusHint, type LabEndpoint, type LabResult } from '$lib/api/labs';
-	import { httpStatusTone } from '$lib/tones';
+	import { documentedStatus, statusHint, type LabEndpoint, type LabResult } from '#lib/api/labs.ts';
+	import { httpStatusTone } from '#lib/tones.ts';
 
 	interface Props {
 		result: LabResult;

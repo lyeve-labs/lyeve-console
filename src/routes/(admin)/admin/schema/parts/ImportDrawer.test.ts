@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 
 const forms = vi.hoisted(() => ({ handlers: new Map<string, SubmitFunction>() }));
 vi.mock('$app/forms', () => ({
@@ -11,7 +11,7 @@ vi.mock('$app/forms', () => ({
 		return { destroy() {} };
 	},
 }));
-const nav = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}) }));
+const nav = vi.hoisted(() => ({ refreshAll: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => nav);
 
 import ImportDrawer from './ImportDrawer.svelte';
@@ -19,7 +19,7 @@ import ImportDrawer from './ImportDrawer.svelte';
 afterEach(cleanup);
 beforeEach(() => {
 	forms.handlers.clear();
-	nav.invalidateAll.mockClear();
+	nav.refreshAll.mockClear();
 	HTMLFormElement.prototype.requestSubmit = vi.fn();
 });
 
@@ -104,7 +104,7 @@ describe('ImportDrawer', () => {
 		setup();
 		await answer({ type: 'success', data: { ...plan, applied: true } });
 		expect(screen.queryByRole('button', { name: 'Check' })).toBeNull();
-		expect(nav.invalidateAll).toHaveBeenCalled();
+		expect(nav.refreshAll).toHaveBeenCalled();
 	});
 
 	it('starts from no plan when opened again', async () => {

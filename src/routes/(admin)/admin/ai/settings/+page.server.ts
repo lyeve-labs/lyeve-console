@@ -1,9 +1,9 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient, loadUser, requireRole, requireUser } from '$lib/server/authz';
-import { aiActionError } from '$lib/server/ai-load';
-import { putAiSettings } from '$lib/api/ai';
+import { authedClient, loadUser, requireRole, requireUser } from '#lib/server/authz.ts';
+import { aiActionError } from '#lib/server/ai-load.ts';
+import { putAiSettings } from '#lib/api/ai.ts';
 
 /** The retention window and the instance switch, as the config route states them. */
 export interface InstanceSetting {

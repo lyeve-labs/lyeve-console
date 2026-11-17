@@ -12,11 +12,11 @@
 		SearchInput,
 		SegmentedControl,
 	} from '@lyeve-labs/ui-kit';
-	import { confirmed } from '$lib/forms.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import { confirmed } from '#lib/forms.svelte.ts';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { KeyRound, Search, Unlock } from '@lucide/svelte';
 	import {
 		ABANDONED_AFTER_SECONDS,
@@ -27,11 +27,11 @@
 		keyTone,
 		replaysServed,
 		type IdempotencyKey,
-	} from '$lib/api/idempotency';
-	import { formatDateTime, plural } from '$lib/format';
+	} from '#lib/api/idempotency.ts';
+	import { formatDateTime, plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

@@ -5,7 +5,7 @@
 	 * template drawer, so a transform reads the same in both.
 	 */
 	import { Input, Select, Textarea } from '@lyeve-labs/ui-kit';
-	import { TRANSFORMS, type TransformDraft } from '$lib/api/bulk-import';
+	import { TRANSFORMS, type TransformDraft } from '#lib/api/bulk-import.ts';
 
 	let {
 		draft = $bindable(),

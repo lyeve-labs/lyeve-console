@@ -8,7 +8,7 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { Banner, Button } from '@lyeve-labs/ui-kit';
-	import { CONFIRM_FIELD, CONFIRMED, unconfirmedOf } from '$lib/confirmation';
+	import { CONFIRM_FIELD, CONFIRMED, unconfirmedOf } from '#lib/confirmation.ts';
 
 	const ask = $derived(unconfirmedOf(page.form));
 </script>

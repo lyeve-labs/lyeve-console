@@ -3,8 +3,8 @@ import { cleanup, render, screen, within } from '@testing-library/svelte';
 import { flushSync, tick } from 'svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import AssistantPanel from './AssistantPanel.svelte';
-import { AssistantSession } from '$lib/assistant/session.svelte';
-import { fakeFetch, frame, refusedWith, sse } from '$lib/assistant/test-support';
+import { AssistantSession } from '#lib/assistant/session.svelte.ts';
+import { fakeFetch, frame, refusedWith, sse } from '#lib/assistant/test-support.ts';
 
 afterEach(cleanup);
 

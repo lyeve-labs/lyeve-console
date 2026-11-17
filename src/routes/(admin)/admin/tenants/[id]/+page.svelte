@@ -15,17 +15,17 @@
 		Table,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { Archive, ArchiveRestore, Pencil, Plus, Trash2 } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import { roleTone } from '$lib/roles';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { formatDate } from '$lib/format';
-	import type { TenantMember } from '$lib/api/tenant-access';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { confirmed, drawerFailure, fieldErrors } from '$lib/forms.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import { ICON } from '#lib/icon.ts';
+	import { roleTone } from '#lib/roles.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { formatDate } from '#lib/format.ts';
+	import type { TenantMember } from '#lib/api/tenant-access.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { confirmed, drawerFailure, fieldErrors } from '#lib/forms.svelte.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

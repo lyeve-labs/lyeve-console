@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 
 const forms = vi.hoisted(() => ({ handlers: new Map<string, SubmitFunction>() }));
 vi.mock('$app/forms', () => ({
@@ -14,8 +14,8 @@ vi.mock('$app/forms', () => ({
 		return { destroy() {} };
 	},
 }));
-const nav = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}) }));
-vi.mock('$app/navigation', () => ({ invalidateAll: nav.invalidateAll }));
+const nav = vi.hoisted(() => ({ refreshAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ refreshAll: nav.refreshAll }));
 const kit = vi.hoisted(() => ({ confirm: vi.fn(async (_title: string, _body: string, _opts?: unknown) => true) }));
 vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 	const actual = await importOriginal<Record<string, unknown>>();
@@ -27,7 +27,7 @@ import PresetsDrawer from './PresetsDrawer.svelte';
 afterEach(cleanup);
 beforeEach(() => {
 	forms.handlers.clear();
-	nav.invalidateAll.mockClear();
+	nav.refreshAll.mockClear();
 	kit.confirm.mockClear();
 	HTMLFormElement.prototype.requestSubmit = vi.fn();
 });
@@ -163,7 +163,7 @@ describe('PresetsDrawer import file', () => {
 		expect(screen.getByTestId('preset-import').contains(message)).toBe(true);
 		expect(screen.queryByText('Content types created.')).toBeNull();
 		expect(update).not.toHaveBeenCalled();
-		expect(nav.invalidateAll).not.toHaveBeenCalled();
+		expect(nav.refreshAll).not.toHaveBeenCalled();
 	});
 
 	it('shows the uncertain sentence after a 5xx and reloads in case the write landed', async () => {
@@ -171,6 +171,6 @@ describe('PresetsDrawer import file', () => {
 		const uncertain = 'Could not import the preset. Check whether its content types were created, then try again.';
 		await importAnswer({ type: 'failure', status: 502, data: { importError: uncertain, importField: '' } });
 		expect(await screen.findByText(uncertain)).toBeTruthy();
-		expect(nav.invalidateAll).toHaveBeenCalledTimes(1);
+		expect(nav.refreshAll).toHaveBeenCalledTimes(1);
 	});
 });

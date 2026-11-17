@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ImportRowsDrawer from './ImportRowsDrawer.svelte';
-import type { ImportJob } from '$lib/api/bulk-import';
+import type { ImportJob } from '#lib/api/bulk-import.ts';
 
 afterEach(cleanup);
 

@@ -8,8 +8,8 @@
 		Stat,
 		Table,
 	} from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import {
 		BACKEND_SETTINGS,
 		HEALTH_LABELS,
@@ -20,8 +20,8 @@
 		deliveryRate,
 		hasBroker,
 		healthTone,
-	} from '$lib/api/messagebroker';
-	import { NO_VALUE, formatDateTime, plural } from '$lib/format';
+	} from '#lib/api/messagebroker.ts';
+	import { NO_VALUE, formatDateTime, plural } from '#lib/format.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

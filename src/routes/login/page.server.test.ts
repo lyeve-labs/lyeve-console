@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 import { load, actions } from './+page.server';
-import { resetRateLimitStore } from '$lib/server/rate-limit';
-import { OUTAGE } from '$lib/outage';
+import { resetRateLimitStore } from '#lib/server/rate-limit.ts';
+import { OUTAGE } from '#lib/outage.ts';
 
 // helpers
 

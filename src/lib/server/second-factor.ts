@@ -1,6 +1,6 @@
 import { ApiError } from '@lyeve-labs/client';
-import { errorCodeOf } from '$lib/api/limits';
-import { outageFor } from '$lib/outage';
+import { errorCodeOf } from '#lib/api/limits.ts';
+import { outageFor } from '#lib/outage.ts';
 
 /** The sentence and status a sign-in answers with when a second factor fails. */
 export interface SecondFactorFailure {

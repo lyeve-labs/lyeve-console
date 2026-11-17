@@ -7,8 +7,8 @@
 	 */
 	import type { ComponentProps } from 'svelte';
 	import { Button } from '@lyeve-labs/ui-kit';
-	import type { InstanceLink } from '$lib/instance.svelte';
-	import { isExternalHref } from '$lib/links';
+	import type { InstanceLink } from '#lib/instance.svelte.ts';
+	import { isExternalHref } from '#lib/links.ts';
 
 	type ButtonProps = ComponentProps<typeof Button>;
 

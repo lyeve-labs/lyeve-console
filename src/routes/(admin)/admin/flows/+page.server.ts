@@ -1,16 +1,16 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient, authedHeaders, requireUser } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { readImportForm } from '$lib/server/flow-import';
-import { flowClient } from '$lib/server/flow-client';
-import { forbiddenFailure } from '$lib/server/flow-forbidden';
-import { refusalFailure } from '$lib/server/flow-refusal';
-import { flowLoadOutcome } from '$lib/server/flow-load';
-import { couldNotLoad } from '$lib/outage';
-import { GATE_OK, gateOf, type Gate } from '$lib/api/gate';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
+import { authedClient, authedHeaders, requireUser } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { readImportForm } from '#lib/server/flow-import.ts';
+import { flowClient } from '#lib/server/flow-client.ts';
+import { forbiddenFailure } from '#lib/server/flow-forbidden.ts';
+import { refusalFailure } from '#lib/server/flow-refusal.ts';
+import { flowLoadOutcome } from '#lib/server/flow-load.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { GATE_OK, gateOf, type Gate } from '#lib/api/gate.ts';
+import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
 import {
 	ImportError,
 	FlowRefusal,
@@ -21,8 +21,8 @@ import {
 	validationErrors,
 	type Flow,
 	type ImportResult,
-} from '$lib/api/flows';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/flows.ts';
+import { asked } from '#lib/server/asked.ts';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 199;

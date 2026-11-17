@@ -2,7 +2,7 @@
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import NotRunning from './NotRunning.svelte';
-import type { NotRunningReason } from '$lib/plugins';
+import type { NotRunningReason } from '#lib/plugins.ts';
 
 afterEach(cleanup);
 

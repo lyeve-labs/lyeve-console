@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import SearchPage from './+page.svelte';
-import type { Entitlements } from '$lib/entitlements';
-import { outlineSkips } from '$lib/test-outline';
+import type { Entitlements } from '#lib/entitlements.ts';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(cleanup);
 

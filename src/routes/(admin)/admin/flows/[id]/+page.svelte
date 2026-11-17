@@ -2,35 +2,35 @@
 	import { Alert, Badge, Button, EmptyState, PageShell, Pagination, Table, confirm, toast } from '@lyeve-labs/ui-kit';
 	import { BookOpen, Download, Keyboard, LayoutGrid, LayoutTemplate, PanelLeft, Play, Upload, Workflow } from '@lucide/svelte';
 	import { page } from '$app/state';
-	import { actionWithQuery, listBack, queryWithout } from '$lib/back';
+	import { actionWithQuery, listBack, queryWithout } from '#lib/back.ts';
 	import { FLOW_LIST_KEYS } from '../list-keys';
 	import { enhance } from '$app/forms';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { createClient } from '@lyeve-labs/client';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
-	import { FlowCanvas, hasFlowCanvas } from '$lib/canvas/flow';
-	import type { FlowCanvasApi } from '$lib/canvas/contract';
-	import NodePalette from '$lib/components/flow/NodePalette.svelte';
-	import FlowInspector from '$lib/components/flow/FlowInspector.svelte';
-	import EditorDrawer from '$lib/components/flow/EditorDrawer.svelte';
-	import SidePanel from '$lib/components/flow/SidePanel.svelte';
-	import FlowToolbar from '$lib/components/flow/FlowToolbar.svelte';
-	import FlowVersions from '$lib/components/flow/FlowVersions.svelte';
-	import TestPanel from '$lib/components/flow/TestPanel.svelte';
-	import FlowGuide from '$lib/components/flow/FlowGuide.svelte';
-	import AssistantPanel from '$lib/components/flow/AssistantPanel.svelte';
-	import FlowExportModal from '$lib/components/flow/FlowExportModal.svelte';
-	import FlowTemplateGallery from '$lib/components/flow/FlowTemplateGallery.svelte';
-	import FlowImportDrawer, { type ImportFailure } from '$lib/components/flow/FlowImportDrawer.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { useInstance } from '$lib/instance.svelte';
-	import InlineUpgradeLink from '$lib/components/InlineUpgradeLink.svelte';
-	import { csrfHeaders } from '$lib/api/csrf';
-	import { submitter } from '$lib/forms.svelte';
-	import type { TablesState } from '$lib/components/flow/TablesPanel.svelte';
+	import { FlowCanvas, hasFlowCanvas } from '#lib/canvas/flow.ts';
+	import type { FlowCanvasApi } from '#lib/canvas/contract.ts';
+	import NodePalette from '#lib/components/flow/NodePalette.svelte';
+	import FlowInspector from '#lib/components/flow/FlowInspector.svelte';
+	import EditorDrawer from '#lib/components/flow/EditorDrawer.svelte';
+	import SidePanel from '#lib/components/flow/SidePanel.svelte';
+	import FlowToolbar from '#lib/components/flow/FlowToolbar.svelte';
+	import FlowVersions from '#lib/components/flow/FlowVersions.svelte';
+	import TestPanel from '#lib/components/flow/TestPanel.svelte';
+	import FlowGuide from '#lib/components/flow/FlowGuide.svelte';
+	import AssistantPanel from '#lib/components/flow/AssistantPanel.svelte';
+	import FlowExportModal from '#lib/components/flow/FlowExportModal.svelte';
+	import FlowTemplateGallery from '#lib/components/flow/FlowTemplateGallery.svelte';
+	import FlowImportDrawer, { type ImportFailure } from '#lib/components/flow/FlowImportDrawer.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { useInstance } from '#lib/instance.svelte.ts';
+	import InlineUpgradeLink from '#lib/components/InlineUpgradeLink.svelte';
+	import { csrfHeaders } from '#lib/api/csrf.ts';
+	import { submitter } from '#lib/forms.svelte.ts';
+	import type { TablesState } from '#lib/components/flow/TablesPanel.svelte';
 	import {
 		exportFlow,
 		introspectDatasource,
@@ -39,25 +39,25 @@
 		type FlowRun,
 		type FlowTemplate,
 		type ValidationResult,
-	} from '$lib/api/flows';
-	import { cleanJSON, cloneDefinition, nodeById, normalizeDefinition, specFor } from '$lib/flow/graph';
-	import { AssistantState } from '$lib/flow/assistant.svelte';
-	import type { AssistProblem } from '$lib/api/assist';
-	import { emptyDefinition, type FlowDefinition, type FlowStatus, type RefusalNotice, type Selection } from '$lib/flow/types';
+	} from '#lib/api/flows.ts';
+	import { cleanJSON, cloneDefinition, nodeById, normalizeDefinition, specFor } from '#lib/flow/graph.ts';
+	import { AssistantState } from '#lib/flow/assistant.svelte.ts';
+	import type { AssistProblem } from '#lib/api/assist.ts';
+	import { emptyDefinition, type FlowDefinition, type FlowStatus, type RefusalNotice, type Selection } from '#lib/flow/types.ts';
 	import { tick, untrack } from 'svelte';
-	import { formatDuration } from '$lib/flow/time';
-	import { defaultTriggerJSON, statusTone, triggerLabel } from '$lib/flow/triggers';
-	import { blockedText, missingPluginOf } from '$lib/flow/blocked';
-	import { flowGrants } from '$lib/flow/permissions';
-	import { draftIsLive, writeButtons } from '$lib/flow/publish';
-	import { describeError } from '$lib/flow/problems';
-	import type { ProblemItem } from '$lib/components/ProblemsMenu.svelte';
-	import { FlowRefusal, refusalAware, type ValidationError } from '$lib/api/flows';
-	import { formatDateTime, relativeTime } from '$lib/format';
-	import { focusMode } from '$lib/flow/focus.svelte';
-	import { parseTrigger, sampleKey, testFailure, untilOptions } from '$lib/flow/test-run';
-	import { renewingOnce } from '$lib/renew';
-	import { ICON } from '$lib/icon';
+	import { formatDuration } from '#lib/flow/time.ts';
+	import { defaultTriggerJSON, statusTone, triggerLabel } from '#lib/flow/triggers.ts';
+	import { blockedText, missingPluginOf } from '#lib/flow/blocked.ts';
+	import { flowGrants } from '#lib/flow/permissions.ts';
+	import { draftIsLive, writeButtons } from '#lib/flow/publish.ts';
+	import { describeError } from '#lib/flow/problems.ts';
+	import type { ProblemItem } from '#lib/components/ProblemsMenu.svelte';
+	import { FlowRefusal, refusalAware, type ValidationError } from '#lib/api/flows.ts';
+	import { formatDateTime, relativeTime } from '#lib/format.ts';
+	import { focusMode } from '#lib/flow/focus.svelte.ts';
+	import { parseTrigger, sampleKey, testFailure, untilOptions } from '#lib/flow/test-run.ts';
+	import { renewingOnce } from '#lib/renew.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

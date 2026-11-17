@@ -1,11 +1,11 @@
 import type { Actions, PageServerLoad } from './$types';
 import { error, fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { forbiddenText, isOutage } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
-import { PLUGIN, type PluginName } from '$lib/plugin-names';
-import { notRunning, whyNotRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { forbiddenText, isOutage } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { PLUGIN, type PluginName } from '#lib/plugin-names.ts';
+import { notRunning, whyNotRunning } from '#lib/plugins.ts';
 import {
 	ALWAYS_EXPORT,
 	MAX_EXPORT_ROLES,
@@ -22,7 +22,7 @@ import {
 	type ExportSections,
 	type FormErasure,
 	type SettingRead,
-} from '$lib/api/privacy';
+} from '#lib/api/privacy.ts';
 
 /** The roles the engine lets read and change a tenant's privacy settings. */
 const EDITORS = ['admin', 'super_admin'];

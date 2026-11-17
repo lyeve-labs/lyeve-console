@@ -2,8 +2,8 @@ import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 import { getSchemaStats, getSchemas } from '@lyeve-labs/client-rest';
 import type { Schema } from '@lyeve-labs/client';
-import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { section, type Section } from '$lib/api/gate';
+import { pageOf, pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { section, type Section } from '#lib/api/gate.ts';
 import {
 	COLLECTION_FILTERS,
 	filterCountsRows,
@@ -12,12 +12,12 @@ import {
 	type CollectionFilter,
 	type CollectionSort,
 	type SortDir
-} from '$lib/api/collections';
-import { authedClient, loadUser } from '$lib/server/authz';
-import { couldNotLoad } from '$lib/outage';
-import { rolesInWords } from '$lib/roles';
-import { readContentAccess } from '$lib/api/content-access';
-import { UNKNOWN_ACCESS, type TypeAccess } from '$lib/utils/content-access';
+} from '#lib/api/collections.ts';
+import { authedClient, loadUser } from '#lib/server/authz.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { rolesInWords } from '#lib/roles.ts';
+import { readContentAccess } from '#lib/api/content-access.ts';
+import { UNKNOWN_ACCESS, type TypeAccess } from '#lib/utils/content-access.ts';
 
 /**
  * Resolve typed text to exactly one collection.

@@ -1,7 +1,7 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { authedHeaders } from '$lib/server/authz';
-import { logoBytesMatch, logoProblem } from '$lib/logo';
-import type { MediaItem } from '$lib/api/media';
+import { authedHeaders } from '#lib/server/authz.ts';
+import { logoBytesMatch, logoProblem } from '#lib/logo.ts';
+import type { MediaItem } from '#lib/api/media.ts';
 
 /** A refusal whose text is safe to show: it describes the file, never the engine. */
 export class LogoRejected extends Error {}

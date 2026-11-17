@@ -1,16 +1,16 @@
 import type { PageServerLoad, Actions } from './$types';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient, authedHeaders, loadUser, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
+import { authedClient, authedHeaders, loadUser, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { unwrapList } from '@lyeve-labs/client-rest';
-import { pageNumber, pageOffset, pastEndOffset, statedTotal, withOffset, type ListEnvelope } from '$lib/api/list';
-import { section, type Section } from '$lib/api/gate';
-import { AUDIT_EXPORT_CEILING, UUID, endpointQuery, readFilter } from '$lib/server/audit-filter';
-import { formatCount } from '$lib/format';
-import { rolesInWords } from '$lib/roles';
-import { couldNotLoad } from '$lib/outage';
-import { queryWithout } from '$lib/back';
+import { pageNumber, pageOffset, pastEndOffset, statedTotal, withOffset, type ListEnvelope } from '#lib/api/list.ts';
+import { section, type Section } from '#lib/api/gate.ts';
+import { AUDIT_EXPORT_CEILING, UUID, endpointQuery, readFilter } from '#lib/server/audit-filter.ts';
+import { formatCount } from '#lib/format.ts';
+import { rolesInWords } from '#lib/roles.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { queryWithout } from '#lib/back.ts';
 
 export interface AuditEntry {
 	id: string;

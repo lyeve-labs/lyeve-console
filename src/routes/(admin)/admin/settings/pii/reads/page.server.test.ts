@@ -3,12 +3,12 @@ import { ApiError } from '@lyeve-labs/client';
 
 const api = vi.hoisted(() => ({ getRules: vi.fn(), listAccessLog: vi.fn() }));
 
-vi.mock('$lib/api/pii-mask', async (importOriginal) => ({
+vi.mock('#lib/api/pii-mask.ts', async (importOriginal) => ({
 	...((await importOriginal()) as object),
 	...api,
 }));
 
-vi.mock('$lib/server/authz', () => ({ authedClient: vi.fn(() => ({})) }));
+vi.mock('#lib/server/authz.ts', () => ({ authedClient: vi.fn(() => ({})) }));
 
 import { load } from './+page.server';
 

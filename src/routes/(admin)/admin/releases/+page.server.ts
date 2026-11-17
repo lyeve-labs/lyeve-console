@@ -1,13 +1,13 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireUser } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { GATE_OK, section, type Gate } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
-import { pageWindow, pastEndOffset, rowsOf, statedTotal, totalOf, withOffset } from '$lib/api/list';
-import { RELEASE_STATUSES, createRelease, listReleases, type Release } from '$lib/api/content-releases';
+import { authedClient, requireUser } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { GATE_OK, section, type Gate } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { pageWindow, pastEndOffset, rowsOf, statedTotal, totalOf, withOffset } from '#lib/api/list.ts';
+import { RELEASE_STATUSES, createRelease, listReleases, type Release } from '#lib/api/content-releases.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();

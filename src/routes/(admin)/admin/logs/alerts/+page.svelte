@@ -16,17 +16,17 @@
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { BellRing, Pencil, Plus, Trash2 } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import AlertChannelFields from '$lib/components/AlertChannelFields.svelte';
-	import { confirmed, submitter } from '$lib/forms.svelte';
-	import { formRefusal } from '$lib/api/refusal';
-	import { channelSummary } from '$lib/api/alert-channels';
-	import { LOG_ALERT_LEVELS, ruleScope, type LogAlertRule } from '$lib/api/log-alerts';
-	import { formatCount } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import AlertChannelFields from '#lib/components/AlertChannelFields.svelte';
+	import { confirmed, submitter } from '#lib/forms.svelte.ts';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import { channelSummary } from '#lib/api/alert-channels.ts';
+	import { LOG_ALERT_LEVELS, ruleScope, type LogAlertRule } from '#lib/api/log-alerts.ts';
+	import { formatCount } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

@@ -5,10 +5,10 @@
  */
 
 import { ApiError } from '@lyeve-labs/client';
-import { FlowRefusal, validationErrors, type ValidationError } from '$lib/api/flows';
-import { isOutage } from '$lib/api/gate';
-import { outageFor } from '$lib/outage';
-import { SIGN_IN_AGAIN } from '$lib/session';
+import { FlowRefusal, validationErrors, type ValidationError } from '#lib/api/flows.ts';
+import { isOutage } from '#lib/api/gate.ts';
+import { outageFor } from '#lib/outage.ts';
+import { SIGN_IN_AGAIN } from '#lib/session.ts';
 import { isBlockedMessage, notEnabledText } from './blocked';
 import type { FlowDefinition } from './types';
 

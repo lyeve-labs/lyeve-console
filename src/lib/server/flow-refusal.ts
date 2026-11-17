@@ -1,8 +1,8 @@
 import { fail } from '@sveltejs/kit';
-import type { FlowRefusal } from '$lib/api/flows';
-import type { RefusalNotice } from '$lib/flow/types';
-import { notEnabledText } from '$lib/flow/blocked';
-import { LIFTS } from '$lib/api/refusal';
+import type { FlowRefusal } from '#lib/api/flows.ts';
+import type { RefusalNotice } from '#lib/flow/types.ts';
+import { notEnabledText } from '#lib/flow/blocked.ts';
+import { LIFTS } from '#lib/api/refusal.ts';
 
 /**
  * What the page renders for a 402 the flow plugin answered, as the plugin

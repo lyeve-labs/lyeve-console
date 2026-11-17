@@ -1,4 +1,4 @@
-import type { BackLink } from '$lib/back';
+import type { BackLink } from '#lib/back.ts';
 
 const FLOWS: BackLink = { href: '/admin/flows', label: 'Flows' };
 

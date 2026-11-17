@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tick } from 'svelte';
 import FlowTemplateGallery from './FlowTemplateGallery.svelte';
-import { fixtureTemplates } from '$lib/flow/fixtures';
+import { fixtureTemplates } from '#lib/flow/fixtures.ts';
 
 type After = (o: { result: { type: string; data?: unknown }; update: (o?: unknown) => Promise<void>; formElement: HTMLFormElement }) => Promise<void>;
 type Submit = () => After;

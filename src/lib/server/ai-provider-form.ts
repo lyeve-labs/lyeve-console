@@ -7,7 +7,7 @@
  * and allow_private only for a super admin.
  */
 
-import { MODALITIES, PROVIDER_KINDS, isCompatibleKind, providerKindLabel, type AiProvider, type Modality, type ProviderInput, type ProviderKind } from '$lib/api/ai';
+import { MODALITIES, PROVIDER_KINDS, isCompatibleKind, providerKindLabel, type AiProvider, type Modality, type ProviderInput, type ProviderKind } from '#lib/api/ai.ts';
 
 export type ProviderFormResult = { input: ProviderInput } | { error: string };
 

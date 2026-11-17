@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, cleanup } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 
 const forms = vi.hoisted(() => ({ submits: [] as { action: string | null; fn: SubmitFunction }[] }));
 vi.mock('$app/forms', () => ({
@@ -20,7 +20,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 }));
 
 import ImportsPage from './+page.svelte';
-import type { ImportJob } from '$lib/api/bulk-import';
+import type { ImportJob } from '#lib/api/bulk-import.ts';
 
 afterEach(() => {
 	cleanup();

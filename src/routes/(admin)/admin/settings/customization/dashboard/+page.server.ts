@@ -1,10 +1,10 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError, actionFailure } from '$lib/server/action-error';
-import { listSchemaNames } from '$lib/api/search-settings';
-import { ROLE_CHOICES, saveCustomization, type PageSummary } from '$lib/api/customization';
-import { readPluginSet } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionError, actionFailure } from '#lib/server/action-error.ts';
+import { listSchemaNames } from '#lib/api/search-settings.ts';
+import { ROLE_CHOICES, saveCustomization, type PageSummary } from '#lib/api/customization.ts';
+import { readPluginSet } from '#lib/plugins.ts';
 import {
 	MAX_WIDGETS,
 	getDashboardLayout,
@@ -13,12 +13,12 @@ import {
 	wireWidget,
 	type DashboardLayout,
 	type Widget,
-} from '$lib/api/custom-dashboard';
-import { resolveWidgets } from '$lib/server/dashboard-widgets';
-import { readError } from '$lib/server/read-error';
-import { GATE_OK, section } from '$lib/api/gate';
+} from '#lib/api/custom-dashboard.ts';
+import { resolveWidgets } from '#lib/server/dashboard-widgets.ts';
+import { readError } from '#lib/server/read-error.ts';
+import { GATE_OK, section } from '#lib/api/gate.ts';
 import { current, openTab } from '../customization.server';
-import { asked } from '$lib/server/asked';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { user, plugins } = await event.parent();

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from '@lyeve-labs/ui-kit';
 	import { Maximize2, Minus, Plus } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 	import { MAX_SCALE, MIN_SCALE, clampPan, fitScale, stepScale, zoomAt, type Point, type Size } from './zoom';
 
 	/**

@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SchemaField } from '@lyeve-labs/client';
-import type { Translation } from '$lib/api/localization';
+import type { Translation } from '#lib/api/localization.ts';
 import TranslationsPanel from './TranslationsPanel.svelte';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));

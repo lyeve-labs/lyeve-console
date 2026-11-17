@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import ResizableAside from '$lib/components/ResizableAside.svelte';
-	import { PANEL, PANEL_KEY, type PanelName } from '$lib/flow/prefs';
+	import ResizableAside from '#lib/components/ResizableAside.svelte';
+	import { PANEL, PANEL_KEY, type PanelName } from '#lib/flow/prefs.ts';
 
 	/**
 	 * A panel docked to one side of the canvas: the shared aside with the

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FlowRefusal } from '$lib/api/flows';
+import { FlowRefusal } from '#lib/api/flows.ts';
 import { refusalFailure } from './flow-refusal';
 
 type Failure = { status: number; data: { error: string; refusal?: unknown; locked?: boolean; errors?: unknown[] } };

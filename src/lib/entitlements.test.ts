@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { hasLicenseModule, NO_ENTITLEMENTS } from './entitlements';
-import type { Entitlements } from '$lib/entitlements';
+import type { Entitlements } from '#lib/entitlements.ts';
 
 const example: Entitlements = {
 	plan: 'example',

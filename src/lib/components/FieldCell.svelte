@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Badge } from '@lyeve-labs/ui-kit';
 	import type { SchemaField } from '@lyeve-labs/client';
-	import { formatDate, formatDateTime, plural } from '$lib/format';
-	import { shortId } from '$lib/utils/entry-identity';
+	import { formatDate, formatDateTime, plural } from '#lib/format.ts';
+	import { shortId } from '#lib/utils/entry-identity.ts';
 
 	let { field, value }: { field: SchemaField; value: unknown } = $props();
 

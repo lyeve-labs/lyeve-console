@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button, SearchInput } from '@lyeve-labs/ui-kit';
 	import type { Schema } from '@lyeve-labs/client';
-	import { tableName } from '$lib/relations';
+	import { tableName } from '#lib/relations.ts';
 
 	/**
 	 * The rail lists every schema in the tenant. A tenant with two hundred of

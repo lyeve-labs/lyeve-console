@@ -1,15 +1,15 @@
 import type { PageServerLoad, Actions } from './$types';
 import type { Permission, Schema } from '@lyeve-labs/client';
 import { getSchemas, listPermissions, upsertPermission, deletePermission } from '@lyeve-labs/client-rest';
-import { refusalOf } from '$lib/api/refusal';
+import { refusalOf } from '#lib/api/refusal.ts';
 import { fail, error, isHttpError, isRedirect } from '@sveltejs/kit';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
-import { listAllFlows } from '$lib/api/flows';
-import type { FlowOption } from '$lib/flow/types';
-import { isFlowResource } from '$lib/flow/permissions';
-import { getRoleLimits, type RoleLimits } from '$lib/api/permissions';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { gateOf, section, type Gate } from '$lib/api/gate';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
+import { listAllFlows } from '#lib/api/flows.ts';
+import type { FlowOption } from '#lib/flow/types.ts';
+import { isFlowResource } from '#lib/flow/permissions.ts';
+import { getRoleLimits, type RoleLimits } from '#lib/api/permissions.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { gateOf, section, type Gate } from '#lib/api/gate.ts';
 
 // Static text. The engine's own message can carry driver or upstream detail
 // that has no place in a page, and the operator's next step is the same

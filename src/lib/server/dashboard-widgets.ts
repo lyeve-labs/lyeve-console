@@ -1,8 +1,8 @@
 import type { HttpClient } from '@lyeve-labs/client';
 import { getSummary, getTrend } from '@lyeve-labs/client-rest';
-import { rowsOf, statedTotal, type ListEnvelope } from '$lib/api/list';
-import { visibleTo } from '$lib/api/customization';
-import { mediaKind, type MediaItem, type MediaKind } from '$lib/api/media';
+import { rowsOf, statedTotal, type ListEnvelope } from '#lib/api/list.ts';
+import { visibleTo } from '#lib/api/customization.ts';
+import { mediaKind, type MediaItem, type MediaKind } from '#lib/api/media.ts';
 import {
 	widgetKind,
 	widgetServed,
@@ -14,12 +14,12 @@ import {
 	type WidgetAudit,
 	type WidgetEntry,
 	type WidgetWindow,
-} from '$lib/api/custom-dashboard';
-import { WINDOWS } from '$lib/dashboard';
-import { UNTITLED } from '$lib/utils/new-entry';
-import { hoursOf } from '$lib/server/dashboard';
-import { PLUGIN, type PluginName } from '$lib/plugin-names';
-import { runs, type PluginSet } from '$lib/plugins';
+} from '#lib/api/custom-dashboard.ts';
+import { WINDOWS } from '#lib/dashboard.ts';
+import { UNTITLED } from '#lib/utils/new-entry.ts';
+import { hoursOf } from '#lib/server/dashboard.ts';
+import { PLUGIN, type PluginName } from '#lib/plugin-names.ts';
+import { runs, type PluginSet } from '#lib/plugins.ts';
 
 /** How many days an entry count's trend covers. */
 export const TREND_DAYS = 14;

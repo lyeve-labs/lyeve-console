@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@lyeve-labs/client';
-import { CatalogError } from '$lib/api/assist';
+import { CatalogError } from '#lib/api/assist.ts';
 import { assistRefusal, catalogFor, refusalStatus } from './flow-assist';
 
 describe('assistRefusal', () => {

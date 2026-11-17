@@ -8,7 +8,7 @@ import {
 	parsePoolForm,
 	readGoroutineEngine,
 	readTuningLicensed,
-} from '$lib/api/goroutine-engine';
+} from '#lib/api/goroutine-engine.ts';
 
 function clientAnswering(tuning: () => Response) {
 	const fetch = vi.fn(async (url: string) => {

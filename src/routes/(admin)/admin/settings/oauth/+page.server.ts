@@ -1,10 +1,10 @@
 import type { PageServerLoad, Actions } from './$types';
 import { listOAuthProviders, createOAuthProvider, updateOAuthProvider, deleteOAuthProvider } from '@lyeve-labs/client-rest';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
 import { error } from '@sveltejs/kit';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { section } from '$lib/api/gate';
-import { asked } from '$lib/server/asked';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { section } from '#lib/api/gate.ts';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const user = await loadUser(event);

@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
-import { LANDING } from '$lib/landing';
+import { LANDING } from '#lib/landing.ts';
 
 /**
  * The bare host has no content of its own. The admin starts at the dashboard.

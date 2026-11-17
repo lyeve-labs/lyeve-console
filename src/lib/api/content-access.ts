@@ -6,7 +6,7 @@
  */
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
 import { isOutage } from './gate';
-import { UNKNOWN_ACCESS, accessOf, type TypeAccess } from '$lib/utils/content-access';
+import { UNKNOWN_ACCESS, accessOf, type TypeAccess } from '#lib/utils/content-access.ts';
 
 /** The caller's access to `schema`. Throws the client's error on a refusal or an outage. */
 export async function getContentAccess(client: HttpClient, schema: string): Promise<TypeAccess> {

@@ -11,12 +11,12 @@
 		SectionHeading,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
 	import { Database } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import SearchTabs from '$lib/components/SearchTabs.svelte';
-	import { ICON } from '$lib/icon';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import SearchTabs from '#lib/components/SearchTabs.svelte';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

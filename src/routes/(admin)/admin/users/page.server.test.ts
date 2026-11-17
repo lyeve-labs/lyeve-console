@@ -4,8 +4,8 @@ import type { Cookies } from '@sveltejs/kit';
 // Mock requireRole so the action tests don't ask the engine for the session.
 // The session client stays real and runs over the event's own fetch, which the
 // tests stub, so every call carries the headers it would send.
-vi.mock('$lib/server/authz', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/server/authz')>()),
+vi.mock('#lib/server/authz.ts', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/authz.ts')>()),
 	requireRole: vi.fn(
 		async () => ({ id: 'u1', email: 'admin@test.invalid', roles: ['super_admin'] }) as never
 	),
@@ -13,7 +13,7 @@ vi.mock('$lib/server/authz', async (importOriginal) => ({
 
 import { ApiError } from '@lyeve-labs/client';
 import { load, actions } from './+page.server';
-import { requireRole } from '$lib/server/authz';
+import { requireRole } from '#lib/server/authz.ts';
 
 // helpers
 

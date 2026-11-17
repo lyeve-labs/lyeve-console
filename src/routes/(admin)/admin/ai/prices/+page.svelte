@@ -2,16 +2,16 @@
 	import { Badge, Button, Drawer, EmptyState, Input, NumberInput, PageShell, RadioGroup, Table, confirm as confirmDialog } from '@lyeve-labs/ui-kit';
 	import { tick } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { tracked } from '$lib/forms.svelte';
+	import { tracked } from '#lib/forms.svelte.ts';
 	import { Coins, Pencil, Plus, Trash2 } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
-	import type { ModelPrice } from '$lib/api/ai';
-	import AiSection from '$lib/components/ai/AiSection.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { PROVIDER_KINDS, effectiveGate, providerKindDescription, providerKindLabel } from '$lib/api/ai';
-	import { formatDateTime } from '$lib/format';
-	import { overlayClosed } from '$lib/overlay';
-	import { ICON } from '$lib/icon';
+	import type { ModelPrice } from '#lib/api/ai.ts';
+	import AiSection from '#lib/components/ai/AiSection.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { PROVIDER_KINDS, effectiveGate, providerKindDescription, providerKindLabel } from '#lib/api/ai.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { overlayClosed } from '#lib/overlay.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

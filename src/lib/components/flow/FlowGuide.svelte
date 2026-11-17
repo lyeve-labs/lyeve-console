@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { SectionHeading, Table } from '@lyeve-labs/ui-kit';
-	import type { FlowTemplate } from '$lib/api/flows';
+	import type { FlowTemplate } from '#lib/api/flows.ts';
 
 	interface Props {
 		templates?: FlowTemplate[];

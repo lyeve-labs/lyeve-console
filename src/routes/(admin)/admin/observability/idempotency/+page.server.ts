@@ -1,20 +1,20 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, isRedirect, redirect } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	listKeys,
 	readStats,
 	releaseKey,
 	type IdempotencyKey,
 	type IdempotencyStats,
-} from '$lib/api/idempotency';
-import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
-import { pageOf, pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/idempotency.ts';
+import { type Gate, GATE_OK, gateOf } from '#lib/api/gate.ts';
+import { pageOf, pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;

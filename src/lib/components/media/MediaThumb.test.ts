@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import MediaThumb from './MediaThumb.svelte';
-import type { MediaItem } from '$lib/api/media';
+import type { MediaItem } from '#lib/api/media.ts';
 
 afterEach(cleanup);
 

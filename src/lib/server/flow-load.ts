@@ -12,7 +12,7 @@
 import { redirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { clearSessionCookie, type SessionEvent } from './session-cookie';
-import { couldNotLoad } from '$lib/outage';
+import { couldNotLoad } from '#lib/outage.ts';
 
 export type LoadOutcome = { locked: boolean; loadError: string | null };
 

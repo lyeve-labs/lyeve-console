@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { listPlugins, type PluginBreakdown } from '$lib/api/profiler';
-import { detailFor } from '$lib/plugin-rows';
-import { authedClient } from '$lib/server/authz';
-import type { Gate } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+import { listPlugins, type PluginBreakdown } from '#lib/api/profiler.ts';
+import { detailFor } from '#lib/plugin-rows.ts';
+import { authedClient } from '#lib/server/authz.ts';
+import type { Gate } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 /**
  * The plugin as the shell's status report describes it, and the requests

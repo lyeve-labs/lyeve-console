@@ -1,10 +1,10 @@
 import { fail } from '@sveltejs/kit';
 import { createClient } from '@lyeve-labs/client';
-import { requestMagicLink } from '$lib/api/magic-link';
-import { recoveryRefusal } from '$lib/server/recovery';
-import { checkRateLimit } from '$lib/server/rate-limit';
-import { organizationFromUrl } from '$lib/organization';
-import { askedOrganization, asksOrganization } from '$lib/server/sign-in-organization';
+import { requestMagicLink } from '#lib/api/magic-link.ts';
+import { recoveryRefusal } from '#lib/server/recovery.ts';
+import { checkRateLimit } from '#lib/server/rate-limit.ts';
+import { organizationFromUrl } from '#lib/organization.ts';
+import { askedOrganization, asksOrganization } from '#lib/server/sign-in-organization.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 // A link that names the organization fills the field in, and the reader can

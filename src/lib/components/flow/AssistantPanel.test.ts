@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 
 import AssistantPanel from './AssistantPanel.svelte';
-import type { AssistantAnswer, AssistantDraft } from '$lib/flow/assistant';
+import type { AssistantAnswer, AssistantDraft } from '#lib/flow/assistant.ts';
 
 afterEach(() => {
 	cleanup();

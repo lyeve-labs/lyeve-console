@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { PluginStatus } from '@lyeve-labs/client-rest';
-import type { DescribedPluginStatus, PluginManifest } from '$lib/plugin-rows';
+import type { DescribedPluginStatus, PluginManifest } from '#lib/plugin-rows.ts';
 
 import PluginsPage from './+page.svelte';
 

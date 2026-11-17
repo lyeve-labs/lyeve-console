@@ -6,13 +6,13 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { CheckCircle, XCircle, History, RotateCcw } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import type { Section } from '$lib/api/gate';
-	import { formRefusal, refusalText, type Refusal } from '$lib/api/refusal';
-	import { formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
-	import { eventTone } from '$lib/tones';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import type { Section } from '#lib/api/gate.ts';
+	import { formRefusal, refusalText, type Refusal } from '#lib/api/refusal.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { eventTone } from '#lib/tones.ts';
 
 	interface Props {
 		/** The page's one action result, which carries each retry. */

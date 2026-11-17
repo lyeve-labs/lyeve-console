@@ -3,10 +3,10 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/navigation', () => ({ goto: vi.fn(async () => {}), invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ goto: vi.fn(async () => {}), refreshAll: vi.fn(async () => {}) }));
 
 import TelemetryPage from './+page.svelte';
-import type { MetricFamily } from '$lib/api/telemetry';
+import type { MetricFamily } from '#lib/api/telemetry.ts';
 
 const REQUESTS: MetricFamily = {
 	name: 'lyeve_requests_total',

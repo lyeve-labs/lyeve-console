@@ -3,8 +3,8 @@
      of it. -->
 <script lang="ts">
 	import NotEnabled from './NotEnabled.svelte';
-	import { provideInstance } from '$lib/instance.svelte';
-	import type { Licensing } from '$lib/api/license';
+	import { provideInstance } from '#lib/instance.svelte.ts';
+	import type { Licensing } from '#lib/api/license.ts';
 
 	let {
 		licensing,

@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionError } from '#lib/server/action-error.ts';
 import {
 	EMPTY_SETTINGS,
 	deleteCustomPage,
@@ -9,9 +9,9 @@ import {
 	saveCustomPage,
 	slugify,
 	type PageSummary,
-} from '$lib/api/customization';
+} from '#lib/api/customization.ts';
 import { openTab, roleList } from '../customization.server';
-import { asked } from '$lib/server/asked';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { user, plugins } = await event.parent();

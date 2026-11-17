@@ -62,7 +62,7 @@
 <script lang="ts">
 	import { Button, Collapsible, Input, SegmentedControl, Textarea, assistField } from '@lyeve-labs/ui-kit';
 	import { Plus, Trash2 } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 	import AssistChoice from './AssistChoice.svelte';
 
 	type TextareaEv = Event & { currentTarget: HTMLTextAreaElement };

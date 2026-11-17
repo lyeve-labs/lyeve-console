@@ -21,7 +21,7 @@
 import { isHttpError, isRedirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { count, str } from './narrow';
-import { rolesInWords } from '$lib/roles';
+import { rolesInWords } from '#lib/roles.ts';
 
 export type Gate =
 	| { state: 'ok' }

@@ -1,8 +1,8 @@
 import { getSchemas } from '@lyeve-labs/client-rest';
-import type { authedClient } from '$lib/server/authz';
-import { listTemplates, type ImportSchema, type MappingTemplate } from '$lib/api/bulk-import';
-import { type Gate, section, type Section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+import type { authedClient } from '#lib/server/authz.ts';
+import { listTemplates, type ImportSchema, type MappingTemplate } from '#lib/api/bulk-import.ts';
+import { type Gate, section, type Section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 type Client = ReturnType<typeof authedClient>;
 

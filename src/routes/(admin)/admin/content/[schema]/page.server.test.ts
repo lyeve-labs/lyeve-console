@@ -3,8 +3,8 @@ import type { Cookies } from '@sveltejs/kit';
 
 // The real session client, so every read goes through the event's fetch with
 // the session's headers.
-vi.mock('$lib/server/authz', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/server/authz')>()),
+vi.mock('#lib/server/authz.ts', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/authz.ts')>()),
 	requireUser: vi.fn(async () => ({ id: 'u1' })),
 }));
 

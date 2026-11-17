@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { Alert, Badge, Card, SectionHeading, Stat } from '@lyeve-labs/ui-kit';
 	import { ExternalLink } from '@lucide/svelte';
-	import Markdown from '$lib/components/Markdown.svelte';
-	import { ICON } from '$lib/icon';
-	import { isExternal, visibleTo, type ResolvedBlock } from '$lib/api/customization';
-	import { formatDate } from '$lib/format';
-	import { couldNotLoad } from '$lib/outage';
+	import Markdown from '#lib/components/Markdown.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import { isExternal, visibleTo, type ResolvedBlock } from '#lib/api/customization.ts';
+	import { formatDate } from '#lib/format.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
 
 	/**
 	 * Draws a tenant's page from its blocks. Markdown is rendered as elements,

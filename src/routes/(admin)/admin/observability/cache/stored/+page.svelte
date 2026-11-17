@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { Alert, Button, EmptyState, PageShell, SectionHeading, Table, Pagination } from '@lyeve-labs/ui-kit';
-	import CacheTabs from '$lib/components/CacheTabs.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import CacheTabs from '#lib/components/CacheTabs.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import { enhance } from '$app/forms';
-	import { confirmed } from '$lib/forms.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { confirmed } from '#lib/forms.svelte.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { Database, Trash2 } from '@lucide/svelte';
-	import { tagsOf } from '$lib/api/cache';
-	import { formatBytes, formatDateTime } from '$lib/format';
+	import { tagsOf } from '#lib/api/cache.ts';
+	import { formatBytes, formatDateTime } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

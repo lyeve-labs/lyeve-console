@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 import { load } from './+page.server';
 import type { ReferencePageData } from './+page.server';
-import { staticGroups } from '$lib/api/reference';
-import { signedIn } from '$lib/server/test-support/signed-in';
+import { staticGroups } from '#lib/api/reference.ts';
+import { signedIn } from '#lib/server/test-support/signed-in.ts';
 
 function engineDocument(collections: string[]) {
 	const paths: Record<string, unknown> = {

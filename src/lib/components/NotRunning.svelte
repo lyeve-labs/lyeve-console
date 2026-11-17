@@ -9,9 +9,9 @@
 	 */
 	import { Button, EmptyState } from '@lyeve-labs/ui-kit';
 	import { Ban, CircleSlash, OctagonAlert, PackageX, PowerOff } from '@lucide/svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import { ICON } from '$lib/icon';
-	import type { NotRunningReason } from '$lib/plugins';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import type { NotRunningReason } from '#lib/plugins.ts';
 
 	let {
 		title,

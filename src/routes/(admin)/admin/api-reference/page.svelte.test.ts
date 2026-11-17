@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const writeText = vi.fn(async (_text: string) => {});
 
 import ApiReferencePage from './+page.svelte';
-import type { EndpointGroup } from '$lib/api/reference';
+import type { EndpointGroup } from '#lib/api/reference.ts';
 import type { PageData } from './$types';
 
 afterEach(() => {

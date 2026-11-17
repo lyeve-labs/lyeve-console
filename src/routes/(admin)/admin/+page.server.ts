@@ -1,10 +1,10 @@
 import type { PageServerLoad, Actions } from './$types';
-import { getCustomPage } from '$lib/api/customization';
-import { resolveBlocks } from '$lib/server/custom-blocks';
-import { getDashboardLayout } from '$lib/api/custom-dashboard';
-import { resolveWidgets } from '$lib/server/dashboard-widgets';
-import { PLUGIN } from '$lib/plugin-names';
-import { runs } from '$lib/plugins';
+import { getCustomPage } from '#lib/api/customization.ts';
+import { resolveBlocks } from '#lib/server/custom-blocks.ts';
+import { getDashboardLayout } from '#lib/api/custom-dashboard.ts';
+import { resolveWidgets } from '#lib/server/dashboard-widgets.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { runs } from '#lib/plugins.ts';
 import { fail, redirect } from '@sveltejs/kit';
 import type { DeadLetter, GlobalHealthStats, Schema } from '@lyeve-labs/client';
 import {
@@ -19,17 +19,17 @@ import {
 	type LogSearchResponse,
 	type Summary,
 } from '@lyeve-labs/client-rest';
-import { applyMigrations, pendingMigrations } from '$lib/api/migrate';
-import { section, type Gate, type Section } from '$lib/api/gate';
-import { rowsOf, statedTotal, type ListEnvelope } from '$lib/api/list';
-import { actionFailure } from '$lib/server/action-error';
-import { couldNotLoad } from '$lib/outage';
-import { localPath } from '$lib/server/local-path';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { WINDOWS, windowOf } from '$lib/dashboard';
-import { attentionOf, hoursOf, type TopEndpoint } from '$lib/server/dashboard';
-import { getSecurityControls } from '$lib/api/security';
-import { hasLicenseModule } from '$lib/entitlements';
+import { applyMigrations, pendingMigrations } from '#lib/api/migrate.ts';
+import { section, type Gate, type Section } from '#lib/api/gate.ts';
+import { rowsOf, statedTotal, type ListEnvelope } from '#lib/api/list.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { localPath } from '#lib/server/local-path.ts';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { WINDOWS, windowOf } from '#lib/dashboard.ts';
+import { attentionOf, hoursOf, type TopEndpoint } from '#lib/server/dashboard.ts';
+import { getSecurityControls } from '#lib/api/security.ts';
+import { hasLicenseModule } from '#lib/entitlements.ts';
 import type { AuditEntry } from './audit-log/+page.server';
 import type { Job } from './jobs/+page.server';
 

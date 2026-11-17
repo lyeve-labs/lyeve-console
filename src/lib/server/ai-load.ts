@@ -15,11 +15,11 @@
 import { redirect } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { clearSessionCookie, type SessionEvent } from './session-cookie';
-import type { AiGate } from '$lib/api/ai';
-import { gateOf } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+import type { AiGate } from '#lib/api/ai.ts';
+import { gateOf } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 import { actionError } from './action-error';
-import { refusalOf, refusalText } from '$lib/api/refusal';
+import { refusalOf, refusalText } from '#lib/api/refusal.ts';
 
 export type { AiGate };
 

@@ -2,11 +2,11 @@
 	import { Alert, Badge, Button, Card, Collapsible, Drawer, EmptyState, FileInput, Input, Textarea, confirm, toast } from '@lyeve-labs/ui-kit';
 	import { Lock, Trash2 } from '@lucide/svelte';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { tick } from 'svelte';
-	import type { FlowTemplate } from '$lib/api/flows';
-	import { triggerLabel } from '$lib/flow/triggers';
-	import { ICON } from '$lib/icon';
+	import type { FlowTemplate } from '#lib/api/flows.ts';
+	import { triggerLabel } from '#lib/flow/triggers.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	interface Props {
 		open?: boolean;
@@ -42,7 +42,7 @@
 				const d = result.data as { savedTemplate?: string; deletedTemplate?: string } | undefined;
 				toast.success(d?.deletedTemplate ? 'Template deleted' : 'Template saved');
 			}
-			await update({ reset: false, invalidateAll: true });
+			await update({ reset: false, refreshAll: true });
 		};
 	};
 	async function deleteTemplate(id: string, name: string) {

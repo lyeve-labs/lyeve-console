@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
-import { authedClient } from '$lib/server/authz';
-import { aiGate } from '$lib/server/ai-load';
-import { GATE_OK, section } from '$lib/api/gate';
-import { listPrompts } from '$lib/api/ai';
+import { authedClient } from '#lib/server/authz.ts';
+import { aiGate } from '#lib/server/ai-load.ts';
+import { GATE_OK, section } from '#lib/api/gate.ts';
+import { listPrompts } from '#lib/api/ai.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const client = authedClient(event);

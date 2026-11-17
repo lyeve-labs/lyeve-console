@@ -2,16 +2,16 @@
 import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const nav = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}) }));
+const nav = vi.hoisted(() => ({ refreshAll: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => nav);
 
 import SetupPage from './+page.svelte';
-import type { SetupModeStatus } from '$lib/api/setup';
+import type { SetupModeStatus } from '#lib/api/setup.ts';
 
 afterEach(() => {
 	cleanup();
 	vi.useRealTimers();
-	nav.invalidateAll.mockClear();
+	nav.refreshAll.mockClear();
 });
 
 type State = 'unreachable' | 'setup_mode' | 'needs_admin';
@@ -46,7 +46,7 @@ describe('Setup page: engine unreachable', () => {
 		expect(container.querySelector('form')).toBeNull();
 
 		await vi.advanceTimersByTimeAsync(3000);
-		expect(nav.invalidateAll).toHaveBeenCalled();
+		expect(nav.refreshAll).toHaveBeenCalled();
 	});
 });
 
@@ -65,7 +65,7 @@ describe('Setup page: setup mode', () => {
 		vi.useFakeTimers();
 		render(SetupPage, { props: { data: data('setup_mode'), form: null } });
 		await vi.advanceTimersByTimeAsync(6000);
-		expect(nav.invalidateAll).not.toHaveBeenCalled();
+		expect(nav.refreshAll).not.toHaveBeenCalled();
 	});
 
 	it('shows a missing database with the env lines, the YAML and the restart commands', () => {
@@ -110,7 +110,7 @@ describe('Setup page: setup mode', () => {
 		});
 		expect(container.querySelector('[data-state="waiting"]')).toBeTruthy();
 		await vi.advanceTimersByTimeAsync(3000);
-		expect(nav.invalidateAll).toHaveBeenCalled();
+		expect(nav.refreshAll).toHaveBeenCalled();
 	});
 
 	it('warns when the engine holds no token at all', () => {
@@ -133,7 +133,7 @@ describe('Setup page: create the first admin', () => {
 		expect(container.textContent).toContain('database is reachable');
 		expect(container.querySelector('form')?.getAttribute('action')).toBe('?/create');
 		await vi.advanceTimersByTimeAsync(6000);
-		expect(nav.invalidateAll).not.toHaveBeenCalled();
+		expect(nav.refreshAll).not.toHaveBeenCalled();
 	});
 
 	// ui-kit marks a required field twice over: an aria-hidden asterisk and

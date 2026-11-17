@@ -8,7 +8,7 @@
 	 * footer on create, a card on the detail page.
 	 */
 	import { CheckboxGroup, Input, NumberInput, PasswordInput, RadioGroup, Select, Toggle } from '@lyeve-labs/ui-kit';
-	import { MODALITIES, PRESETS, PROVIDER_KINDS, isCompatibleKind, providerKindDescription, providerKindLabel, type AiProvider, type Modality, type ProviderKind } from '$lib/api/ai';
+	import { MODALITIES, PRESETS, PROVIDER_KINDS, isCompatibleKind, providerKindDescription, providerKindLabel, type AiProvider, type Modality, type ProviderKind } from '#lib/api/ai.ts';
 
 	let {
 		id,

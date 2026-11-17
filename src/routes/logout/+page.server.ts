@@ -1,8 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import { createClient } from '@lyeve-labs/client';
-import { authedHeaders } from '$lib/server/authz';
-import { clearCsrfCookie, clearRefreshCookie, clearSessionCookie, refreshToken, sessionToken } from '$lib/server/session-cookie';
+import { authedHeaders } from '#lib/server/authz.ts';
+import { clearCsrfCookie, clearRefreshCookie, clearSessionCookie, refreshToken, sessionToken } from '#lib/server/session-cookie.ts';
 
 export const actions: Actions = {
 	default: async ({ cookies, fetch, url }) => {

@@ -13,20 +13,20 @@
 		Table,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { AlertTriangle, CheckCircle, Plus, Send, Trash2, Upload } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import TelemetryTabs from '$lib/components/TelemetryTabs.svelte';
-	import { formRefusal } from '$lib/api/refusal';
-	import { confirmed, tracked } from '$lib/forms.svelte';
-	import { DESTINATION_KINDS, sameOrigin, type DestinationKind } from '$lib/api/telemetry';
-	import { NO_VALUE, formatDateTime } from '$lib/format';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import TelemetryTabs from '#lib/components/TelemetryTabs.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import { confirmed, tracked } from '#lib/forms.svelte.ts';
+	import { DESTINATION_KINDS, sameOrigin, type DestinationKind } from '#lib/api/telemetry.ts';
+	import { NO_VALUE, formatDateTime } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

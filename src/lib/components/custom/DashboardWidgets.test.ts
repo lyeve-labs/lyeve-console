@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import DashboardWidgets from './DashboardWidgets.svelte';
-import type { ResolvedWidget } from '$lib/api/custom-dashboard';
+import type { ResolvedWidget } from '#lib/api/custom-dashboard.ts';
 
 afterEach(cleanup);
 

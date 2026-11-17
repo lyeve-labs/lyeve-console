@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { Alert, Breadcrumb, PageShell } from '@lyeve-labs/ui-kit';
-	import ErrorPanel from '$lib/components/ErrorPanel.svelte';
-	import { BUSY, OUTAGE } from '$lib/outage';
-	import { crumbsAfter } from '$lib/breadcrumb';
+	import ErrorPanel from '#lib/components/ErrorPanel.svelte';
+	import { BUSY, OUTAGE } from '#lib/outage.ts';
+	import { crumbsAfter } from '#lib/breadcrumb.ts';
 
 	/*
 	 * A refused entry or new entry draws inside the content type's frame, the

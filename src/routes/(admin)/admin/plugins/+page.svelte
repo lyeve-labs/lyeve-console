@@ -1,5 +1,5 @@
 <script lang="ts">
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	/**
 	 * Every plugin the engine reports, with the state it reports.
 	 *
@@ -33,7 +33,7 @@
 		Puzzle
 	} from '@lucide/svelte';
 	import type { PageData } from './$types';
-	import { CATEGORY_LABEL, CATEGORY_ORDER } from '$lib/plugin-categories';
+	import { CATEGORY_LABEL, CATEGORY_ORDER } from '#lib/plugin-categories.ts';
 	import {
 		buildRows,
 		failedCount,
@@ -45,12 +45,12 @@
 		STATE_TONE,
 		type PluginRow,
 		type PluginState
-	} from '$lib/plugin-rows';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { hasLicenseModule } from '$lib/entitlements';
-	import { ICON } from '$lib/icon';
-	import { plural } from '$lib/format';
-	import { isExternalHref } from '$lib/links';
+	} from '#lib/plugin-rows.ts';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { hasLicenseModule } from '#lib/entitlements.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { plural } from '#lib/format.ts';
+	import { isExternalHref } from '#lib/links.ts';
 
 	let { data }: { data: PageData } = $props();
 

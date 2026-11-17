@@ -1,6 +1,6 @@
 /** Fixture rows in the shapes the AI plugin answers with, for the page tests. */
 
-import type { AiProvider, AiSettings, ModelPrice, PromptView, Transcript } from '$lib/api/ai';
+import type { AiProvider, AiSettings, ModelPrice, PromptView, Transcript } from '#lib/api/ai.ts';
 
 export const fixtureSettings: AiSettings = {
 	tenant_id: 'default',

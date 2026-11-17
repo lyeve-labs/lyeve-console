@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { authedHeaders } from '$lib/server/authz';
-import { transcriptExportPath } from '$lib/api/ai';
-import { OUTAGE } from '$lib/outage';
+import { authedHeaders } from '#lib/server/authz.ts';
+import { transcriptExportPath } from '#lib/api/ai.ts';
+import { OUTAGE } from '#lib/outage.ts';
 
 /**
  * The transcript download, as a plain link.

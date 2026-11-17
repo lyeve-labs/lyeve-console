@@ -4,11 +4,11 @@
  */
 
 import { ApiError } from '@lyeve-labs/client';
-import { CatalogError, getLLMCatalog } from '$lib/api/assist';
-import { authedHeaders } from '$lib/server/authz';
-import { AI_BUDGET_TEXT, aiBudgetSpent } from '$lib/server/ai-load';
-import { actionError } from '$lib/server/action-error';
-import type { AssistRefusal } from '$lib/flow/assistant';
+import { CatalogError, getLLMCatalog } from '#lib/api/assist.ts';
+import { authedHeaders } from '#lib/server/authz.ts';
+import { AI_BUDGET_TEXT, aiBudgetSpent } from '#lib/server/ai-load.ts';
+import { actionError } from '#lib/server/action-error.ts';
+import type { AssistRefusal } from '#lib/flow/assistant.ts';
 
 const NO_CATALOG_TEXT = 'The assistant needs a newer version of the flow plugin.';
 const UNAVAILABLE_FALLBACK = 'The flow validator is not available on this engine.';

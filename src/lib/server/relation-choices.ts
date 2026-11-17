@@ -8,8 +8,8 @@
  */
 import type { HttpClient, Schema, SchemaField } from '@lyeve-labs/client';
 import { getSchema } from '@lyeve-labs/client-rest';
-import type { RelationChoices } from '$lib/components/content/relation-choices';
-import { entryTitle, shortId } from '$lib/utils/entry-identity';
+import type { RelationChoices } from '#lib/components/content/relation-choices.ts';
+import { entryTitle, shortId } from '#lib/utils/entry-identity.ts';
 
 /** The most entries a picker is fed. The listing serves no more in one page. */
 export const RELATION_PAGE = 500;

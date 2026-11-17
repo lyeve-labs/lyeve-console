@@ -1,12 +1,12 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
-import { createSynonym, deleteSynonym, listSynonymGroups, parseTerms, type SynonymList } from '$lib/api/search-settings';
-import { section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionError } from '#lib/server/action-error.ts';
+import { createSynonym, deleteSynonym, listSynonymGroups, parseTerms, type SynonymList } from '#lib/api/search-settings.ts';
+import { section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 import { attempt } from '../attempt.server';
-import { asked } from '$lib/server/asked';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const client = authedClient(event);

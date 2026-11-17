@@ -13,18 +13,18 @@
 		Table,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
 	import { enhance } from '$app/forms';
 	import { goto, invalidate } from '$app/navigation';
 	import { page } from '$app/state';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { Ban, Download, FileText, Link, ListChecks, Plus, Undo2, Upload } from '@lucide/svelte';
-	import ImportWizard from '$lib/components/ImportWizard.svelte';
-	import ImportTabs from '$lib/components/ImportTabs.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import { formRefusal } from '$lib/api/refusal';
-	import { confirmed } from '$lib/forms.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import ImportWizard from '#lib/components/ImportWizard.svelte';
+	import ImportTabs from '#lib/components/ImportTabs.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
+	import { confirmed } from '#lib/forms.svelte.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import {
 		OUTCOME_LABELS,
 		cancelable,
@@ -35,11 +35,11 @@
 		rejectionRate,
 		rollbackable,
 		type ImportJob,
-	} from '$lib/api/bulk-import';
-	import { NO_VALUE, formatCount, formatDateTime, plural } from '$lib/format';
+	} from '#lib/api/bulk-import.ts';
+	import { NO_VALUE, formatCount, formatDateTime, plural } from '#lib/format.ts';
 	import type { ActionData, PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 	import ImportRowsDrawer from './ImportRowsDrawer.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

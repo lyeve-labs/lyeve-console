@@ -21,23 +21,23 @@
 		confirm as confirmDialog,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import { applyAction, enhance } from '$app/forms';
-	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
+	import { goto, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { Ban, KeySquare, Plus, RefreshCw, ScrollText } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import StepUpField from '$lib/components/admin-tokens/StepUpField.svelte';
-	import TokenExpiryField from '$lib/components/admin-tokens/TokenExpiryField.svelte';
-	import { tracked } from '$lib/forms.svelte';
-	import { narrows } from '$lib/narrow';
-	import { formatCount, formatDate, formatDateTime, plural, relativeTime } from '$lib/format';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import StepUpField from '#lib/components/admin-tokens/StepUpField.svelte';
+	import TokenExpiryField from '#lib/components/admin-tokens/TokenExpiryField.svelte';
+	import { tracked } from '#lib/forms.svelte.ts';
+	import { narrows } from '#lib/narrow.ts';
+	import { formatCount, formatDate, formatDateTime, plural, relativeTime } from '#lib/format.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 	import {
 		MAX_TOKEN_DAYS,
 		STATUS_LABEL,
@@ -53,7 +53,7 @@
 		tokenStatus,
 		type AdminToken,
 		type TokenStatus,
-	} from '$lib/api/admin-tokens';
+	} from '#lib/api/admin-tokens.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -117,7 +117,7 @@
 					issued = result.data.issued as Issued;
 					failure = null;
 					close();
-					await invalidateAll();
+					await refreshAll();
 					return;
 				}
 				if (result.type === 'failure') {
@@ -195,7 +195,7 @@
 				if (result.type === 'success') {
 					failure = null;
 					toast.success(`Revoked ${t.name}`);
-					await invalidateAll();
+					await refreshAll();
 					return;
 				}
 				if (result.type === 'failure') {

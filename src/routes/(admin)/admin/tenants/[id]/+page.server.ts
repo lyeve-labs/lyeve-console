@@ -1,13 +1,13 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { archiveTenant, getEntitlements, getTenant, restoreTenant } from '@lyeve-labs/client-rest';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
-import { seatRefusal } from '$lib/api/admin-seats';
-import { refusalText } from '$lib/api/refusal';
-import { section, type Section } from '$lib/api/gate';
-import { readError } from '$lib/server/read-error';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
+import { actionError } from '#lib/server/action-error.ts';
+import { seatRefusal } from '#lib/api/admin-seats.ts';
+import { refusalText } from '#lib/api/refusal.ts';
+import { section, type Section } from '#lib/api/gate.ts';
+import { readError } from '#lib/server/read-error.ts';
+import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
 
 /** The members page size when a request names none. */
 const MEMBERS_LIMIT = 50;
@@ -27,9 +27,9 @@ import {
 	withheldFrom,
 	type FeatureChoice,
 	type TenantMember,
-} from '$lib/api/tenant-access';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/tenant-access.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const user = await loadUser(event);

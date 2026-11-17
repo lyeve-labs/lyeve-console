@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { couldNotLoad } from '$lib/outage';
+	import { couldNotLoad } from '#lib/outage.ts';
 	import { Button, Drawer, Input, RadioGroup, Select, toast } from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
 	import { Plus, Trash2 } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import TransformField from '$lib/components/imports/TransformField.svelte';
-	import type { Refusal } from '$lib/api/refusal';
-	import { tracked } from '$lib/forms.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import TransformField from '#lib/components/imports/TransformField.svelte';
+	import type { Refusal } from '#lib/api/refusal.ts';
+	import { tracked } from '#lib/forms.svelte.ts';
 	import {
 		emptyTransform,
 		mappingTargets,
@@ -17,8 +17,8 @@
 		type ImportSchema,
 		type MappingTemplate,
 		type TransformDraft,
-	} from '$lib/api/bulk-import';
-	import { ICON } from '$lib/icon';
+	} from '#lib/api/bulk-import.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	/**
 	 * The drawer that creates or edits a mapping template: a saved mapping an

@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ActionResult, SubmitFunction } from '@sveltejs/kit';
+import type { ActionResult, SubmitFunction } from '$app/forms';
 import { tick } from 'svelte';
 import Page from './+page.svelte';
-import { fixturePrice, fixtureSettings } from '$lib/components/ai/test-support/fixtures';
+import { fixturePrice, fixtureSettings } from '#lib/components/ai/test-support/fixtures.ts';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 // enhance hands back each form's submit function by its action, so a test can

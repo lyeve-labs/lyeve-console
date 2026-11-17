@@ -2,11 +2,11 @@
 	import { enhance } from '$app/forms';
 	import { Alert, Button, Card, DescriptionList, EmptyState, Input, PageShell } from '@lyeve-labs/ui-kit';
 	import { CircleCheck, CircleX, Clock, SearchX, ShieldAlert, TriangleAlert } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import { relativeTime } from '$lib/format';
-	import StepUpField from '$lib/components/admin-tokens/StepUpField.svelte';
-	import { expiresIn, rolesLabel, sessionLength, tenantLabel, type DeviceOutcome } from '$lib/device-login';
-	import { BUSY, OUTAGE } from '$lib/outage';
+	import { ICON } from '#lib/icon.ts';
+	import { relativeTime } from '#lib/format.ts';
+	import StepUpField from '#lib/components/admin-tokens/StepUpField.svelte';
+	import { expiresIn, rolesLabel, sessionLength, tenantLabel, type DeviceOutcome } from '#lib/device-login.ts';
+	import { BUSY, OUTAGE } from '#lib/outage.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

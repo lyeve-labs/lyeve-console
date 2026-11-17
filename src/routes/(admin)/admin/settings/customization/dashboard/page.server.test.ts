@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@lyeve-labs/client';
-import { listSchemaNames } from '$lib/api/search-settings';
+import { listSchemaNames } from '#lib/api/search-settings.ts';
 
 const api = vi.hoisted(() => ({
 	getDashboardLayout: vi.fn(),
@@ -14,23 +14,23 @@ const custom = vi.hoisted(() => ({
 const resolve = vi.hoisted(() => vi.fn(async (_c: unknown, widgets: { id: string }[]) => widgets.map((w) => ({ ...w, heading: w.id }))));
 
 // The preview asks the engine which plugins run, as an action has no layout.
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => ({ get: vi.fn(async () => ({ plugins: ['content'], withheld: [] })) })),
 	requireRole: vi.fn(async () => ({ roles: ['admin'] })),
 }));
-vi.mock('$lib/api/search-settings', () => ({ listSchemaNames: vi.fn(async () => ['posts']) }));
-vi.mock('$lib/server/dashboard-widgets', () => ({ resolveWidgets: resolve }));
-vi.mock('$lib/api/custom-dashboard', async (orig) => ({
-	...(await orig<typeof import('$lib/api/custom-dashboard')>()),
+vi.mock('#lib/api/search-settings.ts', () => ({ listSchemaNames: vi.fn(async () => ['posts']) }));
+vi.mock('#lib/server/dashboard-widgets.ts', () => ({ resolveWidgets: resolve }));
+vi.mock('#lib/api/custom-dashboard.ts', async (orig) => ({
+	...(await orig<typeof import('#lib/api/custom-dashboard.ts')>()),
 	...api,
 }));
-vi.mock('$lib/api/customization', async (orig) => ({
-	...(await orig<typeof import('$lib/api/customization')>()),
+vi.mock('#lib/api/customization.ts', async (orig) => ({
+	...(await orig<typeof import('#lib/api/customization.ts')>()),
 	...custom,
 }));
 
 import { actions, load } from './+page.server';
-import { requireRole } from '$lib/server/authz';
+import { requireRole } from '#lib/server/authz.ts';
 
 const settings = () => ({
 	brand: { name: 'Old', logo_url: '', accent: '', welcome: '' },

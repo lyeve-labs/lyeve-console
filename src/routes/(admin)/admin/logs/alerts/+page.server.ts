@@ -1,12 +1,12 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { GATE_OK, gateOf, type Gate } from '$lib/api/gate';
-import { errorCodeOf } from '$lib/api/limits';
-import { channelsFrom } from '$lib/api/alert-channels';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { GATE_OK, gateOf, type Gate } from '#lib/api/gate.ts';
+import { errorCodeOf } from '#lib/api/limits.ts';
+import { channelsFrom } from '#lib/api/alert-channels.ts';
 import {
 	LOG_ALERT_LEVELS,
 	LOG_RULE_NOT_FOUND,
@@ -19,9 +19,9 @@ import {
 	type LogAlertConfig,
 	type LogAlertRule,
 	type LogAlertRuleAnswer,
-} from '$lib/api/log-alerts';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/log-alerts.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 /** What the rule drawer posts its channel fields under. */
 const CHANNEL_PREFIX = 'channel_';

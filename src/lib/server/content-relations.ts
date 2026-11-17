@@ -1,14 +1,14 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { ApiError, type HttpClient, type Schema, type SchemaField } from '@lyeve-labs/client';
 import { getSchema } from '@lyeve-labs/client-rest';
-import type { InverseEntries } from '$lib/components/content/inverse-entries';
-import { inverseKey, isInverse } from '$lib/relations';
-import { totalOf, type ListEnvelope } from '$lib/api/list';
-import { entryLabel } from '$lib/utils/entry-identity';
-import { DEFAULT_LIMIT, apiQuery, listPath, readView, viewQuery } from '$lib/utils/entry-view';
-import { authedHeaders } from '$lib/server/authz';
-import { couldNotLoad } from '$lib/outage';
-import { plural } from '$lib/format';
+import type { InverseEntries } from '#lib/components/content/inverse-entries.ts';
+import { inverseKey, isInverse } from '#lib/relations.ts';
+import { totalOf, type ListEnvelope } from '#lib/api/list.ts';
+import { entryLabel } from '#lib/utils/entry-identity.ts';
+import { DEFAULT_LIMIT, apiQuery, listPath, readView, viewQuery } from '#lib/utils/entry-view.ts';
+import { authedHeaders } from '#lib/server/authz.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { plural } from '#lib/format.ts';
 
 /**
  * The most links of one field a read takes. The editor's read and the save's

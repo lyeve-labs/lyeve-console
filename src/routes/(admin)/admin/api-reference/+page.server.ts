@@ -1,16 +1,16 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, authedHeaders, loadUser, requireUser } from '$lib/server/authz';
-import { engineOriginFor } from '$lib/server/engine';
-import { checked } from '$lib/checkbox';
+import { authedClient, authedHeaders, loadUser, requireUser } from '#lib/server/authz.ts';
+import { engineOriginFor } from '#lib/server/engine.ts';
+import { checked } from '#lib/checkbox.ts';
 import {
 	MAX_SHOWN_BODY,
 	presentBody,
 	refuse,
 	type TryResult,
-} from '$lib/api/try-it';
-import { staticGroups, type EndpointGroup } from '$lib/api/reference';
-import { buildReference, type OpenAPIDocument } from '$lib/api/openapi';
+} from '#lib/api/try-it.ts';
+import { staticGroups, type EndpointGroup } from '#lib/api/reference.ts';
+import { buildReference, type OpenAPIDocument } from '#lib/api/openapi.ts';
 
 export type ReferenceSource = 'engine' | 'catalog';
 

@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, EmptyState, PageShell, SectionHeading, Stat, confirm as confirmDialog } from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
 	import { enhance } from '$app/forms';
-	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import { AlertTriangle, CheckCircle, MemoryStick, RotateCcw } from '@lucide/svelte';
-	import { NO_VALUE, formatBytes, formatDateTime, formatSignedBytes } from '$lib/format';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ProfilerTabs from '$lib/components/ProfilerTabs.svelte';
+	import { NO_VALUE, formatBytes, formatDateTime, formatSignedBytes } from '#lib/format.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ProfilerTabs from '#lib/components/ProfilerTabs.svelte';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

@@ -12,7 +12,7 @@
 	 */
 	import type { Snippet } from 'svelte';
 	import { Alert } from '@lyeve-labs/ui-kit';
-	import { formatCount } from '$lib/format';
+	import { formatCount } from '#lib/format.ts';
 
 	let {
 		count,

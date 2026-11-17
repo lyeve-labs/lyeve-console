@@ -1,6 +1,6 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { authedHeaders } from '$lib/server/authz';
-import { formatBody, isSameOriginPath, pickHeaders, type LabResult } from '$lib/api/labs';
+import { authedHeaders } from '#lib/server/authz.ts';
+import { formatBody, isSameOriginPath, pickHeaders, type LabResult } from '#lib/api/labs.ts';
 
 /*
  * What every lab's action shares. The labs are separate routes, so the send

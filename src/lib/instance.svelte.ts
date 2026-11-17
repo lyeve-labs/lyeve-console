@@ -10,10 +10,10 @@
  * request the server renders.
  */
 import { getContext, setContext } from 'svelte';
-import { linkOf, REL, type Licensing } from '$lib/api/license';
-import { hasLicenseModule, type LicenseEntitlements } from '$lib/entitlements';
-import { linkHref } from '$lib/links';
-import { runs, UNREAD, type PluginSet } from '$lib/plugins';
+import { linkOf, REL, type Licensing } from '#lib/api/license.ts';
+import { hasLicenseModule, type LicenseEntitlements } from '#lib/entitlements.ts';
+import { linkHref } from '#lib/links.ts';
+import { runs, UNREAD, type PluginSet } from '#lib/plugins.ts';
 
 /** A link the instance offers. */
 export interface InstanceLink {

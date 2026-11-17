@@ -1,13 +1,13 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { ApiError, createClient } from '@lyeve-labs/client';
 import { mfaVerify } from '@lyeve-labs/client-rest';
-import { errorCodeOf } from '$lib/api/limits';
-import { isMagicLinkMFAChallenge, verifyMagicLink } from '$lib/api/magic-link';
-import { recoveryRefusal } from '$lib/server/recovery';
-import { checkRateLimit } from '$lib/server/rate-limit';
-import { secondFactorFailure } from '$lib/server/second-factor';
-import { setRefreshCookie, setSessionCookie } from '$lib/server/session-cookie';
-import { LANDING } from '$lib/landing';
+import { errorCodeOf } from '#lib/api/limits.ts';
+import { isMagicLinkMFAChallenge, verifyMagicLink } from '#lib/api/magic-link.ts';
+import { recoveryRefusal } from '#lib/server/recovery.ts';
+import { checkRateLimit } from '#lib/server/rate-limit.ts';
+import { secondFactorFailure } from '#lib/server/second-factor.ts';
+import { setRefreshCookie, setSessionCookie } from '#lib/server/session-cookie.ts';
+import { LANDING } from '#lib/landing.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 const EXPIRED = 'This sign-in link no longer works. Request a new one.';

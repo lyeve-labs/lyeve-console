@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
-import { requireRole } from '$lib/server/authz';
-import { proxyAuditDownload } from '$lib/server/audit-download';
+import { requireRole } from '#lib/server/authz.ts';
+import { proxyAuditDownload } from '#lib/server/audit-download.ts';
 
 /**
  * Every tenant. Super admin only, matching the engine's route.

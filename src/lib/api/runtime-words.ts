@@ -1,4 +1,4 @@
-import { formatBytes, formatCount } from '$lib/format';
+import { formatBytes, formatCount } from '#lib/format.ts';
 
 /**
  * Every sentence the runtime and scaling panel shows for a code the runtime

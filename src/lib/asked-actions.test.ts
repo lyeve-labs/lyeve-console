@@ -156,7 +156,7 @@ function importers(): Map<string, string[]> {
 	for (const file of components) {
 		const src = readFileSync(file, 'utf8');
 		for (const m of src.matchAll(/from\s+'([^']+\.svelte)'/g)) {
-			const target = m[1].startsWith('$lib/') ? join('src/lib', m[1].slice(5)) : normalize(join(dirname(file), m[1]));
+			const target = m[1].startsWith('#lib/') ? join('src/lib', m[1].slice(5)) : normalize(join(dirname(file), m[1]));
 			by.set(target, [...(by.get(target) ?? []), file]);
 		}
 	}

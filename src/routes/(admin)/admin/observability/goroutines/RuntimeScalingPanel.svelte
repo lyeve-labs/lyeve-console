@@ -2,7 +2,7 @@
 	import { Alert, Button, Card, NumberInput, SectionHeading, SegmentedControl, Stat } from '@lyeve-labs/ui-kit';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { formRefusal } from '$lib/api/refusal';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		FACTS,
 		MEMORY_MB_MIN,
@@ -24,12 +24,12 @@
 		type Recommended,
 		type RuntimeSetting,
 		type RuntimeSettingsMap,
-	} from '$lib/api/runtime-settings';
-	import { factText, recommendationText, warningText } from '$lib/api/runtime-words';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { formatCount } from '$lib/format';
-	import { fieldErrors } from '$lib/forms.svelte';
+	} from '#lib/api/runtime-settings.ts';
+	import { factText, recommendationText, warningText } from '#lib/api/runtime-words.ts';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { formatCount } from '#lib/format.ts';
+	import { fieldErrors } from '#lib/forms.svelte.ts';
 	import type { ActionData, PageData } from './$types';
 
 	interface Props {

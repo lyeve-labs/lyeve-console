@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { tick } from 'svelte';
 import AiSection from './AiSection.svelte';
 import Body from './ai-section-body.test.svelte';
-import type { AiGate } from '$lib/api/ai';
+import type { AiGate } from '#lib/api/ai.ts';
 
 const goto = vi.fn();
 vi.mock('$app/navigation', () => ({ goto: (...args: unknown[]) => goto(...args) }));

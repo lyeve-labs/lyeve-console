@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 
 const forms = vi.hoisted(() => ({ submits: new Map<string, SubmitFunction>() }));
 vi.mock('$app/forms', () => ({
@@ -19,7 +19,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 }));
 
 import RetentionPage from './+page.svelte';
-import type { LegalHold, RetentionPolicy } from '$lib/api/retention';
+import type { LegalHold, RetentionPolicy } from '#lib/api/retention.ts';
 
 beforeEach(() => {
 	forms.submits.clear();

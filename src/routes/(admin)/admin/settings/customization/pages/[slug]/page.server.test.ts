@@ -4,17 +4,17 @@ import { ApiError } from '@lyeve-labs/client';
 const api = vi.hoisted(() => ({ getCustomPage: vi.fn(), saveCustomPage: vi.fn(), deleteCustomPage: vi.fn() }));
 const schemas = vi.hoisted(() => vi.fn(async () => ['posts']));
 
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => ({})),
 	requireRole: vi.fn(async () => ({ roles: ['admin'] })),
 }));
-vi.mock('$lib/api/search-settings', () => ({ listSchemaNames: schemas }));
-vi.mock('$lib/api/customization', async (orig) => ({
-	...(await orig<typeof import('$lib/api/customization')>()),
+vi.mock('#lib/api/search-settings.ts', () => ({ listSchemaNames: schemas }));
+vi.mock('#lib/api/customization.ts', async (orig) => ({
+	...(await orig<typeof import('#lib/api/customization.ts')>()),
 	...api,
 }));
 
-import { requireRole } from '$lib/server/authz';
+import { requireRole } from '#lib/server/authz.ts';
 import { actions, load } from './+page.server';
 
 function event(roles = ['admin']) {

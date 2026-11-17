@@ -2,9 +2,9 @@ import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 import { getSchemas } from '@lyeve-labs/client-rest';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { section } from '$lib/api/gate';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { section } from '#lib/api/gate.ts';
 import {
 	HISTORY_MODES,
 	MAX_KEEP_DAYS,
@@ -17,8 +17,8 @@ import {
 	saveHistorySettings,
 	type HistoryMode,
 	type HistorySettings,
-} from '$lib/api/content-history';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/content-history.ts';
+import { asked } from '#lib/server/asked.ts';
 
 /** The roles the plugin lets change history settings. */
 const EDITORS = ['admin', 'super_admin'];

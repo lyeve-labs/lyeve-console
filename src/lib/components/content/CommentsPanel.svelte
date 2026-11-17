@@ -10,13 +10,13 @@
 	import { Alert, Badge, Button, Card, EmptyState, MultiSelect, SectionHeading, SegmentedControl, Textarea } from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
 	import { CheckCircle2, MessageSquare, RotateCcw } from '@lucide/svelte';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { submitter } from '$lib/forms.svelte';
-	import type { EntryComment } from '$lib/api/content-comments';
-	import type { Refusal } from '$lib/api/refusal';
-	import { formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
-	import { couldNotLoad } from '$lib/outage';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import { submitter } from '#lib/forms.svelte.ts';
+	import type { EntryComment } from '#lib/api/content-comments.ts';
+	import type { Refusal } from '#lib/api/refusal.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
 
 	interface Person {
 		id: string;

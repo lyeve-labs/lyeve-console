@@ -18,13 +18,13 @@
 		Toggle,
 		confirm,
 	} from '@lyeve-labs/ui-kit';
-	import BuilderConnectionTabs from '$lib/components/BuilderConnectionTabs.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import { confirmed, tracked } from '$lib/forms.svelte';
-	import { FORM_KEY_SAID, SAID, type Settings } from '$lib/api/connected-editors';
-	import { invalidateAll } from '$app/navigation';
-	import { FORMS_TYPE_TAKEN, FORM_SUBMISSIONS, SUBMISSIONS_PUBLIC, flowNotes, flowOptions } from '$lib/api/form-destinations';
+	import BuilderConnectionTabs from '#lib/components/BuilderConnectionTabs.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import { confirmed, tracked } from '#lib/forms.svelte.ts';
+	import { FORM_KEY_SAID, SAID, type Settings } from '#lib/api/connected-editors.ts';
+	import { refreshAll } from '$app/navigation';
+	import { FORMS_TYPE_TAKEN, FORM_SUBMISSIONS, SUBMISSIONS_PUBLIC, flowNotes, flowOptions } from '#lib/api/form-destinations.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -146,7 +146,7 @@
 	// When the preset created its types but the save after it failed, the page reloads its data so it offers to allow them.
 	const applyPreset = tracked(() => async ({ result, update }) => {
 		await update();
-		if (result.type === 'failure' && result.data?.presetCreated) await invalidateAll();
+		if (result.type === 'failure' && result.data?.presetCreated) await refreshAll();
 	});
 </script>
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import CustomBlocks from '$lib/components/custom/CustomBlocks.svelte';
-	import DashboardWidgets from '$lib/components/custom/DashboardWidgets.svelte';
+	import CustomBlocks from '#lib/components/custom/CustomBlocks.svelte';
+	import DashboardWidgets from '#lib/components/custom/DashboardWidgets.svelte';
 	import {
 		Badge,
 		Button,
@@ -14,15 +14,15 @@
 	} from '@lyeve-labs/ui-kit';
 	import type { ActionData, PageData } from './$types';
 	import { ArrowRight, CircleCheck, OctagonAlert, Pencil, Plus, TriangleAlert } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import TrafficBars from '$lib/components/TrafficBars.svelte';
-	import { NO_VALUE, formatCount, formatDateTime, formatPercent, logLevelTone, plural } from '$lib/format';
-	import { couldNotLoad } from '$lib/outage';
-	import { entryTone } from '$lib/tones';
-	import { WINDOWS, WINDOW_LABEL, trafficTone, type Window } from '$lib/dashboard';
-	import { ICON } from '$lib/icon';
-	import { licenseStateLabel, licenseTone } from '$lib/license-state';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import TrafficBars from '#lib/components/TrafficBars.svelte';
+	import { NO_VALUE, formatCount, formatDateTime, formatPercent, logLevelTone, plural } from '#lib/format.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
+	import { entryTone } from '#lib/tones.ts';
+	import { WINDOWS, WINDOW_LABEL, trafficTone, type Window } from '#lib/dashboard.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { licenseStateLabel, licenseTone } from '#lib/license-state.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

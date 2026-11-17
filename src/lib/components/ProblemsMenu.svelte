@@ -19,8 +19,8 @@
 	import type { Snippet } from 'svelte';
 	import { Button, motion } from '@lyeve-labs/ui-kit';
 	import { CircleAlert, CornerDownRight } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import { plural } from '$lib/format';
+	import { ICON } from '#lib/icon.ts';
+	import { plural } from '#lib/format.ts';
 
 	interface Props {
 		problems: ProblemItem[];

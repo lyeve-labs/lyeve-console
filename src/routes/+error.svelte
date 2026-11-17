@@ -1,8 +1,8 @@
 <script lang="ts">
-	import PageTitle from '$lib/components/PageTitle.svelte';
+	import PageTitle from '#lib/components/PageTitle.svelte';
 	import { page } from '$app/state';
-	import ErrorPanel from '$lib/components/ErrorPanel.svelte';
-	import { BUSY, OUTAGE } from '$lib/outage';
+	import ErrorPanel from '#lib/components/ErrorPanel.svelte';
+	import { BUSY, OUTAGE } from '#lib/outage.ts';
 
 	const status = $derived(page.status);
 	const message = $derived(page.error?.message ?? '');

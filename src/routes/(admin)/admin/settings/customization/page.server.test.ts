@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ApiError } from '@lyeve-labs/client';
-import { listMediaChoices } from '$lib/api/media';
+import { listMediaChoices } from '#lib/api/media.ts';
 
 const api = vi.hoisted(() => ({
 	getCustomization: vi.fn(),
@@ -10,18 +10,18 @@ const api = vi.hoisted(() => ({
 const client = vi.hoisted(() => ({ delete: vi.fn(async () => undefined) }));
 const media = vi.hoisted(() => ({ importMedia: vi.fn() }));
 
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => client),
 	authedHeaders: vi.fn(() => ({ Authorization: 'Bearer tok', 'X-CSRF-Token': 'c' })),
 	requireRole: vi.fn(async () => ({ roles: ['admin'] })),
 }));
-vi.mock('$lib/api/media', async (orig) => ({
-	...(await orig<typeof import('$lib/api/media')>()),
+vi.mock('#lib/api/media.ts', async (orig) => ({
+	...(await orig<typeof import('#lib/api/media.ts')>()),
 	listMediaChoices: vi.fn(async () => []),
 	importMedia: media.importMedia,
 }));
-vi.mock('$lib/api/customization', async (orig) => ({
-	...(await orig<typeof import('$lib/api/customization')>()),
+vi.mock('#lib/api/customization.ts', async (orig) => ({
+	...(await orig<typeof import('#lib/api/customization.ts')>()),
 	...api,
 }));
 

@@ -2,21 +2,21 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { ApiError, type HttpClient, type Schema, type SchemaField } from '@lyeve-labs/client';
 import { getSchemas, getSchema } from '@lyeve-labs/client-rest';
-import { authedClient, exactParse, requireUser, withExactIntegers } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { couldNotLoad } from '$lib/outage';
-import { readError } from '$lib/server/read-error';
-import { gateOf, section, type Gate, type Section } from '$lib/api/gate';
-import { pageWindow, pastEndOffset, totalOf, withOffset, type ListEnvelope } from '$lib/api/list';
-import { fieldKey } from '$lib/utils/content-form';
-import { asked } from '$lib/server/asked';
+import { authedClient, exactParse, requireUser, withExactIntegers } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { readError } from '#lib/server/read-error.ts';
+import { gateOf, section, type Gate, type Section } from '#lib/api/gate.ts';
+import { pageWindow, pastEndOffset, totalOf, withOffset, type ListEnvelope } from '#lib/api/list.ts';
+import { fieldKey } from '#lib/utils/content-form.ts';
+import { asked } from '#lib/server/asked.ts';
 import {
 	UNKNOWN_ACCESS,
 	accessOf,
 	joinAccess,
 	withoutHidden,
 	type TypeAccess,
-} from '$lib/utils/content-access';
+} from '#lib/utils/content-access.ts';
 import {
 	DEFAULT_LIMIT,
 	VIEW_COOKIE,
@@ -24,7 +24,7 @@ import {
 	hasViewParam,
 	readView,
 	viewQuery,
-} from '$lib/utils/entry-view';
+} from '#lib/utils/entry-view.ts';
 
 /** One row of the admin content listing, before it is reshaped for the table. */
 type EntryRow = {

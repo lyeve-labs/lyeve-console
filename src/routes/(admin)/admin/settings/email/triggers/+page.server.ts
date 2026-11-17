@@ -1,11 +1,11 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { isOutage, section } from '$lib/api/gate';
+import { isOutage, section } from '#lib/api/gate.ts';
 import { getSchemas } from '@lyeve-labs/client-rest';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { refusalOf } from '$lib/api/refusal';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { refusalOf } from '#lib/api/refusal.ts';
 import {
 	createEmailTrigger,
 	deleteEmailTrigger,
@@ -13,9 +13,9 @@ import {
 	listEmailTriggers,
 	triggerWriteRefusal,
 	updateEmailTrigger,
-} from '$lib/api/email-triggers';
-import { readTriggerForm } from '$lib/server/email-trigger-form';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/email-triggers.ts';
+import { readTriggerForm } from '#lib/server/email-trigger-form.ts';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const client = authedClient(event);

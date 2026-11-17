@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isRunnable, presentBody, refuse, unfilledParameters } from './try-it';
-import { CONTENT_API_URL, ENGINE_URL, engineOriginFor } from '$lib/server/engine';
+import { CONTENT_API_URL, ENGINE_URL, engineOriginFor } from '#lib/server/engine.ts';
 
 /*
  * A try-it that fires a DELETE performs a real delete against real tenant

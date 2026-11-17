@@ -6,9 +6,9 @@
 	 * another origin opens in a tab of its own, so it cannot reach back into
 	 * the admin session through window.opener.
 	 */
-	import type { InstanceLink } from '$lib/instance.svelte';
-	import { isExternalHref } from '$lib/links';
-	import { upgradeWords } from '$lib/api/refusal';
+	import type { InstanceLink } from '#lib/instance.svelte.ts';
+	import { isExternalHref } from '#lib/links.ts';
+	import { upgradeWords } from '#lib/api/refusal.ts';
 
 	let {
 		link,

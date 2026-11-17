@@ -15,8 +15,8 @@
 	import type { ActionData, PageData } from './$types';
 	import type { DryRunStatement } from './+page.server';
 	import { enhance } from '$app/forms';
-	import { beforeNavigate, goto, invalidate, invalidateAll } from '$app/navigation';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { beforeNavigate, goto, invalidate, refreshAll } from '$app/navigation';
+	import type { SubmitFunction } from '$app/forms';
 	import { tick, untrack } from 'svelte';
 	import type { Schema } from '@lyeve-labs/client';
 	import {
@@ -34,8 +34,8 @@
 		Undo2,
 		Upload,
 	} from '@lucide/svelte';
-	import { tableName } from '$lib/relations';
-	import { MIGRATIONS_DEPENDENCY } from '$lib/api/migrate';
+	import { tableName } from '#lib/relations.ts';
+	import { MIGRATIONS_DEPENDENCY } from '#lib/api/migrate.ts';
 	import {
 		canonical,
 		changesOf,
@@ -44,15 +44,15 @@
 		problemsOf,
 		wireSchema,
 		type SchemaHistory,
-	} from '$lib/schema/editor';
-	import ResizableAside from '$lib/components/ResizableAside.svelte';
-	import { SchemaCanvas, hasSchemaCanvas } from '$lib/canvas/schema';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import type { Positions } from '$lib/api/schema-canvas-layout';
-	import type { SchemaCanvasApi } from '$lib/canvas/contract';
-	import ProblemsMenu from '$lib/components/ProblemsMenu.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { ICON } from '$lib/icon';
+	} from '#lib/schema/editor.ts';
+	import ResizableAside from '#lib/components/ResizableAside.svelte';
+	import { SchemaCanvas, hasSchemaCanvas } from '#lib/canvas/schema.ts';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import type { Positions } from '#lib/api/schema-canvas-layout.ts';
+	import type { SchemaCanvasApi } from '#lib/canvas/contract.ts';
+	import ProblemsMenu from '#lib/components/ProblemsMenu.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { ICON } from '#lib/icon.ts';
 	import DdlPreview from './parts/DdlPreview.svelte';
 	import ImportDrawer from './parts/ImportDrawer.svelte';
 	import PresetsDrawer from './parts/PresetsDrawer.svelte';
@@ -390,7 +390,7 @@
 		if (!name || reloading) return;
 		reloading = true;
 		try {
-			await invalidateAll();
+			await refreshAll();
 		} finally {
 			reloading = false;
 		}

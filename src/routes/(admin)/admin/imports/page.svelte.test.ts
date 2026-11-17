@@ -7,8 +7,8 @@ vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/imports') } }));
 
 import ImportsPage from './+page.svelte';
-import type { ImportJob } from '$lib/api/bulk-import';
-import { outlineSkips } from '$lib/test-outline';
+import type { ImportJob } from '#lib/api/bulk-import.ts';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(cleanup);
 

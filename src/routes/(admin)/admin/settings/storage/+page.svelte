@@ -17,14 +17,14 @@
 		Toggle,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
 	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { SubmitFunction } from '$app/forms';
 	import { Copy, HardDrive, Pencil, Plug, Plus, Trash2 } from '@lucide/svelte';
-	import { duplicateRow } from '$lib/duplicate';
-	import { plural } from '$lib/format';
-	import { confirmed, drawerFailure, submitter } from '$lib/forms.svelte';
+	import { duplicateRow } from '#lib/duplicate.ts';
+	import { plural } from '#lib/format.ts';
+	import { confirmed, drawerFailure, submitter } from '#lib/forms.svelte.ts';
 	import {
 		PROVIDER_FIELDS,
 		PROVIDER_LABELS,
@@ -41,9 +41,9 @@
 		type ProviderField,
 		type ProviderType,
 		type StorageProvider,
-	} from '$lib/api/storage';
+	} from '#lib/api/storage.ts';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

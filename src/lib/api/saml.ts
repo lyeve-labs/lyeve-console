@@ -21,7 +21,7 @@
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
 import type { ListEnvelope } from './list';
-import { plural } from '$lib/format';
+import { plural } from '#lib/format.ts';
 
 const PROVIDERS_URL = '/api/admin/saml-providers';
 const TEMPLATES_URL = '/api/admin/saml-templates';

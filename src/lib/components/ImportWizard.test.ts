@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import ImportWizard from './ImportWizard.svelte';
 
-const nav = vi.hoisted(() => ({ goto: vi.fn(async () => {}), invalidateAll: vi.fn(async () => {}) }));
+const nav = vi.hoisted(() => ({ goto: vi.fn(async () => {}), refreshAll: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => nav);
 
 afterEach(() => {
@@ -249,7 +249,7 @@ describe('a wizard request that the engine did not answer in its own words', () 
 	// chosen file and mapping stay where they are.
 	it('renews the session and reads the file again after a 401', async () => {
 		nav.goto.mockClear();
-		nav.invalidateAll.mockClear();
+		nav.refreshAll.mockClear();
 		const statuses = [401];
 		const answer = vi.fn(async () => {
 			const status = statuses.shift() ?? 400;
@@ -258,7 +258,7 @@ describe('a wizard request that the engine did not answer in its own words', () 
 		await readWith(answer);
 		await waitFor(() => expect(document.body.textContent).toContain('The file has no header row.'));
 		expect(answer).toHaveBeenCalledTimes(2);
-		expect(nav.invalidateAll).toHaveBeenCalledTimes(1);
+		expect(nav.refreshAll).toHaveBeenCalledTimes(1);
 		expect(nav.goto).not.toHaveBeenCalled();
 	});
 

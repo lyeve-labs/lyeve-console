@@ -6,12 +6,12 @@ const api = vi.hoisted(() => ({
 	getDashboard: vi.fn(),
 }));
 
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => ({})),
 	requireRole: vi.fn(async () => ({ roles: ['admin'] })),
 }));
-vi.mock('$lib/api/cost', async (orig) => ({
-	...(await orig<typeof import('$lib/api/cost')>()),
+vi.mock('#lib/api/cost.ts', async (orig) => ({
+	...(await orig<typeof import('#lib/api/cost.ts')>()),
 	...api,
 }));
 

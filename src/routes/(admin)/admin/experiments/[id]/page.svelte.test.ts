@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 
 import DetailPage from './+page.svelte';
-import type { Experiment, ExperimentResults, Metric, Variant } from '$lib/api/ab-testing';
+import type { Experiment, ExperimentResults, Metric, Variant } from '#lib/api/ab-testing.ts';
 
 afterEach(cleanup);
 

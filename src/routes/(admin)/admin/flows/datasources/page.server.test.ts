@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 import { actions, load } from './+page.server';
-import type { Datasource } from '$lib/api/flows';
+import type { Datasource } from '#lib/api/flows.ts';
 
 type Loaded = Exclude<Awaited<ReturnType<typeof load>>, void>;
 

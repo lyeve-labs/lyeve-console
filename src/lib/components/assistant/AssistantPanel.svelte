@@ -9,11 +9,11 @@
 	 */
 	import { Alert, Badge, Button, EmptyState, Textarea, type StatusTone } from '@lyeve-labs/ui-kit';
 	import { ArrowUp, Check, Circle, CircleDot, Square, SquarePen, X } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import { methodTone } from '$lib/tones';
-	import type { AssistantSession, PageContext } from '$lib/assistant/session.svelte';
-	import { refusalSentence, retryable } from '$lib/assistant/refusal';
-	import type { ApiProposal } from '$lib/assistant/events';
+	import { ICON } from '#lib/icon.ts';
+	import { methodTone } from '#lib/tones.ts';
+	import type { AssistantSession, PageContext } from '#lib/assistant/session.svelte.ts';
+	import { refusalSentence, retryable } from '#lib/assistant/refusal.ts';
+	import type { ApiProposal } from '#lib/assistant/events.ts';
 	import type { Action } from 'svelte/action';
 
 	let {

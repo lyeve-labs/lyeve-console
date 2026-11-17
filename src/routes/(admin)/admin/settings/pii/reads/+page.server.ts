@@ -1,11 +1,11 @@
 import type { PageServerLoad } from './$types';
 import { isRedirect, redirect } from '@sveltejs/kit';
-import { authedClient } from '$lib/server/authz';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { listAccessLog, type AccessEntry } from '$lib/api/pii-mask';
-import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
+import { authedClient } from '#lib/server/authz.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { listAccessLog, type AccessEntry } from '#lib/api/pii-mask.ts';
+import { type Gate, GATE_OK, gateOf } from '#lib/api/gate.ts';
+import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 199;

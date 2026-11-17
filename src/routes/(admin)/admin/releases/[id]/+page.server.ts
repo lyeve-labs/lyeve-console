@@ -1,10 +1,10 @@
 import type { Actions, PageServerLoad } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { ApiError, type HttpClient } from '@lyeve-labs/client';
-import { authedClient, requireUser } from '$lib/server/authz';
-import { actionError, actionFailure } from '$lib/server/action-error';
-import { GATE_OK, gateOf, section, type Gate } from '$lib/api/gate';
-import { rowsOf, type ListEnvelope } from '$lib/api/list';
+import { authedClient, requireUser } from '#lib/server/authz.ts';
+import { actionError, actionFailure } from '#lib/server/action-error.ts';
+import { GATE_OK, gateOf, section, type Gate } from '#lib/api/gate.ts';
+import { rowsOf, type ListEnvelope } from '#lib/api/list.ts';
 import {
 	addReleaseItem,
 	cancelRelease,
@@ -19,8 +19,8 @@ import {
 	unscheduleRelease,
 	updateRelease,
 	type ReleaseConflict,
-} from '$lib/api/content-releases';
-import { couldNotLoad } from '$lib/outage';
+} from '#lib/api/content-releases.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 /** What a row of the release names, read from the entry itself. */
 export interface EntryLabel {

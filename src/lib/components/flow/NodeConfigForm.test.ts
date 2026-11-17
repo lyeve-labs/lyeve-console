@@ -2,8 +2,8 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import NodeConfigForm from './NodeConfigForm.svelte';
-import { fixtureCatalog, fixtureEventTypes, fixtureFlowOptions, fixtureGroupedEventTypes } from '$lib/flow/fixtures';
-import type { JsonSchema, SchemaOption } from '$lib/flow/types';
+import { fixtureCatalog, fixtureEventTypes, fixtureFlowOptions, fixtureGroupedEventTypes } from '#lib/flow/fixtures.ts';
+import type { JsonSchema, SchemaOption } from '#lib/flow/types.ts';
 
 afterEach(cleanup);
 
@@ -109,7 +109,7 @@ describe('NodeConfigForm', () => {
 	});
 });
 
-import { fixtureDatasources, fixtureIntrospection, fixtureSchemas } from '$lib/flow/fixtures';
+import { fixtureDatasources, fixtureIntrospection, fixtureSchemas } from '#lib/flow/fixtures.ts';
 
 const sql = fixtureCatalog.find((s) => s.type === 'db.query')!;
 

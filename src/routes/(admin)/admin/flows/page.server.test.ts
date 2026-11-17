@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 import { actions, load } from './+page.server';
-import { fixtureFlow, fixtureTemplates, joinFlow } from '$lib/flow/fixtures';
-import type { Flow } from '$lib/api/flows';
+import { fixtureFlow, fixtureTemplates, joinFlow } from '#lib/flow/fixtures.ts';
+import type { Flow } from '#lib/api/flows.ts';
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });

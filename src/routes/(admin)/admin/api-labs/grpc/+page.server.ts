@@ -1,9 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail } from '@sveltejs/kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { GATE_OK, forbiddenText, gateOf, type Gate } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
-import { authedClient, loadUser } from '$lib/server/authz';
+import { GATE_OK, forbiddenText, gateOf, type Gate } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { authedClient, loadUser } from '#lib/server/authz.ts';
 import {
 	GRPC_INVOKE_URL,
 	byteLength,
@@ -11,9 +11,9 @@ import {
 	grpcRouteTakesBody,
 	labResultFromInvoke,
 	type GrpcInvokeResult,
-} from '$lib/api/labs';
+} from '#lib/api/labs.ts';
 import { MAX_BODY_BYTES, send } from '../labs.server';
-import { asked } from '$lib/server/asked';
+import { asked } from '#lib/server/asked.ts';
 
 /** The roles that may read the listener's status and send through it. */
 const READERS = ['super_admin'];

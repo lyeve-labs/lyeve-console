@@ -1,8 +1,8 @@
 import { fail, type RequestEvent } from '@sveltejs/kit';
-import { resetProfiler } from '$lib/api/profiler';
-import { actionFailure } from '$lib/server/action-error';
-import { authedClient, requireRole } from '$lib/server/authz';
-import type { Question } from '$lib/server/asked';
+import { resetProfiler } from '#lib/api/profiler.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import type { Question } from '#lib/server/asked.ts';
 
 /** What a reset that skipped the question asks, on either tab. */
 export const RESET_QUESTION: Question = {

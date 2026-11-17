@@ -1,5 +1,5 @@
 import type { HttpClient } from '@lyeve-labs/client';
-import { plural } from '$lib/format';
+import { plural } from '#lib/format.ts';
 
 /**
  * What an API key may reach, as the create drawer builds it.

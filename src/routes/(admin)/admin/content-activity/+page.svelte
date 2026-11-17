@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { Badge, Button, DatePicker, EmptyState, PageShell, Pagination, Select, Table, type StatusTone } from '@lyeve-labs/ui-kit';
 	import { History } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { ACTIVITY_ACTIONS, actionLabel } from '$lib/api/content-history';
-	import { pageNumber, pageOffset } from '$lib/api/list';
-	import { listQuery } from '$lib/back';
-	import { NO_VALUE, formatCount, formatDateTime, plural } from '$lib/format';
-	import { couldNotLoad } from '$lib/outage';
-	import { ICON } from '$lib/icon';
-	import { shortId } from '$lib/utils/entry-identity';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { ACTIVITY_ACTIONS, actionLabel } from '#lib/api/content-history.ts';
+	import { pageNumber, pageOffset } from '#lib/api/list.ts';
+	import { listQuery } from '#lib/back.ts';
+	import { NO_VALUE, formatCount, formatDateTime, plural } from '#lib/format.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { shortId } from '#lib/utils/entry-identity.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

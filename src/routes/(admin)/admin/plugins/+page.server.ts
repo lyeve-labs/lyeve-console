@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { getPluginStatus, type PluginStatus } from '@lyeve-labs/client-rest';
-import { GATE_OK, gateOf, type Gate } from '$lib/api/gate';
-import { authedClient, loadUser } from '$lib/server/authz';
-import { couldNotLoad } from '$lib/outage';
+import { GATE_OK, gateOf, type Gate } from '#lib/api/gate.ts';
+import { authedClient, loadUser } from '#lib/server/authz.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 /**
  * The plugin status, read on every visit rather than taken from the shell's

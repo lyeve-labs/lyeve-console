@@ -1,4 +1,4 @@
-import type { MediaItem } from '$lib/api/media';
+import type { MediaItem } from '#lib/api/media.ts';
 
 /** One item per family the library draws differently. */
 export function mediaFixture(overrides: Partial<MediaItem> = {}): MediaItem {

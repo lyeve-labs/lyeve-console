@@ -8,7 +8,7 @@
  */
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import type { HttpClient } from '@lyeve-labs/client';
-import { formatMillis } from '$lib/format';
+import { formatMillis } from '#lib/format.ts';
 
 export const PROFILER_ROOT = '/api/admin/debug/profiler';
 

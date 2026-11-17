@@ -11,18 +11,18 @@ const api = vi.hoisted(() => ({
 	readRefusalHistory: vi.fn(),
 }));
 
-vi.mock('$lib/api/rate-limit', async (importOriginal) => ({
+vi.mock('#lib/api/rate-limit.ts', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
 	...api,
 }));
 
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => ({})),
 	requireRole: vi.fn(async () => ({ id: 'u1', roles: ['admin'] })),
 }));
 
 import { load, actions } from './+page.server';
-import { requireRole } from '$lib/server/authz';
+import { requireRole } from '#lib/server/authz.ts';
 
 type Loaded = Exclude<Awaited<ReturnType<typeof load>>, void>;
 

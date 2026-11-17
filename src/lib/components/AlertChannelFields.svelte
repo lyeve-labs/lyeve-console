@@ -16,9 +16,9 @@
 	 */
 	import { Badge, Input, Textarea } from '@lyeve-labs/ui-kit';
 	import { BadgeCheck } from '@lucide/svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import { ICON } from '$lib/icon';
-	import type { AlertChannels, ChannelKey } from '$lib/api/alert-channels';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import type { AlertChannels, ChannelKey } from '#lib/api/alert-channels.ts';
 
 	let {
 		prefix,

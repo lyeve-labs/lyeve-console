@@ -7,10 +7,10 @@
 	import { Alert, Button } from '@lyeve-labs/ui-kit';
 	import { RefreshCw } from '@lucide/svelte';
 	import { page } from '$app/state';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import { ICON } from '$lib/icon';
-	import { BUSY, OUTAGE, outageFor } from '$lib/outage';
-	import { forbiddenText, fullText, inSentence, type Gate } from '$lib/api/gate';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import { BUSY, OUTAGE, outageFor } from '#lib/outage.ts';
+	import { forbiddenText, fullText, inSentence, type Gate } from '#lib/api/gate.ts';
 
 	let {
 		gate,

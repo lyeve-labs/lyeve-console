@@ -5,7 +5,7 @@
  * action or a load passes the type check and the unit tests and then fails
  * the page at runtime.
  */
-import { FORMATS, type ExportConfig, type ExportFormat } from '$lib/api/data-export';
+import { FORMATS, type ExportConfig, type ExportFormat } from '#lib/api/data-export.ts';
 
 const STATUSES = ['draft', 'published', 'archived'] as const;
 

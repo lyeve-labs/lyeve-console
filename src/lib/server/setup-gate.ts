@@ -1,6 +1,6 @@
 import { ApiError, createClient } from '@lyeve-labs/client';
-import { getSetupStatus, type SetupTokenSource } from '$lib/api/setup';
-import { localPath } from '$lib/server/local-path';
+import { getSetupStatus, type SetupTokenSource } from '#lib/api/setup.ts';
+import { localPath } from '#lib/server/local-path.ts';
 
 /**
  * Where the engine is on its way to serving the admin.

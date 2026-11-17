@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
 import { proxyAuditDownload } from './audit-download';
-import { OUTAGE } from '$lib/outage';
+import { OUTAGE } from '#lib/outage.ts';
 
 /*
  * The export is a proxy, because SvelteKit refuses a form action that returns

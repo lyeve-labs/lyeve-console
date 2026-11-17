@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { Badge, EmptyState, PageShell, Pagination, SearchInput, Stat, Table } from '@lyeve-labs/ui-kit';
-	import RefreshButton from '$lib/components/RefreshButton.svelte';
+	import RefreshButton from '#lib/components/RefreshButton.svelte';
 	import { Eye, Search } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import PiiTabs from '$lib/components/PiiTabs.svelte';
-	import { byType } from '$lib/api/pii-mask';
-	import { NO_VALUE, formatDateTime } from '$lib/format';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import PiiTabs from '#lib/components/PiiTabs.svelte';
+	import { byType } from '#lib/api/pii-mask.ts';
+	import { NO_VALUE, formatDateTime } from '#lib/format.ts';
 	import type { PageData } from './$types';
-	import { ICON } from '$lib/icon';
-	import { pageHref, pageNumber } from '$lib/api/list';
+	import { ICON } from '#lib/icon.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
 
 	let { data }: { data: PageData } = $props();
 

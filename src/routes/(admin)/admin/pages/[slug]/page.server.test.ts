@@ -3,9 +3,9 @@ import { isHttpError } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
 
 const api = vi.hoisted(() => ({ getCustomPage: vi.fn() }));
-vi.mock('$lib/api/customization', () => api);
-vi.mock('$lib/server/authz', () => ({ authedClient: vi.fn(() => ({})) }));
-vi.mock('$lib/server/custom-blocks', () => ({ resolveBlocks: vi.fn(async () => []) }));
+vi.mock('#lib/api/customization.ts', () => api);
+vi.mock('#lib/server/authz.ts', () => ({ authedClient: vi.fn(() => ({})) }));
+vi.mock('#lib/server/custom-blocks.ts', () => ({ resolveBlocks: vi.fn(async () => []) }));
 
 import { load } from './+page.server';
 

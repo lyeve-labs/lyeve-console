@@ -17,12 +17,12 @@
 	import { Alert, Button, EmptyState, Tabs, Toggle } from '@lyeve-labs/ui-kit';
 	import { Power, Server } from '@lucide/svelte';
 	import type { Snippet } from 'svelte';
-	import { effectiveGate, type AiGate } from '$lib/api/ai';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import { ICON } from '$lib/icon';
+	import { effectiveGate, type AiGate } from '#lib/api/ai.ts';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import type { SubmitFunction } from '$app/forms';
+	import { ICON } from '#lib/icon.ts';
 
 	export type AiTab = 'providers' | 'prompts' | 'transcripts' | 'prices' | 'settings';
 

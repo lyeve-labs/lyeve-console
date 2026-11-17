@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 
 import ResidencyPage from './+page.svelte';
-import type { Region, ResidencyReport } from '$lib/api/residency';
+import type { Region, ResidencyReport } from '#lib/api/residency.ts';
 
 afterEach(cleanup);
 

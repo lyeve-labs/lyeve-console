@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { Alert, Badge, Button, CopyButton, PageShell, SectionHeading, Table } from '@lyeve-labs/ui-kit';
 	import { FlaskConical } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import GraphqlTabs from '$lib/components/GraphqlTabs.svelte';
-	import { GRAPHQL_HTTP, GRAPHQL_WS, type RootField } from '$lib/api/graphql';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import GraphqlTabs from '#lib/components/GraphqlTabs.svelte';
+	import { GRAPHQL_HTTP, GRAPHQL_WS, type RootField } from '#lib/api/graphql.ts';
 	import type { PageData } from './$types';
-	import { ICON } from '$lib/icon';
-	import { couldNotLoad } from '$lib/outage';
+	import { ICON } from '#lib/icon.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
 
 	let { data }: { data: PageData } = $props();
 

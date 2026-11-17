@@ -6,8 +6,8 @@
 	 */
 	import { Alert, Button, SectionHeading } from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import { submitter } from '$lib/forms.svelte';
-	import { focalAt, type FocalPoint } from '$lib/api/media';
+	import { submitter } from '#lib/forms.svelte.ts';
+	import { focalAt, type FocalPoint } from '#lib/api/media.ts';
 
 	interface Props {
 		id: string;

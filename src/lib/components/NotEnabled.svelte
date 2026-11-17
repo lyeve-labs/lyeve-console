@@ -9,11 +9,11 @@
 	 */
 	import { Badge, EmptyState } from '@lyeve-labs/ui-kit';
 	import { Lock } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
-	import { useInstance } from '$lib/instance.svelte';
-	import { isExternalHref } from '$lib/links';
-	import UpgradeLink from '$lib/components/UpgradeLink.svelte';
-	import { NOT_ENABLED as STATE, upgradeWords } from '$lib/api/refusal';
+	import { ICON } from '#lib/icon.ts';
+	import { useInstance } from '#lib/instance.svelte.ts';
+	import { isExternalHref } from '#lib/links.ts';
+	import UpgradeLink from '#lib/components/UpgradeLink.svelte';
+	import { NOT_ENABLED as STATE, upgradeWords } from '#lib/api/refusal.ts';
 
 	let {
 		title,

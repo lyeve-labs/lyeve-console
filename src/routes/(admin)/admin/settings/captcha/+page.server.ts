@@ -1,19 +1,19 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	clearCaptchaSettings,
 	isCaptchaProvider,
 	readCaptchaSettings,
 	saveCaptchaSettings,
 	type CaptchaSettings,
-} from '$lib/api/captcha-settings';
-import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/captcha-settings.ts';
+import { type Gate, GATE_OK, gateOf } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const { plugins } = await event.parent();

@@ -18,14 +18,14 @@
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
 	import { ArrowDown, ArrowUp, Plus, X } from '@lucide/svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import NotEnabled from '$lib/components/NotEnabled.svelte';
-	import { submitter } from '$lib/forms.svelte';
-	import type { Section } from '$lib/api/gate';
-	import type { Refusal } from '$lib/api/refusal';
-	import { couldNotLoad } from '$lib/outage';
-	import { shortId } from '$lib/utils/entry-identity';
-	import { ICON } from '$lib/icon';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import NotEnabled from '#lib/components/NotEnabled.svelte';
+	import { submitter } from '#lib/forms.svelte.ts';
+	import type { Section } from '#lib/api/gate.ts';
+	import type { Refusal } from '#lib/api/refusal.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
+	import { shortId } from '#lib/utils/entry-identity.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	interface Props {
 		open?: boolean;

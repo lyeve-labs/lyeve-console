@@ -1,9 +1,9 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { aiActionError, aiGate } from '$lib/server/ai-load';
-import { GATE_OK, section } from '$lib/api/gate';
-import { deletePrice, listPrices, putPrice, PROVIDER_KINDS } from '$lib/api/ai';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { aiActionError, aiGate } from '#lib/server/ai-load.ts';
+import { GATE_OK, section } from '#lib/api/gate.ts';
+import { deletePrice, listPrices, putPrice, PROVIDER_KINDS } from '#lib/api/ai.ts';
 
 export const load: PageServerLoad = async (event) => {
 	const client = authedClient(event);

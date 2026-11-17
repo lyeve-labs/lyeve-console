@@ -1,10 +1,10 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { authedClient } from '$lib/server/authz';
-import { getSearchAnalytics, searchPage, type SearchAnalytics, type SearchPage } from '$lib/api/search-settings';
-import { section } from '$lib/api/gate';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
-import { couldNotLoad } from '$lib/outage';
+import { authedClient } from '#lib/server/authz.ts';
+import { getSearchAnalytics, searchPage, type SearchAnalytics, type SearchPage } from '#lib/api/search-settings.ts';
+import { section } from '#lib/api/gate.ts';
+import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 import { attempt } from './attempt.server';
 
 /** The results a page shows when the request names no limit. */

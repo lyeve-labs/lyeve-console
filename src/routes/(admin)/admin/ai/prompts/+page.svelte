@@ -2,10 +2,10 @@
 	import { Badge, Button, EmptyState, PageShell, Table } from '@lyeve-labs/ui-kit';
 	import { ChevronRight, MessageSquareText } from '@lucide/svelte';
 	import type { PageData } from './$types';
-	import AiSection from '$lib/components/ai/AiSection.svelte';
-	import { useCaseLabel } from '$lib/components/ai/use-case';
-	import { formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import AiSection from '#lib/components/ai/AiSection.svelte';
+	import { useCaseLabel } from '#lib/components/ai/use-case.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data }: { data: PageData } = $props();
 </script>

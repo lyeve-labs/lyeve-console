@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { authedHeaders } from '$lib/server/authz';
-import { readRequest } from '$lib/assistant/request';
-import { refusalKind } from '$lib/assistant/refusal';
+import { authedHeaders } from '#lib/server/authz.ts';
+import { readRequest } from '#lib/assistant/request.ts';
+import { refusalKind } from '#lib/assistant/refusal.ts';
 
 const ASSISTANT_PATH = '/api/admin/ai/assistant';
 

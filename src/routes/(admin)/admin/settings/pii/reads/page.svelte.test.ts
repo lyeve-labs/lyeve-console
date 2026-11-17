@@ -2,7 +2,7 @@
 import { render, cleanup } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/navigation', () => ({ goto: vi.fn(), invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ goto: vi.fn(), refreshAll: vi.fn(async () => {}) }));
 
 import ReadsPage from './+page.svelte';
 

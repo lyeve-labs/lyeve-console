@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { Alert, Badge, Card, SectionHeading, Stat } from '@lyeve-labs/ui-kit';
 	import { ExternalLink } from '@lucide/svelte';
-	import Markdown from '$lib/components/Markdown.svelte';
-	import TrafficBars from '$lib/components/TrafficBars.svelte';
-	import TrendBars from '$lib/components/custom/TrendBars.svelte';
-	import { ICON } from '$lib/icon';
-	import { isExternal } from '$lib/api/customization';
-	import { WIDTH_SPAN } from '$lib/api/custom-dashboard';
-	import { mediaKindLabel } from '$lib/api/media';
-	import { WINDOW_LABEL, trafficTone } from '$lib/dashboard';
-	import { formatBytes, formatCount, formatDate, formatDateTime, formatPercent } from '$lib/format';
-	import { entryTone } from '$lib/tones';
-	import type { ResolvedWidget } from '$lib/api/custom-dashboard';
-	import { couldNotLoad } from '$lib/outage';
+	import Markdown from '#lib/components/Markdown.svelte';
+	import TrafficBars from '#lib/components/TrafficBars.svelte';
+	import TrendBars from '#lib/components/custom/TrendBars.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import { isExternal } from '#lib/api/customization.ts';
+	import { WIDTH_SPAN } from '#lib/api/custom-dashboard.ts';
+	import { mediaKindLabel } from '#lib/api/media.ts';
+	import { WINDOW_LABEL, trafficTone } from '#lib/dashboard.ts';
+	import { formatBytes, formatCount, formatDate, formatDateTime, formatPercent } from '#lib/format.ts';
+	import { entryTone } from '#lib/tones.ts';
+	import type { ResolvedWidget } from '#lib/api/custom-dashboard.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
 
 	/**
 	 * Draws a tenant's composed dashboard. Every number was read with the

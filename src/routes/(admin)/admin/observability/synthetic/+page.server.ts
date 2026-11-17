@@ -1,9 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
 import {
 	SECRET_MASK,
 	acknowledgeAlert,
@@ -27,9 +27,9 @@ import {
 	type ProbeChannels,
 	type ProbeConfig,
 	type ProbeLimits,
-} from '$lib/api/synthetic';
-import { type Gate, GATE_OK, section, type Section } from '$lib/api/gate';
-import { channelsFrom, hasChannels } from '$lib/api/alert-channels';
+} from '#lib/api/synthetic.ts';
+import { type Gate, GATE_OK, section, type Section } from '#lib/api/gate.ts';
+import { channelsFrom, hasChannels } from '#lib/api/alert-channels.ts';
 
 /** What the notice channels drawer posts its fields under. */
 const CHANNEL_PREFIX = 'channel_';
@@ -39,9 +39,9 @@ const CHANNEL_PREFIX = 'channel_';
  * A refused or failed read is said in the drawer rather than as no channels.
  */
 type ChannelsFor = { probe: Probe; read: ProbeChannels | null; gate: Gate } | null;
-import { pageOf, pageWindow, pastEndOffset, rowsOf, withOffset } from '$lib/api/list';
-import { couldNotLoad } from '$lib/outage';
-import { asked } from '$lib/server/asked';
+import { pageOf, pageWindow, pastEndOffset, rowsOf, withOffset } from '#lib/api/list.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { asked } from '#lib/server/asked.ts';
 
 const NO_ALERTS: Section<ProbeAlert[]> = { ok: true, value: [] };
 

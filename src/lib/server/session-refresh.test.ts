@@ -4,7 +4,7 @@ import type { Cookies, RequestEvent } from '@sveltejs/kit';
 // a load does after this step set it.
 // @ts-expect-error SvelteKit ships this module without type declarations.
 import { get_cookies } from '../../../node_modules/@sveltejs/kit/src/runtime/server/cookie.js';
-import { authedHeaders } from '$lib/server/authz';
+import { authedHeaders } from '#lib/server/authz.ts';
 
 type SessionRefresh = typeof import('./session-refresh');
 let refreshSession: SessionRefresh['refreshSession'];

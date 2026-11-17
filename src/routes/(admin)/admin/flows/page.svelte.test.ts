@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Entitlements } from '$lib/entitlements';
-import type { ValidationError } from '$lib/api/flows';
-import { blockedFlow, fixtureFlow } from '$lib/flow/fixtures';
-import { BLOCKED_TEXT } from '$lib/flow/blocked';
+import type { Entitlements } from '#lib/entitlements.ts';
+import type { ValidationError } from '#lib/api/flows.ts';
+import { blockedFlow, fixtureFlow } from '#lib/flow/fixtures.ts';
+import { BLOCKED_TEXT } from '#lib/flow/blocked.ts';
 
 // enhance keeps each form's submit handler, so a case can run the one a
 // delete would run and read the question it asks.
@@ -17,10 +17,10 @@ vi.mock('$app/forms', () => ({
 }));
 
 // The import reads the list again after a 5xx, which a case observes here.
-const nav = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}) }));
+const nav = vi.hoisted(() => ({ refreshAll: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
-	invalidateAll: nav.invalidateAll,
+	refreshAll: nav.refreshAll,
 }));
 
 // Delete asks through the kit's confirm dialog, which renders through a
@@ -34,7 +34,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 import FlowsPage from './+page.svelte';
 
 beforeEach(() => {
-	nav.invalidateAll.mockClear();
+	nav.refreshAll.mockClear();
 	kit.confirm.mockReset();
 	kit.confirm.mockResolvedValue(false);
 });
@@ -332,7 +332,7 @@ describe('flows list page', () => {
 		const submit = forms.submits.get(form) as (input: unknown) => Promise<(a: unknown) => Promise<void>>;
 		const after = await submit({ formData: new FormData(), formElement: form, action: new URL('http://x/?/import'), cancel: vi.fn(), submitter: null, controller: new AbortController() });
 		await after({ result: { type: 'failure', status: 502, data: {} }, update: vi.fn(async () => {}) });
-		expect(nav.invalidateAll).toHaveBeenCalledTimes(1);
+		expect(nav.refreshAll).toHaveBeenCalledTimes(1);
 	});
 });
 

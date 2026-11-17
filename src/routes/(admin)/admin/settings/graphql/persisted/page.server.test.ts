@@ -6,9 +6,9 @@ const listPersisted = vi.fn();
 const registerPersisted = vi.fn();
 const togglePersisted = vi.fn();
 const deletePersisted = vi.fn();
-vi.mock('$lib/server/authz', () => ({ authedClient: () => ({}), requireUser: async () => ({}) }));
-vi.mock('$lib/api/graphql', async (orig) => ({
-	...(await orig<typeof import('$lib/api/graphql')>()),
+vi.mock('#lib/server/authz.ts', () => ({ authedClient: () => ({}), requireUser: async () => ({}) }));
+vi.mock('#lib/api/graphql.ts', async (orig) => ({
+	...(await orig<typeof import('#lib/api/graphql.ts')>()),
 	introspect: (...a: unknown[]) => introspect(...a),
 	listPersisted: (...a: unknown[]) => listPersisted(...a),
 	registerPersisted: (...a: unknown[]) => registerPersisted(...a),

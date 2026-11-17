@@ -1,10 +1,10 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { ApiError } from '@lyeve-labs/client';
-import { authedClient } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
-import { section } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+import { authedClient } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
+import { section } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 type Setup = { provisioning_uri: string; secret: string };
 

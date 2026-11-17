@@ -1,9 +1,9 @@
 <script lang="ts">
-	import CaptureTabs from '$lib/components/CaptureTabs.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import CaptureTabs from '#lib/components/CaptureTabs.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		Alert,
 		Badge,
@@ -19,8 +19,8 @@
 		toast,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import { confirmed, tracked } from '$lib/forms.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { confirmed, tracked } from '#lib/forms.svelte.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { History, Pencil, Plus, Trash2 } from '@lucide/svelte';
 	import {
 		RULE_METHODS,
@@ -30,8 +30,8 @@
 		sampleLabel,
 		type CaptureRule,
 		type RuleMethod,
-	} from '$lib/api/request-capture';
-	import { ICON } from '$lib/icon';
+	} from '#lib/api/request-capture.ts';
+	import { ICON } from '#lib/icon.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

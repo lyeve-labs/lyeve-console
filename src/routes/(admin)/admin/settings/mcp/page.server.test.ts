@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/server/authz', async () => {
+vi.mock('#lib/server/authz.ts', async () => {
 	const { createClient } = await vi.importActual<typeof import('@lyeve-labs/client')>('@lyeve-labs/client');
 	return { authedClient: (event: { fetch: typeof fetch }) => createClient(event.fetch) };
 });

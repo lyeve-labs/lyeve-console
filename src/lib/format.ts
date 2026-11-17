@@ -6,7 +6,7 @@
  */
 
 import type { StatusTone } from '@lyeve-labs/ui-kit';
-import { levelName } from '$lib/api/helpers';
+import { levelName } from '#lib/api/helpers.ts';
 
 /** The levels the engine emits, least severe first. */
 export const LOG_LEVELS = ['DEBUG', 'INFO', 'WARN', 'ERROR'] as const;

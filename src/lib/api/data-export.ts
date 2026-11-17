@@ -10,7 +10,7 @@
  * rather than promising the file is still downloadable.
  */
 import type { HttpClient } from '@lyeve-labs/client';
-import { formatCount } from '$lib/format';
+import { formatCount } from '#lib/format.ts';
 
 export const JOBS_URL = '/api/admin/data-export/jobs';
 const SCHEDULES_URL = '/api/admin/data-export/schedules';

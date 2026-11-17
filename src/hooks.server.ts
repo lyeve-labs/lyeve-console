@@ -1,18 +1,19 @@
 import { hostname } from 'node:os';
-import { building, dev } from '$app/environment';
-import { redirect, type Handle, type HandleFetch, type ServerInit } from '@sveltejs/kit';
-import { addressHeaderProblem, cleanupRateLimitStore, WINDOW_MS } from '$lib/server/rate-limit';
-import { setupGateRedirect } from '$lib/server/setup-gate';
-import { limitBody } from '$lib/server/body-limit';
+import { building, dev } from '$app/env';
+import { redirect } from '@sveltejs/kit';
+import type { Handle, HandleFetch, ServerInit } from '@sveltejs/kit/hooks';
+import { addressHeaderProblem, cleanupRateLimitStore, WINDOW_MS } from '#lib/server/rate-limit.ts';
+import { setupGateRedirect } from '#lib/server/setup-gate.ts';
+import { limitBody } from '#lib/server/body-limit.ts';
 import {
 	callerOf,
 	contentApiAddressProblem,
 	engineBaseFor,
 	signEngineRequest
-} from '$lib/server/engine';
-import { relayEngineCookies } from '$lib/server/engine-cookies';
-import { ensureCsrfCookie, sessionToken } from '$lib/server/session-cookie';
-import { refreshSession } from '$lib/server/session-refresh';
+} from '#lib/server/engine.ts';
+import { relayEngineCookies } from '#lib/server/engine-cookies.ts';
+import { ensureCsrfCookie, sessionToken } from '#lib/server/session-cookie.ts';
+import { refreshSession } from '#lib/server/session-refresh.ts';
 
 // A production server that cannot reach the Content API refuses to start.
 // The fallback address is this console's own port in the official image, so

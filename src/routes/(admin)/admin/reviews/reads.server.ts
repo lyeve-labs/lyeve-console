@@ -1,7 +1,7 @@
-import type { authedClient } from '$lib/server/authz';
-import { listPeople } from '$lib/server/people';
-import { couldNotLoad } from '$lib/outage';
-import { getDefinition, listDefinitions, type ReviewDefinition, type ReviewLimits, type ReviewStage } from '$lib/api/review';
+import type { authedClient } from '#lib/server/authz.ts';
+import { listPeople } from '#lib/server/people.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { getDefinition, listDefinitions, type ReviewDefinition, type ReviewLimits, type ReviewStage } from '#lib/api/review.ts';
 
 /** A definition and its stages. Stages are null when their read failed, which is never a definition with none. */
 export type DefinitionRow = { definition: ReviewDefinition; stages: ReviewStage[] | null };

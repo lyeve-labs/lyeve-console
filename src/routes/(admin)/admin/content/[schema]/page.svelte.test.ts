@@ -13,8 +13,8 @@ vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 import ContentListPage from './+page.svelte';
 import type { PageData } from './$types';
 import type { Schema } from '@lyeve-labs/client';
-import { readView } from '$lib/utils/entry-view';
-import { withoutHidden } from '$lib/utils/content-access';
+import { readView } from '#lib/utils/entry-view.ts';
+import { withoutHidden } from '#lib/utils/content-access.ts';
 
 afterEach(cleanup);
 

@@ -11,12 +11,12 @@
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { ConfigSetting } from './+page.server';
-	import SettingRow from '$lib/components/SettingRow.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import SettingRow from '#lib/components/SettingRow.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import { Lock, FileCode, Terminal, PencilLine } from '@lucide/svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { ICON } from '$lib/icon';
-	import { settingForms, settingMatches } from '$lib/config-forms';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import { settingForms, settingMatches } from '#lib/config-forms.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

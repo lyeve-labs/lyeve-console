@@ -6,7 +6,7 @@ const api = vi.hoisted(() => ({
 	saveProviderWindow: vi.fn(),
 }));
 
-vi.mock('$lib/api/provider-window', async (importOriginal) => ({
+vi.mock('#lib/api/provider-window.ts', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
 	...api,
 }));
@@ -15,7 +15,7 @@ const authz = vi.hoisted(() => ({
 	authedClient: vi.fn(() => ({})),
 	requireRole: vi.fn(async () => ({ id: 'u1', roles: ['admin'] })),
 }));
-vi.mock('$lib/server/authz', () => authz);
+vi.mock('#lib/server/authz.ts', () => authz);
 
 import { load, actions } from './+page.server';
 

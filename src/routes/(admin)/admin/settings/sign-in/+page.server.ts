@@ -1,16 +1,16 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure } from '$lib/server/action-error';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure } from '#lib/server/action-error.ts';
 import {
 	PROVIDER_WINDOW_MAX_DAYS,
 	parseWindowDays,
 	readProviderWindow,
 	saveProviderWindow,
 	type ProviderWindow,
-} from '$lib/api/provider-window';
-import { type Gate, GATE_OK, gateOf } from '$lib/api/gate';
-import { couldNotLoad } from '$lib/outage';
+} from '#lib/api/provider-window.ts';
+import { type Gate, GATE_OK, gateOf } from '#lib/api/gate.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 
 export const load: PageServerLoad = async (event) => {
 	try {

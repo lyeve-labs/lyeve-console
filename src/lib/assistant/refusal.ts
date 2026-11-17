@@ -7,8 +7,8 @@
  * role, because only an administrator can change what refused them.
  */
 
-import { SESSION_ENDED } from '$lib/session';
-import { outageFor } from '$lib/outage';
+import { SESSION_ENDED } from '#lib/session.ts';
+import { outageFor } from '#lib/outage.ts';
 
 export type RefusalKind =
 	| 'assistant_off'

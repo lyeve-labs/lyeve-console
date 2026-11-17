@@ -9,7 +9,7 @@ const api = vi.hoisted(() => ({
 }));
 
 const authz = vi.hoisted(() => ({ roles: ['admin'] as string[] }));
-vi.mock('$lib/server/authz', async () => {
+vi.mock('#lib/server/authz.ts', async () => {
 	const { createClient } = await vi.importActual<typeof import('@lyeve-labs/client')>('@lyeve-labs/client');
 	return {
 		authedClient: (event: { fetch?: typeof fetch }) => createClient(event.fetch ?? globalThis.fetch),
@@ -19,8 +19,8 @@ vi.mock('$lib/server/authz', async () => {
 		},
 	};
 });
-vi.mock('$lib/api/email-triggers', async (orig) => ({
-	...(await orig<typeof import('$lib/api/email-triggers')>()),
+vi.mock('#lib/api/email-triggers.ts', async (orig) => ({
+	...(await orig<typeof import('#lib/api/email-triggers.ts')>()),
 	listEmailTriggers: api.listEmailTriggers,
 	listEmailTemplates: api.listEmailTemplates,
 	triggerWriteRefusal: api.triggerWriteRefusal,

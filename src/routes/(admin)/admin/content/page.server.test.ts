@@ -3,7 +3,7 @@ import type { Cookies } from '@sveltejs/kit';
 import { isRedirect } from '@sveltejs/kit';
 
 import { load } from './+page.server';
-import { signedIn } from '$lib/server/test-support/signed-in';
+import { signedIn } from '#lib/server/test-support/signed-in.ts';
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {

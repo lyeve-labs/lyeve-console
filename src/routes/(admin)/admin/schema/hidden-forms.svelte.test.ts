@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, cleanup, fireEvent, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 import type { PageData } from './$types';
 
 // Each form's submit function, by its action, so a case can play the round trip.
@@ -12,11 +12,11 @@ vi.mock('$app/forms', () => ({
 		return { destroy() {} };
 	},
 }));
-const nav = vi.hoisted(() => ({ invalidate: vi.fn(async (_dep: string) => {}), invalidateAll: vi.fn(async () => {}) }));
-vi.mock('$app/navigation', () => ({ beforeNavigate: vi.fn(), goto: vi.fn(async () => {}), invalidateAll: nav.invalidateAll, invalidate: nav.invalidate }));
+const nav = vi.hoisted(() => ({ invalidate: vi.fn(async (_dep: string) => {}), refreshAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ beforeNavigate: vi.fn(), goto: vi.fn(async () => {}), refreshAll: nav.refreshAll, invalidate: nav.invalidate }));
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/schema') } }));
 vi.mock('$app/state', () => state);
-vi.mock('$lib/canvas/schema', () => ({ SchemaCanvas: null, hasSchemaCanvas: false }));
+vi.mock('#lib/canvas/schema.ts', () => ({ SchemaCanvas: null, hasSchemaCanvas: false }));
 
 const kit = vi.hoisted(() => ({ confirm: vi.fn(async (_title: string, _body: string, _opts?: unknown) => false) }));
 vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
@@ -30,7 +30,7 @@ afterEach(cleanup);
 beforeEach(() => {
 	forms.handlers.clear();
 	nav.invalidate.mockClear();
-	nav.invalidateAll.mockReset();
+	nav.refreshAll.mockReset();
 	kit.confirm.mockReset();
 	kit.confirm.mockResolvedValue(false);
 	// The page submits its hidden forms itself. The test plays each round
@@ -223,7 +223,7 @@ describe('a content type that changed since it was opened', () => {
 	it('offers to reload it, and opens it as the engine holds it now', async () => {
 		const view = render(SchemaPage, { props: { data: data({ schemas: [versioned('v1', [{ name: 'title' }])] }), form: null } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
-		nav.invalidateAll.mockImplementation(async () => {
+		nav.refreshAll.mockImplementation(async () => {
 			await view.rerender({ data: data({ schemas: [versioned('v2', [{ name: 'title' }, { name: 'summary' }])] }), form: null });
 		});
 
@@ -232,7 +232,7 @@ describe('a content type that changed since it was opened', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
 
 		await waitFor(() => expect(sentVersion()).toBe('v2'));
-		expect(nav.invalidateAll).toHaveBeenCalledOnce();
+		expect(nav.refreshAll).toHaveBeenCalledOnce();
 		expect(screen.getByDisplayValue('summary')).toBeTruthy();
 		expect(screen.queryByTestId('save-error')).toBeNull();
 	});

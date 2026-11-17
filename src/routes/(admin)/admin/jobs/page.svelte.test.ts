@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Entitlements } from '$lib/entitlements';
-import type { Gate } from '$lib/api/gate';
+import type { Entitlements } from '#lib/entitlements.ts';
+import type { Gate } from '#lib/api/gate.ts';
 import JobsPage from './+page.svelte';
 
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/jobs') } }));

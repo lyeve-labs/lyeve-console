@@ -6,7 +6,7 @@ import type { PageData } from './$types';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 
 import LocalesPage from './+page.svelte';
-import { outlineSkips } from '$lib/test-outline';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(cleanup);
 

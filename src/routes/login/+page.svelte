@@ -1,17 +1,17 @@
 <script lang="ts">
-	import PageTitle from '$lib/components/PageTitle.svelte';
-	import { submitter } from '$lib/forms.svelte';
+	import PageTitle from '#lib/components/PageTitle.svelte';
+	import { submitter } from '#lib/forms.svelte.ts';
 	import { enhance } from '$app/forms';
 	import { Alert, Button, Divider, Input, PasswordInput } from '@lyeve-labs/ui-kit';
 	import { ArrowLeft } from '@lucide/svelte';
-	import AuthShell from '$lib/components/AuthShell.svelte';
-	import CaptchaWidget from '$lib/components/CaptchaWidget.svelte';
-	import type { CaptchaChallenge } from '$lib/captcha';
+	import AuthShell from '#lib/components/AuthShell.svelte';
+	import CaptchaWidget from '#lib/components/CaptchaWidget.svelte';
+	import type { CaptchaChallenge } from '#lib/captcha.ts';
 	import type { ActionData, PageData } from './$types';
-	import { ICON } from '$lib/icon';
-	import OrganizationField from '$lib/components/OrganizationField.svelte';
-	import { withOrganization } from '$lib/organization';
-	import { SESSION_ENDED } from '$lib/session';
+	import { ICON } from '#lib/icon.ts';
+	import OrganizationField from '#lib/components/OrganizationField.svelte';
+	import { withOrganization } from '#lib/organization.ts';
+	import { SESSION_ENDED } from '#lib/session.ts';
 
 	let { form, data }: { form: ActionData; data: PageData } = $props();
 

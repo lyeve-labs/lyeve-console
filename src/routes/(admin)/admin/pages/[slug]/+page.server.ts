@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-import { authedClient } from '$lib/server/authz';
-import { getCustomPage, type CustomPage } from '$lib/api/customization';
-import { resolveBlocks } from '$lib/server/custom-blocks';
-import { readError } from '$lib/server/read-error';
+import { authedClient } from '#lib/server/authz.ts';
+import { getCustomPage, type CustomPage } from '#lib/api/customization.ts';
+import { resolveBlocks } from '#lib/server/custom-blocks.ts';
+import { readError } from '#lib/server/read-error.ts';
 
 const NO_PAGE = 'This page does not exist.';
 

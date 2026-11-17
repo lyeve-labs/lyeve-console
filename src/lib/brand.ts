@@ -11,8 +11,8 @@
  * keeps the product's own brand. Both copies arrive as `brand` in the page
  * data, and the nearest layout's wins.
  */
-import { logoAddressOk } from '$lib/logo';
-import { parseAccent } from '$lib/api/customization';
+import { logoAddressOk } from '#lib/logo.ts';
+import { parseAccent } from '#lib/api/customization.ts';
 
 export interface PublicBrand {
 	name: string;

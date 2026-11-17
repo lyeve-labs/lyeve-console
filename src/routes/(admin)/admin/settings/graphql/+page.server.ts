@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { authedClient } from '$lib/server/authz';
-import { introspect, type SchemaRoots } from '$lib/api/graphql';
-import { type Gate, GATE_OK, section, type Section } from '$lib/api/gate';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { authedClient } from '#lib/server/authz.ts';
+import { introspect, type SchemaRoots } from '#lib/api/graphql.ts';
+import { type Gate, GATE_OK, section, type Section } from '#lib/api/gate.ts';
 
 type Schema = { roots: SchemaRoots | null; refused: string | null };
 

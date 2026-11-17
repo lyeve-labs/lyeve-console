@@ -1,19 +1,19 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authedClient, requireUser } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { pageWindow, pastEndOffset, withOffset } from '$lib/api/list';
+import { authedClient, requireUser } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
 import {
 	deletePersisted,
 	listPersisted,
 	registerPersisted,
 	togglePersisted,
 	type PersistedQuery,
-} from '$lib/api/graphql';
-import { type Gate, GATE_OK, section, type Section } from '$lib/api/gate';
-import { asked } from '$lib/server/asked';
+} from '#lib/api/graphql.ts';
+import { type Gate, GATE_OK, section, type Section } from '#lib/api/gate.ts';
+import { asked } from '#lib/server/asked.ts';
 
 /** The persisted queries a page shows, and the most the plugin answers at once. */
 const PERSISTED_PAGE = 50;

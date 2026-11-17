@@ -1,9 +1,9 @@
 <script lang="ts">
-	import CaptureTabs from '$lib/components/CaptureTabs.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import FormErrors from '$lib/components/FormErrors.svelte';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import CaptureTabs from '#lib/components/CaptureTabs.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		Alert,
 		Badge,
@@ -19,13 +19,13 @@
 		toast,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import { tracked } from '$lib/forms.svelte';
+	import { tracked } from '#lib/forms.svelte.ts';
 	import { History, Plus } from '@lucide/svelte';
-	import { MAX_SET_CAPTURES, capturePath } from '$lib/api/request-capture';
-	import { NO_VALUE, formatDateTime, plural } from '$lib/format';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
-	import { httpStatusTone } from '$lib/tones';
+	import { MAX_SET_CAPTURES, capturePath } from '#lib/api/request-capture.ts';
+	import { NO_VALUE, formatDateTime, plural } from '#lib/format.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { httpStatusTone } from '#lib/tones.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

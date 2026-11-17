@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Alert } from '@lyeve-labs/ui-kit';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import type { Refusal } from '$lib/api/refusal';
-	import { plural } from '$lib/format';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import type { Refusal } from '#lib/api/refusal.ts';
+	import { plural } from '#lib/format.ts';
 
 	/**
 	 * The banner an action's failure is announced through.

@@ -3,29 +3,29 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tick } from 'svelte';
 import EditorPage from './+page.svelte';
-import type { Entitlements } from '$lib/entitlements';
-import { blockedFlow, blockedRunError, fixtureCatalog, fixtureFlow, fixtureRun, fixtureTemplates, missingTypeErrors, respondingFlow, withLocked } from '$lib/flow/fixtures';
-import { BLOCKED_TEXT } from '$lib/flow/blocked';
-import { FOCUS_KEY } from '$lib/flow/prefs';
-import { SHELL_KEY, type Shell } from '$lib/shell.svelte';
-import { outlineSkips } from '$lib/test-outline';
+import type { Entitlements } from '#lib/entitlements.ts';
+import { blockedFlow, blockedRunError, fixtureCatalog, fixtureFlow, fixtureRun, fixtureTemplates, missingTypeErrors, respondingFlow, withLocked } from '#lib/flow/fixtures.ts';
+import { BLOCKED_TEXT } from '#lib/flow/blocked.ts';
+import { FOCUS_KEY } from '#lib/flow/prefs.ts';
+import { SHELL_KEY, type Shell } from '#lib/shell.svelte.ts';
+import { outlineSkips } from '#lib/test-outline.ts';
 
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/flows/f1') } }));
 vi.mock('$app/state', () => state);
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
-const nav = vi.hoisted(() => ({ guard: null as null | ((n: unknown) => void), invalidateAll: vi.fn(async () => {}) }));
+const nav = vi.hoisted(() => ({ guard: null as null | ((n: unknown) => void), refreshAll: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => ({
 	beforeNavigate: vi.fn((fn: (n: unknown) => void) => {
 		nav.guard = fn;
 	}),
 	goto: vi.fn(async () => {}),
-	invalidateAll: nav.invalidateAll,
+	refreshAll: nav.refreshAll,
 }));
 
 // The instance the layout provides, so a refusal has a way to enable to name.
-vi.mock('$lib/instance.svelte', async (importOriginal) => {
-	const real = await importOriginal<typeof import('$lib/instance.svelte')>();
-	const { licensingOf } = await import('$lib/api/license');
+vi.mock('#lib/instance.svelte.ts', async (importOriginal) => {
+	const real = await importOriginal<typeof import('#lib/instance.svelte.ts')>();
+	const { licensingOf } = await import('#lib/api/license.ts');
 	const licensing = licensingOf({ links: [{ rel: 'upgrade', label: 'Turn it on', url: '/admin/settings/license' }], renew: true });
 	return { ...real, useInstance: () => real.instanceFrom(() => ({ licensing })) };
 });
@@ -42,8 +42,8 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 // suite reads the same with the visual editor mounted and without it. A case
 // that needs the page's side of the visual editor sets the flag.
 const seam = vi.hoisted(() => ({ visual: false }));
-vi.mock('$lib/canvas/flow', async () => {
-	const { default: FlowOutline } = await import('$lib/canvas/FlowOutline.svelte');
+vi.mock('#lib/canvas/flow.ts', async () => {
+	const { default: FlowOutline } = await import('#lib/canvas/FlowOutline.svelte');
 	return {
 		FlowCanvas: FlowOutline,
 		get hasFlowCanvas() {
@@ -799,13 +799,13 @@ describe('flow editor page', () => {
 		}
 
 		it('renews the session and runs the test again, keeping the draft in place', async () => {
-			nav.invalidateAll.mockClear();
+			nav.refreshAll.mockClear();
 			fetchMock = answeringTest([401]);
 			vi.stubGlobal('fetch', fetchMock);
 			const { getByRole, queryByText } = setup();
 			await fireEvent.click(getByRole('button', { name: 'Test' }));
 			await vi.waitFor(() => expect(fetchMock.mock.calls.filter((c) => String(c[0]).endsWith('/test'))).toHaveLength(2));
-			expect(nav.invalidateAll).toHaveBeenCalledTimes(1);
+			expect(nav.refreshAll).toHaveBeenCalledTimes(1);
 			await vi.waitFor(() => expect(queryByText('unauthorized')).toBeNull());
 			vi.unstubAllGlobals();
 		});

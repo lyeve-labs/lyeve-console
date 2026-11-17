@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { parseMarkdown } from '$lib/markdown';
+	import { parseMarkdown } from '#lib/markdown.ts';
 	import Inlines from './MarkdownInline.svelte';
 
 	/**
 	 * Renders Markdown a model wrote as elements, never as HTML. The kit ships
 	 * no renderer, and a library one would either inject markup or bring a
-	 * sanitizer the bundle has no room for. The reader in `$lib/markdown`
+	 * sanitizer the bundle has no room for. The reader in `#lib/markdown.ts`
 	 * covers what an answer about a flow uses.
 	 */
 	interface Props {

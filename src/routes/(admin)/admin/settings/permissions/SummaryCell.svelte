@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ShieldCheck } from '@lucide/svelte';
-	import { ICON } from '$lib/icon';
+	import { ICON } from '#lib/icon.ts';
 	import { EXEMPT_ROLE, SUMMARY_FILL, type Action, type RuleMatrix } from './rules.svelte';
 
 	/**

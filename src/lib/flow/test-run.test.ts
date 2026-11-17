@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '@lyeve-labs/client';
-import { FlowRefusal } from '$lib/api/flows';
+import { FlowRefusal } from '#lib/api/flows.ts';
 import { BLOCKED_MESSAGE } from './blocked';
 import { parseTrigger, sampleKey, testFailure, untilOptions } from './test-run';
 

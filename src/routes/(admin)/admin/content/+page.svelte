@@ -13,21 +13,21 @@
 		Table,
 	} from '@lyeve-labs/ui-kit';
 	import { ArrowDown, ArrowUp, CalendarClock, Database, History, Inbox, LayoutGrid, Plus } from '@lucide/svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { planSchemaRelations } from '$lib/relations';
-	import { pageHref, pageNumber } from '$lib/api/list';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { planSchemaRelations } from '#lib/relations.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
 	import {
 		COLLECTION_FILTERS,
 		COLLECTION_SORTS,
 		filterCountsRows,
 		type CollectionFilter,
 		type CollectionSort,
-	} from '$lib/api/collections';
-	import { NO_VALUE, formatCount, formatDateTime, plural } from '$lib/format';
-	import { may } from '$lib/utils/content-access';
-	import { ICON } from '$lib/icon';
-	import { liveFilter } from '$lib/live-filter.svelte';
+	} from '#lib/api/collections.ts';
+	import { NO_VALUE, formatCount, formatDateTime, plural } from '#lib/format.ts';
+	import { may } from '#lib/utils/content-access.ts';
+	import { ICON } from '#lib/icon.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 
 	let { data }: { data: PageData } = $props();
 

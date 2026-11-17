@@ -161,7 +161,7 @@ every pull request and every release tag.
   server.
 - Primitives (`Button`, `Input`, `Textarea`, `Select`, `Checkbox`, `Toggle`,
   `Label`, `Badge`, `Modal`, `Alert`) come from `@lyeve-labs/ui-kit`. Only
-  components specific to the console live in `$lib/components/`.
+  components specific to the console live in `#lib/components/`.
 - Tests are colocated and run under vitest with `@testing-library/svelte`.
   Component files opt into jsdom per file with `// @vitest-environment jsdom`.
   The default environment stays node, so the server-rendered paths stay

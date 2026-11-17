@@ -44,7 +44,7 @@ describe('the pages that pick roles', () => {
 	it('take the list from here rather than declaring one', () => {
 		for (const page of pages) {
 			const src = read(page);
-			expect(src, page).toContain("from '$lib/roles'");
+			expect(src, page).toContain("from '#lib/roles.ts'");
 			expect(src, page).not.toMatch(/const ROLE_OPTIONS\s*=/);
 		}
 	});

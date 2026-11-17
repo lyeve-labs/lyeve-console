@@ -6,9 +6,9 @@
 	import CodeEditor from './CodeEditor.svelte';
 	import GridEditor from './GridEditor.svelte';
 	import type { TablesState } from './TablesPanel.svelte';
-	import type { DatasourceOption, FlowOption, JsonSchema, SchemaOption, SystemEvent } from '$lib/flow/types';
-	import { GATE_OK, type Gate } from '$lib/api/gate';
-	import type { ValidationError } from '$lib/api/flows';
+	import type { DatasourceOption, FlowOption, JsonSchema, SchemaOption, SystemEvent } from '#lib/flow/types.ts';
+	import { GATE_OK, type Gate } from '#lib/api/gate.ts';
+	import type { ValidationError } from '#lib/api/flows.ts';
 	import {
 		datasourceOptions,
 		errorsForField,
@@ -27,9 +27,9 @@
 		schemaOptions,
 		toJSONText,
 		widgetFor,
-	} from '$lib/flow/schema';
-	import { fillableFieldsOf, fillProblem } from '$lib/flow/fill';
-	import { ICON } from '$lib/icon';
+	} from '#lib/flow/schema.ts';
+	import { fillableFieldsOf, fillProblem } from '#lib/flow/fill.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	interface Props {
 		schema: JsonSchema;

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import CaptureTabs from '$lib/components/CaptureTabs.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { formRefusal } from '$lib/api/refusal';
+	import CaptureTabs from '#lib/components/CaptureTabs.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		Alert,
 		Badge,
@@ -13,13 +13,13 @@
 		confirm as confirmDialog,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import { CONFIRM_FIELD, CONFIRMED } from '$lib/confirmation';
-	import { confirmed } from '$lib/forms.svelte';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
+	import { confirmed } from '#lib/forms.svelte.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { Play, Trash2 } from '@lucide/svelte';
-	import { diffChanged, type ReplaySet, type SetReplay } from '$lib/api/request-capture';
-	import { formatDateTime } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import { diffChanged, type ReplaySet, type SetReplay } from '#lib/api/request-capture.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

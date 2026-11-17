@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Inline } from '$lib/markdown';
+	import type { Inline } from '#lib/markdown.ts';
 	import Self from './MarkdownInline.svelte';
 
 	/** The inline half of the Markdown renderer. Recursive for emphasis inside a link and the like. */

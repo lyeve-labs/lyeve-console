@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import SidePanel from './SidePanel.svelte';
-import { PANEL, PANEL_KEY } from '$lib/flow/prefs';
+import { PANEL, PANEL_KEY } from '#lib/flow/prefs.ts';
 
 afterEach(cleanup);
 beforeEach(() => localStorage.clear());

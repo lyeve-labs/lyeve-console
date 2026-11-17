@@ -1,10 +1,10 @@
 import type { PageServerLoad, Actions } from './$types';
-import { authedClient, requireRole } from '$lib/server/authz';
-import type { Section } from '$lib/api/gate';
-import { PLUGIN } from '$lib/plugin-names';
-import { notRunning } from '$lib/plugins';
-import { aggregateNow, getDashboard, getSummary, monthStart, type CostDashboard, type CostSummary } from '$lib/api/cost';
-import { couldNotLoad } from '$lib/outage';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import type { Section } from '#lib/api/gate.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { notRunning } from '#lib/plugins.ts';
+import { aggregateNow, getDashboard, getSummary, monthStart, type CostDashboard, type CostSummary } from '#lib/api/cost.ts';
+import { couldNotLoad } from '#lib/outage.ts';
 import { OPERATOR_ROLES, UNREAD, ledgerReader, refusal, refuseBelowAdmin } from './costs.server';
 
 /**

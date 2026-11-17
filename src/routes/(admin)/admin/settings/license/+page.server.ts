@@ -1,12 +1,12 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { authedClient, loadUser, requireRole } from '$lib/server/authz';
+import { authedClient, loadUser, requireRole } from '#lib/server/authz.ts';
 import { ApiError } from '@lyeve-labs/client';
 import { getEntitlements } from '@lyeve-labs/client-rest';
-import type { LicenseEntitlements } from '$lib/entitlements';
-import { sessionToken } from '$lib/server/session-cookie';
-import { actionError } from '$lib/server/action-error';
-import { forbiddenText } from '$lib/api/gate';
+import type { LicenseEntitlements } from '#lib/entitlements.ts';
+import { sessionToken } from '#lib/server/session-cookie.ts';
+import { actionError } from '#lib/server/action-error.ts';
+import { forbiddenText } from '#lib/api/gate.ts';
 
 const RENEW_FAILED = 'Could not apply the license. The current license is unchanged.';
 

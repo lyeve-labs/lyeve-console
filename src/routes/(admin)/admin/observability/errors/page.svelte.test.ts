@@ -6,7 +6,7 @@ vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/observability/errors') } }));
 
 import ErrorsPage from './+page.svelte';
-import type { ErrorAlert } from '$lib/api/error-tracking';
+import type { ErrorAlert } from '#lib/api/error-tracking.ts';
 
 afterEach(cleanup);
 

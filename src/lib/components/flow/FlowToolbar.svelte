@@ -19,14 +19,14 @@
 		WandSparkles,
 	} from '@lucide/svelte';
 	import type { ComponentProps } from 'svelte';
-	import { hasFlowCanvas } from '$lib/canvas/flow';
-	import ProblemsMenu, { type ProblemItem } from '$lib/components/ProblemsMenu.svelte';
-	import { fromFlow } from '$lib/flow/back';
-	import type { FlowAction } from '$lib/flow/permissions';
-	import type { WriteButtons } from '$lib/flow/publish';
-	import { statusTone } from '$lib/flow/triggers';
-	import type { FlowStatus } from '$lib/flow/types';
-	import { ICON } from '$lib/icon';
+	import { hasFlowCanvas } from '#lib/canvas/flow.ts';
+	import ProblemsMenu, { type ProblemItem } from '#lib/components/ProblemsMenu.svelte';
+	import { fromFlow } from '#lib/flow/back.ts';
+	import type { FlowAction } from '#lib/flow/permissions.ts';
+	import type { WriteButtons } from '#lib/flow/publish.ts';
+	import { statusTone } from '#lib/flow/triggers.ts';
+	import type { FlowStatus } from '#lib/flow/types.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	interface Props {
 		back: { href: string; label: string };

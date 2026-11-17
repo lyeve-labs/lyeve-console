@@ -2,12 +2,12 @@
 	import { Alert, Badge, Card, DescriptionList, Input, PageShell, Panel, SectionHeading, Toggle } from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
-	import AiSection from '$lib/components/ai/AiSection.svelte';
-	import SettingRow from '$lib/components/SettingRow.svelte';
-	import { GATE_OK } from '$lib/api/gate';
-	import { retentionDays } from '$lib/api/ai';
-	import { formatDateTime } from '$lib/format';
-	import { couldNotLoad } from '$lib/outage';
+	import AiSection from '#lib/components/ai/AiSection.svelte';
+	import SettingRow from '#lib/components/SettingRow.svelte';
+	import { GATE_OK } from '#lib/api/gate.ts';
+	import { retentionDays } from '#lib/api/ai.ts';
+	import { formatDateTime } from '#lib/format.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

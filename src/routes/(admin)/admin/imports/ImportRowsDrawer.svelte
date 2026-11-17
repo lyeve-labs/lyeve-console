@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { Button, DescriptionList, Drawer, SectionHeading, Table } from '@lyeve-labs/ui-kit';
 	import { Download } from '@lucide/svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import { OUTCOME_LABELS, outcome, rejectedHref } from '$lib/api/bulk-import';
-	import { formatCount } from '$lib/format';
-	import { ICON } from '$lib/icon';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { OUTCOME_LABELS, outcome, rejectedHref } from '#lib/api/bulk-import.ts';
+	import { formatCount } from '#lib/format.ts';
+	import { ICON } from '#lib/icon.ts';
 	import type { PageData } from './$types';
 
 	/**

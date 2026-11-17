@@ -11,17 +11,17 @@
 		Table,
 		type StatusTone,
 	} from '@lyeve-labs/ui-kit';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ReviewTabs from '$lib/components/ReviewTabs.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ReviewTabs from '#lib/components/ReviewTabs.svelte';
 	import { ClipboardCheck } from '@lucide/svelte';
 	import type { PageData } from './$types';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { REVIEW_STATUSES, type ReviewStatus } from '$lib/api/review';
-	import { formatDateTime, NO_VALUE } from '$lib/format';
-	import { couldNotLoad } from '$lib/outage';
-	import { shortId } from '$lib/utils/entry-identity';
-	import { pageNumber, pageOffset } from '$lib/api/list';
-	import { ICON } from '$lib/icon';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { REVIEW_STATUSES, type ReviewStatus } from '#lib/api/review.ts';
+	import { formatDateTime, NO_VALUE } from '#lib/format.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
+	import { shortId } from '#lib/utils/entry-identity.ts';
+	import { pageNumber, pageOffset } from '#lib/api/list.ts';
+	import { ICON } from '#lib/icon.ts';
 
 	let { data }: { data: PageData } = $props();
 

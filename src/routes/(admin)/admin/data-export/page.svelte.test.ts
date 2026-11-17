@@ -2,11 +2,11 @@
 import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/navigation', () => ({ invalidateAll: vi.fn(async () => {}), invalidate: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({ refreshAll: vi.fn(async () => {}), invalidate: vi.fn(async () => {}) }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 
 import ExportPage from './+page.svelte';
-import type { ExportJob, ExportSchedule } from '$lib/api/data-export';
+import type { ExportJob, ExportSchedule } from '#lib/api/data-export.ts';
 
 afterEach(cleanup);
 

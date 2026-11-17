@@ -7,12 +7,12 @@ import {
 	updateIncomingWebhook,
 	deleteIncomingWebhook
 } from '@lyeve-labs/client-rest';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionFailure, tagged } from '$lib/server/action-error';
-import { checked } from '$lib/checkbox';
-import { section, type Section } from '$lib/api/gate';
-import { pageOf, pageWindow, pastEndOffset, withOffset, type ListEnvelope } from '$lib/api/list';
-import { asked } from '$lib/server/asked';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionFailure, tagged } from '#lib/server/action-error.ts';
+import { checked } from '#lib/checkbox.ts';
+import { section, type Section } from '#lib/api/gate.ts';
+import { pageOf, pageWindow, pastEndOffset, withOffset, type ListEnvelope } from '#lib/api/list.ts';
+import { asked } from '#lib/server/asked.ts';
 
 /** The page size when a request names none. */
 const DEFAULT_LIMIT = 50;

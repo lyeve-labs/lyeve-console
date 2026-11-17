@@ -2,13 +2,13 @@
 	import { Badge, Button, Card, EmptyState, PageShell, Pagination, SearchInput, SectionHeading, Stat } from '@lyeve-labs/ui-kit';
 	import type { PageData } from './$types';
 	import { Search } from '@lucide/svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import SearchTabs from '$lib/components/SearchTabs.svelte';
-	import { ICON } from '$lib/icon';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { formatCount, formatPercent, plural } from '$lib/format';
-	import { snippetParts } from '$lib/highlight';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import SearchTabs from '#lib/components/SearchTabs.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { formatCount, formatPercent, plural } from '#lib/format.ts';
+	import { snippetParts } from '#lib/highlight.ts';
 
 	let { data }: { data: PageData } = $props();
 

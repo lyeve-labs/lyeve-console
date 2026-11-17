@@ -5,7 +5,7 @@
  * is saved like any other edit.
  */
 
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 import type { AssistantAnswer, AssistantDraft, AssistantStatus, AssistRefusal } from './assistant';
 
 /** What the assistant actions answered, read off the page's form result. */

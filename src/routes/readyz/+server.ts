@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
-import { ENGINE_READY_TIMEOUT_MS } from '$lib/server/engine';
-import { readEngineSetup } from '$lib/server/setup-gate';
+import { ENGINE_READY_TIMEOUT_MS } from '#lib/server/engine.ts';
+import { readEngineSetup } from '#lib/server/setup-gate.ts';
 
 /**
  * The console's readiness probe: 200 while the engine answers, 503 otherwise.

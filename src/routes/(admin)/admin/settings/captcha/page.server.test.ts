@@ -7,12 +7,12 @@ const api = vi.hoisted(() => ({
 	clearCaptchaSettings: vi.fn(),
 }));
 
-vi.mock('$lib/api/captcha-settings', async (importOriginal) => ({
+vi.mock('#lib/api/captcha-settings.ts', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
 	...api,
 }));
 
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => ({})),
 	requireRole: vi.fn(async () => ({ id: 'u1', roles: ['admin'] })),
 }));

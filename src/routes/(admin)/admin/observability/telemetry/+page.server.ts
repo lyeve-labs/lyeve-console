@@ -1,10 +1,10 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-import { parseExposition, readMetricsText, type MetricFamily } from '$lib/api/telemetry';
-import { section, type Section } from '$lib/api/gate';
-import { authedHeaders, loadUser } from '$lib/server/authz';
-import { couldNotLoad } from '$lib/outage';
-import { rolesInWords } from '$lib/roles';
+import { parseExposition, readMetricsText, type MetricFamily } from '#lib/api/telemetry.ts';
+import { section, type Section } from '#lib/api/gate.ts';
+import { authedHeaders, loadUser } from '#lib/server/authz.ts';
+import { couldNotLoad } from '#lib/outage.ts';
+import { rolesInWords } from '#lib/roles.ts';
 
 const READERS = ['admin', 'super_admin'];
 

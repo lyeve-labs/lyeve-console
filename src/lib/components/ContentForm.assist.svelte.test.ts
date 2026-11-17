@@ -5,9 +5,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { activeAssistForm, type FormAssistController } from '@lyeve-labs/ui-kit';
 import type { Content, FieldType, HttpClient, SchemaField } from '@lyeve-labs/client';
 import ContentForm from './ContentForm.svelte';
-import { fieldKey } from '$lib/utils/content-form';
-import { formContext } from '$lib/assistant/request';
-import { readRelationChoices } from '$lib/server/relation-choices';
+import { fieldKey } from '#lib/utils/content-form.ts';
+import { formContext } from '#lib/assistant/request.ts';
+import { readRelationChoices } from '#lib/server/relation-choices.ts';
 
 afterEach(cleanup);
 

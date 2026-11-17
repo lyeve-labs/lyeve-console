@@ -1,13 +1,13 @@
 <script lang="ts">
-	import PageTitle from '$lib/components/PageTitle.svelte';
+	import PageTitle from '#lib/components/PageTitle.svelte';
 	import { enhance } from '$app/forms';
 	import { Alert, Button, Input } from '@lyeve-labs/ui-kit';
 	import { ArrowLeft } from '@lucide/svelte';
-	import AuthShell from '$lib/components/AuthShell.svelte';
-	import { submitter } from '$lib/forms.svelte';
-	import OrganizationField from '$lib/components/OrganizationField.svelte';
-	import { ICON } from '$lib/icon';
-	import { withOrganization } from '$lib/organization';
+	import AuthShell from '#lib/components/AuthShell.svelte';
+	import { submitter } from '#lib/forms.svelte.ts';
+	import OrganizationField from '#lib/components/OrganizationField.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import { withOrganization } from '#lib/organization.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { form, data }: { form: ActionData; data: PageData } = $props();

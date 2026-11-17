@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Change } from '$lib/schema/editor';
+import type { Change } from '#lib/schema/editor.ts';
 import DdlPreview from './DdlPreview.svelte';
 
 afterEach(cleanup);

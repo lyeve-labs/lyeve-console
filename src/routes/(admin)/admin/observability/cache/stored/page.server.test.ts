@@ -16,7 +16,7 @@ const api = vi.hoisted(() => ({
 	resetCircuit: vi.fn(),
 }));
 
-vi.mock('$lib/api/cache', async (importOriginal) => ({
+vi.mock('#lib/api/cache.ts', async (importOriginal) => ({
 	...(await importOriginal<Record<string, unknown>>()),
 	...api,
 }));
@@ -26,7 +26,7 @@ const authz = vi.hoisted(() => ({
 	requireRole: vi.fn(),
 }));
 
-vi.mock('$lib/server/authz', () => ({
+vi.mock('#lib/server/authz.ts', () => ({
 	authedClient: vi.fn(() => ({})),
 	requireRole: authz.requireRole,
 }));

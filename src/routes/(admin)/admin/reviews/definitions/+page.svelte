@@ -1,19 +1,19 @@
 <script lang="ts">
-	import FormErrors from '$lib/components/FormErrors.svelte';
+	import FormErrors from '#lib/components/FormErrors.svelte';
 	import { Alert, Badge, Button, EmptyState, PageShell, SectionHeading, Table } from '@lyeve-labs/ui-kit';
 	import { enhance } from '$app/forms';
-	import GateNotice from '$lib/components/GateNotice.svelte';
-	import ReviewTabs from '$lib/components/ReviewTabs.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import ReviewTabs from '#lib/components/ReviewTabs.svelte';
 	import { ClipboardCheck, Plus, Trash2 } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
-	import { confirmed, fieldErrors } from '$lib/forms.svelte';
-	import { approvalsNeeded, conditionText, type ReviewStage } from '$lib/api/review';
-	import RefusalNotice from '$lib/components/RefusalNotice.svelte';
-	import { formRefusal, type Refusal } from '$lib/api/refusal';
-	import { NO_VALUE, plural } from '$lib/format';
-	import { couldNotLoad } from '$lib/outage';
-	import { shortId } from '$lib/utils/entry-identity';
-	import { ICON } from '$lib/icon';
+	import { confirmed, fieldErrors } from '#lib/forms.svelte.ts';
+	import { approvalsNeeded, conditionText, type ReviewStage } from '#lib/api/review.ts';
+	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
+	import { formRefusal, type Refusal } from '#lib/api/refusal.ts';
+	import { NO_VALUE, plural } from '#lib/format.ts';
+	import { couldNotLoad } from '#lib/outage.ts';
+	import { shortId } from '#lib/utils/entry-identity.ts';
+	import { ICON } from '#lib/icon.ts';
 	import DefinitionDrawer from './DefinitionDrawer.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

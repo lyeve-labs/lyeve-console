@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { motion } from '@lyeve-labs/ui-kit';
-import type { OnNavigate } from '@sveltejs/kit';
+import type { OnNavigate } from '$app/navigation';
 import { ENTERING, fadeRouteChange } from './page-transition';
 
 vi.mock('@lyeve-labs/ui-kit', () => ({ motion: { swapPage: vi.fn() } }));

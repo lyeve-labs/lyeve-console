@@ -12,15 +12,15 @@
 		Stat,
 		Table,
 	} from '@lyeve-labs/ui-kit';
-	import GateNotice from '$lib/components/GateNotice.svelte';
+	import GateNotice from '#lib/components/GateNotice.svelte';
 	import type { PageData } from './$types';
-	import { pageHref, pageNumber } from '$lib/api/list';
-	import { LOG_PAGE_SIZES } from '$lib/api/logs';
-	import { LOG_LEVELS, NO_VALUE, formatCount, formatDateTime, hasTrace, logLevelLabel, logLevelTone, plural } from '$lib/format';
+	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { LOG_PAGE_SIZES } from '#lib/api/logs.ts';
+	import { LOG_LEVELS, NO_VALUE, formatCount, formatDateTime, hasTrace, logLevelLabel, logLevelTone, plural } from '#lib/format.ts';
 	import { FileText, AlertTriangle, BellRing } from '@lucide/svelte';
-	import ListToolbar from '$lib/components/ListToolbar.svelte';
-	import { ICON } from '$lib/icon';
-	import { liveFilter } from '$lib/live-filter.svelte';
+	import ListToolbar from '#lib/components/ListToolbar.svelte';
+	import { ICON } from '#lib/icon.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
 
 	let { data }: { data: PageData } = $props();
 	const live = liveFilter(() => data.q);

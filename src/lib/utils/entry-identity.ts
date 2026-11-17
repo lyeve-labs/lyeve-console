@@ -1,5 +1,5 @@
 import type { SchemaField } from '@lyeve-labs/client';
-import { text } from '$lib/api/narrow';
+import { text } from '#lib/api/narrow.ts';
 
 /**
  * Which part of an entry produced the name on screen.

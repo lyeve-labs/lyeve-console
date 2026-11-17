@@ -1,11 +1,11 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { authedClient, requireRole } from '$lib/server/authz';
-import { actionError } from '$lib/server/action-error';
-import { LOGO_MAX_BYTES, LOGO_TYPES, logoAddressOk } from '$lib/logo';
-import { importMedia, importRefusal, isForeignAddress, listMediaChoices, type MediaChoice } from '$lib/api/media';
-import { LogoRejected, uploadLogo } from '$lib/server/logo-upload';
-import { EMPTY_SETTINGS, parseAccent, saveCustomization } from '$lib/api/customization';
+import { authedClient, requireRole } from '#lib/server/authz.ts';
+import { actionError } from '#lib/server/action-error.ts';
+import { LOGO_MAX_BYTES, LOGO_TYPES, logoAddressOk } from '#lib/logo.ts';
+import { importMedia, importRefusal, isForeignAddress, listMediaChoices, type MediaChoice } from '#lib/api/media.ts';
+import { LogoRejected, uploadLogo } from '#lib/server/logo-upload.ts';
+import { EMPTY_SETTINGS, parseAccent, saveCustomization } from '#lib/api/customization.ts';
 import { current, openTab } from './customization.server';
 
 export const load: PageServerLoad = async (event) => {
