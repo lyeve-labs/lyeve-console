@@ -80,8 +80,10 @@ export function documentTitle(brand: PublicBrand | null | undefined, ...parts: (
 export async function readPublicBrand(fetch: typeof globalThis.fetch): Promise<PublicBrand> {
 	try {
 		// A slow engine would hold every signed-out page, and the page is
-		// whole without the brand.
-		const res = await fetch(PUBLIC_BRAND_PATH, { signal: AbortSignal.timeout(2000) });
+		// whole without the brand. The browser's cookies stay off the call: a
+		// session that ended in another tenant would otherwise choose the
+		// brand, while the logo loads without it from the host's tenant.
+		const res = await fetch(PUBLIC_BRAND_PATH, { signal: AbortSignal.timeout(2000), credentials: 'omit' });
 		if (!res.ok) return STOCK_BRAND;
 		return brandOf((await res.json()) as Partial<PublicBrand> | null);
 	} catch {
