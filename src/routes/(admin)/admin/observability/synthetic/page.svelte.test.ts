@@ -212,10 +212,18 @@ describe('notice channels', () => {
 	});
 
 	it('opens and closes the channels with the search, the filter and the page kept', async () => {
-		appState.page.url = new URL('http://localhost/admin/observability/synthetic?q=home&show=paused&offset=25&channels=p9');
-		const { container } = render(SyntheticPage, { props: props({ q: 'home', show: 'paused' }) });
+		appState.page.url = new URL('http://localhost/admin/observability/synthetic?q=home&show=paused&offset=25&channels=p1');
+		nav.goto.mockClear();
+		const { container, getByRole } = render(SyntheticPage, {
+			props: props({ q: 'home', show: 'paused', channelsFor: read() }),
+		});
 		const link = container.querySelector('a[aria-label="Notice channels for Homepage"]');
 		expect(link?.getAttribute('href')).toBe('/admin/observability/synthetic?q=home&show=paused&offset=25&channels=p1');
+		await fireEvent.click(getByRole('button', { name: 'Cancel' }));
+		expect(nav.goto).toHaveBeenCalledWith('/admin/observability/synthetic?q=home&show=paused&offset=25', {
+			replace: true,
+			reset: false,
+		});
 		appState.page.url = new URL('http://localhost/');
 	});
 
