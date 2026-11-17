@@ -218,8 +218,24 @@ export interface ModelPrice {
 	updated_at: string;
 }
 
-export type TranscriptKind = 'assistant' | 'flow_assistant' | 'node' | 'route';
-export const TRANSCRIPT_KINDS: TranscriptKind[] = ['assistant', 'flow_assistant', 'node', 'route'];
+/** Every kind the AI plugin writes a transcript under: who asked. */
+export type TranscriptKind =
+	| 'assistant'
+	| 'flow_assistant'
+	| 'engine_assistant'
+	| 'plugin_assistant'
+	| 'node'
+	| 'route'
+	| 'support';
+export const TRANSCRIPT_KINDS: TranscriptKind[] = [
+	'assistant',
+	'flow_assistant',
+	'engine_assistant',
+	'plugin_assistant',
+	'node',
+	'route',
+	'support',
+];
 
 export interface TranscriptMessage {
 	id: string;

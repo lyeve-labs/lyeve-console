@@ -22,6 +22,16 @@ describe('admin/ai/transcripts load', () => {
 		expect(url).toContain('subject_id=post-1');
 	});
 
+	it.each(['engine_assistant', 'plugin_assistant', 'support'])('forwards the %s kind the plugin writes', async (kind) => {
+		const { event, calls } = loadEvent(
+			{ '/api/admin/ai/transcripts': () => json({ data: [], total: 0 }) },
+			{ path: `/admin/ai/transcripts?kind=${kind}` },
+		);
+		const out = (await load(event)) as Loaded;
+		expect(out.kind).toBe(kind);
+		expect(calls[0].url).toContain(`kind=${kind}`);
+	});
+
 	it('drops a kind the plugin does not know rather than sending it', async () => {
 		const { event, calls } = loadEvent({ '/api/admin/ai/transcripts': () => json({ data: [], total: 0 }) }, { path: '/admin/ai/transcripts?kind=bogus' });
 		const out = (await load(event)) as Loaded;
