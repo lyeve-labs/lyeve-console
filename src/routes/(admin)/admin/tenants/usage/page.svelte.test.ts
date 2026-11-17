@@ -32,6 +32,7 @@ const props = (over: Record<string, unknown> = {}) => ({
 		quotaTotal: 0,
 		limit: 50,
 		offset: 0,
+		q: '',
 		requests: { ok: true, value: [request(MIRA)] },
 		requestTotal: 1,
 		usage: { ok: true, value: [] },
@@ -139,12 +140,18 @@ describe('the quota list', () => {
 		blocked_at: null,
 	});
 
-	it('narrows the page by the typed tenant', async () => {
-		const { container } = render(UsagePage, { props: props({ quotas: [quota('acme'), quota('globex')], quotaTotal: 2 }) });
-		await fireEvent.input(container.querySelector('#quota-search') as HTMLInputElement, { target: { value: 'glob' } });
-		const rows = [...container.querySelectorAll('table[aria-label="Quotas"] tbody tr, [aria-label="Quotas"] tbody tr')].map((tr) => tr.textContent ?? '');
-		expect(rows.some((t) => t.includes('globex'))).toBe(true);
-		expect(rows.some((t) => t.includes('acme'))).toBe(false);
+	it('keeps the search on the pager', () => {
+		const quotas = Array.from({ length: 50 }, (_, i) => quota(`t${i}`));
+		const { container } = render(UsagePage, { props: props({ quotas, quotaTotal: 120, q: 'glob' }) });
+		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
+		expect(hrefs.some((h) => h.startsWith('/admin/tenants/usage?q=glob&') && h.includes('offset=50'))).toBe(true);
+	});
+
+	it('offers to clear a search that matches nothing, rather than offering a first quota', () => {
+		const { container } = render(UsagePage, { props: props({ quotas: [], quotaTotal: 0, q: 'nothing like it' }) });
+		expect(container.textContent).toContain('No quotas match this search');
+		expect(container.textContent).not.toContain('No quotas yet');
+		expect(container.querySelector('a[href="/admin/tenants/usage"]')?.textContent?.trim()).toBe('Clear filters');
 	});
 
 	it('offers the first quota from the empty list', () => {

@@ -8,7 +8,7 @@
 		PageShell,
 		Pagination,
 		SearchInput,
-		SegmentedControl,
+		FilterChips,
 		Table,
 		toast,
 	} from '@lyeve-labs/ui-kit';
@@ -17,7 +17,6 @@
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import { confirmed, drawerFailure, fieldErrors, tracked } from '#lib/forms.svelte.ts';
-	import { narrows } from '#lib/narrow.ts';
 	import type { PageData, ActionData } from './$types';
 	import type { SubmitFunction } from '$app/forms';
 	import type { Tenant } from '@lyeve-labs/client-rest';
@@ -26,6 +25,9 @@
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import { ICON } from '#lib/icon.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { listQuery } from '#lib/back.ts';
+	import { liveFilter } from '#lib/live-filter.svelte.ts';
+	import { TENANT_LIST_KEYS } from './list-keys';
 	import { formRefusal } from '#lib/api/refusal.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -103,22 +105,22 @@
 		};
 	};
 
-	// The endpoint takes no search, so the box narrows the page on screen and
-	// the pager below still walks the whole collection.
-	let query = $state('');
-	let status = $state('');
-	const STATUSES = [
-		{ value: '', label: 'All' },
-		{ value: 'enabled', label: 'Enabled' },
-		{ value: 'disabled', label: 'Disabled' },
-	];
-	const visible = $derived(
-		(data.tenants.ok ? data.tenants.value : []).filter(
-			(t: Tenant) =>
-				narrows(query, t.slug, t.name, t.plan) &&
-				(status === '' || (status === 'enabled') === t.enabled)
-		)
+	// The plugin searches and filters every tenant, so a match past the first
+	// page shows on the first. Both live in the URL, and a row link carries
+	// them so the tenant's back link returns to the same slice.
+	const live = liveFilter(() => data.q);
+	const filtered = $derived(data.q !== '' || data.status !== '');
+	const statusOptions = $derived(
+		[
+			{ value: '', label: 'All' },
+			{ value: 'enabled', label: 'Enabled' },
+			{ value: 'disabled', label: 'Disabled' },
+		].map((o) => ({ ...o, href: `/admin/tenants${listQuery({ status: o.value, q: data.q })}` })),
 	);
+	const listParams = $derived(
+		Object.fromEntries(TENANT_LIST_KEYS.flatMap((k) => (data[k] ? [[k, data[k]]] : []))) as Record<string, string>,
+	);
+	const rowQuery = $derived(listQuery(listParams));
 
 	const saveTenantSubmit = tracked(saveTenant);
 
@@ -128,6 +130,27 @@
 		data.tenants.ok && data.tenants.value.length > 0 ? ' You can still edit, disable and delete the tenants below.' : '',
 	);
 </script>
+
+{#snippet toolbar()}
+	<form method="GET" {@attach live.form}>
+		{#if data.status}<input type="hidden" name="status" value={data.status} />{/if}
+		<ListToolbar label="Filter tenants">
+			{#snippet search()}
+				<label for="tenant-search" class="sr-only">Search tenants</label>
+				<SearchInput
+					id="tenant-search"
+					name="q"
+					bind:value={live.value}
+					oninput={live.input}
+					placeholder="Slug, name or plan"
+				/>
+			{/snippet}
+			{#snippet filters()}
+				<FilterChips label="Status" value={data.status} options={statusOptions} />
+			{/snippet}
+		</ListToolbar>
+	</form>
+{/snippet}
 
 <PageShell
 	title="Tenants"
@@ -172,6 +195,13 @@
 			title="Tenants"
 			absent="Multitenancy is not included in this build. This engine has one tenant."
 		/>
+	{:else if data.tenants.value.length === 0 && filtered}
+		{@render toolbar()}
+		<EmptyState level={2} title="No tenants match these filters" description="Clear the search or choose another status.">
+			{#snippet action()}
+				<Button variant="secondary" href="/admin/tenants">Clear filters</Button>
+			{/snippet}
+		</EmptyState>
 	{:else if data.tenants.value.length === 0}
 		<EmptyState
 			level={2}
@@ -190,23 +220,8 @@
 			{/snippet}
 		</EmptyState>
 	{:else}
-		<ListToolbar label="Filter tenants">
-			{#snippet search()}
-				<label for="tenant-search" class="sr-only">Search this page</label>
-				<SearchInput id="tenant-search" bind:value={query} placeholder="Slug, name or plan on this page" />
-			{/snippet}
-			{#snippet filters()}
-				<SegmentedControl label="Status" labelHidden bind:value={status} options={STATUSES} />
-			{/snippet}
-		</ListToolbar>
+		{@render toolbar()}
 
-		{#if visible.length === 0}
-			<EmptyState
-				level={2}
-				title="No tenants match this search"
-				description="The search covers this page only. Clear it or go to another page."
-			/>
-		{:else}
 		<Table label="Tenants">
 			<thead>
 				<tr>
@@ -219,11 +234,11 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each visible as tenant (tenant.id)}
+				{#each data.tenants.value as tenant (tenant.id)}
 					<tr>
 						<td data-cell="nowrap" class="font-mono text-xs">{tenant.slug}</td>
 						<td data-cell="nowrap">
-							<a href="/admin/tenants/{tenant.id}" class="relative hit-area text-fg transition-colors hover:text-brand">{tenant.name}</a>
+							<a href="/admin/tenants/{tenant.id}{rowQuery}" class="relative hit-area text-fg transition-colors hover:text-brand">{tenant.name}</a>
 						</td>
 						<td>
 							{#if tenant.plan}
@@ -289,7 +304,6 @@
 				{/each}
 			</tbody>
 		</Table>
-		{/if}
 
 		<!-- Links rather than a callback, so a page turns before hydration. -->
 		<Pagination
@@ -298,7 +312,7 @@
 			count={data.tenants.value.length}
 			total={data.total}
 			noun="tenants"
-			href={pageHref('/admin/tenants', data.limit)}
+			href={pageHref('/admin/tenants', data.limit, listParams)}
 		/>
 	{/if}
 </PageShell>

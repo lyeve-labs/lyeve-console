@@ -20,6 +20,9 @@
 	import { ICON } from '#lib/icon.ts';
 	import { roleTone } from '#lib/roles.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
+	import { page } from '$app/state';
+	import { listBack } from '#lib/back.ts';
+	import { TENANT_LIST_KEYS } from '../list-keys';
 	import { formatDate } from '#lib/format.ts';
 	import type { TenantMember } from '#lib/api/tenant-access.ts';
 	import GateNotice from '#lib/components/GateNotice.svelte';
@@ -151,7 +154,7 @@
 	title={tenant.name}
 	description="Choose what this tenant can use and who can work in it."
 	width="wide"
-	back={{ href: '/admin/tenants', label: 'Tenants' }}
+	back={listBack('/admin/tenants', 'Tenants', page.url, TENANT_LIST_KEYS)}
 >
 	{#snippet actions()}
 		{#if tenant.archived}
@@ -316,7 +319,11 @@
 				count={data.members.value.length}
 				total={data.memberTotal}
 				noun="members"
-				href={pageHref(`/admin/tenants/${tenant.id}`, data.limit)}
+				href={pageHref(
+					`/admin/tenants/${tenant.id}`,
+					data.limit,
+					Object.fromEntries(TENANT_LIST_KEYS.flatMap((k) => (page.url.searchParams.get(k) ? [[k, page.url.searchParams.get(k) ?? '']] : []))),
+				)}
 			/>
 		{/if}
 	</section>

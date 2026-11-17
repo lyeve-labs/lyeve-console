@@ -83,9 +83,10 @@ export interface TenantUsage {
 export async function listQuotas(
 	client: HttpClient,
 	limit = 50,
-	offset = 0
+	offset = 0,
+	q = ''
 ): Promise<ListEnvelope<Quota>> {
-	return client.get<ListEnvelope<Quota>>(`${QUOTAS_URL}?limit=${limit}&offset=${offset}`);
+	return client.get<ListEnvelope<Quota>>(`${QUOTAS_URL}${query({ limit, offset, q })}`);
 }
 
 /** The most requests one read asks for, the engine's page ceiling. */

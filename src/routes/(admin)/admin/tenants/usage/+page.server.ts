@@ -18,7 +18,7 @@ import {
 	type TenantUsage,
 } from '#lib/api/usage.ts';
 import { type Gate, GATE_OK, section, type Section } from '#lib/api/gate.ts';
-import { rowsOf, pageWindow, pastEndOffset, statedTotal, totalOf, withOffset } from '#lib/api/list.ts';
+import { rowsOf, pageWindow, pastEndOffset, searchOf, statedTotal, totalOf, withOffset } from '#lib/api/list.ts';
 import { listPeople } from '#lib/server/people.ts';
 import { couldNotLoad } from '#lib/outage.ts';
 import { asked } from '#lib/server/asked.ts';
@@ -46,6 +46,7 @@ export const load: PageServerLoad = async (event) => {
 			quotaTotal: 0,
 			limit: 50,
 			offset: 0,
+			q: '',
 			requests: UNREAD as Section<QuotaRequest[]>,
 			requestTotal: null as number | null,
 			usage: UNREAD as Section<TenantUsage[]>,
@@ -59,12 +60,15 @@ export const load: PageServerLoad = async (event) => {
 	// The endpoint pages at 50 by default, so a read that names no window
 	// shows the first 50 quotas and calls them every tenant's.
 	const { limit, offset } = pageWindow(event.url, 50, 500);
+	// An admin's list holds their own tenant's quota alone, and the usage read
+	// below names that tenant from it, so only a super admin searches.
+	const q = superAdmin ? searchOf(event.url) : '';
 	let quotas: Quota[] = [];
 	let quotaTotal = 0;
 	// The shell says why the page is unavailable while its plugin does not run.
 	let gate: Gate = notRunning(plugins, PLUGIN.usage) ? { state: 'absent' } : GATE_OK;
 	if (gate.state === 'ok') {
-		const read = await section(listQuotas(client, limit, offset), couldNotLoad('usage'));
+		const read = await section(listQuotas(client, limit, offset, q), couldNotLoad('usage'));
 		if (read.ok) {
 			quotas = rowsOf(read.value);
 			quotaTotal = Math.max(totalOf(read.value), offset + quotas.length);
@@ -108,6 +112,7 @@ export const load: PageServerLoad = async (event) => {
 		quotaTotal,
 		limit,
 		offset,
+		q,
 		requests,
 		requestTotal: requestRead.ok ? statedTotal(requestRead.value) : null,
 		usage: usage as Section<TenantUsage[]>,

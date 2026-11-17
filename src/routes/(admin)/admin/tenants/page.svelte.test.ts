@@ -44,6 +44,8 @@ function data(overrides: Record<string, unknown> = {}) {
 		tenants: Array.isArray(rows) ? { ok: true, value: rows } : rows,
 		limit: 50,
 		offset: 0,
+		q: '',
+		status: '',
 		total: 731,
 		// Creating is enabled, so a pagination test is not also a gate test.
 		canProvision: true,
@@ -135,6 +137,22 @@ describe('Tenants pagination', () => {
 	});
 
 	// A link turns the page before the page hydrates, which a callback cannot.
+	it('keeps the search and the status on the pager, the chips and each row link', () => {
+		const { container } = render(TenantsPage, { props: props({ q: 'acme', status: 'enabled' }) });
+		const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
+		expect(hrefs).toContain('/admin/tenants/t0?status=enabled&q=acme');
+		expect(hrefs).toContain('/admin/tenants?status=disabled&q=acme');
+		expect(hrefs.some((h) => h.startsWith('/admin/tenants?status=enabled&q=acme&') && h.includes('offset=50'))).toBe(true);
+	});
+
+	it('offers to clear filters that match nothing, rather than offering a first tenant', () => {
+		const { container } = render(TenantsPage, { props: props({ tenants: [], total: 0, q: 'nothing like it' }) });
+		expect(container.textContent).toContain('No tenants match these filters');
+		expect(container.textContent).not.toContain('No tenants yet');
+		expect(container.querySelector('#tenant-search')).toBeTruthy();
+		expect(container.querySelector('a[href="/admin/tenants"]')?.textContent?.trim()).toBe('Clear filters');
+	});
+
 	it('links the next page by its offset', () => {
 		const { getByRole } = render(TenantsPage, { props: props() });
 
