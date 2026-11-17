@@ -238,11 +238,12 @@ export const MAX_SEARCH = 200;
 
 /**
  * The search a list's address carries, trimmed. A search longer than the
- * engine accepts reads as none, because sending it would fail the whole list.
+ * engine accepts is cut to its first MAX_SEARCH characters and trimmed again,
+ * so the box shows what was searched and the rows match it.
  */
 export function searchOf(url: URL): string {
 	const q = (url.searchParams.get('q') ?? '').trim();
-	return [...q].length > MAX_SEARCH ? '' : q;
+	return [...q].slice(0, MAX_SEARCH).join('').trim();
 }
 
 /**

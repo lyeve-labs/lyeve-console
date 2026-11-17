@@ -47,14 +47,14 @@ describe('API keys load', () => {
 		expect(out).toMatchObject({ q: 'deploy', status: 'revoked' });
 	});
 
-	it('drops a status it does not offer and a search the engine would refuse', async () => {
+	it('drops a status it does not offer and cuts a search past 200 characters', async () => {
 		const asked: string[] = [];
 		const answer = (path: string) => (asked.push(path), path.startsWith('/api/admin/api-keys') ? json({ data: [], total_count: 0 }) : json({}));
 		const out = (await load(event(answer, `?status=expired&q=${'a'.repeat(201)}`))) as Loaded;
 		const url = asked.find((p) => p.startsWith('/api/admin/api-keys'))!;
 		expect(url).not.toContain('status=');
-		expect(url).not.toContain('q=');
-		expect(out).toMatchObject({ q: '', status: '' });
+		expect(url).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(out).toMatchObject({ q: 'a'.repeat(200), status: '' });
 	});
 
 	it('marks the usage unknown when its read failed, and absent when the route is missing', async () => {

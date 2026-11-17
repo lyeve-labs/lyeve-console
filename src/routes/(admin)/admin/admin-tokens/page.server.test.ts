@@ -177,7 +177,7 @@ describe('the load', () => {
 		expect(out).toMatchObject({ q: 'ci', status: 'replaced' });
 	});
 
-	it('drops a status it does not offer and a search the engine would refuse', async () => {
+	it('drops a status it does not offer and cuts a search past 200 characters', async () => {
 		const { ev, fetch } = loadEvent(
 			['admin'],
 			{ 'GET /api/admin/admin-tokens': { status: 200, body: { data: [], total_count: 0 } } },
@@ -186,8 +186,8 @@ describe('the load', () => {
 		const out = (await load(ev)) as Record<string, unknown>;
 		const asked = String(fetch.mock.calls.map(([u]) => String(u)).find((u) => u.includes('/api/admin/admin-tokens?')));
 		expect(asked).not.toContain('status=');
-		expect(asked).not.toContain('q=');
-		expect(out).toMatchObject({ q: '', status: '' });
+		expect(asked).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(out).toMatchObject({ q: 'a'.repeat(200), status: '' });
 	});
 
 	it('sends a page past the end back to the last page that holds tokens', async () => {

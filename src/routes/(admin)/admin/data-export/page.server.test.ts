@@ -87,10 +87,10 @@ describe('data export load', () => {
 		expect(out).toMatchObject({ status: 'failed', q: 'nightly' });
 	});
 
-	it('does not send a search the engine would refuse', async () => {
+	it('cuts a search past 200 characters before sending it', async () => {
 		const out = (await load(event(`?q=${'a'.repeat(201)}`))) as unknown as { q: string };
-		expect(api.listJobs).toHaveBeenLastCalledWith(expect.anything(), 50, 0, '', '');
-		expect(out.q).toBe('');
+		expect(api.listJobs).toHaveBeenLastCalledWith(expect.anything(), 50, 0, '', 'a'.repeat(200));
+		expect(out.q).toBe('a'.repeat(200));
 	});
 
 	it('sends a page past the end back to the last page', async () => {

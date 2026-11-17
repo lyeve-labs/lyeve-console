@@ -64,13 +64,13 @@ describe('the events load', () => {
 		expect(out).toMatchObject({ q: 'orders', failed: '1' });
 	});
 
-	it('drops an error filter value it does not offer and a search the engine would refuse', async () => {
+	it('drops an error filter value it does not offer and cuts a search past 200 characters', async () => {
 		route({ '/events/replay': { data: [], total_count: 0 }, '/events?': { data: [], total_count: 0 } });
 		const out = (await load(loadEvent(`?failed=yes&q=${'a'.repeat(201)}`))) as Loaded;
 		const asked = engine.get.mock.calls.map((c) => String(c[0])).find((u) => u.includes('/events?'))!;
 		expect(asked).not.toContain('failed=');
-		expect(asked).not.toContain('q=');
-		expect(out).toMatchObject({ q: '', failed: '' });
+		expect(asked).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(out).toMatchObject({ q: 'a'.repeat(200), failed: '' });
 	});
 });
 

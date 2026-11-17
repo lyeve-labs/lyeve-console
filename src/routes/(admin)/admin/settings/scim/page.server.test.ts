@@ -63,11 +63,11 @@ describe('SCIM load', () => {
 		expect(out.q).toBe('azure');
 	});
 
-	it('does not send a search the engine would refuse', async () => {
+	it('cuts a search past 200 characters before sending it', async () => {
 		const ev = event({ data: [], total_count: 0 }, `?q=${'a'.repeat(201)}`);
 		const out = (await load(ev)) as { q: string };
-		expect(String((ev as { fetch: { mock: { calls: unknown[][] } } }).fetch.mock.calls[0][0])).not.toContain('q=');
-		expect(out.q).toBe('');
+		expect(String((ev as { fetch: { mock: { calls: unknown[][] } } }).fetch.mock.calls[0][0])).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(out.q).toBe('a'.repeat(200));
 	});
 });
 

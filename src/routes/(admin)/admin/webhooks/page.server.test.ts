@@ -87,14 +87,14 @@ describe('admin/webhooks/+page.server.ts load', () => {
 		expect(result).toMatchObject({ q: 'ship', status: 'disabled' });
 	});
 
-	it('drops a status it does not offer and a search the engine would refuse', async () => {
+	it('drops a status it does not offer and cuts a search past 200 characters', async () => {
 		const { seen, event } = loadEvent({ data: hooks(1), total_count: 1 }, `?status=failing&q=${'a'.repeat(201)}`);
 
 		const result = (await load(event)) as Loaded;
 
 		expect(webhookCall(seen)).not.toContain('status=');
-		expect(webhookCall(seen)).not.toContain('q=');
-		expect(result).toMatchObject({ q: '', status: '' });
+		expect(webhookCall(seen)).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(result).toMatchObject({ q: 'a'.repeat(200), status: '' });
 	});
 
 	it('carries the window the request named', async () => {

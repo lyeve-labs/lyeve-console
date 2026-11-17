@@ -254,14 +254,14 @@ describe('a plugin that answers every probe', () => {
 		expect(out.counts?.paused).toBe(3);
 	});
 
-	it('drops a show value it does not offer and a search past the engine limit', async () => {
+	it('drops a show value it does not offer and cuts a search past 200 characters', async () => {
 		engine.get.mockImplementation(async (url: string) => {
 			if (url.includes('/probes')) return many;
 			if (url.includes('/alerts')) return [];
 			throw new ApiError(404, 'not found', {});
 		});
 		const out = (await load(loadEvent(`?limit=25&show=passing&q=${'a'.repeat(201)}`))) as Loaded;
-		expect(out).toMatchObject({ q: '', show: '', total: 30 });
+		expect(out).toMatchObject({ q: 'a'.repeat(200), show: '', total: 0 });
 	});
 
 	it('sends an offset past every probe back to the last page', async () => {

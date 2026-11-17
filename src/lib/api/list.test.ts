@@ -79,8 +79,13 @@ describe('searchOf', () => {
 		expect(searchOf(at('\u{1F600}'.repeat(200)))).toBe('\u{1F600}'.repeat(200));
 	});
 
-	it('reads a search past 200 characters as none', () => {
-		expect(searchOf(at('a'.repeat(201)))).toBe('');
+	it('cuts a search past 200 characters to its first 200', () => {
+		expect(searchOf(at('a'.repeat(201)))).toBe('a'.repeat(200));
+		expect(searchOf(at('\u{1F600}'.repeat(201)))).toBe('\u{1F600}'.repeat(200));
+	});
+
+	it('trims again after the cut', () => {
+		expect(searchOf(at(`${'a'.repeat(199)}  bcd`))).toBe('a'.repeat(199));
 	});
 });
 

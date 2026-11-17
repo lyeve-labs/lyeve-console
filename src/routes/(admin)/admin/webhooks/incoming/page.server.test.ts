@@ -94,13 +94,13 @@ describe('admin/webhooks/incoming paging', () => {
 		expect(result).toMatchObject({ q: 'stripe', status: 'enabled' });
 	});
 
-	it('drops a status it does not offer and a search the engine would refuse', async () => {
+	it('drops a status it does not offer and cuts a search past 200 characters', async () => {
 		const { event, asked } = listEvent({ data: [row('a')], total_count: 1 }, `?status=on&q=${'a'.repeat(201)}`);
 		const result = (await load(event)) as Loaded;
 		const url = asked.find((u) => u.includes('/incoming-webhooks'))!;
 		expect(url).not.toContain('status=');
-		expect(url).not.toContain('q=');
-		expect(result).toMatchObject({ q: '', status: '' });
+		expect(url).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(result).toMatchObject({ q: 'a'.repeat(200), status: '' });
 	});
 
 	it('sends a page past the end back to the last page', async () => {

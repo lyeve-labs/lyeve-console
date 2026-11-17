@@ -135,15 +135,15 @@ describe('the accounts list', () => {
 		expect(result).toMatchObject({ q: 'ada', role: 'editor' });
 	});
 
-	it('drops a role it does not offer and a search the engine would refuse', async () => {
+	it('drops a role it does not offer and cuts a search past 200 characters', async () => {
 		const { event, seen } = loadEvent([], `?role=owner&q=${'a'.repeat(201)}`);
 
 		const result = await run(event);
 
 		const asked = seen.find((u) => u.includes('/api/admin/users?'))!;
 		expect(asked).not.toContain('role=');
-		expect(asked).not.toContain('q=');
-		expect(result).toMatchObject({ q: '', role: '' });
+		expect(asked).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(result).toMatchObject({ q: 'a'.repeat(200), role: '' });
 	});
 
 	// The endpoint clamps at its own default and sends no row count, so a page

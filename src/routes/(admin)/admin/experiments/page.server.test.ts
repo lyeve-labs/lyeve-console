@@ -80,11 +80,11 @@ describe('experiments list', () => {
 		expect(out.q).toBe('checkout');
 	});
 
-	it('does not send a search the engine would refuse', async () => {
+	it('cuts a search past 200 characters before sending it', async () => {
 		engine.get.mockResolvedValue({ data: [], total_count: 0 });
 		const out = (await load(loadEvent(`http://localhost/admin/experiments?q=${'a'.repeat(201)}`))) as { q: string };
-		expect(String(engine.get.mock.calls[0][0])).not.toContain('q=');
-		expect(out.q).toBe('');
+		expect(String(engine.get.mock.calls[0][0])).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(out.q).toBe('a'.repeat(200));
 	});
 });
 

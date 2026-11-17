@@ -82,15 +82,15 @@ describe('admin/jobs/+page.server.ts load', () => {
 		expect(result).toMatchObject({ q: 'digest', status: 'enabled' });
 	});
 
-	it('drops a status it does not offer and a search the engine would refuse', async () => {
+	it('drops a status it does not offer and cuts a search past 200 characters', async () => {
 		const { seen, event } = loadEvent(jobs(1), `?status=paused&q=${'a'.repeat(201)}`);
 
 		const result = (await load(event)) as Loaded;
 
 		const asked = seen.find((u) => u.includes('/api/admin/jobs?'))!;
 		expect(asked).not.toContain('status=');
-		expect(asked).not.toContain('q=');
-		expect(result).toMatchObject({ q: '', status: '' });
+		expect(asked).toMatch(/[?&]q=a{200}(&|$)/);
+		expect(result).toMatchObject({ q: 'a'.repeat(200), status: '' });
 	});
 
 	it('carries the window the request named', async () => {

@@ -37,10 +37,10 @@ describe('pii reads load', () => {
 		expect(api.listAccessLog).toHaveBeenCalledWith(expect.anything(), 50, 0, 'email');
 	});
 
-	it('does not send a search the engine would refuse', async () => {
+	it('cuts a search past 200 characters before sending it', async () => {
 		api.listAccessLog.mockResolvedValue({ data: [ENTRY], total_count: 1 });
-		expect(await load(loadEvent(`?q=${'a'.repeat(201)}`))).toMatchObject({ q: '' });
-		expect(api.listAccessLog).toHaveBeenCalledWith(expect.anything(), 50, 0, '');
+		expect(await load(loadEvent(`?q=${'a'.repeat(201)}`))).toMatchObject({ q: 'a'.repeat(200) });
+		expect(api.listAccessLog).toHaveBeenCalledWith(expect.anything(), 50, 0, 'a'.repeat(200));
 	});
 
 	it('sends an access log page past the end back to the last page', async () => {
