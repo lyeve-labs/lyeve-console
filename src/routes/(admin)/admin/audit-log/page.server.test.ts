@@ -255,6 +255,12 @@ describe('audit-log search maps to the endpoint filters', () => {
 		expect(both.get('resource_type')).toBe('content.delete');
 	});
 
+	it('sends the action once when the search names the action the select chose', () => {
+		const same = endpointQuery(filter('content.delete', { action: 'content.delete' }), 50, 0);
+		expect(same.get('action')).toBe('content.delete');
+		expect(same.get('resource_type')).toBeNull();
+	});
+
 	it('sends anything else as the resource type', () => {
 		expect(endpointQuery(filter('api_key'), 50, 0).get('resource_type')).toBe('api_key');
 	});
