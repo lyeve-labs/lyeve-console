@@ -176,10 +176,13 @@ describe('the route fade in app.css', () => {
 // Reduced motion is honored once, in the kit's stylesheet. A second check in
 // the admin is a second rule that can disagree with the first.
 describe('reduced motion', () => {
+	// Reading every source file takes a tenth of a second on a quiet machine
+	// and took over 10 s on a busy shared runner, so the survey has its own
+	// timeout instead of the 5 s default.
 	it('is decided nowhere in the admin', () => {
 		const src = fileURLToPath(new URL('..', import.meta.url));
 		const files = globSync('**/*.{ts,svelte,css}', { cwd: src }).filter((f) => !f.endsWith('.test.ts'));
 		expect(files.length).toBeGreaterThan(0);
 		expect(files.filter((f) => /prefers-reduced-motion/.test(readFileSync(join(src, f), 'utf8')))).toEqual([]);
-	});
+	}, 60_000);
 });
