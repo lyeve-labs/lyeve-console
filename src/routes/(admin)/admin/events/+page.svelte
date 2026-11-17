@@ -10,8 +10,8 @@
 		Input,
 		PageShell,
 		SearchInput,
-		Toggle,
 		SectionHeading,
+		SegmentedControl,
 		Stat,
 		Table,
 		Pagination,
@@ -33,7 +33,6 @@
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
 	import { filterHref } from '#lib/back.ts';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
 
@@ -80,11 +79,14 @@
 	// a shared link keep them.
 	const live = liveFilter(() => data.q);
 	const filtered = $derived(data.q !== '' || data.failed !== '');
-	// A switch that applies at once. The search and the page size stay, and
-	// the log starts again at its first page.
-	function showFailed(on: boolean) {
-		void goto(filterHref(page.url, 'failed', on ? '1' : ''), { reset: false });
-	}
+	// Each option is a link, so it works before hydration. The search and the
+	// page size stay, and the log starts again at its first page.
+	const failedOptions = $derived(
+		[
+			{ value: '', label: 'All' },
+			{ value: '1', label: 'With errors' },
+		].map((o) => ({ ...o, href: filterHref(page.url, 'failed', o.value) })),
+	);
 
 	const failures = $derived(failedOnly(data.events).length);
 </script>
@@ -242,7 +244,7 @@
 							/>
 						{/snippet}
 						{#snippet filters()}
-							<Toggle label="Only events with errors" checked={data.failed === '1'} onchange={showFailed} />
+							<SegmentedControl label="Errors" labelHidden value={data.failed} options={failedOptions} />
 						{/snippet}
 					</ListToolbar>
 				</form>

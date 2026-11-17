@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { render, cleanup, fireEvent } from '@testing-library/svelte';
+import { render, cleanup, fireEvent, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SubmitFunction } from '$app/forms';
 
-const nav = vi.hoisted(() => ({ refreshAll: vi.fn(async () => {}), goto: vi.fn(async () => {}) }));
+const nav = vi.hoisted(() => ({ refreshAll: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => nav);
 const appState = vi.hoisted(() => ({ page: { url: new URL('http://localhost/') } }));
 vi.mock('$app/state', () => appState);
@@ -271,13 +271,16 @@ describe('the search box', () => {
 		expect(hrefs.some((h) => h?.includes('failed=1') && h.includes('q=orders') && h.includes('offset=50'))).toBe(true);
 	});
 
-	it('switches the error filter at once, keeping the search and the page size from the first page', async () => {
+	it('links each error option from the first page, keeping the search and the page size', () => {
 		appState.page.url = new URL('http://localhost/admin/events?q=orders&limit=100&offset=100');
 		const { getByRole } = render(EventsPage, { props: props({ q: 'orders', total: 120 }) });
-		const toggle = getByRole('switch', { name: 'Only events with errors' });
-		expect(toggle.getAttribute('aria-checked')).toBe('false');
-		await fireEvent.click(toggle);
-		expect(nav.goto).toHaveBeenCalledWith('/admin/events?q=orders&limit=100&failed=1', { reset: false });
+		const group = getByRole('group', { name: 'Errors' });
+		const all = within(group).getByRole('link', { name: 'All' });
+		const withErrors = within(group).getByRole('link', { name: 'With errors' });
+		expect(all.getAttribute('aria-current')).toBe('page');
+		expect(all.getAttribute('href')).toBe('/admin/events?q=orders&limit=100');
+		expect(withErrors.getAttribute('href')).toBe('/admin/events?q=orders&limit=100&failed=1');
 		appState.page.url = new URL('http://localhost/');
 	});
+
 });
