@@ -171,7 +171,7 @@ describe('latency depth', () => {
 			'/admin/observability?top=100',
 		]);
 		expect(links.find((a) => a.getAttribute('aria-current') === 'page')?.textContent).toContain('Top 20');
-		expect(container.querySelector('#latency-top')?.hasAttribute('data-sveltekit-noscroll')).toBe(true);
+		expect(container.querySelector('#latency-top')?.getAttribute('data-sveltekit-reset')).toBe('false');
 	});
 });
 

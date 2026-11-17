@@ -444,9 +444,8 @@ describe('flow name link', () => {
 		it('loads once typing pauses, keeping focus, the history entry and the scroll', async () => {
 			const { container, getByTestId } = setup({ flows: [fixtureFlow] });
 			const form = getByTestId('flow-filters');
-			expect(form.hasAttribute('data-sveltekit-keepfocus')).toBe(true);
+			expect(form.getAttribute('data-sveltekit-reset')).toBe('false');
 			expect(form.hasAttribute('data-sveltekit-replacestate')).toBe(true);
-			expect(form.hasAttribute('data-sveltekit-noscroll')).toBe(true);
 			await type(field(container), 'o');
 			await type(field(container), 'or');
 			await vi.advanceTimersByTimeAsync(299);

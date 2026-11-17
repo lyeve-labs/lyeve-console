@@ -31,7 +31,7 @@ export const init: ServerInit = () => {
 // grows with every client address, spoofed ones included.
 setInterval(cleanupRateLimitStore, WINDOW_MS).unref();
 
-// The Content-Security-Policy is configured in svelte.config.js (kit.csp), not
+// The Content-Security-Policy is configured in vite.config.ts (csp), not
 // with the headers below, so SvelteKit can attach nonces to its own inline
 // hydration scripts. Setting script-src here would break it.
 export const handle: Handle = async ({ event, resolve }) => {

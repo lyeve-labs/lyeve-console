@@ -16,11 +16,11 @@ const appHtml = readFileSync(resolve(root, 'src/app.html'), 'utf8');
 const appCss = readFileSync(resolve(root, 'src/app.css'), 'utf8');
 // Read as text: importing the config would put it under the type check, which
 // types each directive as a list of CSP source keywords.
-const svelteConfig = readFileSync(resolve(root, 'svelte.config.js'), 'utf8');
+const viteConfig = readFileSync(resolve(root, 'vite.config.ts'), 'utf8');
 
 function directive(name: string): string {
-	const found = svelteConfig.match(new RegExp(`'${name}': \\[([^\\]]*)\\]`));
-	if (!found) throw new Error(`svelte.config.js sets no ${name}`);
+	const found = viteConfig.match(new RegExp(`'${name}': \\[([^\\]]*)\\]`));
+	if (!found) throw new Error(`vite.config.ts sets no ${name}`);
 	return found[1];
 }
 

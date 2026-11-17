@@ -71,7 +71,7 @@
 	}
 
 	function detailHref(id: string): string {
-		const q = new URLSearchParams(page.url.searchParams);
+		const q = new URLSearchParams(page.url.search);
 		q.set('job', id);
 		return `?${q}`;
 	}
@@ -80,9 +80,9 @@
 		detailOpen = data.detail !== null;
 	});
 	function closeDetail() {
-		const q = new URLSearchParams(page.url.searchParams);
+		const q = new URLSearchParams(page.url.search);
 		q.delete('job');
-		void goto(`?${q}`, { replaceState: true, noScroll: true, keepFocus: true });
+		void goto(`?${q}`, { replace: true, reset: false });
 	}
 
 	function cancel(j: ImportJob): SubmitFunction {

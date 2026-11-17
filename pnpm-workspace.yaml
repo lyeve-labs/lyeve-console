@@ -11,12 +11,3 @@ minimumReleaseAgeStrict: true
 # pnpm only warns when the running Node misses engines.node, so this makes
 # an install on an older Node fail instead.
 engineStrict: true
-
-# GHSA-3r8g-jcqq-3p5j: a denial of service in the form data parser of
-# SvelteKit's remote functions, fixed only in 3.1.1. The console declares no
-# remote function, so SvelteKit refuses every remote request before it reads
-# the body. src/lib/audit-exceptions.test.ts fails once that stops being true
-# and once SvelteKit carries the fix.
-auditConfig:
-  ignoreGhsas:
-    - GHSA-3r8g-jcqq-3p5j

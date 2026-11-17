@@ -81,9 +81,8 @@
 	function closeChannels() {
 		channelsOpen = false;
 		void goto(`${base}?${new URLSearchParams({ limit: String(data.limit), offset: String(data.offset) })}`, {
-			replaceState: true,
-			noScroll: true,
-			keepFocus: true,
+			replace: true,
+			reset: false,
 		});
 	}
 	const channelsSubmit = submitter(closeChannels);

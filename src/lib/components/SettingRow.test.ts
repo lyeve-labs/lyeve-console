@@ -107,7 +107,7 @@ describe('SettingRow', () => {
 		await tick();
 		expect(live.textContent).toBe('');
 
-		await finish({ result: { type: 'success', status: 200 }, update: async () => {} });
+		await finish({ result: { type: 'success', status: 200, location: '/admin/settings' }, update: async () => {} });
 		await view.rerender({ result: { key: 'SMTP_HOST', success: true } });
 		expect(view.getByTestId('setting-saved-SMTP_HOST')).toBe(live);
 		expect(live.textContent).toBe('Saved.');

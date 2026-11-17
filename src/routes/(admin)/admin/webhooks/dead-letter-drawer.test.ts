@@ -198,6 +198,6 @@ describe('the queue and its own failures', () => {
 	it('takes the queue out of the address on close', () => {
 		render(DeadLetterDrawer, { props: props(queue([])) });
 		[...(dialog()?.querySelectorAll('button') ?? [])].find((b) => b.textContent?.trim() === 'Close')?.click();
-		expect(nav.goto).toHaveBeenCalledWith('/admin/webhooks?offset=50', { noScroll: true, keepFocus: true });
+		expect(nav.goto).toHaveBeenCalledWith('/admin/webhooks?offset=50', { reset: false });
 	});
 });

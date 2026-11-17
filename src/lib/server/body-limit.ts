@@ -100,6 +100,8 @@ export async function limitBody(event: RequestEvent): Promise<Response | null> {
 	if (declared !== null) return tooLarge();
 	const read = await buffered(request, BODY_LIMIT);
 	if (!read) return tooLarge();
-	event.request = read;
+	// SvelteKit types the request as readonly, but the event is a plain object
+	// the handle hook owns, and resolve() reads the request from it.
+	(event as { request: Request }).request = read;
 	return null;
 }

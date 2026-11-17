@@ -225,7 +225,7 @@ export const load: PageServerLoad = async (event) => {
 			if (err instanceof ApiError && err.status === 403) {
 				const def = await schema.catch(() => null);
 				const subject = def?.display_name || params.schema;
-				error(403, { message: forbiddenText(`entries of ${subject}`), subject });
+				error(403, forbiddenText(`entries of ${subject}`), { subject });
 			}
 			return readError(err, 'Entry not found');
 		}),

@@ -110,7 +110,7 @@
 	function closeDrawer() {
 		open = false;
 		if (DRAWER_KEYS.some((key) => page.url.searchParams.has(key))) {
-			void goto(returnAddress(page.url, DRAWER_KEYS), { replaceState: true, noScroll: true, keepFocus: true });
+			void goto(returnAddress(page.url, DRAWER_KEYS), { replace: true, reset: false });
 		}
 	}
 

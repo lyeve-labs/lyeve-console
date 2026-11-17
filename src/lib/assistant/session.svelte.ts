@@ -16,6 +16,7 @@ import type { AssistValue, FormAssistController } from '@lyeve-labs/ui-kit';
 import { EventReader, type ApiProposal, type PlanEntry, type Step, type Usage } from './events';
 import { formContext, type AssistantRequest } from './request';
 import type { RefusalKind } from './refusal';
+import type { ReadonlyURL } from '$app/state';
 
 export const ASK_URL = '/admin/assistant';
 export const RUN_URL = '/admin/assistant/run';
@@ -60,7 +61,7 @@ export interface PageContext {
  * never the document's title, because an entry's tab title is a value from
  * the entry, and that value may sit in a field marked No AI.
  */
-export function pageContext(page: { url: URL; route: { id: string | null } }): PageContext {
+export function pageContext(page: { url: ReadonlyURL; route: { id: string | null } }): PageContext {
 	return { path: page.url.pathname, title: page.route.id ?? '' };
 }
 

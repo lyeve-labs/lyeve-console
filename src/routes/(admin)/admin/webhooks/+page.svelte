@@ -227,7 +227,7 @@
 	// A row's history and the queue open from the address, so a link or a
 	// reload opens them too, and the list keeps its page under them.
 	function drawerHref(param: string, value: string): string {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.set(param, value);
 		return `${next.pathname}${next.search}`;
 	}

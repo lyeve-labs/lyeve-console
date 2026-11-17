@@ -33,9 +33,9 @@
 	// Closing takes the webhook out of the address, or the next load would
 	// open its history again.
 	function close() {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.delete('deliveries');
-		void goto(`${next.pathname}${next.search}`, { noScroll: true, keepFocus: true });
+		void goto(`${next.pathname}${next.search}`, { reset: false });
 	}
 
 	let retryResults = $state<Record<string, { success: boolean; message: string }>>({});

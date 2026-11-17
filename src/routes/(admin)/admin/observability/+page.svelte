@@ -122,7 +122,7 @@
 			{#snippet filters()}
 				<!-- A depth is a page address. It replaces the entry in the history
 				     and keeps the reader where they were on the page. -->
-				<div id="latency-top" data-sveltekit-noscroll data-sveltekit-replacestate>
+				<div id="latency-top" data-sveltekit-reset="false" data-sveltekit-replacestate>
 					<SegmentedControl label="Rows" labelHidden size="sm" options={topOptions} value={String(data.top)} />
 				</div>
 			{/snippet}

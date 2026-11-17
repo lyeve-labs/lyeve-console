@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- The console runs on SvelteKit 3 and its Node adapter 6, because SvelteKit 2 carries a denial of service advisory, GHSA-3r8g-jcqq-3p5j, that only SvelteKit 3 fixes. The server reads `ORIGIN`, `PORT`, `BODY_SIZE_LIMIT`, `ADDRESS_HEADER` and `XFF_DEPTH` as before.
 - The console takes ui-kit 0.62.0. A ghost button that is switched on, such as Node palette, Inspector and Focus mode in the flow toolbar and the lock on a resizable side panel, shows it with the hover fill and a stronger border.
 - The console takes ui-kit 0.61.0. On the sidebar's icon rail each entry is a 40px square centered in the rail with a 20px icon, and the current page is the same square filled evenly. The rail draws no scroll bar, the mark is centered above the entries, and the column no longer runs under the sidebar's edge.
 

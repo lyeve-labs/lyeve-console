@@ -1,3 +1,5 @@
+import type { ReadonlyURL } from '$app/state';
+
 /** What a nested page hands PageShell's `back` prop. */
 export type BackLink = { href: string; label: string };
 
@@ -9,7 +11,7 @@ export type BackLink = { href: string; label: string };
  * back, in the order given, so a stray parameter on the detail URL cannot
  * reach the list, and an empty value is dropped rather than sent as `?q=`.
  */
-export function listBack(href: string, label: string, url: URL, keys: readonly string[]): BackLink {
+export function listBack(href: string, label: string, url: ReadonlyURL, keys: readonly string[]): BackLink {
 	const params = new URLSearchParams();
 	for (const key of keys) {
 		const value = url.searchParams.get(key);
@@ -37,7 +39,7 @@ export function listQuery(filters: Record<string, string | number | null | undef
  * the action a form posted to, as `?a=b` or an empty string. SvelteKit names
  * the action as the first key that starts with a slash.
  */
-export function queryWithout(url: URL, drop: readonly string[] = []): string {
+export function queryWithout(url: ReadonlyURL, drop: readonly string[] = []): string {
 	const params = new URLSearchParams();
 	for (const [key, value] of url.searchParams) {
 		if (key.startsWith('/') || drop.includes(key)) continue;
@@ -57,6 +59,6 @@ export function actionWithQuery(name: string, query: string): string {
 }
 
 /** Where an action sends the reader back to: the address it was posted from, less `drop`. */
-export function returnAddress(url: URL, drop: readonly string[] = []): string {
+export function returnAddress(url: ReadonlyURL, drop: readonly string[] = []): string {
 	return `${url.pathname}${queryWithout(url, drop)}`;
 }

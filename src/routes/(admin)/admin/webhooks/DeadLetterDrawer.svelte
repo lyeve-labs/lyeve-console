@@ -91,7 +91,7 @@
 
 	/** The address of a page of the queue. */
 	function pageHref(offset: number): string {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.set('dead', '1');
 		if (offset > 0) next.searchParams.set('dead_offset', String(offset));
 		else next.searchParams.delete('dead_offset');
@@ -101,10 +101,10 @@
 	// Closing takes the queue out of the address, or the next load would open
 	// it again.
 	function close() {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.delete('dead');
 		next.searchParams.delete('dead_offset');
-		void goto(`${next.pathname}${next.search}`, { noScroll: true, keepFocus: true });
+		void goto(`${next.pathname}${next.search}`, { reset: false });
 	}
 </script>
 

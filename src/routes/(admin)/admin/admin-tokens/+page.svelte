@@ -210,13 +210,13 @@
 	// The request log drawer, named by the URL so the load reads it.
 	const logToken = $derived(data.log ? (tokens.find((t) => t.id === data.log?.token) ?? null) : null);
 	function closeLog() {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.delete('log');
 		next.searchParams.delete('log_offset');
-		goto(`${next.pathname}${next.search}`, { noScroll: true, keepFocus: true });
+		goto(`${next.pathname}${next.search}`, { reset: false });
 	}
 	function logHref(id: string, offset = 0): string {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.set('log', id);
 		if (offset > 0) next.searchParams.set('log_offset', String(offset));
 		else next.searchParams.delete('log_offset');

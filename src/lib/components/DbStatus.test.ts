@@ -132,7 +132,7 @@ describe('DbStatus', () => {
 		render(DbStatus, { props: { pending: 1, items: queue.slice(0, 1), redirectTo: '/admin' } });
 		await fireEvent.click(screen.getByTestId('db-status'));
 
-		await submit({ type: 'failure', status: 409, data: { error: 'The queue changed since it was listed. Review it again.' } });
+		await submit({ type: 'failure', status: 409, location: '/admin', data: { error: 'The queue changed since it was listed. Review it again.' } });
 
 		await waitFor(() => expect(screen.getByText('The queue changed since it was listed. Review it again.')).toBeTruthy());
 		expect(nav.invalidate).toHaveBeenCalledWith('app:migrations');
@@ -142,7 +142,7 @@ describe('DbStatus', () => {
 		render(DbStatus, { props: { pending: 1, redirectTo: '/admin' } });
 		await fireEvent.click(screen.getByTestId('db-status'));
 
-		await submit({ type: 'failure', status: 400, data: { error: 'migration 059 failed' } });
+		await submit({ type: 'failure', status: 400, location: '/admin', data: { error: 'migration 059 failed' } });
 
 		await waitFor(() => expect(screen.getByText('migration 059 failed')).toBeTruthy());
 		expect(nav.refreshAll).not.toHaveBeenCalled();
@@ -152,7 +152,7 @@ describe('DbStatus', () => {
 		render(DbStatus, { props: { pending: 1, redirectTo: '/admin' } });
 		await fireEvent.click(screen.getByTestId('db-status'));
 
-		await submit({ type: 'failure', status: 400, data: {} });
+		await submit({ type: 'failure', status: 400, location: '/admin', data: {} });
 
 		await waitFor(() => expect(screen.getByText('Could not apply the migrations. Try again.')).toBeTruthy());
 	});
@@ -161,7 +161,7 @@ describe('DbStatus', () => {
 		render(DbStatus, { props: { pending: 1, redirectTo: '/admin' } });
 		await fireEvent.click(screen.getByTestId('db-status'));
 
-		await submit({ type: 'error', error: new Error('offline') });
+		await submit({ type: 'error', error: { status: 500, message: 'offline' } });
 
 		await waitFor(() => expect(screen.getByText('Could not apply the migrations. Check your connection and try again.')).toBeTruthy());
 	});
@@ -181,7 +181,7 @@ describe('DbStatus', () => {
 		expect(live.textContent).toBe('');
 
 		await fireEvent.click(screen.getByTestId('db-status'));
-		await submit({ type: 'failure', status: 400, data: { error: 'migration 059 failed' } });
+		await submit({ type: 'failure', status: 400, location: '/admin', data: { error: 'migration 059 failed' } });
 
 		await waitFor(() => expect(live.textContent).toBe('migration 059 failed'));
 		expect(screen.getByTestId('db-status-live')).toBe(live);
@@ -205,7 +205,7 @@ describe('DbStatus', () => {
 		leaving.setAttribute('inert', '');
 		document.body.append(leaving);
 
-		const done = submit({ type: 'failure', status: 400, data: { error: 'migration 059 failed' } });
+		const done = submit({ type: 'failure', status: 400, location: '/admin', data: { error: 'migration 059 failed' } });
 		await new Promise((r) => setTimeout(r, 10));
 		expect(live.textContent).toBe('');
 
@@ -220,7 +220,7 @@ describe('DbStatus', () => {
 	it('keeps the failure out of the chip it returns focus to', async () => {
 		render(DbStatus, { props: { pending: 2, redirectTo: '/admin' } });
 		await fireEvent.click(screen.getByTestId('db-status'));
-		await submit({ type: 'failure', status: 409, data: { error: 'The queue changed since it was listed. Review it again.' } });
+		await submit({ type: 'failure', status: 409, location: '/admin', data: { error: 'The queue changed since it was listed. Review it again.' } });
 
 		await waitFor(() => expect(screen.getByTestId('db-status-live').textContent).toBe('The queue changed since it was listed. Review it again.'));
 		expect(screen.getByTestId('db-status').getAttribute('title')).toBe('2 migrations waiting to be applied');

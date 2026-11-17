@@ -248,7 +248,7 @@
 					{#if !read.replicas?.known || (coresFact && !coresFact.known)}
 						<!-- The typed values are query parameters, so the recommendations
 						     reload through the page load and survive a refresh. -->
-						<form method="GET" class="flex flex-col gap-4" data-sveltekit-noscroll data-sveltekit-keepfocus aria-label="Refine the recommendations">
+						<form method="GET" class="flex flex-col gap-4" data-sveltekit-reset="false" aria-label="Refine the recommendations">
 							{#if !read.replicas?.known}
 								<p class="text-sm text-muted" data-testid="runtime-replicas-unknown">
 									Recommendations assume one replica. Enter the number of replicas you run if you run more.

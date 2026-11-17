@@ -67,7 +67,8 @@
 	 * The switch posts to the settings page's action from whatever tab is open.
 	 * Its failure is kept here and shown under the switch, because the tab's
 	 * own `form` belongs to the tab's forms and only one tab drew it. A success
-	 * reloads the layout, which reads the switch on again.
+	 * reloads the layout, which reads the switch on again, and keeps the reader
+	 * on the tab they were on instead of moving to the settings page.
 	 */
 	let switchError = $state('');
 	const flip: SubmitFunction = () => {
@@ -78,7 +79,7 @@
 				switchError = typeof said === 'string' && said ? said : 'Could not save the setting. Try again.';
 				return;
 			}
-			await update();
+			await update({ navigate: false });
 		};
 	};
 </script>

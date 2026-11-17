@@ -78,7 +78,7 @@
 		const url = new URL(window.location.href);
 		if (dialect) url.searchParams.set('dialect', dialect);
 		else url.searchParams.delete('dialect');
-		void goto(`${url.pathname}${url.search}`, { keepFocus: true, noScroll: true });
+		void goto(`${url.pathname}${url.search}`, { reset: false });
 	}
 
 	function planFlags(entry: QueryLogEntry): string[] {

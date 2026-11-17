@@ -75,7 +75,7 @@ describe('the delivery history drawer', () => {
 		render(DeliveriesDrawer, { props: props(read([])) });
 		const close = [...document.body.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Close');
 		close?.click();
-		expect(nav.goto).toHaveBeenCalledWith('/admin/webhooks?offset=50', { noScroll: true, keepFocus: true });
+		expect(nav.goto).toHaveBeenCalledWith('/admin/webhooks?offset=50', { reset: false });
 	});
 });
 

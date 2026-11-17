@@ -21,14 +21,14 @@ const CAPTCHA_SCRIPT_ORIGINS = [
 	'https://*.hcaptcha.com',
 	'https://www.google.com/recaptcha/',
 	'https://www.gstatic.com/recaptcha/',
-];
+] as const;
 const CAPTCHA_FRAME_ORIGINS = [
 	'https://challenges.cloudflare.com',
 	'https://hcaptcha.com',
 	'https://*.hcaptcha.com',
 	'https://www.google.com/recaptcha/',
 	'https://recaptcha.google.com/recaptcha/',
-];
+] as const;
 
 export default defineConfig({
 	plugins: [
@@ -48,6 +48,11 @@ export default defineConfig({
 			},
 			preprocess: vitePreprocess(),
 			adapter: adapter(),
+			// The visual editors are a separate package built into the console,
+			// and they still import its modules through $lib. SvelteKit 3 keeps
+			// that name only as an alias, which goes once the editors import
+			// through #lib.
+			alias: { $lib: 'src/lib' },
 			// CSP via SvelteKit so its inline hydration scripts get nonces automatically.
 			// The fonts ship with the build, so no font origin is allowed. The sign-in
 			// challenge loads its widget from whichever provider the captcha plugin
@@ -64,7 +69,7 @@ export default defineConfig({
 					'font-src': ['self', 'data:'],
 					'img-src': ['self', 'data:'],
 					'connect-src': ['self', 'https://hcaptcha.com', 'https://*.hcaptcha.com'],
-					'frame-src': CAPTCHA_FRAME_ORIGINS,
+					'frame-src': [...CAPTCHA_FRAME_ORIGINS],
 					'frame-ancestors': ['none'],
 					'form-action': ['self'],
 					'base-uri': ['self'],

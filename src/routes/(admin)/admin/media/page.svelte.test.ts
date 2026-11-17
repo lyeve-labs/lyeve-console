@@ -122,7 +122,7 @@ describe('media library views', () => {
 		setup([], { q: '' });
 		const form = screen.getByLabelText('Search files').closest('form') as HTMLFormElement;
 		expect(form.querySelector('button[type="submit"]')).toBeNull();
-		expect(form.hasAttribute('data-sveltekit-keepfocus')).toBe(true);
+		expect(form.getAttribute('data-sveltekit-reset')).toBe('false');
 	});
 });
 
