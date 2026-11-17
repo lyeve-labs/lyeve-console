@@ -38,6 +38,21 @@ describe('readPublicBrand', () => {
 		expect(fetch).toHaveBeenCalledWith('/api/admin/auth/brand', expect.objectContaining({ signal: expect.any(AbortSignal) }));
 	});
 
+	// SvelteKit's server fetch passes the browser's cookies on to an engine
+	// that shares the console's hostname unless the call omits credentials,
+	// and the engine then answers the brand of the session's tenant. A
+	// session that ended in another tenant would brand the sign-in page with
+	// that tenant, while its logo loads without the cookie, from the host's
+	// tenant, and fails.
+	it('reads the brand of the host, never of a session the browser still carries', async () => {
+		const host = { name: 'Host tenant', logo_url: '/api/v1/media/1/host.png', accent: '', favicon_url: '' };
+		const session = { name: 'Session tenant', logo_url: '/api/v1/media/2/session.png', accent: '', favicon_url: '' };
+		const fetch = vi.fn(async (_path: string, init?: RequestInit) =>
+			Response.json(init?.credentials === 'omit' ? host : session)
+		);
+		expect(await readPublicBrand(fetch as typeof globalThis.fetch)).toEqual(host);
+	});
+
 	// An engine without the plugin answers 404, and one that is down throws.
 	// Either way somebody has to be able to sign in.
 	it('falls back to the stock brand when the engine does not answer one', async () => {
