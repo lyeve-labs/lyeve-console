@@ -130,7 +130,7 @@
 								name="q"
 								bind:value={live.value}
 								oninput={live.input}
-								placeholder="Device name or user agent"
+								placeholder="Device name or browser"
 							/>
 						{/snippet}
 					</ListToolbar>
