@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { authedHeaders } from '#lib/server/authz.ts';
 import { readRequest } from '#lib/assistant/request.ts';
@@ -16,10 +15,10 @@ const ASSISTANT_PATH = '/api/admin/ai/assistant';
  * never as the engine's text.
  */
 export const POST: RequestHandler = async ({ request, cookies, url, fetch }) => {
-	if (request.headers.get('origin') !== url.origin) return json({ refusal: 'failed' }, { status: 403 });
+	if (request.headers.get('origin') !== url.origin) return Response.json({ refusal: 'failed' }, { status: 403 });
 	const auth = authedHeaders({ cookies, url });
 	const body = readRequest(await request.json().catch(() => null));
-	if (!body) return json({ refusal: 'failed' }, { status: 400 });
+	if (!body) return Response.json({ refusal: 'failed' }, { status: 400 });
 
 	let res: Response;
 	try {
@@ -30,11 +29,11 @@ export const POST: RequestHandler = async ({ request, cookies, url, fetch }) => 
 			signal: request.signal,
 		});
 	} catch {
-		return json({ refusal: 'outage' }, { status: 502 });
+		return Response.json({ refusal: 'outage' }, { status: 502 });
 	}
 	if (!res.ok || !res.body) {
 		const kind = refusalKind(res.status, await res.json().catch(() => null));
-		return json({ refusal: kind }, { status: res.status >= 500 ? 502 : res.status });
+		return Response.json({ refusal: kind }, { status: res.status >= 500 ? 502 : res.status });
 	}
 	return new Response(res.body, {
 		status: 200,
