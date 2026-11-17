@@ -211,6 +211,14 @@ describe('notice channels', () => {
 		gate: { state: 'ok' },
 	});
 
+	it('opens and closes the channels with the search, the filter and the page kept', async () => {
+		appState.page.url = new URL('http://localhost/admin/observability/synthetic?q=home&show=paused&offset=25&channels=p9');
+		const { container } = render(SyntheticPage, { props: props({ q: 'home', show: 'paused' }) });
+		const link = container.querySelector('a[aria-label="Notice channels for Homepage"]');
+		expect(link?.getAttribute('href')).toBe('/admin/observability/synthetic?q=home&show=paused&offset=25&channels=p1');
+		appState.page.url = new URL('http://localhost/');
+	});
+
 	it('links each probe to its own channels', () => {
 		const { container } = render(SyntheticPage, { props: props() });
 		const link = container.querySelector('a[aria-label="Notice channels for Homepage"]');

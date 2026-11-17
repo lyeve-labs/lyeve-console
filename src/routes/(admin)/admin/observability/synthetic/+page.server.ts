@@ -177,7 +177,7 @@ export const load: PageServerLoad = async (event) => {
 	} else {
 		const page = pageOf(read.value, limit, offset);
 		every = page.rows;
-		probes = page.rows.filter(matches);
+		probes = page.rows;
 		total = page.total;
 		hasMore = page.hasMore;
 	}

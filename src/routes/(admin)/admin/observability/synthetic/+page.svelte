@@ -77,16 +77,16 @@
 	$effect(() => {
 		channelsOpen = !!data.channelsFor;
 	});
+	// Opening and closing it changes only that key, so the search, the filter
+	// and the page the reader is on stay.
 	function channelsHref(id: string): string {
-		const q = new URLSearchParams({ limit: String(data.limit), offset: String(data.offset), channels: id });
-		return `${base}?${q}`;
+		const kept = new URLSearchParams(queryWithout(page.url, ['channels']));
+		kept.set('channels', id);
+		return `${base}?${kept}`;
 	}
 	function closeChannels() {
 		channelsOpen = false;
-		void goto(`${base}?${new URLSearchParams({ limit: String(data.limit), offset: String(data.offset) })}`, {
-			replace: true,
-			reset: false,
-		});
+		void goto(returnAddress(page.url, ['channels']), { replace: true, reset: false });
 	}
 	const channelsSubmit = submitter(closeChannels);
 
