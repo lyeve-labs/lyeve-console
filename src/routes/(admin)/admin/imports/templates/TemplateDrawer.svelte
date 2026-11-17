@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { couldNotLoad } from '#lib/outage.ts';
 	import { Button, Drawer, Input, RadioGroup, Select, toast } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Plus, Trash2 } from '@lucide/svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import TransformField from '#lib/components/imports/TransformField.svelte';

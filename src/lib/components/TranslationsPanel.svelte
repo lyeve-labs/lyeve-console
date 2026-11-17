@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, Label, SectionHeading, Tabs, type StatusTone } from '@lyeve-labs/ui-kit';
 	import type { SchemaField } from '@lyeve-labs/client';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { CircleCheck } from '@lucide/svelte';
 	import {
 		completenessOf,

@@ -14,7 +14,7 @@
 		confirm as confirmDialog,
 	} from '@lyeve-labs/ui-kit';
 	import { Asterisk, ChevronRight, Plus } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { tick } from 'svelte';
 	import type { PageData, ActionData } from './$types';
 	import type { SubmitFunction } from '$app/forms';

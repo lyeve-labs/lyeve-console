@@ -14,7 +14,7 @@
 		Textarea,
 	} from '@lyeve-labs/ui-kit';
 	import { Braces, Plus, Power, Trash2 } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { tick } from 'svelte';
 	import { confirmed, drawerFailure, submitter } from '#lib/forms.svelte.ts';
 	import GateNotice from '#lib/components/GateNotice.svelte';

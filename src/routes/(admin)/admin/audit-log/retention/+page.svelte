@@ -13,7 +13,7 @@
 		Toggle,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import AuditTabs from '#lib/components/AuditTabs.svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';

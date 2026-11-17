@@ -8,7 +8,7 @@
 	 * notice.
 	 */
 	import { Alert, Badge, Button, Card, EmptyState, MultiSelect, SectionHeading, SegmentedControl, Textarea } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { CheckCircle2, MessageSquare, RotateCcw } from '@lucide/svelte';
 	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
 	import { submitter } from '#lib/forms.svelte.ts';

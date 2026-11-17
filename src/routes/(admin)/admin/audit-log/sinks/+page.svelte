@@ -15,7 +15,7 @@
 		SegmentedControl,
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Pencil, Plus, Radio, Send, Trash2 } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
 	import AuditTabs from '#lib/components/AuditTabs.svelte';

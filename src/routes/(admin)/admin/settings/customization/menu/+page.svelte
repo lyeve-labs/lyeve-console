@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, CheckboxGroup, Drawer, Input, MultiSelect, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { ExternalLink, Plus, Trash2 } from '@lucide/svelte';
 	import { confirmed, drawerFailure } from '#lib/forms.svelte.ts';

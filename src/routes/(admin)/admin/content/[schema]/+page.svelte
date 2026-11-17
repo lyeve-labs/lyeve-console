@@ -24,7 +24,7 @@
 	import type { SubmitFunction } from '$app/forms';
 	import type { RelationChoices } from '#lib/components/content/relation-choices.ts';
 	import { tick, untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { confirmed } from '#lib/forms.svelte.ts';
 	import { pageNumber, pageOffset } from '#lib/api/list.ts';

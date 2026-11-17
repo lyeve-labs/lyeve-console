@@ -66,7 +66,7 @@ function setSecurityHeaders(headers: Headers): void {
 	// login is not a page worth finding. robots.txt says the same to the
 	// crawlers that ask first.
 	headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
-	// HSTS: force HTTPS in production. Gated. $app/environment dev is
+	// HSTS: force HTTPS in production. Gated. $app/env dev is
 	// true during local dev (http://localhost) where the header is harmful.
 	if (!dev) {
 		headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');

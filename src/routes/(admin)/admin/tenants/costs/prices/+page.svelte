@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, Input, NumberInput, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { RotateCcw } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
 	import CostTabs from '#lib/components/CostTabs.svelte';

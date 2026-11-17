@@ -17,7 +17,7 @@
 		type StatusTone,
 	} from '@lyeve-labs/ui-kit';
 	import { tick } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { page } from '$app/state';
 	import { ScrollText, Download, Trash2 } from '@lucide/svelte';
 	import AuditTabs from '#lib/components/AuditTabs.svelte';

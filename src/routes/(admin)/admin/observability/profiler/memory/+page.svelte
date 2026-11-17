@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, EmptyState, PageShell, SectionHeading, Stat, confirm as confirmDialog } from '@lyeve-labs/ui-kit';
 	import RefreshButton from '#lib/components/RefreshButton.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import { AlertTriangle, CheckCircle, MemoryStick, RotateCcw } from '@lucide/svelte';
 	import { NO_VALUE, formatBytes, formatDateTime, formatSignedBytes } from '#lib/format.ts';

@@ -14,7 +14,7 @@
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
 	import RefreshButton from '#lib/components/RefreshButton.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Copy, Pencil, Plus, Search, ShieldCheck, Trash2 } from '@lucide/svelte';
 	import { duplicateRow } from '#lib/duplicate.ts';
 	import GateNotice from '#lib/components/GateNotice.svelte';

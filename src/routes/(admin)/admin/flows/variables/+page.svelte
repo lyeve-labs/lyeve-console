@@ -3,7 +3,7 @@
 	import type { SubmitFunction } from '$app/forms';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import { Pencil, Plus, Trash2, Variable as VariableIcon } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { page } from '$app/state';
 	import { flowBack } from '#lib/flow/back.ts';
 	import { confirmed, submitter } from '#lib/forms.svelte.ts';

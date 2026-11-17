@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { actionWithQuery, listBack, queryWithout } from '#lib/back.ts';
 	import { FLOW_LIST_KEYS } from '../list-keys';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { createClient } from '@lyeve-labs/client';
 	import type { SubmitFunction } from '$app/forms';

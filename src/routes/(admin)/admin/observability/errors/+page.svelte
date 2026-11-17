@@ -19,7 +19,7 @@
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import OlderHidden from '#lib/components/OlderHidden.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { BellRing, BugOff, CheckCheck, CircleCheck, EyeOff, RotateCcw, UserPlus } from '@lucide/svelte';
 	import {

@@ -26,7 +26,7 @@
 	import type { PageData, ActionData } from './$types';
 	import type { Webhook } from '@lyeve-labs/client';
 	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { confirmed, drawerFailure, fieldErrors, submitter } from '#lib/forms.svelte.ts';
 	import {

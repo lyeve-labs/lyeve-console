@@ -2,7 +2,7 @@
 	import { Button, Input, Modal, toast } from '@lyeve-labs/ui-kit';
 	import type { Schema } from '@lyeve-labs/client';
 	import type { SubmitFunction } from '$app/forms';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { refreshAll } from '$app/navigation';
 
 	/**

@@ -18,7 +18,7 @@
 		Toggle,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { Inbox, Pencil, Plus, RotateCw, Share2, Trash2 } from '@lucide/svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';

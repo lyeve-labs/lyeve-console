@@ -16,7 +16,7 @@
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import { formRefusal } from '#lib/api/refusal.ts';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { confirmed, tracked } from '#lib/forms.svelte.ts';
 	import { atLimit } from '#lib/api/limits.ts';
 	import type { SubmitFunction } from '$app/forms';

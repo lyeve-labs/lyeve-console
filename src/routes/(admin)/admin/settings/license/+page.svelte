@@ -10,7 +10,7 @@
 	 */
 	import { Alert, Button, Card, DescriptionList, PageShell, SectionHeading, Textarea } from '@lyeve-labs/ui-kit';
 	import type { ActionData, PageData } from './$types';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Check, Clock, ExternalLink, Shield, TriangleAlert } from '@lucide/svelte';
 	import { ICON } from '#lib/icon.ts';
 	import { formatDate, NO_VALUE } from '#lib/format.ts';

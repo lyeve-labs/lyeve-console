@@ -21,7 +21,7 @@
 		SegmentedControl,
 	} from '@lyeve-labs/ui-kit';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { goto } from '$app/navigation';
 	import { confirmed, submitter, tracked } from '#lib/forms.svelte.ts';
 	import AlertChannelFields from '#lib/components/AlertChannelFields.svelte';

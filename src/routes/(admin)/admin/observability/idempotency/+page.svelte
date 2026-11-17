@@ -15,7 +15,7 @@
 	import { confirmed } from '#lib/forms.svelte.ts';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { KeyRound, Search, Unlock } from '@lucide/svelte';
 	import {

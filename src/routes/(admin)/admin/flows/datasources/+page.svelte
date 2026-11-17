@@ -17,7 +17,7 @@
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
 	import { Database, MessageSquare, Pencil, PlugZap, Plus, Trash2 } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { page } from '$app/state';
 	import { flowBack } from '#lib/flow/back.ts';
 	import { untrack } from 'svelte';

@@ -20,7 +20,7 @@
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { SubmitFunction } from '$app/forms';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Key, Plus, Trash2, Ban, Gauge } from '@lucide/svelte';
 	import { formRefusal } from '#lib/api/refusal.ts';
 	import FormErrors from '#lib/components/FormErrors.svelte';

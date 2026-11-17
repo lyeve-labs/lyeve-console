@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fieldErrors, submitter } from '#lib/forms.svelte.ts';
 	import { passwordTooLong } from '#lib/api/users.ts';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { refreshAll } from '$app/navigation';
 	import {
 		Alert,

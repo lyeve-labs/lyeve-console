@@ -18,7 +18,7 @@
 	import type { PageData, ActionData } from './$types';
 	import type { OAuthProvider } from '@lyeve-labs/client';
 	import type { SubmitFunction } from '$app/forms';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { confirmed, drawerFailure, tracked } from '#lib/forms.svelte.ts';
 	import { KeyRound, Pencil, Plus, Trash2 } from '@lucide/svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';

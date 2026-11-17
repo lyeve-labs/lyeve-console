@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button, Drawer, FileInput, Textarea } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import { submitter } from '#lib/forms.svelte.ts';
 	import type { InstanceLink } from '#lib/instance.svelte.ts';

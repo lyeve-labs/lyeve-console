@@ -193,7 +193,7 @@ describe('starting a replay', () => {
 		const { after } = await press();
 		const update = vi.fn(async () => {});
 		await (after as unknown as (o: { update: typeof update }) => Promise<void>)({ update });
-		expect(update).toHaveBeenCalledWith({ reset: false });
+		expect(update).toHaveBeenCalledWith({ reset: false, navigate: false });
 	});
 });
 

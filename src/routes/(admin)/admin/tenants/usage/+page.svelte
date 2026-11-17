@@ -21,7 +21,7 @@
 	import { narrows } from '#lib/narrow.ts';
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import { tick } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { Check, Gauge, Pencil, Plus, X } from '@lucide/svelte';

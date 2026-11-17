@@ -17,7 +17,7 @@
 		Tooltip,
 	} from '@lyeve-labs/ui-kit';
 	import { Database, Plus, Trash2, Upload, Variable, Workflow } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';

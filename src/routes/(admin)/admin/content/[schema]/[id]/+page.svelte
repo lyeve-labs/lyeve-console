@@ -4,7 +4,7 @@
 	import { Alert, Badge, Breadcrumb, Button, Card, NumberInput, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { SchemaField } from '@lyeve-labs/client';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { page } from '$app/state';
 	import { Clock, Eye, EyeOff, History, RotateCcw } from '@lucide/svelte';
 	import { crumbsAfter } from '#lib/breadcrumb.ts';

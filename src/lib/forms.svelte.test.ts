@@ -70,13 +70,13 @@ describe('submitter', () => {
 	it('applies the result, so the page is not left showing what it submitted', async () => {
 		const s = submitter();
 		const o = await run(s.enhance);
-		expect(o.update).toHaveBeenCalledWith({ reset: true });
+		expect(o.update).toHaveBeenCalledWith({ reset: true, navigate: false });
 	});
 
 	it('keeps the fields of a form whose answer is built from them', async () => {
 		const s = submitter(undefined, { reset: false });
 		const o = await run(s.enhance);
-		expect(o.update).toHaveBeenCalledWith({ reset: false });
+		expect(o.update).toHaveBeenCalledWith({ reset: false, navigate: false });
 	});
 });
 
@@ -218,7 +218,7 @@ describe('confirmed', () => {
 		const after = await confirmed('Delete it?', 'Gone.', { confirmLabel: 'Delete', success: 'Deleted it' })(input);
 		await after!(o as never);
 		expect(cancel).not.toHaveBeenCalled();
-		expect(o.update).toHaveBeenCalledWith();
+		expect(o.update).toHaveBeenCalledWith({ navigate: false });
 		expect(kit.success).toHaveBeenCalledWith('Deleted it');
 	});
 

@@ -5,7 +5,7 @@
 	 */
 	import { Alert, CopyField, Button, NumberInput, RadioGroup, SectionHeading, SegmentedControl, Select, Toggle } from '@lyeve-labs/ui-kit';
 	import { browser } from '$app/env';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
 	import { submitter } from '#lib/forms.svelte.ts';
 	import type { FocalPoint, SignedTransform } from '#lib/api/media.ts';

@@ -10,7 +10,7 @@
 		Table,
 		Pagination,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { confirmed, drawerFailure } from '#lib/forms.svelte.ts';
 	import { plural } from '#lib/format.ts';
 	import type { SubmitFunction } from '$app/forms';

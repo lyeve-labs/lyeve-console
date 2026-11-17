@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Badge, Button, Drawer, EmptyState, Input, NumberInput, PageShell, RadioGroup, Table, confirm as confirmDialog } from '@lyeve-labs/ui-kit';
 	import { tick } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { tracked } from '#lib/forms.svelte.ts';
 	import { Coins, Pencil, Plus, Trash2 } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';

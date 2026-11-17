@@ -3,7 +3,7 @@
 	import type { DeadLetter } from '@lyeve-labs/client';
 	import type { SubmitFunction } from '$app/forms';
 	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';

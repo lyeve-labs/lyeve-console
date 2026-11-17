@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button, Drawer, Input } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { tracked } from '#lib/forms.svelte.ts';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import { windowLabel, type Protection } from '#lib/api/rate-limit.ts';

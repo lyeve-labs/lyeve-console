@@ -19,7 +19,7 @@
 	} from '@lyeve-labs/ui-kit';
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { Copy, HardDrive, Pencil, Plug, Plus, Trash2 } from '@lucide/svelte';
 	import { duplicateRow } from '#lib/duplicate.ts';

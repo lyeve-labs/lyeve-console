@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Alert, Button, Card, DescriptionList, EmptyState, Input, PageShell } from '@lyeve-labs/ui-kit';
 	import { CircleCheck, CircleX, Clock, SearchX, ShieldAlert, TriangleAlert } from '@lucide/svelte';
 	import { ICON } from '#lib/icon.ts';

@@ -12,7 +12,7 @@
 		Textarea,
 		confirm as confirmDialog,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { Play, Terminal } from '@lucide/svelte';

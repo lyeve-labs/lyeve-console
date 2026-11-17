@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Autocomplete, Button, Drawer, Input, RadioGroup, Toggle, toast } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { tracked } from '#lib/forms.svelte.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { duplicateRow } from '#lib/duplicate.ts';

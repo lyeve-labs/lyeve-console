@@ -3,7 +3,7 @@
 	import { formRefusal } from '#lib/api/refusal.ts';
 	import { Alert, Badge, Button, Drawer, EmptyState, Input, PageShell, Select, Table, Textarea, Toggle } from '@lyeve-labs/ui-kit';
 	import { MailPlus, Pencil, Plus, Trash2 } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { confirmed, drawerFailure, submitter } from '#lib/forms.svelte.ts';
 	import type { ActionData, PageData } from './$types';
 	import { TRIGGER_EVENT_LABELS, type EmailTrigger } from '#lib/api/email-triggers.ts';

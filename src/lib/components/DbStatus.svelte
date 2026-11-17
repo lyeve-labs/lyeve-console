@@ -24,7 +24,7 @@
 	import { Badge, Button, Modal } from '@lyeve-labs/ui-kit';
 	import { CircleAlert, CircleCheck, CircleHelp } from '@lucide/svelte';
 	import { ICON } from '#lib/icon.ts';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { invalidate, refreshAll } from '$app/navigation';
 	import type { SubmitFunction } from '$app/forms';
 	import { MIGRATIONS_DEPENDENCY, type PendingStatement } from '#lib/api/migrate.ts';

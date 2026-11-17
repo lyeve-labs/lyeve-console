@@ -12,7 +12,7 @@
 	 * fails independently, and a page-wide form would turn one refused value
 	 * into a page that could not save the nine others.
 	 */
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { Button, Input, PasswordInput } from '@lyeve-labs/ui-kit';
 	import { KeyRound } from '@lucide/svelte';

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Badge, Card, DescriptionList, Input, PageShell, Panel, SectionHeading, Toggle } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { ActionData, PageData } from './$types';
 	import AiSection from '#lib/components/ai/AiSection.svelte';
 	import SettingRow from '#lib/components/SettingRow.svelte';

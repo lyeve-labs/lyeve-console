@@ -20,7 +20,7 @@
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { IncomingWebhook } from '@lyeve-labs/client';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { confirmed, drawerFailure, fieldErrors, submitter } from '#lib/forms.svelte.ts';
 	import { Plus, Pencil, Trash2, ArrowDownToLine } from '@lucide/svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';

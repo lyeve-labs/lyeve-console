@@ -19,7 +19,7 @@
 		Pagination,
 		CopyField,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { confirmed, drawerFailure, tracked } from '#lib/forms.svelte.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { KeyRound, Plus, RefreshCw, Trash2 } from '@lucide/svelte';

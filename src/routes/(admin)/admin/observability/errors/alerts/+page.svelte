@@ -10,7 +10,7 @@
 		SectionHeading,
 		SegmentedControl,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import NotEnabled from '#lib/components/NotEnabled.svelte';

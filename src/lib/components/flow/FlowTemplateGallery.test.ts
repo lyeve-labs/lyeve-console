@@ -6,7 +6,7 @@ import FlowTemplateGallery from './FlowTemplateGallery.svelte';
 import { fixtureTemplates } from '#lib/flow/fixtures.ts';
 
 type After = (o: { result: { type: string; data?: unknown }; update: (o?: unknown) => Promise<void>; formElement: HTMLFormElement }) => Promise<void>;
-type Submit = () => After;
+type Submit = () => Promise<After>;
 
 // Each form's submit handler is kept so a case can play the action's answer through it.
 const forms = vi.hoisted(() => ({ submit: new Map<HTMLFormElement, Submit>() }));
@@ -46,7 +46,7 @@ function setup(props: Partial<{ templates: typeof fixtureTemplates; canUpdate: b
 
 /** Plays an action's answer through the form's submit handler. */
 async function answer(form: HTMLFormElement, result: { type: string; data?: unknown }) {
-	const after = (forms.submit.get(form) as Submit)();
+	const after = await (forms.submit.get(form) as Submit)();
 	await after({ result, update: vi.fn(async () => {}), formElement: form });
 	await tick();
 }

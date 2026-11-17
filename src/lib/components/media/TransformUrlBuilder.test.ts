@@ -79,7 +79,7 @@ describe('TransformUrlBuilder', () => {
 		const update = vi.fn(async () => {});
 		const after = await submit({ formData: new FormData(), cancel: vi.fn() });
 		await after({ result: { type: 'success', status: 200, data: {} }, update });
-		expect(update).toHaveBeenCalledWith({ reset: false });
+		expect(update).toHaveBeenCalledWith({ reset: false, navigate: false });
 	});
 
 	it('sends the focal point only when the file has one', () => {

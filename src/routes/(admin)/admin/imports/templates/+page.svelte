@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Button, EmptyState, PageShell, Table } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { Pencil, Plus, Rows3, Trash2 } from '@lucide/svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';

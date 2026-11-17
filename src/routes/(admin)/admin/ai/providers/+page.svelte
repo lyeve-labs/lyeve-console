@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Badge, Button, Drawer, EmptyState, PageShell, Pagination, Stat, Table } from '@lyeve-labs/ui-kit';
 	import FormErrors from '#lib/components/FormErrors.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { submitter } from '#lib/forms.svelte.ts';
 	import { ChevronRight, Plus, Server } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';

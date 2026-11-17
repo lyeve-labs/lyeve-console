@@ -23,7 +23,8 @@
 	} from '@lyeve-labs/ui-kit';
 	import type { SubmitFunction } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
-	import { applyAction, enhance } from '$app/forms';
+	import { applyAction } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import { goto, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';

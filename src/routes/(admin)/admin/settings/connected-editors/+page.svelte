@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { tick, untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { refreshAll } from '$app/navigation';
 	import { navigating } from '$app/state';
 	import type { SubmitFunction } from '$app/forms';

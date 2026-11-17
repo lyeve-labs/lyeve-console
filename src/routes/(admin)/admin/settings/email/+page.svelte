@@ -22,7 +22,7 @@
 	import { duplicateRow } from '#lib/duplicate.ts';
 	import SettingRow from '#lib/components/SettingRow.svelte';
 	import type { ConfigSetting } from './+page.server';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { ActionData, PageData } from './$types';
 	import { API_METHODS, BODY_PLACEHOLDERS, WEBHOOK_EVENTS, webhookPath, type EmailProvider } from '#lib/api/email.ts';
 	import { confirmed, drawerFailure, submitter } from '#lib/forms.svelte.ts';

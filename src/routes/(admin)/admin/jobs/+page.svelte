@@ -19,7 +19,7 @@
 	import type { PageData, ActionData } from './$types';
 	import type { SubmitFunction } from '$app/forms';
 	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { Plus, Trash2, Pencil, Clock, CheckCircle, XCircle, Inbox } from '@lucide/svelte';

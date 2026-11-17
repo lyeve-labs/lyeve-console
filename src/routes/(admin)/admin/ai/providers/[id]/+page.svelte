@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tracked } from '#lib/forms.svelte.ts';
 	import { Alert, Badge, Breadcrumb, Button, Card, DescriptionList, Input, PageShell, SectionHeading, Tag, confirm as confirmDialog } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { ListTree, ScanSearch, Trash2 } from '@lucide/svelte';
 	import { crumbsAfter } from '#lib/breadcrumb.ts';
 	import type { ActionData, PageData } from './$types';

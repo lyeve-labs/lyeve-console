@@ -6,7 +6,7 @@
 <script lang="ts">
 	import { Alert, Button, Card, FileInput, Input, SectionHeading, Spinner } from '@lyeve-labs/ui-kit';
 	import { tick } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { ImageOff, Trash2 } from '@lucide/svelte';
 	import { ICON } from '#lib/icon.ts';

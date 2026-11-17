@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Autocomplete, Button, CheckboxGroup, Drawer, Input } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { Permission } from '@lyeve-labs/client';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import type { Refusal } from '#lib/api/refusal.ts';

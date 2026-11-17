@@ -14,7 +14,7 @@
 		SegmentedControl,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { confirmed, tracked } from '#lib/forms.svelte.ts';
 	import { CAPTCHA_PROVIDERS, providerLabel, type CaptchaProvider } from '#lib/api/captcha-settings.ts';
 	import type { ActionData, PageData } from './$types';

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Alert, Button, Spinner, Textarea } from '@lyeve-labs/ui-kit';
 	import { Check, WandSparkles, X } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import CodeEditor from './CodeEditor.svelte';
 	import Markdown from '#lib/components/Markdown.svelte';

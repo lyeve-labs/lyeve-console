@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, Input, MultiSelect, SectionHeading, Select, Textarea, type StatusTone } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Check, Eye, EyeOff, RotateCcw, X } from '@lucide/svelte';
 	import {
 		actionsFor,

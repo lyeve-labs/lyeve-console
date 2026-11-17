@@ -16,7 +16,7 @@
 	import { Trash2 } from '@lucide/svelte';
 	import type { SubmitFunction } from '$app/forms';
 	import { tick } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { refreshAll } from '$app/navigation';
 	import type { Gate } from '#lib/api/gate.ts';
 	import type { SchemaPreset } from '#lib/api/schema-preset-catalog.ts';

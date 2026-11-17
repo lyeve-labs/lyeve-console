@@ -1,7 +1,7 @@
 <script lang="ts">
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import { Alert, Badge, Button, EmptyState, PageShell, SectionHeading, Table } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import ReviewTabs from '#lib/components/ReviewTabs.svelte';
 	import { ClipboardCheck, Plus, Trash2 } from '@lucide/svelte';

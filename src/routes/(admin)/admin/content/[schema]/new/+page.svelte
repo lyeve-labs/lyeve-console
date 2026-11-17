@@ -2,7 +2,7 @@
 	import { Alert, Card, Breadcrumb, Button, PageShell, Select } from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { SchemaField } from '@lyeve-labs/client';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { page } from '$app/state';
 	import { Globe } from '@lucide/svelte';
 	import { crumbsAfter } from '#lib/breadcrumb.ts';

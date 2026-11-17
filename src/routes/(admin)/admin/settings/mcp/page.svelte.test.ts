@@ -85,7 +85,7 @@ describe('MCP settings page', () => {
 		const after = await (submit as () => Promise<(o: { update: (o?: { reset?: boolean }) => Promise<void> }) => Promise<void>>)();
 		const update = vi.fn(async () => {});
 		await after({ update });
-		expect(update).toHaveBeenCalledWith({ reset: false });
+		expect(update).toHaveBeenCalledWith({ reset: false, navigate: false });
 	});
 
 	it('shows a disconnected agent with when it was disconnected and an Allow for it, outside the limit', () => {

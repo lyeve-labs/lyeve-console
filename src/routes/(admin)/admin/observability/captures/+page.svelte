@@ -18,7 +18,7 @@
 		Table,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { tracked } from '#lib/forms.svelte.ts';
 	import { History, Plus } from '@lucide/svelte';
 	import { MAX_SET_CAPTURES, capturePath } from '#lib/api/request-capture.ts';

@@ -13,7 +13,7 @@
 		Table,
 		confirm,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { Download } from '@lucide/svelte';
 	import type { ActionData } from './$types';

@@ -14,7 +14,7 @@
 		Pagination,
 		SearchInput,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { MonitorSmartphone, Trash2 } from '@lucide/svelte';
 	import { confirmed } from '#lib/forms.svelte.ts';

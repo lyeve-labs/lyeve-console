@@ -19,7 +19,7 @@
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
 	import RefreshButton from '#lib/components/RefreshButton.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { invalidate } from '$app/navigation';
 	import type { SubmitFunction } from '$app/forms';
 	import { CalendarClock, Download, Pause, Play, Plus, Search, Trash2, X } from '@lucide/svelte';

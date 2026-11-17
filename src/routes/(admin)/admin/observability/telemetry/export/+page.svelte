@@ -15,7 +15,7 @@
 	} from '@lyeve-labs/ui-kit';
 	import RefreshButton from '#lib/components/RefreshButton.svelte';
 	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { AlertTriangle, CheckCircle, Plus, Send, Trash2, Upload } from '@lucide/svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';

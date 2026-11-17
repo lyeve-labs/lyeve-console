@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Alert, Button, Card, NumberInput, SectionHeading, SegmentedControl, Stat } from '@lyeve-labs/ui-kit';
 	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { formRefusal } from '#lib/api/refusal.ts';
 	import {
 		FACTS,

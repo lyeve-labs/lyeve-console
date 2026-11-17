@@ -17,7 +17,7 @@
 		confirm as confirmDialog,
 	} from '@lyeve-labs/ui-kit';
 	import { tick } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { CalendarClock, FileText, Pencil, Plus, Send, Trash2, X } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
 	import FormErrors from '#lib/components/FormErrors.svelte';

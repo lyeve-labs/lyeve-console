@@ -2,7 +2,7 @@
 	import { Alert, Badge, Button, Collapsible, Drawer, FileInput, Panel, SectionHeading, Select, Textarea, toast } from '@lyeve-labs/ui-kit';
 	import type { SubmitFunction } from '$app/forms';
 	import { tick } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { refreshAll } from '$app/navigation';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import type { ImportPlan } from '../+page.server';

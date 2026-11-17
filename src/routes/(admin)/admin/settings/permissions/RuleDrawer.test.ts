@@ -126,7 +126,7 @@ describe('RuleDrawer', () => {
 		await (await (forms.submit as Submit)({ cancel: () => {} }))({ result: { type: 'failure' }, update });
 		await tick();
 		expect(ruleForm()).toBeTruthy();
-		expect(update).toHaveBeenCalledWith({ reset: false });
+		expect(update).toHaveBeenCalledWith({ reset: false, navigate: false });
 		await (await (forms.submit as Submit)({ cancel: () => {} }))({ result: { type: 'success' }, update });
 		await vi.waitFor(() => expect(ruleForm()).toBeNull());
 	});

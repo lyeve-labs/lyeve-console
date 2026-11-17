@@ -15,7 +15,7 @@
 		Toggle,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { confirmed, tracked } from '#lib/forms.svelte.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { Gauge, Plus, SplitSquareHorizontal, Trash2 } from '@lucide/svelte';

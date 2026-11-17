@@ -13,7 +13,7 @@
 		Select,
 		Tag,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { ArrowDown, ArrowUp, Plus, X } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
 	import GateNotice from '#lib/components/GateNotice.svelte';

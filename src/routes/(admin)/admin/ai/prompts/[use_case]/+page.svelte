@@ -2,7 +2,7 @@
 	import { tracked } from '#lib/forms.svelte.ts';
 	import { crumbsAfter } from '#lib/breadcrumb.ts';
 	import { Alert, Badge, Breadcrumb, Button, Card, Collapsible, PageShell, SectionHeading, Table, Textarea } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { History } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
 	import AiSection from '#lib/components/ai/AiSection.svelte';

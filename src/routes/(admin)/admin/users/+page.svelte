@@ -19,7 +19,7 @@
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { SubmitFunction } from '$app/forms';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { refreshAll } from '$app/navigation';
 	import { KeyRound, Pencil, Plus, Trash2, Users } from '@lucide/svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';

@@ -18,7 +18,7 @@
 	import type { MediaItem } from '#lib/api/media.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
 	import type { PageData, ActionData } from './$types';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { goto } from '$app/navigation';
 	import { onMount, tick } from 'svelte';
 	import { Image, Link, LayoutGrid, List, Upload } from '@lucide/svelte';

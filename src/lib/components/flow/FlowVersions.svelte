@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Badge, Button, SectionHeading } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { FlowVersion } from '#lib/api/flows.ts';
 	import type { Section } from '#lib/api/gate.ts';
 	import { formatDateTime, relativeTime } from '#lib/format.ts';

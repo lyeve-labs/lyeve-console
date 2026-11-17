@@ -14,7 +14,7 @@
 	} from '@lyeve-labs/ui-kit';
 	import type { ActionData, PageData } from './$types';
 	import type { DryRunStatement } from './+page.server';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { beforeNavigate, goto, invalidate, refreshAll } from '$app/navigation';
 	import type { SubmitFunction } from '$app/forms';
 	import { tick, untrack } from 'svelte';

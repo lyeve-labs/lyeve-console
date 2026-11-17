@@ -4,7 +4,7 @@
 	import { VALUES_SHOWN } from '#lib/api/openapi.ts';
 	import { curlFor, gateSentence } from '#lib/api/request-preview.ts';
 	import { isWriteMethod, unfilledParameters, type TryResult } from '#lib/api/try-it.ts';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { ChevronDown, ChevronRight, Download, Play } from '@lucide/svelte';
 	import {
 		Alert,

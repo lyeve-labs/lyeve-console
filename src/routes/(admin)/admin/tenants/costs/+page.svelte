@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, PageShell, SectionHeading, Stat } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { RefreshCw } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
 	import CostTabs from '#lib/components/CostTabs.svelte';

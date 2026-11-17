@@ -5,7 +5,7 @@
 	 * action, so a refusal comes back to this card.
 	 */
 	import { Alert, Button, Card, SectionHeading, SegmentedControl, Select } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
 	import { submitter } from '#lib/forms.svelte.ts';
 	import type { Release } from '#lib/api/content-releases.ts';

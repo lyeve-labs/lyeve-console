@@ -11,7 +11,7 @@
 		confirm as confirmDialog,
 	} from '@lyeve-labs/ui-kit';
 	import RefreshButton from '#lib/components/RefreshButton.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import { Gauge, Puzzle, RotateCcw } from '@lucide/svelte';
 	import { formatNs, latencyTone, type EndpointStats } from '#lib/api/profiler.ts';

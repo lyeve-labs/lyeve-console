@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Alert, Button, Card, CheckboxGroup, Input, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
 	import type { ActionData, PageData } from './$types';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Download, Trash2, FileJson } from '@lucide/svelte';
 	import type { DsarExportResult, DsarEraseResult } from '@lyeve-labs/client-rest';
 	import GateNotice from '#lib/components/GateNotice.svelte';

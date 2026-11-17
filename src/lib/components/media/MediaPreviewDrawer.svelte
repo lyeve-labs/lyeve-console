@@ -11,7 +11,7 @@
 	} from '@lyeve-labs/ui-kit';
 	import { Download, File, FileText, Music, Sparkles, Trash2 } from '@lucide/svelte';
 	import { browser } from '$app/env';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { confirmed } from '#lib/forms.svelte.ts';
 	import {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Badge, Breadcrumb, Button, Card, DescriptionList, PageShell, SectionHeading, Stat, type AccentTone } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { crumbsAfter } from '#lib/breadcrumb.ts';
 	import { FileJson, FileText, Sparkles } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';

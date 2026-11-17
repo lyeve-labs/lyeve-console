@@ -12,7 +12,7 @@
 		Table,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Building2, Coins, Pencil, Plus, Trash2, ToggleLeft, ToggleRight } from '@lucide/svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';

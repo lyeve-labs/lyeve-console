@@ -3,7 +3,7 @@
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import { formRefusal } from '#lib/api/refusal.ts';
 	import { Button, Card, NumberInput, PageShell, SectionHeading, toast } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { tracked } from '#lib/forms.svelte.ts';
 	import { PROVIDER_WINDOW_DEFAULT_DAYS, PROVIDER_WINDOW_MAX_DAYS } from '#lib/api/provider-window.ts';
 	import type { ActionData, PageData } from './$types';

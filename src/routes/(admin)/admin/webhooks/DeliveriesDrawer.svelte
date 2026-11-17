@@ -2,7 +2,7 @@
 	import { Badge, Button, Drawer, EmptyState, Table } from '@lyeve-labs/ui-kit';
 	import type { WebhookDelivery } from '@lyeve-labs/client';
 	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { CheckCircle, XCircle, History, RotateCcw } from '@lucide/svelte';

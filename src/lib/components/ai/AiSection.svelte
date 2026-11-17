@@ -12,7 +12,7 @@
 	 * The off state carries the switch itself: the settings action is what
 	 * turns it back on, and a form may post there from any tab.
 	 */
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { goto } from '$app/navigation';
 	import { Alert, Button, EmptyState, Tabs, Toggle } from '@lyeve-labs/ui-kit';
 	import { Power, Server } from '@lucide/svelte';

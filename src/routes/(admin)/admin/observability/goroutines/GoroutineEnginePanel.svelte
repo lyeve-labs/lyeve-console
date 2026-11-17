@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, Checkbox, EmptyState, Input, NumberInput, SectionHeading, Stat, Table } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Cpu } from '@lucide/svelte';
 	import {
 		ASYNC_QUEUE_SIZE,

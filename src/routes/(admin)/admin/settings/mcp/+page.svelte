@@ -12,7 +12,7 @@
 		Table,
 		Toggle,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { Cable, PlugZap, Unplug } from '@lucide/svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';

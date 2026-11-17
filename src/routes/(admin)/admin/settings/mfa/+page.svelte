@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { formRefusal } from '#lib/api/refusal.ts';
 	import { Alert, Button, Card, CopyButton, CopyField, Input, PageShell, PasswordInput, Skeleton } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Shield } from '@lucide/svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';

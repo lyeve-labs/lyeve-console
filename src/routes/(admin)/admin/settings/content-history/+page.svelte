@@ -13,7 +13,7 @@
 		Stat,
 		toast,
 	} from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Scissors, Trash2 } from '@lucide/svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';

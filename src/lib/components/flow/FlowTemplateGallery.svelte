@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, Collapsible, Drawer, EmptyState, FileInput, Input, Textarea, confirm, toast } from '@lyeve-labs/ui-kit';
 	import { Lock, Trash2 } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { tick } from 'svelte';
 	import type { FlowTemplate } from '#lib/api/flows.ts';

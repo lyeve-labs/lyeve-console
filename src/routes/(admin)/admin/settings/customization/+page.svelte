@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Card, Input, PageShell, SectionHeading, Textarea } from '@lyeve-labs/ui-kit';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import NotEnabled from '#lib/components/NotEnabled.svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';

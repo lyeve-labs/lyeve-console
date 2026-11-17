@@ -1,6 +1,6 @@
 <script lang="ts">
 	import PageTitle from '#lib/components/PageTitle.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { Alert, Button, Checkbox, PasswordInput } from '@lyeve-labs/ui-kit';
 	import { ArrowLeft } from '@lucide/svelte';
 	import AuthShell from '#lib/components/AuthShell.svelte';
