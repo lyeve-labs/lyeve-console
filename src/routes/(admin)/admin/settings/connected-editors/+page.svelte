@@ -20,6 +20,7 @@
 		SegmentedControl,
 		Skeleton,
 		Table,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { Link2, RefreshCw } from '@lucide/svelte';
 	import BuilderConnectionTabs from '#lib/components/BuilderConnectionTabs.svelte';
@@ -438,75 +439,79 @@
 		{/if}
 
 		{#if request}
-			<form
-				id="connected-editors-approve"
-				method="POST"
-				action="?/approve"
-				use:enhance={drawerSubmit}
-				class="flex flex-col gap-4 border-t border-line pt-5"
-			>
-				<input type="hidden" name="code" value={held?.code ?? ''} />
-				<input type="hidden" name="fingerprint" value={request.fingerprint} />
-				<input type="hidden" name="code_expires_at" value={request.code_expires_at} />
+			<div class="grid" transition:motion.collapse|global>
+				<div class="min-h-0">
+					<form
+						id="connected-editors-approve"
+						method="POST"
+						action="?/approve"
+						use:enhance={drawerSubmit}
+						class="flex flex-col gap-4 border-t border-line pt-5"
+					>
+						<input type="hidden" name="code" value={held?.code ?? ''} />
+						<input type="hidden" name="fingerprint" value={request.fingerprint} />
+						<input type="hidden" name="code_expires_at" value={request.code_expires_at} />
 
-				<SectionHeading level={3}>Check this request</SectionHeading>
+						<SectionHeading level={3}>Check this request</SectionHeading>
 
-				{#if !request.same_network}
-					<Alert tone="warn">
-						This request came from a different network than this browser. Approve it only if you started it yourself.
-					</Alert>
-				{/if}
+						{#if !request.same_network}
+							<Alert tone="warn">
+								This request came from a different network than this browser. Approve it only if you started it yourself.
+							</Alert>
+						{/if}
 
-				<DescriptionList
-					items={[
-						{ term: 'Browser name', value: request.label, detail: nameDetail },
-						{ term: 'Key', value: request.fingerprint, detail: keyDetail },
-						{ term: 'From', value: request.origin, detail: fromDetail },
-						{ term: 'Requested from', value: request.requester_network || 'Unknown address' },
-						{ term: 'Your address', value: request.approver_address || 'Unknown address' },
-						{ term: 'Code expires', value: expiresIn(request.code_expires_at) },
-						{
-							term: 'Access',
-							value: 'Read and write pages, sections and the theme, and read entries of the content types open to the builder.',
-						},
-						{
-							term: 'Approved as',
-							value: `${data.email}, with the ${rolesLabel(data.roles)} ${plural(data.roles.length, 'role')}`,
-						},
-						...(data.tenant ? [{ term: 'Tenant', value: data.tenant }] : []),
-						{ term: 'Expires', value: formatDate(expiryOf(request, Number(lifetime))) },
-					]}
-				/>
+						<DescriptionList
+							items={[
+								{ term: 'Browser name', value: request.label, detail: nameDetail },
+								{ term: 'Key', value: request.fingerprint, detail: keyDetail },
+								{ term: 'From', value: request.origin, detail: fromDetail },
+								{ term: 'Requested from', value: request.requester_network || 'Unknown address' },
+								{ term: 'Your address', value: request.approver_address || 'Unknown address' },
+								{ term: 'Code expires', value: expiresIn(request.code_expires_at) },
+								{
+									term: 'Access',
+									value: 'Read and write pages, sections and the theme, and read entries of the content types open to the builder.',
+								},
+								{
+									term: 'Approved as',
+									value: `${data.email}, with the ${rolesLabel(data.roles)} ${plural(data.roles.length, 'role')}`,
+								},
+								...(data.tenant ? [{ term: 'Tenant', value: data.tenant }] : []),
+								{ term: 'Expires', value: formatDate(expiryOf(request, Number(lifetime))) },
+							]}
+						/>
 
-				<SegmentedControl
-					label="Valid for"
-					name="lifetime_days"
-					value={lifetime}
-					options={lifetimes.map((d) => ({ value: String(d), label: `${d} days` }))}
-					onchange={(v) => (lifetimePick = v)}
-				/>
+						<SegmentedControl
+							label="Valid for"
+							name="lifetime_days"
+							value={lifetime}
+							options={lifetimes.map((d) => ({ value: String(d), label: `${d} days` }))}
+							onchange={(v) => (lifetimePick = v)}
+						/>
 
-				{#if answered?.approvalUnavailable}
-					<Alert tone="warn">{SAID.approvalUnavailable}</Alert>
-				{:else}
-					<StepUpField id="connected-editors-step-up" {mfa} bind:value={secret} error={answered?.stepUp?.field} />
-				{/if}
+						{#if answered?.approvalUnavailable}
+							<Alert tone="warn">{SAID.approvalUnavailable}</Alert>
+						{:else}
+							<StepUpField id="connected-editors-step-up" {mfa} bind:value={secret} error={answered?.stepUp?.field} />
+						{/if}
 
-				{#if answered?.checkUnavailable}
-					<Alert tone="warn">{SAID.checkUnavailable}</Alert>
-				{/if}
+						{#if answered?.checkUnavailable}
+							<Alert tone="warn">{SAID.checkUnavailable}</Alert>
+						{/if}
 
-				{#if !online}
-					<p id="approve-blocked" class="text-sm text-muted">You're offline.</p>
-				{/if}
-			</form>
-			<!-- Decline posts from a form of its own, so Approve is the approve form's
-			     only submit button: Enter in the password field approves, and the
-			     password never travels with a decline. -->
-			<form id="connected-editors-decline" method="POST" action="?/decline" use:enhance={drawerSubmit} hidden>
-				<input type="hidden" name="code" value={held?.code ?? ''} />
-				<input type="hidden" name="code_expires_at" value={request.code_expires_at} />
-			</form>
+						{#if !online}
+							<p id="approve-blocked" class="text-sm text-muted">You're offline.</p>
+						{/if}
+					</form>
+					<!-- Decline posts from a form of its own, so Approve is the approve form's
+					     only submit button: Enter in the password field approves, and the
+					     password never travels with a decline. -->
+					<form id="connected-editors-decline" method="POST" action="?/decline" use:enhance={drawerSubmit} hidden>
+						<input type="hidden" name="code" value={held?.code ?? ''} />
+						<input type="hidden" name="code_expires_at" value={request.code_expires_at} />
+					</form>
+				</div>
+			</div>
 		{/if}
 	</div>
 

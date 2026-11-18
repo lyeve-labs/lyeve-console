@@ -8,6 +8,7 @@
 		RadioGroup,
 		SectionHeading,
 		SegmentedControl,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
@@ -248,14 +249,18 @@
 								bind:value={scope}
 							/>
 							{#if scope === 'chosen'}
-								<CheckboxGroup
-									name="roles"
-									label="Roles that may export"
-									hint="If no role is checked, only an administrator can export."
-									orientation="horizontal"
-									options={roleOptions}
-									bind:value={roles}
-								/>
+								<div class="grid" transition:motion.collapse|global>
+									<div class="min-h-0">
+										<CheckboxGroup
+											name="roles"
+											label="Roles that may export"
+											hint="If no role is checked, only an administrator can export."
+											orientation="horizontal"
+											options={roleOptions}
+											bind:value={roles}
+										/>
+									</div>
+								</div>
 							{/if}
 							{@render saved(rolesResult, 'Saved. The next export follows this choice.')}
 							<div class="flex justify-end">

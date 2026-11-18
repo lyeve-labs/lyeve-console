@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { cleanup, render } from '@testing-library/svelte';
+import { cleanup, fireEvent, render } from '@testing-library/svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
@@ -51,5 +52,19 @@ describe('CommentsPanel', () => {
 			props: { threads: [], people, mentionable: people, refused: { kind: 'feature', feature: 'example-feature', plugin: 'example', upgradeUrl: '' } },
 		});
 		expect(getByTestId('refusal-notice').textContent).toContain('Not enabled on this engine');
+	});
+
+	it('opens and closes the reply form on its row under the thread', async () => {
+		const { container, getByRole } = render(CommentsPanel, { props: { threads: [thread], people, mentionable: people } });
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(getByRole('button', { name: 'Reply' }));
+			const row = container.querySelector('#reply-c1')!.closest('.grid > .min-h-0')!.parentElement!;
+			expect(watch.entered).toContain(row);
+			await fireEvent.click(getByRole('button', { name: 'Cancel' }));
+			expect(watch.left).toContain(row);
+		} finally {
+			watch.stop();
+		}
 	});
 });

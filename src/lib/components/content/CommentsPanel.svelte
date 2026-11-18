@@ -7,7 +7,7 @@
 	 * The engine may refuse a write with 402, which the panel renders as a
 	 * notice.
 	 */
-	import { Alert, Badge, Button, Card, EmptyState, MultiSelect, SectionHeading, SegmentedControl, Textarea } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Button, Card, EmptyState, MultiSelect, SectionHeading, SegmentedControl, Textarea, motion } from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import { CheckCircle2, MessageSquare, RotateCcw } from '@lucide/svelte';
 	import RefusalNotice from '#lib/components/RefusalNotice.svelte';
@@ -136,14 +136,18 @@
 							{/if}
 							{#if !t.resolved}
 								{#if replyTo === t.id}
-									<form method="POST" action="?/comment" use:enhance={answer.enhance} class="ml-4 flex flex-col gap-2">
-										<input type="hidden" name="parent_id" value={t.id} />
-										<Textarea id="reply-{t.id}" name="body" label="Reply" rows={2} bind:value={reply} />
-										<div class="flex justify-end gap-2">
-											<Button variant="secondary" size="sm" onclick={() => (replyTo = '')}>Cancel</Button>
-											<Button variant="primary" size="sm" type="submit" disabled={!reply.trim()} loading={answer.pending}>Reply</Button>
+									<div class="grid" transition:motion.collapse|global>
+										<div class="min-h-0">
+											<form method="POST" action="?/comment" use:enhance={answer.enhance} class="ml-4 flex flex-col gap-2">
+												<input type="hidden" name="parent_id" value={t.id} />
+												<Textarea id="reply-{t.id}" name="body" label="Reply" rows={2} bind:value={reply} />
+												<div class="flex justify-end gap-2">
+													<Button variant="secondary" size="sm" onclick={() => (replyTo = '')}>Cancel</Button>
+													<Button variant="primary" size="sm" type="submit" disabled={!reply.trim()} loading={answer.pending}>Reply</Button>
+												</div>
+											</form>
 										</div>
-									</form>
+									</div>
 								{:else}
 									<div class="ml-4">
 										<Button variant="ghost" size="sm" onclick={() => ((replyTo = t.id), (reply = ''))}>Reply</Button>
