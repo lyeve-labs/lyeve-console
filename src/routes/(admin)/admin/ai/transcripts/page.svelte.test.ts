@@ -65,9 +65,11 @@ describe('AI transcripts page', () => {
 		expect(row?.querySelector('a')).toBeNull();
 	});
 
+	// A standing condition, drawn as the kit's warning rather than a status line.
 	it('warns when transcript storage is off for the tenant', () => {
-		const { getByRole } = setup({ aiSettings: { ...fixtureSettings, transcripts_enabled: false } });
-		expect(getByRole('status').textContent).toContain('Transcript storage is off');
+		const { getByText, container } = setup({ aiSettings: { ...fixtureSettings, transcripts_enabled: false } });
+		expect(container.querySelector('[role="status"]')).toBeNull();
+		expect(getByText(/Transcript storage is off/).closest('[role="alert"]')).not.toBeNull();
 	});
 
 	it('paints the forbidden state and no table', () => {

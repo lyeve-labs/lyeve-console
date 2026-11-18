@@ -50,6 +50,7 @@
 	import { page } from '$app/state';
 	import { liveFilter } from '#lib/live-filter.svelte.ts';
 	import { ICON } from '#lib/icon.ts';
+	import { liveText } from '#lib/live-text.svelte.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -57,6 +58,8 @@
 	const POLL_MS = 2000;
 
 	const running = $derived(data.jobs.filter(active));
+	const runningText = $derived(running.length === 1 ? 'One export is running.' : `${running.length} exports are running.`);
+	const spokenRunning = liveText(() => (running.length > 0 ? runningText : ''));
 	const failed = $derived(data.jobs.filter((j) => j.status === 'failed').length);
 	// Running and failed are counted from the rows on this page, so once the
 	// list is paged their tiles say so beside a total that covers every page.
@@ -229,10 +232,14 @@
 		<section class="flex flex-col gap-4">
 			<div class="flex flex-wrap items-center justify-between gap-2">
 				<SectionHeading level={2}>Exports</SectionHeading>
+				<!-- Orca reads nothing from a status role, and a region created
+				     holding its text is not announced, so the count is spoken from
+				     a polite region drawn empty. -->
+				<div class="sr-only" aria-live="polite" aria-atomic="true" data-testid="running-live">{spokenRunning.text}</div>
 				{#if running.length > 0}
-					<p class="flex items-center gap-2 text-xs text-muted" role="status">
+					<p class="flex items-center gap-2 text-xs text-muted">
 						<Spinner size={ICON.xs} />
-						{running.length === 1 ? 'One export is running.' : `${running.length} exports are running.`}
+						{runningText}
 						This list updates until every export finishes.
 					</p>
 				{/if}

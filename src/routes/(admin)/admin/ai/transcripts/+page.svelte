@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge, Button, EmptyState, Input, PageShell, Pagination, Select, Table } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Button, EmptyState, Input, PageShell, Pagination, Select, Table } from '@lyeve-labs/ui-kit';
 	import { ChevronRight, MessagesSquare, Search } from '@lucide/svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import type { PageData } from './$types';
@@ -34,10 +34,10 @@
 
 	<AiSection level={2} tab="transcripts" gate={data.gate} layoutGate={data.aiLayoutGate} noun="transcripts">
 		{#if !data.aiSettings?.transcripts_enabled}
-			<p class="text-xs text-warn" role="status">
+			<Alert tone="warn">
 				Transcript storage is off for this tenant. New requests are not recorded.
 				<a href="/admin/ai/settings" class="underline">Turn it on in settings.</a>
-			</p>
+			</Alert>
 		{/if}
 
 		<!-- A GET form: the filters live in the URL so a page can be shared and the

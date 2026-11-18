@@ -40,6 +40,7 @@
 	import type { ActionData, PageData } from './$types';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
 	import { ICON } from '#lib/icon.ts';
+	import { liveText } from '#lib/live-text.svelte.ts';
 	import ImportRowsDrawer from './ImportRowsDrawer.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -54,6 +55,8 @@
 	// says why it offers none.
 	const schemaList = $derived(data.schemas.ok ? data.schemas.value : null);
 	const running = $derived(data.jobs.filter(cancelable));
+	const runningText = $derived(running.length === 1 ? 'One import is running.' : `${running.length} imports are running.`);
+	const spokenRunning = liveText(() => (running.length > 0 ? runningText : ''));
 	const rejecting = $derived(data.jobs.filter((j) => outcome(j) === 'partial' || outcome(j) === 'nothing'));
 
 	// An import runs on the server. The history re-reads until none is left
@@ -203,10 +206,14 @@
 		<section class="flex flex-col gap-4">
 			<div class="flex flex-wrap items-center justify-between gap-2">
 				<SectionHeading level={2}>History</SectionHeading>
+				<!-- Orca reads nothing from a status role, and a region created
+				     holding its text is not announced, so the count is spoken from
+				     a polite region drawn empty. -->
+				<div class="sr-only" aria-live="polite" aria-atomic="true" data-testid="running-live">{spokenRunning.text}</div>
 				{#if running.length > 0}
-					<p class="flex items-center gap-2 text-xs text-muted" role="status">
+					<p class="flex items-center gap-2 text-xs text-muted">
 						<Spinner size={ICON.xs} />
-						{running.length === 1 ? 'One import is running.' : `${running.length} imports are running.`}
+						{runningText}
 						The history updates until every import finishes.
 					</p>
 				{/if}

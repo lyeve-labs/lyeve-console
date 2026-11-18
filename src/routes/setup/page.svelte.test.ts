@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { tick } from 'svelte';
 import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,6 +8,13 @@ vi.mock('$app/navigation', () => nav);
 
 import SetupPage from './+page.svelte';
 import type { SetupModeStatus } from '#lib/api/setup.ts';
+
+// A live region reads its text only after it has been in the page for two
+// frames, the way the kit's notices do.
+async function twoFrames(): Promise<void> {
+	await new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+	await tick();
+}
 
 afterEach(() => {
 	cleanup();
@@ -47,6 +55,24 @@ describe('Setup page: engine unreachable', () => {
 
 		await vi.advanceTimersByTimeAsync(3000);
 		expect(nav.refreshAll).toHaveBeenCalled();
+	});
+});
+
+// Orca reads nothing from a status role, and a region created holding its
+// text is not announced, so the wait is spoken from a polite region that
+// fills once it has been in the page for two frames.
+describe('Setup page: the wait is announced', () => {
+	it.each([
+		['unreachable', null, 'Checking again every few seconds.'],
+		['setup_mode', { status: fullStatus }, 'Waiting for the engine to restart with its settings.'],
+	] as const)('speaks the %s wait from a polite region and draws no status role', async (state, form, said) => {
+		const { container, getByTestId } = render(SetupPage, { props: { data: data(state), form: form as never } });
+		expect(container.querySelector('[role="status"]')).toBeNull();
+		const live = getByTestId('setup-live');
+		expect(live.getAttribute('aria-live')).toBe('polite');
+		expect(live.textContent).toBe('');
+		await twoFrames();
+		expect(live.textContent).toBe(said);
 	});
 });
 
