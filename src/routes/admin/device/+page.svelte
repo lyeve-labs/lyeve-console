@@ -81,6 +81,18 @@
 		},
 	};
 
+	/**
+	 * What a decision just posted is read out as. The form the reader pressed
+	 * in unmounts with the request card, so focus falls to the page, and only
+	 * a region already on the page announces what replaced it. A failure, a
+	 * rate refusal and a 402 draw the kit's alert, which is read out already.
+	 */
+	const spoken = $derived.by(() => {
+		if (!decided) return '';
+		const outcome = outcomes[view];
+		return outcome ? `${outcome.title}. ${outcome.description}` : '';
+	});
+
 	const showCodeField = $derived(view === 'enter' || view === 'unknown' || view === 'expired' || view === 'decided');
 </script>
 
@@ -92,6 +104,7 @@
 	back={{ href: '/admin', label: 'Dashboard' }}
 >
 	<div class="space-y-6">
+		<div class="sr-only" aria-live="polite" aria-atomic="true" data-testid="device-live">{spoken}</div>
 		{#if view === 'pending' && data.request}
 			<Card heading="Sign-in request" headingLevel={2} pad="lg">
 				<div class="space-y-5">
