@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tracked } from '#lib/forms.svelte.ts';
 	import {
 		Alert,
 		Button,
@@ -19,6 +20,9 @@
 	import { ICON } from '#lib/icon.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	// A rebuild reads every entry, so it can take a while.
+	const reindex = tracked(() => {});
 
 	let publicChoice = $state<string[]>([]);
 	$effect.pre(() => {
@@ -112,14 +116,14 @@
 				{#snippet header()}
 					<SectionHeading level={2}>Index</SectionHeading>
 				{/snippet}
-				<form method="POST" action="?/reindex" class="flex flex-col gap-3" use:enhance>
+				<form method="POST" action="?/reindex" class="flex flex-col gap-3" use:enhance={reindex.enhance}>
 					{#if form?.reindexError}
 						<Alert tone="danger">{form.reindexError}</Alert>
 					{:else if form && 'reindexed' in form}
 						<Alert tone="success" autoDismiss>{form.reindexMessage || `Rebuilt ${form.reindexed} entries.`}</Alert>
 					{/if}
 					<p class="text-xs text-muted">Rebuild the index from every entry. Entries are indexed when they are saved, so you only need this after data changed outside the engine.</p>
-					<div><Button variant="secondary" size="sm" type="submit">Rebuild index</Button></div>
+					<div><Button variant="secondary" size="sm" type="submit" loading={reindex.pending}>Rebuild index</Button></div>
 				</form>
 			</Card>
 		{/if}

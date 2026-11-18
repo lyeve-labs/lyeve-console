@@ -53,6 +53,7 @@
 	);
 
 	const saveCaps = tracked(() => async ({ update }) => update({ reset: false }));
+	const listModels = tracked(() => {});
 	const saveConfig = tracked(() => async ({ update }) => update({ reset: false }));
 </script>
 
@@ -109,9 +110,9 @@
 
 			<section class="grid gap-4 md:grid-cols-2">
 				<Card heading="Models" headingLevel={2} description="See which models this provider offers. The list is not saved.">
-					<form method="POST" action="?/models" use:enhance class="flex flex-col gap-3">
+					<form method="POST" action="?/models" use:enhance={listModels.enhance} class="flex flex-col gap-3">
 						<div>
-							<Button variant="secondary" size="sm" type="submit">
+							<Button variant="secondary" size="sm" type="submit" loading={listModels.pending}>
 								<ListTree size={ICON.sm} aria-hidden="true" /> List models
 							</Button>
 						</div>
@@ -133,7 +134,7 @@
 					<form method="POST" action="?/capabilities" use:enhance={saveCaps.enhance} class="flex flex-col gap-3">
 						<Input id="cap-model" name="model" label="Model" bind:value={capModel} placeholder={p.default_model || 'the default model'} />
 						<div>
-							<Button variant="secondary" size="sm" type="submit">
+							<Button variant="secondary" size="sm" type="submit" loading={saveCaps.pending}>
 								<ScanSearch size={ICON.sm} aria-hidden="true" /> Check
 							</Button>
 						</div>
