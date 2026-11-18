@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { tick } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import RuntimeScalingPanel from './RuntimeScalingPanel.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/observability/goroutines') } }));
@@ -479,6 +480,24 @@ describe('the goroutine engine tab names no capability', () => {
 			const { container } = setup(runtime({ licensed }));
 			expect(container.textContent).not.toMatch(/[a-z]-pro\b|_pro\b/);
 			cleanup();
+		}
+	});
+});
+
+/** Whether a collapse row holding `el` started its entrance (or exit). */
+const onRow = (list: Element[], el: Element | null) => !!el && list.some((row) => row.classList.contains('grid') && row.contains(el));
+
+describe('RuntimeScalingPanel dependent fields', () => {
+	it('opens the thread count and the memory figure on their rows', async () => {
+		const { container } = setup(runtime());
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(within(fieldset(container, 'cpu')).getByRole('radio', { name: 'Fixed' }));
+			expect(onRow(watch.entered, container.querySelector('#rt-cpu-threads'))).toBe(true);
+			await fireEvent.click(within(fieldset(container, 'memory')).getByRole('radio', { name: 'Share' }));
+			expect(onRow(watch.entered, container.querySelector('#rt-memory-percent'))).toBe(true);
+		} finally {
+			watch.stop();
 		}
 	});
 });

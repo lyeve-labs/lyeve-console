@@ -297,7 +297,7 @@
 				id="tenant-burst"
 				name="burst"
 				label="Burst"
-				hint={install?.enabled ? `At most ${install.burst}, the global burst.` : 'How many requests can arrive at once.'}
+				hint={install?.enabled ? `At most ${install.burst}, the global burst.` : 'How many requests can arrive together in a burst.'}
 				bind:value={burst}
 				required
 			/>

@@ -97,6 +97,18 @@
 		};
 	}
 
+	/**
+	 * The stored definition with each field's id taken from the one on screen
+	 * under the same name. The engine stores no client id, and a row with a
+	 * fresh id is a new row to the editor, which fades every field out and in
+	 * again after each save. A field renamed in the editor already carries its
+	 * new name on screen, so the name matches.
+	 */
+	function keepIds(raw: Schema, from: Schema | null | undefined): Schema {
+		const ids = new Map((from?.fields ?? []).map((f) => [f.name, f.id]));
+		return withIds({ ...raw, fields: raw.fields.map((f) => (f.id ? f : { ...f, id: ids.get(f.name) })) });
+	}
+
 	// svelte-ignore state_referenced_locally
 	let schemas = $state<Schema[]>((data.schemas ?? []).map(withIds));
 	// svelte-ignore state_referenced_locally
@@ -109,7 +121,8 @@
 	$effect(() => {
 		if (data.schemas === loadedSchemas) return;
 		loadedSchemas = data.schemas;
-		schemas = (data.schemas ?? []).map(withIds);
+		const shown = untrack(() => schemas);
+		schemas = (data.schemas ?? []).map((s) => keepIds(s, shown.find((x) => x.name === s.name)));
 	});
 
 	/**
@@ -351,7 +364,7 @@
 			// answer. Left open it would read as a second, unrelated preview.
 			closeDDLPreview();
 			if (result.type === 'success' && result.data && 'saved' in result.data) {
-				const stored = withIds(result.data.saved as Schema);
+				const stored = keepIds(result.data.saved as Schema, selected);
 				const idx = schemas.findIndex((s) => s.name === stored.name);
 				if (idx >= 0) schemas[idx] = stored;
 				else schemas = [...schemas, stored];
@@ -468,7 +481,7 @@
 	let renameModal = $state<ReturnType<typeof RenameModal>>();
 
 	function renamed(from: string, raw: Schema) {
-		const stored = withIds(raw);
+		const stored = keepIds(raw, selected);
 		schemas = schemas.map((s) => (s.name === from ? stored : s));
 		open(stored);
 	}
@@ -779,8 +792,17 @@
 					</span>
 				{/snippet}
 
-				<div id="schema-rail" class={listFolded ? 'max-lg:hidden' : ''}>
-					<SchemaRail {schemas} {rowCounts} current={saved?.name} onselect={selectSchema} />
+				<!-- Folds below lg only, so the rows travel there and a folded list
+				     leaves the tab order through visibility, which turns at the
+				     end of the travel. An inert attribute would hold at lg too. -->
+				<div
+					id="schema-rail"
+					class="grid grid-rows-[1fr] transition-[grid-template-rows,visibility] duration-base ease-move
+						{listFolded ? 'max-lg:grid-rows-[0fr] max-lg:invisible' : ''}"
+				>
+					<div class="min-h-0 max-lg:overflow-hidden">
+						<SchemaRail {schemas} {rowCounts} current={saved?.name} onselect={selectSchema} />
+					</div>
 				</div>
 			</ResizableAside>
 

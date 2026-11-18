@@ -406,5 +406,12 @@ describe('media library failures stay with their file and form', () => {
 		const importForm = document.querySelector('form#import-form') as HTMLFormElement;
 		expect(importForm.textContent).not.toContain('Failed to delete media');
 	});
+
+	it('states the address rule in the words the imports page uses', async () => {
+		withForm({});
+		await fireEvent.click(screen.getByRole('button', { name: /Import from URL/ }));
+		const drawer = document.querySelector('[role="dialog"]') as HTMLElement;
+		expect(drawer.textContent).toContain('Private and internal addresses are not allowed.');
+	});
 });
 

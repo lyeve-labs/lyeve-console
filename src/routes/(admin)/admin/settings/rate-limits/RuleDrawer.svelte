@@ -178,7 +178,7 @@
 					id="rl-burst"
 					name="burst"
 					label="Burst"
-					hint="How many requests can arrive at once. At least one."
+					hint="How many requests can arrive together in a burst. At least one."
 					bind:value={burst}
 				/>
 			</div>

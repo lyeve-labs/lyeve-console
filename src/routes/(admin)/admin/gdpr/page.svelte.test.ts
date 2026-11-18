@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, cleanup } from '@testing-library/svelte';
+import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -227,5 +227,21 @@ describe('what a person proves before exporting', () => {
 		await vi.waitFor(() => expect(said(container)).toContain('Email is not set up'));
 		await twoFrames();
 		expect(said(container)).not.toContain('Export requirements saved.');
+	});
+});
+
+// Each erasure outcome that stays until dismissed offers the reader a way
+// to dismiss it.
+describe('Privacy request erasure outcome that stays', () => {
+	it.each([
+		['Erasure held', erased([], { total_rows: 0, holds: [{ id: 'h1' }] })],
+		['Erasure kept some records', erased(['not finished: rows kept under a shared address'], { total_rows: 3, complete: false })],
+		['Erasure incomplete', erased([ERASERS_FAILED])],
+	])('offers to dismiss %s', async (title, props) => {
+		const { findByText, getByRole, queryByText } = render(GdprPage, { props });
+		await findByText(title);
+		await fireEvent.click(getByRole('button', { name: 'Close' }));
+		await tick();
+		expect(queryByText(title)).toBeNull();
 	});
 });

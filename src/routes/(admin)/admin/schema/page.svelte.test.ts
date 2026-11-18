@@ -4,10 +4,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { tick } from 'svelte';
 import type { PageData } from './$types';
 
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+// Each form's submit handler, by its action, so a case can hand the page an
+// action's result.
+const forms = vi.hoisted(() => ({ handlers: new Map<string, unknown>() }));
+vi.mock('$app/forms', () => ({
+	enhance: (form: HTMLFormElement, submit: unknown) => {
+		forms.handlers.set(form.getAttribute('action') ?? '', submit);
+		return { destroy() {} };
+	},
+}));
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/schema') } }));
 vi.mock('$app/state', () => state);
-vi.mock('$app/navigation', () => ({ beforeNavigate: vi.fn(), goto: vi.fn(async () => {}), refreshAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => ({
+	beforeNavigate: vi.fn(),
+	goto: vi.fn(async () => {}),
+	invalidate: vi.fn(async () => {}),
+	refreshAll: vi.fn(async () => {}),
+}));
 
 // The builder is tested as a build without the diagram, whatever the tree
 // carries. A case that needs the page's side of the diagram sets the flag.
@@ -23,9 +36,12 @@ vi.mock('#lib/canvas/schema.ts', () => ({
 
 import SchemaPage from './+page.svelte';
 import { outlineSkips } from '#lib/test-outline.ts';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
+import type { SubmitFunction } from '$app/forms';
 
 afterEach(() => {
 	cleanup();
+	forms.handlers.clear();
 	vi.useRealTimers();
 });
 
@@ -244,19 +260,23 @@ describe('schema builder relation panel', () => {
 		expect(container.querySelector('aside')?.contains(buttons[0])).toBe(false);
 	});
 
-	it('folds the list to its header below lg once a schema is open, and brings it back', async () => {
+	it('folds the list to its header below lg once a schema is open, moving its rows, and brings it back', async () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
 		expect(screen.queryByRole('button', { name: 'Show the list' })).toBeNull();
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
 		const rail = document.getElementById('schema-rail') as HTMLElement;
-		expect(rail.className).toContain('max-lg:hidden');
+		const folded = () => ['max-lg:grid-rows-[0fr]', 'max-lg:invisible'].every((c) => rail.classList.contains(c));
+		for (const c of ['grid', 'transition-[grid-template-rows,visibility]', 'duration-base', 'ease-move']) expect(rail.classList).toContain(c);
+		expect(rail.className).not.toContain('max-lg:hidden');
+		expect(folded()).toBe(true);
 		const show = screen.getByRole('button', { name: 'Show the list' });
 		expect(show.getAttribute('aria-expanded')).toBe('false');
 		await fireEvent.click(show);
-		expect(rail.className).not.toContain('max-lg:hidden');
+		expect(folded()).toBe(false);
+		expect(rail.classList).toContain('grid-rows-[1fr]');
 		expect(screen.getByRole('button', { name: 'Hide the list' }).getAttribute('aria-expanded')).toBe('true');
 		await fireEvent.click(screen.getByRole('button', { name: 'Authors' }));
-		expect(rail.className).toContain('max-lg:hidden');
+		expect(folded()).toBe(true);
 	});
 
 	it('moves focus to the list toggle when a pick below lg folds the list away', async () => {
@@ -476,6 +496,34 @@ describe('schema builder saving', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
 		expect(screen.getAllByRole('textbox', { name: 'Field name' })).toHaveLength(1);
 		expect(screen.getByText('Saved')).toBeTruthy();
+	});
+
+	it('keeps the field rows on screen through a save, so none fades out and back', async () => {
+		const fields = [
+			{ id: 'f-title', name: 'title', field_type: 'text', required: true, unique: false, indexed: false },
+			{ id: 'f-body', name: 'body', field_type: 'text', required: false, unique: false, indexed: false },
+		];
+		await openPosts({ schemas: [{ name: 'posts', display_name: 'Posts', fields }] });
+		await fireEvent.input(screen.getAllByRole('textbox', { name: 'Field name' })[1], { target: { value: 'summary' } });
+		const watch = watchTransitions();
+		const submit = forms.handlers.get('?/save') as SubmitFunction;
+		const input = {
+			action: new URL('http://localhost/admin/schema?/save'),
+			formData: new FormData(),
+			formElement: document.createElement('form'),
+		};
+		const after = await submit({ ...input, controller: new AbortController(), submitter: null, cancel: vi.fn() });
+		// The engine answers with the definition it stored, which carries no client ids.
+		const stored = { name: 'posts', display_name: 'Posts', fields: fields.map(({ id: _, ...f }, i) => (i === 1 ? { ...f, name: 'summary' } : f)) };
+		await (after as (o: unknown) => Promise<void>)({
+			...input,
+			update: vi.fn(async () => {}),
+			result: { type: 'success', status: 200, data: { scope: 'save', saved: stored } },
+		});
+		await tick();
+		watch.stop();
+		expect(screen.getAllByRole('textbox', { name: 'Field name' }).map((f) => (f as HTMLInputElement).value)).toEqual(['title', 'summary']);
+		expect(watch.left.filter((el) => el.matches('[data-field-row]'))).toEqual([]);
 	});
 
 	it('moves a saved table only through Rename', async () => {

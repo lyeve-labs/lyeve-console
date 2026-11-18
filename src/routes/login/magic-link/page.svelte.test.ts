@@ -78,3 +78,11 @@ describe('Magic link request page', () => {
 		expect((container.querySelector('#tenant') as HTMLInputElement).value).toBe('');
 	});
 });
+
+describe('Magic link request page title', () => {
+	it('names the page in the tab as its heading does', () => {
+		const { getByRole } = render(MagicLinkPage, { props: { form: null, data: { organization: true, carried: '' } } as never });
+		expect(getByRole('heading', { level: 1 }).textContent).toContain('Sign in with an email link');
+		expect(document.title).toContain('Sign in with an email link');
+	});
+});

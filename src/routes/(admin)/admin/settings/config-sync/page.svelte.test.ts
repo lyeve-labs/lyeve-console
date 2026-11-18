@@ -6,6 +6,7 @@ vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 
 import ConfigSyncPage from './+page.svelte';
 import { watchTransitions } from '#lib/transitions.test-support.ts';
+import { tick } from 'svelte';
 
 afterEach(() => {
 	cleanup();
@@ -135,3 +136,17 @@ describe('config sync results', () => {
 		}
 	});
 });
+
+describe('a dry run that changes nothing', () => {
+	it('announces that the engine already matches the bundle', async () => {
+		setup({ scope: 'sync', mode: 'dry-run', plan: { sections: {}, changes: 0, problems: 0 } });
+		await twoFrames();
+		const regions = [...document.querySelectorAll('[aria-live="polite"]')].filter((r) => r.textContent?.includes('This engine already matches the bundle.'));
+		expect(regions.length).toBeGreaterThan(0);
+	});
+});
+
+async function twoFrames(): Promise<void> {
+	await new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+	await tick();
+}

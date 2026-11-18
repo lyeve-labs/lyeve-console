@@ -54,3 +54,12 @@ describe('the global limit drawer', () => {
 		expect(form()?.firstElementChild?.firstElementChild?.textContent).toContain('Could not save the global limit. Try again.');
 	});
 });
+
+describe('the burst hint', () => {
+	it('says what a burst is in plain words', () => {
+		const { component } = render(GlobalDrawer, { props: { error: '' } });
+		component.openGlobal(null);
+		flushSync();
+		expect(form()?.textContent).toContain('How many requests can arrive together in a burst.');
+	});
+});

@@ -25,6 +25,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 });
 
 import WebhooksPage from './+page.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(() => {
 	cleanup();
@@ -414,5 +415,24 @@ describe('the webhook search and status filter', () => {
 		expect(container.textContent).toContain('No webhooks match these filters');
 		expect(container.textContent).not.toContain('No webhooks yet');
 		expect(container.querySelector('a[href="/admin/webhooks"]')?.textContent?.trim()).toBe('Clear filters');
+	});
+});
+
+describe('a webhook test result arriving', () => {
+	it('opens its line on its row under the webhook', async () => {
+		const props = (form: unknown) =>
+			({
+				data: { q: '', status: '', webhooks: { ok: true, value: [webhook] }, schemas: { ok: true, value: [] }, entitlements, user: { roles: ['admin'] } },
+				form,
+			}) as never;
+		const { container, rerender } = render(WebhooksPage, { props: props(null) });
+		const watch = watchTransitions();
+		try {
+			await rerender(props({ testResult: { id: 'w1', success: false, status_code: 502, message: 'Bad gateway' } }));
+			const line = [...container.querySelectorAll('tbody span')].find((s) => s.textContent?.includes('HTTP 502: Bad gateway'))!;
+			expect(watch.entered.some((el) => el.classList.contains('grid') && el.contains(line))).toBe(true);
+		} finally {
+			watch.stop();
+		}
 	});
 });

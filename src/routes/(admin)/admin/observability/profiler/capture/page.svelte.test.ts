@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
-import { cleanup, render } from '@testing-library/svelte';
+import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn(async () => {}), refreshAll: vi.fn(async () => {}) }));
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 
 import CapturePage from './+page.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 function props(form: Record<string, unknown> | null = null) {
 	return { data: {} as never, form: form as never };
@@ -46,5 +47,81 @@ describe('the profiler capture page', () => {
 	it('carries the profiler tabs with Profiles marked', () => {
 		const { getByRole } = render(CapturePage, props());
 		expect(getByRole('tab', { name: 'Profiles' }).getAttribute('aria-selected')).toBe('true');
+	});
+});
+
+describe('a flamegraph arriving', () => {
+	it('opens its card on its row when the capture returns', async () => {
+		const graph = { endpoint: '/api/v1/content', duration_sec: 5, svg: '<svg xmlns="http://www.w3.org/2000/svg"></svg>', profile_type: 'cpu', captured_at: '2026-09-21T10:00:00Z' };
+		const { rerender, getByTestId } = render(CapturePage, props());
+		const watch = watchTransitions();
+		try {
+			await rerender(props({ form: 'flamegraph', graph }));
+			const card = getByTestId('flamegraph');
+			expect(watch.entered.some((el) => el.classList.contains('grid') && el.contains(card))).toBe(true);
+		} finally {
+			watch.stop();
+		}
+	});
+});
+
+describe('a CPU profile download', () => {
+	it('shows CPU pending for the window the engine samples, then lets it go', async () => {
+		vi.useFakeTimers();
+		try {
+			const { getByTestId } = render(CapturePage, props());
+			const form = getByTestId('profiler-exports').querySelector('form[action$="/profile/cpu"]') as HTMLFormElement;
+			const button = form.querySelector('button') as HTMLButtonElement;
+			const seconds = Number((form.querySelector('input[name="duration_sec"]') as HTMLInputElement).value);
+			expect(button.getAttribute('aria-busy')).toBeNull();
+			await fireEvent.submit(form);
+			expect(button.getAttribute('aria-busy')).toBe('true');
+			await vi.advanceTimersByTimeAsync(seconds * 1000 - 1);
+			expect(button.getAttribute('aria-busy')).toBe('true');
+			await vi.advanceTimersByTimeAsync(1);
+			expect(button.getAttribute('aria-busy')).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('posts and waits for the window the engine clamps to, never the number typed', async () => {
+		vi.useFakeTimers();
+		try {
+			const { getByTestId, getByLabelText } = render(CapturePage, props());
+			await fireEvent.input(getByLabelText('CPU window'), { target: { value: '600' } });
+			const form = getByTestId('profiler-exports').querySelector('form[action$="/profile/cpu"]') as HTMLFormElement;
+			const button = form.querySelector('button') as HTMLButtonElement;
+			expect((form.querySelector('input[name="duration_sec"]') as HTMLInputElement).value).toBe('25');
+			await fireEvent.submit(form);
+			await vi.advanceTimersByTimeAsync(25_000);
+			expect(button.getAttribute('aria-busy')).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('leaves no pending timer behind once the page closes', async () => {
+		vi.useFakeTimers();
+		try {
+			const set = vi.spyOn(globalThis, 'setTimeout');
+			const clear = vi.spyOn(globalThis, 'clearTimeout');
+			const { getByTestId, unmount } = render(CapturePage, props());
+			await fireEvent.submit(getByTestId('profiler-exports').querySelector('form[action$="/profile/cpu"]') as HTMLFormElement);
+			const pending = set.mock.results[set.mock.calls.findIndex(([, ms]) => ms === 5_000)]?.value;
+			expect(pending).toBeDefined();
+			unmount();
+			expect(clear).toHaveBeenCalledWith(pending);
+		} finally {
+			vi.restoreAllMocks();
+			vi.useRealTimers();
+		}
+	});
+
+	it('shows no pending state on the other downloads, which return at once', async () => {
+		const { getByTestId } = render(CapturePage, props());
+		const form = getByTestId('profiler-exports').querySelector('form[action$="/profile/heap"]') as HTMLFormElement;
+		await fireEvent.submit(form);
+		expect(form.querySelector('button')?.getAttribute('aria-busy')).toBeNull();
 	});
 });

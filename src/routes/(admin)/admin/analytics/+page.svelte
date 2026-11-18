@@ -166,9 +166,9 @@
 							role="img"
 							aria-label={`${formatCount(summary.total_2xx)} successful, ${formatCount(summary.total_4xx)} client errors, ${formatCount(summary.total_5xx)} server errors`}
 						>
-							<div class="bg-success" style:width={`${(summary.total_2xx / summary.total_requests) * 100}%`}></div>
-							<div class="bg-warn" style:width={`${(summary.total_4xx / summary.total_requests) * 100}%`}></div>
-							<div class="bg-danger" style:width={`${(summary.total_5xx / summary.total_requests) * 100}%`}></div>
+							<div class="bg-success transition-[width] duration-progress" style:width={`${(summary.total_2xx / summary.total_requests) * 100}%`}></div>
+							<div class="bg-warn transition-[width] duration-progress" style:width={`${(summary.total_4xx / summary.total_requests) * 100}%`}></div>
+							<div class="bg-danger transition-[width] duration-progress" style:width={`${(summary.total_5xx / summary.total_requests) * 100}%`}></div>
 						</div>
 					{/if}
 					<div class="flex flex-wrap gap-x-6 gap-y-1 text-xs">

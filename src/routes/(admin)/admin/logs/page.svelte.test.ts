@@ -3,6 +3,7 @@ import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import LogsPage from './+page.svelte';
+import { hoverSnaps } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -269,5 +270,13 @@ describe('logs filter row', () => {
 	it('offers to clear the filters when nothing matches them', () => {
 		const { getByRole } = render(LogsPage, props([], { q: 'nothing', level: 'ERROR' }));
 		expect(getByRole('link', { name: 'Clear filters' }).getAttribute('href')).toBe('/admin/logs');
+	});
+});
+
+describe('Level chip hover', () => {
+	it('eases the dimming of a level chip', () => {
+		const { container } = render(LogsPage, { props: props([entry()], { volume }) });
+		expect(chip(container, 'ERROR').classList).toContain('transition-opacity');
+		expect(hoverSnaps(container)).toEqual([]);
 	});
 });

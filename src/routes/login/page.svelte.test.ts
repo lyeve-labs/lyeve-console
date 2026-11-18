@@ -102,6 +102,18 @@ describe('Login page', () => {
 		expect(queryByText(/or continue with/i)).toBeNull();
 	});
 
+	it('spells each provider the way its owner does, and capitalizes any other word by word', () => {
+		const { getAllByRole } = render(LoginPage, {
+			props: props({ data: { oauthProviders: ['gitlab', 'auth0', 'oidc', 'google_workspace'], samlProviders: [] } }),
+		});
+		expect(providerLinks(getAllByRole('link')).map((a) => a.textContent?.trim())).toEqual([
+			'Sign in with GitLab',
+			'Sign in with Auth0',
+			'Sign in with OpenID Connect',
+			'Sign in with Google Workspace',
+		]);
+	});
+
 	// An <a> wrapped around a Button nests one interactive element in another.
 	// Button renders the anchor itself.
 	it('renders each provider as a single anchor', () => {
@@ -114,9 +126,12 @@ describe('Login page', () => {
 			'/api/admin/auth/oauth/github',
 			'/api/admin/auth/oauth/azure_ad',
 		]);
-		expect(links[1].textContent?.trim()).toBe('Sign in with azure ad');
+		expect(links[0].textContent?.trim()).toBe('Sign in with GitHub');
+		expect(links[1].textContent?.trim()).toBe('Sign in with Azure AD');
 		for (const link of links) {
 			expect(link.querySelector('button')).toBeNull();
+			// The name is capitalized, the sentence around it is not.
+			expect(link.className).not.toContain('capitalize');
 		}
 	});
 

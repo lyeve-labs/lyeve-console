@@ -11,6 +11,7 @@
 		SectionHeading,
 		Table,
 		confirm as confirmDialog,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
@@ -171,46 +172,50 @@
 			{/if}
 
 			{#if replay}
-				<div class="flex flex-col gap-3" data-testid="replay-results">
-					<SectionHeading level={3}>Replayed {replayedSet?.name ?? 'the set'}</SectionHeading>
-					<p class="text-sm text-muted">
-						{replay.results.filter((r) => r.diff && !diffChanged(r.diff)).length} of {replay.results.length} returned
-						the same response as when captured.
-					</p>
-					{#each replay.results as r (r.capture_id)}
-						<div class="rounded border border-line bg-surface-2 p-3">
-							<div class="flex flex-wrap items-center gap-2">
-								<!-- An expired capture comes back with no method or path, so
-								     its id is all there is to name it by. -->
-								{#if r.method && r.path}
-									<span class="font-mono text-xs text-fg">{r.method} {r.path}</span>
-								{:else}
-									<span class="font-mono text-xs text-faint">{r.capture_id}</span>
-								{/if}
-								{#if r.error}
-									<Badge tone="danger">Not replayed</Badge>
-								{:else if r.diff}
-									<Badge tone={diffChanged(r.diff) ? 'warn' : 'success'} dot>
-										{diffChanged(r.diff) ? 'Changed' : 'Same'}
-									</Badge>
-								{/if}
-							</div>
-							{#if r.error}
-								<p class="mt-1 text-xs text-muted">{r.error}</p>
-							{:else if r.diff}
-								<p class="mt-1 font-mono text-xs text-muted">
-									Status {r.diff.status_code1} then {r.diff.status_code2}, {Math.round(r.diff.duration1_ms)} ms then
-									{Math.round(r.diff.duration2_ms)} ms
-								</p>
-								{#if r.diff.headers_diff}
-									<pre class="mt-2 overflow-x-auto font-mono text-xs text-muted">{r.diff.headers_diff}</pre>
-								{/if}
-								{#if r.diff.body_diff}
-									<pre class="mt-2 overflow-x-auto font-mono text-xs text-muted">{r.diff.body_diff}</pre>
-								{/if}
-							{/if}
+				<div class="grid" transition:motion.collapse|global>
+					<div class="min-h-0">
+						<div class="flex flex-col gap-3" data-testid="replay-results">
+							<SectionHeading level={3}>Replayed {replayedSet?.name ?? 'the set'}</SectionHeading>
+							<p class="text-sm text-muted">
+								{replay.results.filter((r) => r.diff && !diffChanged(r.diff)).length} of {replay.results.length} returned
+								the same response as when captured.
+							</p>
+							{#each replay.results as r (r.capture_id)}
+								<div class="rounded border border-line bg-surface-2 p-3">
+									<div class="flex flex-wrap items-center gap-2">
+										<!-- An expired capture comes back with no method or path, so
+										     its id is all there is to name it by. -->
+										{#if r.method && r.path}
+											<span class="font-mono text-xs text-fg">{r.method} {r.path}</span>
+										{:else}
+											<span class="font-mono text-xs text-faint">{r.capture_id}</span>
+										{/if}
+										{#if r.error}
+											<Badge tone="danger">Not replayed</Badge>
+										{:else if r.diff}
+											<Badge tone={diffChanged(r.diff) ? 'warn' : 'success'} dot>
+												{diffChanged(r.diff) ? 'Changed' : 'Same'}
+											</Badge>
+										{/if}
+									</div>
+									{#if r.error}
+										<p class="mt-1 text-xs text-muted">{r.error}</p>
+									{:else if r.diff}
+										<p class="mt-1 font-mono text-xs text-muted">
+											Status {r.diff.status_code1} then {r.diff.status_code2}, {Math.round(r.diff.duration1_ms)} ms then
+											{Math.round(r.diff.duration2_ms)} ms
+										</p>
+										{#if r.diff.headers_diff}
+											<pre class="mt-2 overflow-x-auto font-mono text-xs text-muted">{r.diff.headers_diff}</pre>
+										{/if}
+										{#if r.diff.body_diff}
+											<pre class="mt-2 overflow-x-auto font-mono text-xs text-muted">{r.diff.body_diff}</pre>
+										{/if}
+									{/if}
+								</div>
+							{/each}
 						</div>
-					{/each}
+					</div>
 				</div>
 			{/if}
 		</section>

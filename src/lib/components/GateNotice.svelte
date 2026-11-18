@@ -3,12 +3,14 @@
 	 * What a page shows in place of what a refused read would have filled,
 	 * the same way for every page. The page names the feature and says in its
 	 * own words what a missing route means for it.
+	 *
+	 * The kit draws the notice. This supplies the console's words for each
+	 * state and its own not-enabled card, so a refusal reads the same here as
+	 * on every surface built on the kit.
 	 */
-	import { Alert, Button } from '@lyeve-labs/ui-kit';
-	import { RefreshCw } from '@lucide/svelte';
+	import { GateNotice, type Gate as KitGate, type GateWords } from '@lyeve-labs/ui-kit';
 	import { page } from '$app/state';
 	import NotEnabled from '#lib/components/NotEnabled.svelte';
-	import { ICON } from '#lib/icon.ts';
 	import { BUSY, OUTAGE, outageFor } from '#lib/outage.ts';
 	import { forbiddenText, fullText, inSentence, type Gate } from '#lib/api/gate.ts';
 
@@ -34,44 +36,25 @@
 	// The title opens a heading, but these sentences name the feature mid-way.
 	const subject = $derived(inSentence(title));
 
-	// A plain link to this address works before the page hydrates. After it
-	// hydrates, the router keeps the data it holds for an address that did not
-	// change, so the link asks for a fresh document instead.
+	// A plain link to this address works before the page hydrates.
 	const here = $derived(`${page.url.pathname}${page.url.search}`);
+
+	const words = $derived<GateWords>({
+		absent,
+		full: { title: `Limit reached for ${subject}`, body: gate.state === 'full' ? fullText(gate) : '' },
+		forbidden: forbiddenText(subject),
+		busy: { title: BUSY.title, body: BUSY.body },
+		// The page around this notice rendered, so unlike the full-page outage
+		// it names only the part that could not be read.
+		unavailable: { title: OUTAGE.title, body: outageFor(`${subject} did not load`) },
+		retry: OUTAGE.action,
+	});
+
+	const shown = $derived<KitGate>(gate.state === 'locked' ? { state: 'locked', forwardHref: gate.upgradeUrl } : gate);
 </script>
 
-{#snippet retry()}
-	<div class="mt-3">
-		<Button variant="secondary" size="sm" href={here} data-sveltekit-reload>
-			<RefreshCw size={ICON.sm} aria-hidden="true" /> {OUTAGE.action}
-		</Button>
-	</div>
+{#snippet locked(forwardHref: string)}
+	<NotEnabled {title} {level} url={forwardHref} />
 {/snippet}
 
-{#if gate.state === 'absent'}
-	<Alert tone="brand">{absent}</Alert>
-{:else if gate.state === 'locked'}
-	<NotEnabled {title} {level} url={gate.upgradeUrl} />
-{:else if gate.state === 'full'}
-	<Alert tone="warn" title="Limit reached for {subject}">{fullText(gate)}</Alert>
-{:else if gate.state === 'forbidden'}
-	<!-- Trying again cannot change a role, so this one offers nothing to press. -->
-	<Alert tone="warn">{forbiddenText(subject)}</Alert>
-{:else if gate.state === 'busy'}
-	<Alert tone="warn" title={BUSY.title}>
-		<p>{BUSY.body}</p>
-		{@render retry()}
-	</Alert>
-{:else if gate.state === 'unavailable'}
-	<!-- The page around this notice rendered, so unlike the full-page outage it
-	     names only the part that could not be read. -->
-	<Alert tone="warn" title={OUTAGE.title}>
-		<p>{outageFor(`${subject} did not load`)}</p>
-		{@render retry()}
-	</Alert>
-{:else if gate.state === 'error'}
-	<Alert tone="danger">
-		<p>{gate.message}</p>
-		{@render retry()}
-	</Alert>
-{/if}
+<GateNotice gate={shown} {words} {locked} retryHref={here} />

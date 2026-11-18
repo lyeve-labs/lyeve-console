@@ -155,7 +155,7 @@
 		     margin, so the row grows to 44px and holds the whole area. -->
 		<a
 			href={sortHref(key)}
-			class="relative -my-1 coarse:-my-0.5 py-1 inline-flex items-center gap-1 hit-area outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-focus"
+			class="relative -my-1 coarse:-my-0.5 py-1 inline-flex items-center gap-1 hit-area outline-none transition-colors hover:text-fg focus-visible:ring-2 focus-visible:ring-focus"
 		>
 			{label}
 			{#if data.sort === key}
@@ -269,7 +269,7 @@
 				{#if empties > 0 && !filterCountsRows(data.filter)}
 					<p class="text-xs text-faint">
 						{empties} of {filtered.length} on this page {plural(empties, 'has', 'have')} no entries.
-						<a href={filterHref('with-rows')} class="underline hover:text-fg">Hide them</a>.
+						<a href={filterHref('with-rows')} class="underline transition-colors hover:text-fg">Hide them</a>.
 					</p>
 				{/if}
 
@@ -296,7 +296,7 @@
 									     grows under a finger is clipped by an overflow the link carries. -->
 									<a
 										href="/admin/content/{schema.name}"
-										class="relative -my-1 py-1 hit-area block font-medium outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-focus {f.rows ===
+										class="relative -my-1 py-1 hit-area block font-medium outline-none transition-colors hover:text-brand focus-visible:ring-2 focus-visible:ring-focus {f.rows ===
 										0
 											? 'text-muted'
 											: 'text-fg'}"

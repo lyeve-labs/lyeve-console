@@ -11,6 +11,16 @@
 	import { CONFIRM_FIELD, CONFIRMED, unconfirmedOf } from '#lib/confirmation.ts';
 
 	const ask = $derived(unconfirmedOf(page.form));
+
+	// The post went to the list's own address with the action added as a key
+	// that starts with a slash. Cancel returns to the list as it was, so it
+	// keeps the filters and the page and leaves the action out.
+	const back = $derived.by(() => {
+		const query = new URLSearchParams(page.url.search);
+		for (const key of [...query.keys()]) if (key.startsWith('/')) query.delete(key);
+		const rest = query.toString();
+		return rest ? `${page.url.pathname}?${rest}` : page.url.pathname;
+	});
 </script>
 
 {#if ask}
@@ -24,7 +34,7 @@
 				{/each}
 				<input type="hidden" name={CONFIRM_FIELD} value={CONFIRMED} />
 				<Button variant="danger" size="sm" type="submit">{ask.label}</Button>
-				<Button variant="ghost" size="sm" href={page.url.pathname}>Cancel</Button>
+				<Button variant="ghost" size="sm" href={back}>Cancel</Button>
 			</form>
 		{/snippet}
 	</Banner>

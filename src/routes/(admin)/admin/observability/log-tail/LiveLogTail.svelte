@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Alert, Badge, Button, EmptyState, Input, SectionHeading, SegmentedControl, Table } from '@lyeve-labs/ui-kit';
-	import { onMount } from 'svelte';
+	import { Alert, Badge, Button, EmptyState, Input, SectionHeading, SegmentedControl, Table, motion } from '@lyeve-labs/ui-kit';
+	import { onMount, tick } from 'svelte';
 	import { Activity, RefreshCw, Trash2 } from '@lucide/svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import { LOG_LEVELS, formatTime, logLevelLabel, logLevelTone } from '#lib/format.ts';
@@ -97,7 +97,7 @@
 				// A pause holds the table still for reading, so what arrives
 				// meanwhile waits and joins the table on resume.
 				if (logPaused) held = [entry, ...held].slice(0, MAX_LOG_ENTRIES);
-				else logEntries = [entry, ...logEntries].slice(0, MAX_LOG_ENTRIES);
+				else void addOnTop([entry]);
 			} catch { /* ignore malformed */ }
 		});
 
@@ -115,10 +115,28 @@
 	}
 
 	let held: LogEntry[] = [];
+	let scroller: HTMLDivElement | undefined = $state();
+
+	// A reader scrolled into the table is reading a row, so the rows that
+	// arrive above it scroll the box by their own height and that row stays
+	// where it was. At the top the newest row arrives in view, which is the
+	// tail. The browser's own scroll anchoring is off on the box, so this is
+	// the one rule in every browser.
+	async function addOnTop(next: LogEntry[]) {
+		const box = scroller;
+		const anchor = box && box.scrollTop > 0 ? box.querySelector<HTMLElement>('tbody tr') : null;
+		const before = anchor?.offsetTop ?? 0;
+		logEntries = [...next, ...logEntries].slice(0, MAX_LOG_ENTRIES);
+		if (!box || !anchor) return;
+		await tick();
+		// A row the new ones pushed out of the table is still connected while
+		// it fades, and inert. It marks no place, so the box stays put.
+		if (anchor.isConnected && !anchor.inert) box.scrollTop += anchor.offsetTop - before;
+	}
 
 	function togglePause() {
 		if (logPaused) {
-			logEntries = [...held, ...logEntries].slice(0, MAX_LOG_ENTRIES);
+			void addOnTop(held);
 			held = [];
 		}
 		logPaused = !logPaused;
@@ -198,7 +216,7 @@
 	{:else}
 		{#if logState === 'refused'}
 			<Alert tone="warn" title="Could not connect to the live log tail">
-				<p>The connection was refused, and it does not reconnect on its own. Choose Try again.</p>
+				<p>The connection was refused. Choose Try again to reconnect.</p>
 				<div class="mt-3">
 					<Button variant="secondary" size="sm" onclick={retryLogStream}>
 						<RefreshCw size={ICON.sm} aria-hidden="true" /> Try again
@@ -209,8 +227,7 @@
 
 		<ListToolbar label="Filter the log tail">
 			{#snippet search()}
-				<label for="tail-keyword" class="sr-only">Filter</label>
-				<Input id="tail-keyword" bind:value={logKeyword} placeholder="Keyword, then Enter" onkeydown={applyKeyword} />
+				<Input id="tail-keyword" label="Keyword" hint="Press Enter to apply." bind:value={logKeyword} onkeydown={applyKeyword} />
 			{/snippet}
 			{#snippet filters()}
 				<div id="tail-level">
@@ -243,11 +260,19 @@
 				/>
 			{/if}
 		{:else}
-			<div class="max-h-96 overflow-y-auto overscroll-contain rounded-xl">
+			<div bind:this={scroller} class="max-h-96 overflow-y-auto overscroll-contain rounded-xl [overflow-anchor:none]">
 				<Table hoverable label="Live log tail">
+					<thead>
+						<tr>
+							<th scope="col">Time</th>
+							<th scope="col">Level</th>
+							<th scope="col">Message</th>
+							<th scope="col">Source</th>
+						</tr>
+					</thead>
 					<tbody>
 						{#each logEntries as entry (entry.sequence)}
-							<tr class="align-top">
+							<tr class="align-top" transition:motion.fade>
 								<td class="whitespace-nowrap font-mono text-xs">
 									<!-- A timestamp that will not parse shows as it arrived, never as "Invalid Date". -->
 									<span class="text-faint">{formatTime(entry.timestamp, entry.timestamp)}</span>

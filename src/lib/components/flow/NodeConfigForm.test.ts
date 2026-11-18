@@ -432,7 +432,14 @@ describe('the fields list of the Fill fields with AI node', () => {
 			props: { schema: fillSchema, value: { schema: 'notes' }, schemas: locked, fillNode: true, onchange: vi.fn() },
 		});
 		expect(getByText('No field of this content type can be filled with AI.')).toBeTruthy();
-		expect(queryByText(/^Pick a field/)).toBeNull();
+		expect(queryByText(/^Choose a field/)).toBeNull();
+	});
+
+	it('asks to choose a field when the content type has one the node can fill', () => {
+		const { getByText } = render(NodeConfigForm, {
+			props: { schema: fillSchema, value: { schema: 'posts' }, schemas: posts, fillNode: true, onchange: vi.fn() },
+		});
+		expect(getByText(/^Choose a field, or type a custom one below and press Enter\./)).toBeTruthy();
 	});
 
 	it('leaves the same list on another node as it was', async () => {

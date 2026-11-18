@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { Alert, Button, Card, Input, NumberInput, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
+	import { Alert, Button, Card, Input, NumberInput, PageShell, SectionHeading, motion } from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import { Download, Flame } from '@lucide/svelte';
-	import { PROFILE_SECONDS, PROFILE_TYPES } from '#lib/api/profiler.ts';
+	import { PROFILE_SECONDS, PROFILE_TYPES, clampSeconds } from '#lib/api/profiler.ts';
 	import { NO_VALUE, formatDateTime } from '#lib/format.ts';
 	import ProfilerTabs from '#lib/components/ProfilerTabs.svelte';
 	import type { ActionData } from './$types';
@@ -14,6 +14,20 @@
 	let flameEndpoint = $state('');
 	let flameSeconds = $state<number>(PROFILE_SECONDS.default);
 	let cpuSeconds = $state<number>(PROFILE_SECONDS.default);
+
+	// The engine samples for the whole window before the file arrives, and a
+	// download never tells the page that it has, so CPU shows pending for the
+	// window it asked for. The engine clamps the window, so the page posts and
+	// waits for the clamped one.
+	const cpuWindow = $derived(clampSeconds(cpuSeconds));
+	let cpuWaiting = $state(false);
+	let cpuTimer: ReturnType<typeof setTimeout> | undefined;
+	function waitForCpu() {
+		cpuWaiting = true;
+		clearTimeout(cpuTimer);
+		cpuTimer = setTimeout(() => (cpuWaiting = false), cpuWindow * 1000);
+	}
+	$effect(() => () => clearTimeout(cpuTimer));
 
 	// The flamegraph is the last action's answer while the page holds it. It
 	// is drawn as an image from a data URL rather than inlined as markup: the
@@ -65,11 +79,11 @@
 				<div class="flex flex-wrap gap-2">
 					{#each PROFILE_TYPES as type (type)}
 						<!-- A download, so it posts to an endpoint and stays a plain form. -->
-						<form method="POST" action="/admin/observability/profiler/profile/{type}">
+						<form method="POST" action="/admin/observability/profiler/profile/{type}" onsubmit={type === 'cpu' ? waitForCpu : undefined}>
 							{#if type === 'cpu'}
-								<input type="hidden" name="duration_sec" value={cpuSeconds} />
+								<input type="hidden" name="duration_sec" value={cpuWindow} />
 							{/if}
-							<Button type="submit" variant="secondary" size="sm">
+							<Button type="submit" variant="secondary" size="sm" loading={type === 'cpu' && cpuWaiting}>
 								<Download size={ICON.sm} /> {PROFILE_LABELS[type]}
 							</Button>
 						</form>
@@ -132,16 +146,20 @@
 	</div>
 
 	{#if graph && graphSrc}
-		<Card>
-			{#snippet header()}
-				<div class="flex flex-wrap items-center gap-2">
-					<SectionHeading level={3}><span class="font-mono">{graph.endpoint}</span></SectionHeading>
-					<span class="ms-auto text-xs text-faint">{graph.duration_sec}s CPU, captured {formatDateTime(graph.captured_at, NO_VALUE)}</span>
-				</div>
-			{/snippet}
-			<div class="overflow-x-auto" data-testid="flamegraph">
-				<img src={graphSrc} alt="CPU flamegraph for {graph.endpoint}" class="max-w-none" />
+		<div class="grid" transition:motion.collapse|global>
+			<div class="min-h-0">
+				<Card>
+					{#snippet header()}
+						<div class="flex flex-wrap items-center gap-2">
+							<SectionHeading level={3}><span class="font-mono">{graph.endpoint}</span></SectionHeading>
+							<span class="ms-auto text-xs text-faint">{graph.duration_sec}s CPU, captured {formatDateTime(graph.captured_at, NO_VALUE)}</span>
+						</div>
+					{/snippet}
+					<div class="overflow-x-auto" data-testid="flamegraph">
+						<img src={graphSrc} alt="CPU flamegraph for {graph.endpoint}" class="max-w-none" />
+					</div>
+				</Card>
 			</div>
-		</Card>
+		</div>
 	{/if}
 </PageShell>

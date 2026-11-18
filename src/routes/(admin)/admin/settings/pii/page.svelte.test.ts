@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/navigation', () => ({ refreshAll: vi.fn(async () => {}) }));
 
 import PiiPage from './+page.svelte';
+import { tick } from 'svelte';
 
 afterEach(cleanup);
 
@@ -230,3 +231,24 @@ describe('PII failures stay where they were made', () => {
 		expect(save.textContent).not.toContain('Could not run');
 	});
 });
+
+// A try-it result stays on the page, so a screen reader is told it arrived.
+describe('the try-it result spoken', () => {
+	it.each([
+		['the match count', { valid: true, matches: ['ACC-1'], count: 1, masked: 'x' }, '1 match.'],
+		['a pattern that matched nothing', { valid: true, matches: [], count: 0, masked: 'x' }, 'The pattern matched nothing in this sample'],
+	])('announces %s from a live region', async (_name, test, sentence) => {
+		const rendered = render(PiiPage, {
+			props: { ...props({ rules: { presets: [], custom: [], mask_tags: {} } }), form: { test } as never },
+		});
+		await fireEvent.click(rendered.getByRole('button', { name: /New rule/ }));
+		await twoFrames();
+		const regions = [...document.querySelectorAll('[aria-live]')].filter((r) => (r.textContent ?? '').replace(/\s+/g, ' ').includes(sentence));
+		expect(regions.length).toBeGreaterThan(0);
+	});
+});
+
+async function twoFrames(): Promise<void> {
+	await new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+	await tick();
+}

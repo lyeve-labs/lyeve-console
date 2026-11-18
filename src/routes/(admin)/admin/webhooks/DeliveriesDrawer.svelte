@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge, Button, Drawer, EmptyState, Table } from '@lyeve-labs/ui-kit';
+	import { Badge, Button, Drawer, EmptyState, Table, motion } from '@lyeve-labs/ui-kit';
 	import type { WebhookDelivery } from '@lyeve-labs/client';
 	import { untrack } from 'svelte';
 	import { enhance } from '#lib/enhance.ts';
@@ -103,15 +103,15 @@
 								<td data-cell="nowrap" class="text-xs text-muted">
 									{d.duration_ms != null ? `${d.duration_ms}ms` : 'Not recorded'}
 								</td>
-								<td data-cell="nowrap">
+								<td>
 									{#if d.success}
 										<span class="flex items-center gap-1 text-xs text-success">
 											<CheckCircle size={ICON.xs} /> OK
 										</span>
 									{:else if d.error}
-										<span class="flex items-center gap-1 text-xs text-danger" title={d.error}>
-											<XCircle size={ICON.xs} />
-											{d.error.slice(0, 40)}
+										<span class="flex items-start gap-1 text-xs break-words text-danger">
+											<XCircle size={ICON.xs} class="mt-0.5 shrink-0" />
+											<span class="min-w-0">{d.error}</span>
 										</span>
 									{:else}
 										<span class="flex items-center gap-1 text-xs text-danger">
@@ -143,9 +143,13 @@
 									     another try. -->
 									{#if retryResults[d.id]}
 										{@const rr = retryResults[d.id]}
-										<span class="text-xs {rr.success ? 'text-success' : 'text-danger'}">
-											{rr.message.slice(0, 30)}
-										</span>
+										<div class="grid" transition:motion.collapse>
+											<div class="min-h-0">
+												<span class="text-xs break-words {rr.success ? 'text-success' : 'text-danger'}">
+													{rr.message}
+												</span>
+											</div>
+										</div>
 									{/if}
 								</td>
 							</tr>

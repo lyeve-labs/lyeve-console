@@ -22,7 +22,7 @@ describe('ErrorPanel', () => {
 	describe('a reader the engine knows and refuses', () => {
 		it('says why, in the words the load gave', () => {
 			const { getByText } = mount(403, 'Only a super admin can open this page.');
-			expect(getByText('Access denied')).toBeTruthy();
+			expect(getByText('No access')).toBeTruthy();
 			expect(getByText('Only a super admin can open this page.')).toBeTruthy();
 		});
 
@@ -44,7 +44,7 @@ describe('ErrorPanel', () => {
 	it('reads a 402 as a refusal in the words the load gave', () => {
 		const seats = "Every admin seat is taken. You're using 5 of 5, the most this engine allows.";
 		const { getByText, getAllByRole, queryByRole } = mount(402, seats);
-		expect(getByText('Access denied')).toBeTruthy();
+		expect(getByText('No access')).toBeTruthy();
 		expect(getByText(seats)).toBeTruthy();
 		expect(queryByRole('link', { name: /sign in/i })).toBeNull();
 		expect(getAllByRole('link')[0].getAttribute('href')).toBe('/admin');

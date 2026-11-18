@@ -17,6 +17,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import SetsPage from './+page.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -173,5 +174,20 @@ describe('replaying a set', () => {
 		await after({ result: { type: 'success' }, update: async () => {} });
 		await tick();
 		expect(button.getAttribute('aria-busy')).toBeNull();
+	});
+});
+
+describe('replay results arriving', () => {
+	it('open on their row below the sets when a replay returns', async () => {
+		const replay = { set_id: 's1', results: [{ capture_id: 'gone', error: 'capture not found, it may have expired' }] };
+		const { rerender } = render(SetsPage, { props: props() });
+		const watch = watchTransitions();
+		try {
+			await rerender(props({}, { replay }));
+			const results = screen.getByTestId('replay-results');
+			expect(watch.entered.some((el) => el.classList.contains('grid') && el.contains(results))).toBe(true);
+		} finally {
+			watch.stop();
+		}
 	});
 });

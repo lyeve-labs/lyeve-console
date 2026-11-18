@@ -281,7 +281,7 @@
 	{/if}
 </PageShell>
 
-<Drawer bind:open={importOpen} title="Import from URL" description="Copy a file from an http or https address into the library. Private and internal addresses are refused.">
+<Drawer bind:open={importOpen} title="Import from URL" description="Copy a file from an http or https address into the library. Private and internal addresses are not allowed.">
 	<form
 		method="POST"
 		action="?/importUrl"

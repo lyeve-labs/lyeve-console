@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/content-activity') } }));
 
 import Page from './+page.svelte';
+import { hoverSnaps } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -209,5 +210,23 @@ describe('content activity', () => {
 		cleanup();
 		const none = render(Page, { props: props({ activity: { ok: true, value: [] }, total: 0 }) });
 		expect(said(none.container)).toContain('No content changes yet');
+	});
+});
+
+describe('content activity links', () => {
+	it('eases the hover color of every link in a row', () => {
+		const { container } = render(Page, {
+			props: props({
+				activity: {
+					ok: true,
+					value: [
+						{ ...ROW, actor_kind: 'api_key', actor_email: null },
+						{ ...ROW, id: 'a2', actor_kind: 'user', actor_email: 'ana@example.com', revision_num: 7, entry_exists: true },
+					],
+				},
+			}),
+		});
+		expect(screen.getByRole('link', { name: 'Version 7' })).toBeTruthy();
+		expect(hoverSnaps(container)).toEqual([]);
 	});
 });

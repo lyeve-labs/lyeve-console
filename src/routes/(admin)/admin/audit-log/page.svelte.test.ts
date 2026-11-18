@@ -187,7 +187,7 @@ describe('Audit log prune', () => {
 
 		expect(kit.openDialog).toHaveBeenCalledTimes(1);
 		const options = (kit.openDialog.mock.calls[0] as unknown[])[0] as { title: string; body: unknown; footer: unknown };
-		expect(options.title).toContain('Prune');
+		expect(options.title).toBe('Delete older audit entries?');
 		expect(options.body, 'the dialog carries no body for the date picker').toBeTypeOf('function');
 		expect(options.footer).toBeTypeOf('function');
 		expect(submit).not.toHaveBeenCalled();

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import OlderHidden from '#lib/components/OlderHidden.svelte';
-	import { Alert, Badge, Breadcrumb, Button, Card, NumberInput, PageShell, SectionHeading, confirm } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Breadcrumb, Button, Card, NumberInput, PageShell, SectionHeading, confirm, motion } from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { SchemaField } from '@lyeve-labs/client';
 	import { enhance } from '#lib/enhance.ts';
@@ -236,6 +236,8 @@
 						size="sm"
 						type="button"
 						onclick={() => (showHistory = !showHistory)}
+						aria-expanded={showHistory}
+						aria-controls="revision-history"
 					>
 						<History size={ICON.sm} /> History ({revisionTotal})
 					</Button>
@@ -247,7 +249,7 @@
 					<span class="text-xs text-muted" data-testid="history-off">
 						History is off for this type.
 						{#if data.canManageHistory}
-							<a href="/admin/settings/content-history" class="underline hover:text-fg">Turn it on in settings</a>
+							<a href="/admin/settings/content-history" class="underline transition-colors hover:text-fg">Turn it on in settings</a>
 						{/if}
 					</span>
 				{/if}
@@ -265,7 +267,11 @@
 		</div>
 	{/snippet}
 
-	<div class="flex flex-col gap-5 lg:flex-row lg:items-start">
+	<!-- The history stays mounted and travels open: its rows below the large
+	     breakpoint, where it stacks under the form, and its width beside it.
+	     The space between the two is the history's own padding, so it closes
+	     with it. -->
+	<div class="flex flex-col lg:flex-row lg:items-start">
 		<div class="min-w-0 flex-1">
 			{#if restored !== null}
 				<div class="mb-5">
@@ -384,75 +390,91 @@
 			{/if}
 		</div>
 
-		{#if showHistory}
-			<aside data-testid="revision-history" class="lg:w-64 lg:shrink-0">
-				<Card pad="none">
-					{#snippet header()}
-						<SectionHeading level={3}>Revision history</SectionHeading>
-					{/snippet}
-					<ul class="max-h-96 divide-y divide-line overflow-y-auto">
-						{#each revisions as rev (rev.id)}
-							<li class="px-4 py-3 {selectedRev === rev.id ? 'bg-surface-2/60' : ''}">
-								<button
-									type="button"
-									class="w-full rounded text-left outline-none focus-visible:ring-2
-										focus-visible:ring-focus"
-									onclick={() => (selectedRev = selectedRev === rev.id ? null : rev.id)}
-								>
-									<span class="block text-xs text-fg">{formatDateTime(rev.created_at)}</span>
-									<span class="mt-0.5 block truncate text-xs text-faint">{revDiff(rev)}</span>
-								</button>
-								{#if selectedRev === rev.id && canUpdate}
-									<form method="POST" action={actionWithQuery('restore', listQuery)} use:enhance={restore.enhance} class="mt-2">
-										<input type="hidden" name="rev_num" value={rev.revision_num} />
-										<Button variant="secondary" size="sm" type="submit" loading={restore.pending}>
-											<RotateCcw size={ICON.sm} /> Restore
-										</Button>
-									</form>
-								{/if}
-							</li>
-						{/each}
-					</ul>
-					{#if openedRevision}
-						<div class="border-t border-line px-4 py-3" data-testid="opened-revision">
-							<p class="text-xs font-medium text-fg">Revision {openedRevision.revision_num}</p>
-							<p class="mt-0.5 text-xs text-faint">{formatDateTime(openedRevision.created_at)}</p>
-							<p class="mt-0.5 truncate text-xs text-faint">{revDiff(openedRevision)}</p>
-							{#if canUpdate}
-								<form method="POST" action={actionWithQuery('restore', listQuery)} use:enhance={restore.enhance} class="mt-2">
-									<input type="hidden" name="rev_num" value={openedRevision.revision_num} />
-									<Button variant="secondary" size="sm" type="submit" loading={restore.pending}>
-										<RotateCcw size={ICON.sm} /> Restore
-									</Button>
-								</form>
-							{/if}
-						</div>
-					{/if}
-					{#if olderHidden || olderUnlisted > 0 || revisionError}
-						<div class="flex flex-col gap-3 border-t border-line p-3">
-							{#if olderUnlisted > 0 && !olderHidden}
-								<p class="text-xs text-muted">
-									Showing the newest {revisions.length} of {revisionTotal} revisions. Open an older one by its number.
-								</p>
-								{#if nextOlder > 0}
-									{@render revisionOpener()}
-								{/if}
-							{/if}
-							{#if olderHidden}
-								<OlderHidden count={hiddenOlder} noun="revisions" {windowDays}>
+		<aside
+			id="revision-history"
+			data-testid="revision-history"
+			inert={!showHistory}
+			class="grid overflow-hidden transition-[grid-template-rows,width] duration-base ease-move lg:shrink-0 lg:grid-rows-[1fr]
+				{showHistory ? 'grid-rows-[1fr] lg:w-69' : 'grid-rows-[0fr] lg:w-0'}"
+		>
+			<div class="min-h-0 lg:w-69">
+				<div class="pt-5 lg:pt-0 lg:pl-5">
+					<Card pad="none">
+						{#snippet header()}
+							<SectionHeading level={3}>Revision history</SectionHeading>
+						{/snippet}
+						<ul class="max-h-96 divide-y divide-line overflow-y-auto">
+							{#each revisions as rev (rev.id)}
+								<li class="px-4 py-3 {selectedRev === rev.id ? 'bg-surface-2/60' : ''}">
+									<button
+										type="button"
+										class="w-full rounded text-left outline-none focus-visible:ring-2
+											focus-visible:ring-focus"
+										onclick={() => (selectedRev = selectedRev === rev.id ? null : rev.id)}
+									>
+										<span class="block text-xs text-fg">{formatDateTime(rev.created_at)}</span>
+										<span class="mt-0.5 block truncate text-xs text-faint">{revDiff(rev)}</span>
+									</button>
+									{#if selectedRev === rev.id && canUpdate}
+										<div class="mt-2 grid" transition:motion.collapse>
+											<div class="min-h-0">
+												<form method="POST" action={actionWithQuery('restore', listQuery)} use:enhance={restore.enhance}>
+													<input type="hidden" name="rev_num" value={rev.revision_num} />
+													<Button variant="secondary" size="sm" type="submit" loading={restore.pending}>
+														<RotateCcw size={ICON.sm} /> Restore
+													</Button>
+												</form>
+											</div>
+										</div>
+									{/if}
+								</li>
+							{/each}
+						</ul>
+						{#if openedRevision}
+							<div class="grid" transition:motion.collapse>
+								<div class="min-h-0">
+									<div class="border-t border-line px-4 py-3" data-testid="opened-revision">
+										<p class="text-xs font-medium text-fg">Revision {openedRevision.revision_num}</p>
+										<p class="mt-0.5 text-xs text-faint">{formatDateTime(openedRevision.created_at)}</p>
+										<p class="mt-0.5 truncate text-xs text-faint">{revDiff(openedRevision)}</p>
+										{#if canUpdate}
+											<form method="POST" action={actionWithQuery('restore', listQuery)} use:enhance={restore.enhance} class="mt-2">
+												<input type="hidden" name="rev_num" value={openedRevision.revision_num} />
+												<Button variant="secondary" size="sm" type="submit" loading={restore.pending}>
+													<RotateCcw size={ICON.sm} /> Restore
+												</Button>
+											</form>
+										{/if}
+									</div>
+								</div>
+							</div>
+						{/if}
+						{#if olderHidden || olderUnlisted > 0 || revisionError}
+							<div class="flex flex-col gap-3 border-t border-line p-3">
+								{#if olderUnlisted > 0 && !olderHidden}
+									<p class="text-xs text-muted">
+										Showing the newest {revisions.length} of {revisionTotal} revisions. Open an older one by its number.
+									</p>
 									{#if nextOlder > 0}
 										{@render revisionOpener()}
 									{/if}
-								</OlderHidden>
-							{/if}
-							{#if revisionError}
-								<FormErrors message={revisionError} refused={revisionRefusal} />
-							{/if}
-						</div>
-					{/if}
-				</Card>
-			</aside>
-		{/if}
+								{/if}
+								{#if olderHidden}
+									<OlderHidden count={hiddenOlder} noun="revisions" {windowDays}>
+										{#if nextOlder > 0}
+											{@render revisionOpener()}
+										{/if}
+									</OlderHidden>
+								{/if}
+								{#if revisionError}
+									<FormErrors message={revisionError} refused={revisionRefusal} />
+								{/if}
+							</div>
+						{/if}
+					</Card>
+				</div>
+			</div>
+		</aside>
 	</div>
 </PageShell>
 

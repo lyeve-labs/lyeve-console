@@ -87,7 +87,7 @@
 	const title = $derived(
 		{
 			'signed-out': 'Not signed in',
-			denied: 'Access denied',
+			denied: 'No access',
 			missing: 'Not found',
 			busy: BUSY.title,
 			outage: OUTAGE.title,

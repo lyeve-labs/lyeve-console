@@ -52,6 +52,21 @@
 	 * Whether a tile drawn above could not be read. Nothing needing attention
 	 * then covers only what was read, and the line says so.
 	 */
+	/*
+	 * Whether a tile in the Right now band could not be read. Each such tile
+	 * shows the no-value mark and says what is unavailable, and the band
+	 * offers one way to try again.
+	 */
+	const tileUnread = $derived(
+		(data.offers.schema && !schemas) ||
+			(data.isAdmin &&
+				((data.offers.content && data.entryTotal === null) ||
+					(data.offers.analytics && !data.requests) ||
+					(data.superAdmin && data.offers.jobs && !data.jobs) ||
+					(data.offers.logs && data.errorsLogged === null) ||
+					(data.offers.webhooks && !data.webhooks)))
+	);
+
 	const unread = $derived(
 		(data.offers.analytics && !data.requests) ||
 			(data.superAdmin && data.offers.jobs && !data.jobs) ||
@@ -104,7 +119,7 @@
 		<p class="flex flex-wrap items-center gap-2 text-sm text-muted">
 			<TriangleAlert size={ICON.md} class="shrink-0 text-warn" aria-hidden="true" />
 			{couldNotLoad("this tenant's own dashboard")} Showing the standard one.
-			<a class="relative hit-area underline hover:text-fg" href="{page.url.pathname}{page.url.search}" data-sveltekit-reload>Try again</a>
+			<a class="relative hit-area underline transition-colors hover:text-fg" href="{page.url.pathname}{page.url.search}" data-sveltekit-reload>Try again</a>
 		</p>
 	{/if}
 	{#if data.welcome}
@@ -155,7 +170,7 @@
 					{#if data.attention.length === 0 && unread}
 						<p class="flex items-center gap-2 px-card py-card-sm text-sm text-muted">
 							<TriangleAlert size={ICON.md} class="shrink-0 text-warn" aria-hidden="true" />
-							No problems in the tiles that loaded. Tiles marked unknown did not load.
+							No problems in the tiles that loaded. Some tiles did not load.
 						</p>
 					{:else if data.attention.length === 0}
 						<p class="flex items-center gap-2 px-card py-card-sm text-sm text-muted">
@@ -187,10 +202,17 @@
 
 		<section class="flex flex-col gap-4">
 			<SectionHeading level={2}>Right now</SectionHeading>
+			{#if tileUnread}
+				<p class="flex flex-wrap items-center gap-2 text-sm text-muted">
+					<TriangleAlert size={ICON.md} class="shrink-0 text-warn" aria-hidden="true" />
+					{couldNotLoad('some of these figures')}
+					<a class="relative hit-area underline transition-colors hover:text-fg" href="{page.url.pathname}{page.url.search}" data-sveltekit-reload>Try again</a>
+				</p>
+			{/if}
 
 			<!-- Each tile is a link to the page that explains its number, and is
 			     drawn only while the plugin behind it runs. A tile whose read
-			     failed says unknown rather than zero: a read nobody answered is
+			     failed shows the no-value mark rather than zero: a read nobody answered is
 			     not a quiet instance. -->
 			<div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
 				{#if data.offers.schema}
@@ -199,7 +221,7 @@
 							class="h-full"
 							label="Content types"
 							accent="neutral"
-							value={schemas ? formatCount(schemas.length) : 'unknown'}
+							value={schemas ? formatCount(schemas.length) : NO_VALUE}
 							sub={collectionsSub}
 						/>
 					</a>
@@ -211,7 +233,7 @@
 						<Stat class="h-full"
 							label="Entries"
 							accent="neutral"
-							value={data.entryTotal === null ? 'unknown' : formatCount(data.entryTotal)}
+							value={data.entryTotal === null ? NO_VALUE : formatCount(data.entryTotal)}
 							sub={data.entryTotal === null ? 'entries unavailable' : (entriesSub ?? 'across every content type')}
 						/>
 					</a>
@@ -221,7 +243,7 @@
 						<a href="/admin/analytics" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 							<Stat class="h-full"
 								label="Requests, {data.window}"
-								value={data.requests ? formatCount(data.requests.total) : 'unknown'}
+								value={data.requests ? formatCount(data.requests.total) : NO_VALUE}
 								sub={data.requests ? `${formatPercent(errorRate)} failed` : 'analytics unavailable'}
 								tone={data.requests ? trafficTone(errorRate) : 'neutral'}
 							/>
@@ -230,7 +252,7 @@
 							<Stat class="h-full"
 								label="P95 latency, {data.window}"
 								accent="neutral"
-								value={data.requests ? ms(data.requests.p95) : 'unknown'}
+								value={data.requests ? ms(data.requests.p95) : NO_VALUE}
 								sub={data.requests ? 'average across endpoints' : 'analytics unavailable'}
 							/>
 						</a>
@@ -240,7 +262,7 @@
 						<a href="/admin/jobs" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 							<Stat class="h-full"
 								label="Failed jobs"
-								value={data.jobs ? formatCount(data.jobs.failed.length) : 'unknown'}
+								value={data.jobs ? formatCount(data.jobs.failed.length) : NO_VALUE}
 								sub={data.jobs ? `of ${formatCount(data.jobs.enabled)} enabled` : 'jobs unavailable'}
 								tone={data.jobs && data.jobs.failed.length > 0 ? 'danger' : 'neutral'}
 							/>
@@ -250,7 +272,7 @@
 						<a href="/admin/logs?level=ERROR" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 							<Stat class="h-full"
 								label="Errors logged, {data.window}"
-								value={data.errorsLogged === null ? 'unknown' : formatCount(data.errorsLogged)}
+								value={data.errorsLogged === null ? NO_VALUE : formatCount(data.errorsLogged)}
 								sub={data.errorsLogged === null ? 'log unavailable' : 'at level ERROR'}
 								tone={data.errorsLogged ? 'danger' : 'neutral'}
 							/>
@@ -260,7 +282,7 @@
 						<a href="/admin/webhooks" class="block h-full rounded-card outline-none transition-shadow hover:ring-1 hover:ring-brand/40 focus-visible:ring-2 focus-visible:ring-focus">
 							<Stat class="h-full"
 								label="Webhooks failing"
-								value={data.webhooks ? formatCount(data.webhooks.unhealthy) : 'unknown'}
+								value={data.webhooks ? formatCount(data.webhooks.unhealthy) : NO_VALUE}
 								sub={data.webhooks
 									? `of ${formatCount(data.webhooks.total)}, ${formatCount(data.webhooks.pendingDlq)} dead-lettered`
 									: 'webhooks unavailable'}
@@ -291,7 +313,7 @@
 						<SectionHeading level={3}>
 							Requests per hour
 							{#snippet actions()}
-								<a href="/admin/analytics" class="relative -my-1 py-1 hit-area text-xs text-muted hover:text-brand">Analytics</a>
+								<a href="/admin/analytics" class="relative -my-1 py-1 hit-area text-xs text-muted transition-colors hover:text-brand">Analytics</a>
 							{/snippet}
 						</SectionHeading>
 						<div class="mt-3">
@@ -337,7 +359,7 @@
 							<SectionHeading level={3}>
 								Recent entries
 								{#snippet actions()}
-									<a href="/admin/content" class="relative -my-1 py-1 hit-area text-xs text-muted hover:text-brand">All content types</a>
+									<a href="/admin/content" class="relative -my-1 py-1 hit-area text-xs text-muted transition-colors hover:text-brand">All content types</a>
 								{/snippet}
 							</SectionHeading>
 							{#if !data.entries}
@@ -351,7 +373,7 @@
 											<div class="min-w-0">
 												<a
 													href="/admin/content/{entry.schema}/{entry.id}"
-													class="relative -my-1 py-1 hit-area block text-sm font-medium text-fg hover:text-brand"
+													class="relative -my-1 py-1 hit-area block text-sm font-medium text-fg transition-colors hover:text-brand"
 												>
 													<span class="block truncate">{entry.title || entry.slug || entry.id}</span>
 												</a>
@@ -373,7 +395,7 @@
 							<SectionHeading level={3}>
 								Recent audit entries
 								{#snippet actions()}
-									<a href="/admin/audit-log" class="relative -my-1 py-1 hit-area text-xs text-muted hover:text-brand">Audit log</a>
+									<a href="/admin/audit-log" class="relative -my-1 py-1 hit-area text-xs text-muted transition-colors hover:text-brand">Audit log</a>
 								{/snippet}
 							</SectionHeading>
 							{#if !data.audit}
@@ -403,7 +425,7 @@
 							<SectionHeading level={3}>
 								Dead-lettered deliveries
 								{#snippet actions()}
-									<a href="/admin/webhooks" class="relative -my-1 py-1 hit-area text-xs text-muted hover:text-brand">Webhooks</a>
+									<a href="/admin/webhooks" class="relative -my-1 py-1 hit-area text-xs text-muted transition-colors hover:text-brand">Webhooks</a>
 								{/snippet}
 							</SectionHeading>
 							{#if !data.deadLetters}
@@ -437,7 +459,7 @@
 							<SectionHeading level={3}>
 								Recent errors, last {WINDOW_LABEL[data.window]}
 								{#snippet actions()}
-									<a href="/admin/logs?level=ERROR" class="relative -my-1 py-1 hit-area text-xs text-muted hover:text-brand">Logs</a>
+									<a href="/admin/logs?level=ERROR" class="relative -my-1 py-1 hit-area text-xs text-muted transition-colors hover:text-brand">Logs</a>
 								{/snippet}
 							</SectionHeading>
 							{#if !data.errors}

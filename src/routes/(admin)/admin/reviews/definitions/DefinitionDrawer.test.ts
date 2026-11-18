@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 
 import DefinitionDrawer from './DefinitionDrawer.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -85,6 +86,40 @@ describe('the definition drawer', () => {
 		expect(group.parentElement).toBe(row);
 		for (const name of ['Move stage 1 up', 'Move stage 1 down', 'Remove stage 1']) {
 			expect(group.querySelector(`[aria-label="${name}"]`), name).not.toBeNull();
+		}
+	});
+});
+
+/** Whether a collapse row holding `el` started its entrance (or exit). */
+const onRow = (list: Element[], el: Element | null) => !!el && list.some((row) => row.classList.contains('grid') && row.contains(el));
+
+describe('the stages in motion', () => {
+	it('fades a stage in on New stage and out on remove', async () => {
+		render(DefinitionDrawer, { props: props() });
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(screen.getByRole('button', { name: 'New stage' }));
+			const stages = screen.getByRole('list', { name: 'Stages' }).querySelectorAll(':scope > li');
+			expect(watch.entered).toContain(stages[1]);
+			const remove = [...stages[1].querySelectorAll('button')].find((b) => /Remove stage/.test(b.getAttribute('aria-label') ?? ''))!;
+			await fireEvent.click(remove);
+			expect(watch.left).toContain(stages[1]);
+		} finally {
+			watch.stop();
+		}
+	});
+
+	it('opens the escalation target and the condition value on their rows', async () => {
+		render(DefinitionDrawer, { props: props() });
+		await fireEvent.input(document.querySelector('input[id^="stage-sla-"]') as HTMLInputElement, { target: { value: '24' } });
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(screen.getByRole('radio', { name: 'A role' }));
+			expect(onRow(watch.entered, document.querySelector('input[id^="stage-escalate-"]'))).toBe(true);
+			await fireEvent.input(document.querySelector('input[id^="stage-condition-field-"]') as HTMLInputElement, { target: { value: 'category' } });
+			expect(onRow(watch.entered, document.querySelector('input[id^="stage-condition-value-"]'))).toBe(true);
+		} finally {
+			watch.stop();
 		}
 	});
 });

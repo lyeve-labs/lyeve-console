@@ -40,7 +40,7 @@ describe('content type error page', () => {
 		expect(getByRole('heading', { level: 1 }).textContent?.trim()).toBe('Posts');
 		expect(getByText(message)).toBeTruthy();
 		expect(container.textContent).not.toContain('403');
-		expect(container.textContent).not.toContain('Access denied');
+		expect(container.textContent).not.toContain('No access');
 		expect(container.querySelector('a[href="/admin/content"]')).not.toBeNull();
 	});
 

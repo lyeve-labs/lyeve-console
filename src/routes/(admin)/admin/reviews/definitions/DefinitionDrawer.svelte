@@ -15,6 +15,7 @@
 		SegmentedControl,
 		Select,
 		Toggle,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import { ArrowDown, ArrowUp, Plus, X } from '@lucide/svelte';
@@ -216,7 +217,7 @@
 				<SectionHeading level={3}>Stages, in order</SectionHeading>
 				<ol class="flex flex-col gap-3" aria-label="Stages">
 					{#each stages as stage, i (stage.key)}
-						<li>
+						<li transition:motion.fade|global animate:motion.reorder>
 							<Panel pad="sm">
 								<div class="flex flex-col gap-2">
 									<!-- Beside the three stage buttons a phone left the name field
@@ -306,28 +307,36 @@
 											disabled={stagesLocked || stage.sla_hours === 0}
 											bind:value={stage.escalate_kind}
 										/>
-										{#if stage.escalate_kind === 'user' && peopleOptions.length > 0}
-											<Select
-												id="stage-escalate-{stage.key}"
-												label="User"
-												hint="The user becomes the assignee when the SLA passes."
-												placeholder="Choose a user"
-												options={escalateOptions(stage.escalate_to)}
-												searchable
-												disabled={stagesLocked}
-												bind:value={stage.escalate_to}
-											/>
-										{:else if stage.escalate_kind !== 'none'}
-											<Input
-												id="stage-escalate-{stage.key}"
-												label={stage.escalate_kind === 'user' ? 'User id' : 'Role'}
-												hint={stage.escalate_kind === 'user'
-													? 'The user becomes the assignee when the SLA passes.'
-													: 'Anyone with this role can act on the stage once the SLA passes.'}
-												disabled={stagesLocked}
-												bind:value={stage.escalate_to}
-												mono
-											/>
+										<!-- One row for the escalation target, so a change between a user and a
+										     role swaps the field in place and only none opens or shuts it. -->
+										{#if stage.escalate_kind !== 'none'}
+											<div class="grid" transition:motion.collapse|global>
+												<div class="min-h-0">
+													{#if stage.escalate_kind === 'user' && peopleOptions.length > 0}
+														<Select
+															id="stage-escalate-{stage.key}"
+															label="User"
+															hint="The user becomes the assignee when the SLA passes."
+															placeholder="Choose a user"
+															options={escalateOptions(stage.escalate_to)}
+															searchable
+															disabled={stagesLocked}
+															bind:value={stage.escalate_to}
+														/>
+													{:else}
+														<Input
+															id="stage-escalate-{stage.key}"
+															label={stage.escalate_kind === 'user' ? 'User id' : 'Role'}
+															hint={stage.escalate_kind === 'user'
+																? 'The user becomes the assignee when the SLA passes.'
+																: 'Anyone with this role can act on the stage once the SLA passes.'}
+															disabled={stagesLocked}
+															bind:value={stage.escalate_to}
+															mono
+														/>
+													{/if}
+												</div>
+											</div>
 										{/if}
 										<div class="grid gap-2 sm:grid-cols-2">
 											<Input
@@ -349,13 +358,17 @@
 											{/if}
 										</div>
 										{#if stage.condition_field.trim() && stage.condition_op !== 'exists'}
-											<Input
-												id="stage-condition-value-{stage.key}"
-												label={stage.condition_op === 'in' ? 'Values' : 'Value'}
-												hint={stage.condition_op === 'in' ? 'One per comma, up to 100.' : 'A text, a number, or true or false.'}
-												disabled={stagesLocked}
-												bind:value={stage.condition_value}
-											/>
+										<div class="grid" transition:motion.collapse|global>
+											<div class="min-h-0">
+													<Input
+														id="stage-condition-value-{stage.key}"
+														label={stage.condition_op === 'in' ? 'Values' : 'Value'}
+														hint={stage.condition_op === 'in' ? 'One per comma, up to 100.' : 'A text, a number, or true or false.'}
+														disabled={stagesLocked}
+														bind:value={stage.condition_value}
+													/>
+											</div>
+										</div>
 										{/if}
 									</div>
 								</div>
