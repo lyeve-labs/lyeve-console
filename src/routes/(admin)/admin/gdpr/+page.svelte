@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Alert, Button, Card, CheckboxGroup, Input, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
+	import { Alert, Button, Card, CheckboxGroup, Input, PageShell, SectionHeading, motion } from '@lyeve-labs/ui-kit';
 	import type { ActionData, PageData } from './$types';
 	import { enhance } from '#lib/enhance.ts';
 	import { Download, Trash2, FileJson } from '@lucide/svelte';
@@ -151,38 +151,42 @@
 		</Card>
 
 		{#if exportResult}
-			<!-- The exporters' own error text is the engine's, so it stays in the
-			     file and the page says what it means for the file. -->
-			{#if exportResult.errors.length > 0}
-				<Alert tone="warn" title="This export is incomplete">
-					{exportResult.errors.length === 1 ? 'One plugin' : `${exportResult.errors.length} plugins`} could not export this subject's data, so the file is missing it.
-					Export again before you send the file.
-				</Alert>
-			{/if}
-			<Card pad="none">
-				{#snippet header()}
-					<div class="flex flex-wrap items-center justify-between gap-3">
-						<span class="text-xs text-muted">
-							{exportResult.summary.total_records}
-							{plural(exportResult.summary.total_records, 'record')} from
-							{exportResult.summary.plugins_with_data} of {exportResult.summary.plugins_queried}
-							{plural(exportResult.summary.plugins_queried, 'plugin')}
-						</span>
-						<!-- The payload is already in the page, so the link carries it as a
-						     data URI. Button refuses that scheme, which is why this one
-						     control is a plain anchor. -->
-						<!-- ui-consistency: allow raw-button - a download link carrying a data URI, which Button refuses -->
-						<a
-							href={exportHref}
-							download={exportFilename}
-							class="inline-flex items-center gap-2 rounded-md bg-brand px-3 py-1.5 coarse:min-h-control text-xs font-medium text-ink transition-colors hover:bg-brand-light"
-						>
-							<FileJson size={ICON.sm} /> Download JSON
-						</a>
-					</div>
-				{/snippet}
-				<pre class="max-h-96 overflow-auto p-4 text-xs text-fg">{exportJson}</pre>
-			</Card>
+			<div class="grid" transition:motion.collapse|global>
+				<div class="min-h-0 flex flex-col gap-4">
+					<!-- The exporters' own error text is the engine's, so it stays in the
+					     file and the page says what it means for the file. -->
+					{#if exportResult.errors.length > 0}
+						<Alert tone="warn" title="This export is incomplete">
+							{exportResult.errors.length === 1 ? 'One plugin' : `${exportResult.errors.length} plugins`} could not export this subject's data, so the file is missing it.
+							Export again before you send the file.
+						</Alert>
+					{/if}
+					<Card pad="none">
+						{#snippet header()}
+							<div class="flex flex-wrap items-center justify-between gap-3">
+								<span class="text-xs text-muted">
+									{exportResult.summary.total_records}
+									{plural(exportResult.summary.total_records, 'record')} from
+									{exportResult.summary.plugins_with_data} of {exportResult.summary.plugins_queried}
+									{plural(exportResult.summary.plugins_queried, 'plugin')}
+								</span>
+								<!-- The payload is already in the page, so the link carries it as a
+								     data URI. Button refuses that scheme, which is why this one
+								     control is a plain anchor. -->
+								<!-- ui-consistency: allow raw-button - a download link carrying a data URI, which Button refuses -->
+								<a
+									href={exportHref}
+									download={exportFilename}
+									class="inline-flex items-center gap-2 rounded-md bg-brand px-3 py-1.5 coarse:min-h-control text-xs font-medium text-ink transition-colors hover:bg-brand-light"
+								>
+									<FileJson size={ICON.sm} /> Download JSON
+								</a>
+							</div>
+						{/snippet}
+						<pre class="max-h-96 overflow-auto p-4 text-xs text-fg">{exportJson}</pre>
+					</Card>
+				</div>
+			</div>
 		{/if}
 	</section>
 

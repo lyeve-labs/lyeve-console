@@ -10,6 +10,7 @@
 		Select,
 		Textarea,
 		confirm as confirmDialog,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
@@ -135,7 +136,11 @@
 				</div>
 			</form>
 			{#if grpcResult}
-				<LabAnswer result={grpcResult} />
+				<div class="grid" transition:motion.collapse|global>
+					<div class="min-h-0">
+						<LabAnswer result={grpcResult} />
+					</div>
+				</div>
 			{/if}
 			{#if data.grpc.routes.length === 0}
 				<EmptyState

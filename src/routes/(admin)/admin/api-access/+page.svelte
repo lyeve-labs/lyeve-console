@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Alert, Button, Card, CopyField, Input, PageShell, PasswordInput, SectionHeading, Table } from '@lyeve-labs/ui-kit';
+	import { Alert, Button, Card, CopyField, Input, PageShell, PasswordInput, SectionHeading, Table, motion } from '@lyeve-labs/ui-kit';
 	import type { ActionData, PageData } from './$types';
 	import { enhance } from '#lib/enhance.ts';
 	import { tracked } from '#lib/forms.svelte.ts';
@@ -132,10 +132,14 @@
 				{/if}
 
 				{#if tokenResult}
-					<!-- Keyed on the token, so a new one arrives masked again. -->
-					{#key tokenResult}
-						<CopyField id="bearer-token" label="Bearer token" value={tokenResult} secret copyLabel="Copy the token" />
-					{/key}
+					<div class="grid" transition:motion.collapse|global>
+						<div class="min-h-0">
+							<!-- Keyed on the token, so a new one arrives masked again. -->
+							{#key tokenResult}
+								<CopyField id="bearer-token" label="Bearer token" value={tokenResult} secret copyLabel="Copy the token" />
+							{/key}
+						</div>
+					</div>
 				{/if}
 			</div>
 		</Card>

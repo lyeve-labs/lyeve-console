@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Alert, Badge, Button, PageShell, SectionHeading, Textarea, confirm as confirmDialog } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Button, PageShell, SectionHeading, Textarea, confirm as confirmDialog, motion } from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import type { SubmitFunction } from '$app/forms';
@@ -94,18 +94,22 @@
 		</form>
 
 		{#if gqlResult}
-			{#if gqlResult.status === 200 && gqlResult.body.includes('"errors"')}
-				<!-- GraphQL answers 200 and puts the failure in the body, so a
-				     status badge alone reads as success. -->
-				<Alert tone="warn">
-					The status is 200, but the body has an `errors` array. GraphQL reports failures
-					inside a successful response, so check the body, not the status.
-				</Alert>
-			{/if}
-			{#if gqlMutated}
-				<Alert tone="brand">That was a mutation, so its changes are already applied.</Alert>
-			{/if}
-			<LabAnswer result={gqlResult} />
+			<div class="grid" transition:motion.collapse|global>
+				<div class="min-h-0 flex flex-col gap-4">
+					{#if gqlResult.status === 200 && gqlResult.body.includes('"errors"')}
+						<!-- GraphQL answers 200 and puts the failure in the body, so a
+						     status badge alone reads as success. -->
+						<Alert tone="warn">
+							The status is 200, but the body has an `errors` array. GraphQL reports failures
+							inside a successful response, so check the body, not the status.
+						</Alert>
+					{/if}
+					{#if gqlMutated}
+						<Alert tone="brand">That was a mutation, so its changes are already applied.</Alert>
+					{/if}
+					<LabAnswer result={gqlResult} />
+				</div>
+			</div>
 		{/if}
 	</section>
 </PageShell>
