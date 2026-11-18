@@ -46,6 +46,13 @@ describe('RunViewer', () => {
 		expect(screen.queryByRole('button', { name: /^Copy (step|input|output)$/ })).toBeNull();
 	});
 
+	it('eases the hover color of a step rather than switching it in a frame', () => {
+		const { getByRole } = render(RunViewer, { props: { run: fixtureRun } });
+		const steps = getByRole('list', { name: 'Steps' }).querySelectorAll('button');
+		expect(steps.length).toBeGreaterThan(0);
+		for (const step of steps) expect(step.classList).toContain('transition-colors');
+	});
+
 	it('offers to copy a step and its values when they are not withheld', () => {
 		render(RunViewer, { props: { run: fixtureRun } });
 		for (const name of ['Copy step', 'Copy input', 'Copy output']) expect(screen.getByRole('button', { name })).toBeTruthy();

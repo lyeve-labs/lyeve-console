@@ -90,7 +90,7 @@
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div
-			class="absolute -top-1 left-0 right-0 z-10 h-2 cursor-row-resize outline-none hover:bg-brand/40 focus-visible:bg-brand {drag ? 'bg-brand/40' : ''}"
+			class="absolute -top-1 left-0 right-0 z-10 h-2 cursor-row-resize outline-none transition-colors hover:bg-brand/40 focus-visible:bg-brand {drag ? 'bg-brand/40' : ''}"
 			role="separator"
 			aria-orientation="horizontal"
 			aria-label="Resize drawer"

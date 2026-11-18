@@ -47,6 +47,11 @@ function setup(props: Props = {}) {
 describe('ResizableAside', () => {
 	// The tinted handle measures under 3:1 on both surfaces, so a focused
 	// handle takes the full brand color.
+	it('eases the handle color on hover rather than switching it in a frame', () => {
+		const { handle } = setup();
+		expect((handle() as HTMLElement).classList).toContain('transition-colors');
+	});
+
 	it('marks a focused handle in the full brand color', () => {
 		const handle = setup().handle() as HTMLElement;
 		expect(handle.classList).toContain('focus-visible:bg-brand');

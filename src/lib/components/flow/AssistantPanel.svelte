@@ -187,7 +187,7 @@
 						<ul class="flex flex-col gap-1 text-xs" aria-label="Draft problems" data-testid="assist-problems">
 							{#each problems as p (p.path + p.message)}
 								<li>
-									<button type="button" class="flex w-full items-baseline gap-2 text-left hover:text-fg" onclick={() => focusProblem(p)}>
+									<button type="button" class="flex w-full items-baseline gap-2 text-left transition-colors hover:text-fg" onclick={() => focusProblem(p)}>
 										<span class="shrink-0 font-mono text-danger">{p.node_id ?? 'flow'}{p.path}</span>
 										<span class="min-w-0 text-muted">{p.message}</span>
 									</button>

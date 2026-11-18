@@ -314,7 +314,7 @@
 							{/if}
 						</div>
 						<p class="text-xs text-muted">
-							Read it under <a href="/admin/content-activity" class="underline hover:text-fg">Content activity</a>.
+							Read it under <a href="/admin/content-activity" class="underline transition-colors hover:text-fg">Content activity</a>.
 						</p>
 					</div>
 				</Card>

@@ -14,6 +14,11 @@ describe('JsonTree', () => {
 		expect(text(container)).toContain('[1]0:{4}id:7name:"Ada"active:truenote:null');
 	});
 
+	it('eases the hover color of a toggle rather than switching it in a frame', () => {
+		render(JsonTree, { props: { value: { order: { id: 1 } } } });
+		expect(screen.getByRole('button', { name: /order/ }).classList).toContain('transition-colors');
+	});
+
 	it('keeps a third level folded until it is opened', async () => {
 		const { container } = render(JsonTree, { props: { value: { order: { customer: { email: 'a@example.com' } } } } });
 		expect(container.textContent).not.toContain('a@example.com');

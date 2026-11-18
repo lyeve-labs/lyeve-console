@@ -23,6 +23,11 @@ function setup() {
 }
 
 describe('EditorDrawer', () => {
+	it('eases the handle color on hover rather than switching it in a frame', () => {
+		const { handle } = setup();
+		expect(handle.classList).toContain('transition-colors');
+	});
+
 	it('marks a focused handle in the full brand color', () => {
 		const { handle } = setup();
 		expect(handle.classList).toContain('focus-visible:bg-brand');

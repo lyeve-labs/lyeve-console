@@ -100,7 +100,7 @@
 						{#if failed}
 							Run failed at <span class="font-mono">{failed.node_id}</span>.
 							{#if current?.id !== failed.id}
-								<button type="button" class="underline hover:text-fg" onclick={() => (picked = failed.node_id)}>Show the step</button>
+								<button type="button" class="underline transition-colors hover:text-fg" onclick={() => (picked = failed.node_id)}>Show the step</button>
 							{/if}
 						{:else}
 							{run.error || 'The run failed.'}
@@ -115,7 +115,7 @@
 					<li>
 						<button
 							type="button"
-							class="flex w-full items-center gap-2 border-b border-line px-3 py-2 text-left text-sm hover:bg-surface-2 {current?.id === step.id ? 'bg-surface-2' : ''}"
+							class="flex w-full items-center gap-2 border-b border-line px-3 py-2 text-left text-sm transition-colors hover:bg-surface-2 {current?.id === step.id ? 'bg-surface-2' : ''}"
 							aria-pressed={current?.id === step.id}
 							onclick={() => (picked = step.node_id)}
 						>
