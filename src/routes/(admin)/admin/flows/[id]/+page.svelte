@@ -25,6 +25,7 @@
 	import FlowImportDrawer, { type ImportFailure } from '#lib/components/flow/FlowImportDrawer.svelte';
 	import NotEnabled from '#lib/components/NotEnabled.svelte';
 	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { GATE_OK } from '#lib/api/gate.ts';
 	import { pageHref, pageNumber } from '#lib/api/list.ts';
 	import { useInstance } from '#lib/instance.svelte.ts';
 	import InlineUpgradeLink from '#lib/components/InlineUpgradeLink.svelte';
@@ -365,6 +366,7 @@
 	// runs tab.
 	let tab = $state(page.url.searchParams.has('offset') ? 'runs' : 'test');
 	const runs = $derived(data.runs.ok ? data.runs.value : null);
+	const templates = $derived(data.templates.ok ? data.templates.value : []);
 	// The list's filter rides along, so the way back still lands on it.
 	const runsHref = $derived(
 		pageHref(
@@ -878,7 +880,7 @@
 					/>
 				{:else}
 					<div class="h-full overflow-y-auto">
-						<FlowGuide templates={data.templates} />
+						<FlowGuide templates={templates} />
 					</div>
 				{/if}
 			</EditorDrawer>
@@ -889,7 +891,8 @@
 
 	<FlowTemplateGallery
 		bind:open={showGallery}
-		templates={data.templates}
+		{templates}
+		gate={data.templates.ok ? GATE_OK : data.templates.gate}
 		flowDocument={JSON.stringify({ ...definition, name: data.flow.name, slug: data.flow.slug })}
 		canUpdate={can.update}
 		canDelete={can.delete}

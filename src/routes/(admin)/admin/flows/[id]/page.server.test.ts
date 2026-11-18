@@ -243,6 +243,12 @@ describe('admin/flows/[id] load', () => {
 		expect(result.runs).toEqual({ ok: false, gate: { state: 'unavailable' } });
 	});
 
+	it('keeps a failed templates read as its gate, never an empty gallery', async () => {
+		const { event } = loadEvent({ ...everything, '/api/admin/flows/templates': () => json({ error: 'down' }, 500) });
+		const result = (await load(event)) as Loaded;
+		expect(result.templates).toEqual({ ok: false, gate: { state: 'error', message: 'Could not load templates.' } });
+	});
+
 	it('pages the runs by the address and states whether another page follows', async () => {
 		const { fetch, calls } = fetchFor({
 			...everything,

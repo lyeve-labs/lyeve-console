@@ -37,6 +37,7 @@ import {
 	type ValidationError,
 	type Flow,
 	type FlowRun,
+	type FlowTemplate,
 	type FlowVersion,
 	deleteTemplate,
 	saveTemplate,
@@ -72,7 +73,7 @@ const LOCKED = {
 	eventTypes: null,
 	runs: { ok: true, value: { rows: [], limit: RUNS_PER_PAGE, offset: 0, total: 0, hasMore: false } } as Section<PagedList<FlowRun>>,
 	versions: { ok: true, value: [] } as Section<FlowVersion[]>,
-	templates: [],
+	templates: { ok: true, value: [] } as Section<FlowTemplate[]>,
 	assistant: 'hidden' as const,
 };
 
@@ -139,7 +140,7 @@ export const load: PageServerLoad = async (event) => {
 				'Could not load runs.',
 			),
 			section(listVersions(client, flow.id), 'Could not load versions.'),
-			getTemplates(client).catch(() => []),
+			section(getTemplates(client), 'Could not load templates.'),
 			// The assistant's catalog decides whether the tab exists at all: a
 			// 402 there means the assistant is not enabled, and a tab that could
 			// only say so is better left out. Any other refusal is reported when
