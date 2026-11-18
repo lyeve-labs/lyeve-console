@@ -20,7 +20,7 @@ describe('ai api paths', () => {
 	});
 
 	it('reads the provider ceiling the list states, and none from an older plugin', async () => {
-		const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro';
+		const url = 'https://shop.example.com/pricing?skus=example-pro';
 		const capped = client({ data: [], total_count: 0, limit: 10, offset: 0, provider_limit: 1, upgrade_url: url });
 		expect((await listProviders(capped.client)).ceiling).toEqual({ limit: 1, upgradeUrl: url });
 		const lifted = client({ data: [], total_count: 0, limit: 10, offset: 0, provider_limit: 0 });

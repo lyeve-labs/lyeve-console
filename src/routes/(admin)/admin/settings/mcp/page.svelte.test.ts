@@ -127,7 +127,7 @@ describe('MCP settings page', () => {
 	});
 
 	it('links the ceiling to the plan the agents answer names', () => {
-		const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro';
+		const url = 'https://shop.example.com/pricing?skus=example-pro';
 		const { getByText, container } = setup({ agents: { ok: true, value: { limit: 1, upgradeUrl: url, agents: [KEY_AGENT] } } });
 		expect(getByText(CEILING)).toBeTruthy();
 		expect(container.querySelector(`a[href="${url}"]`)?.textContent).toContain('View the add-on');

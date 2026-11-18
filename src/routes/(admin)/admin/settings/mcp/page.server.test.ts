@@ -84,7 +84,7 @@ describe('MCP settings load', () => {
 	});
 
 	it('reads the upgrade link the agents answer carries while the limit holds', async () => {
-		const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro';
+		const url = 'https://shop.example.com/pricing?skus=example-pro';
 		const { event } = loadEvent({ ...READS, '/api/admin/mcp/settings/agents': () => json({ limit: 1, upgrade_url: url, agents: [AGENT] }) });
 		const out = (await load(event)) as Loaded;
 		expect(out.agents).toEqual({ ok: true, value: { limit: 1, upgradeUrl: url, agents: [AGENT] } });

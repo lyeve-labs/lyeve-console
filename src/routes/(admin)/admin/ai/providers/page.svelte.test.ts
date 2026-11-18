@@ -105,7 +105,7 @@ describe('AI providers page', () => {
 		});
 
 		it('links the ceiling to the plan the list names', () => {
-			const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro';
+			const url = 'https://shop.example.com/pricing?skus=example-pro';
 			const { container } = setup({ ceiling: { limit: 1, upgradeUrl: url }, providers: [fixtureProvider], total: 1 });
 			expect(container.querySelector(`a[href="${url}"]`)?.textContent).toContain('View the add-on');
 		});
@@ -135,7 +135,7 @@ describe('AI providers page', () => {
 		});
 
 		it('draws a refused create as the ceiling, with the link from the refusal', async () => {
-			const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro';
+			const url = 'https://shop.example.com/pricing?skus=example-pro';
 			const refused = { kind: 'cap', cap: 'ai.providers', limit: 1, current: 1, upgradeUrl: url };
 			const { container, getAllByText } = setup({ ceiling: { limit: 0, upgradeUrl: '' } }, { error: 'x', refused });
 			await fireEvent.click(getAllByText('New provider')[0]);
