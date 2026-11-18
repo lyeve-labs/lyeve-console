@@ -252,7 +252,7 @@
 		</div>
 	{/snippet}
 
-	<div class="flex items-start gap-5">
+	<div class="flex flex-col gap-5 lg:flex-row lg:items-start">
 		<div class="min-w-0 flex-1">
 			{#if data.review}
 				<div class="mb-5">
@@ -367,7 +367,7 @@
 		</div>
 
 		{#if showHistory}
-			<aside data-testid="revision-history" class="w-64 shrink-0">
+			<aside data-testid="revision-history" class="lg:w-64 lg:shrink-0">
 				<Card pad="none">
 					{#snippet header()}
 						<SectionHeading level={3}>Revision history</SectionHeading>

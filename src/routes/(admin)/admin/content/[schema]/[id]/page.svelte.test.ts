@@ -160,6 +160,18 @@ describe('content entry editor, revision history', () => {
 		expect(screen.getAllByTestId('refusal-notice')).toHaveLength(1);
 	});
 
+	it('stacks the history under the entry below the large breakpoint, so a phone keeps the form its width', () => {
+		render(EntryPage, {
+			props: { data: data({ revisions: [revision(2)], revisionWindow: { hiddenOlder: 0, windowDays: null } }), form: { openedRevision: revision(1) } as never },
+		});
+		const aside = screen.getByTestId('revision-history');
+		const row = aside.parentElement as HTMLElement;
+		expect(row.classList).toContain('flex-col');
+		expect(row.classList).toContain('lg:flex-row');
+		expect(aside.classList).not.toContain('w-64');
+		expect(aside.classList).toContain('lg:w-64');
+	});
+
 	it('shows a revision the plugin opened, with a way to restore it', () => {
 		render(EntryPage, {
 			props: {
