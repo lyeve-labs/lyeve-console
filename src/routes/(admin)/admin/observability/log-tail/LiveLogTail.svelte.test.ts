@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import LiveLogTail from './LiveLogTail.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 /** jsdom has no EventSource. The stub records its listeners so a case can play the stream. */
 class StubEventSource {
@@ -154,5 +155,82 @@ describe('LiveLogTail', () => {
 		await tick();
 		expect(first.closed).toBe(true);
 		expect(StubEventSource.all).toHaveLength(1);
+	});
+});
+
+describe('LiveLogTail rows arriving', () => {
+	it('fades a new row in at the top', async () => {
+		const { container } = render(LiveLogTail, { props: { running: true } });
+		last().emit('log', entry('first'));
+		await tick();
+		const watch = watchTransitions();
+		try {
+			last().emit('log', entry('second'));
+			await tick();
+			const top = container.querySelector('tbody tr') as HTMLElement;
+			expect(top.textContent).toContain('second');
+			expect(watch.entered).toContain(top);
+		} finally {
+			watch.stop();
+		}
+	});
+
+	it('keeps the row a reader scrolled to in place as rows arrive above it', async () => {
+		// jsdom lays nothing out, so a row stands at 20px a row and the box keeps the offset it is given.
+		const rowTop = vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(function (this: HTMLElement) {
+			return this instanceof HTMLTableRowElement ? this.sectionRowIndex * 20 : 0;
+		});
+		try {
+			const { container } = render(LiveLogTail, { props: { running: true } });
+			for (const m of ['one', 'two', 'three']) last().emit('log', entry(m));
+			await tick();
+			const box = container.querySelector('tbody')!.closest('.overflow-y-auto') as HTMLElement;
+			let top = 30;
+			Object.defineProperty(box, 'scrollTop', { configurable: true, get: () => top, set: (v: number) => (top = v) });
+
+			last().emit('log', entry('four'));
+			await tick();
+			await tick();
+			expect(top).toBe(50);
+
+			top = 0;
+			last().emit('log', entry('five'));
+			await tick();
+			await tick();
+			expect(top, 'a reader at the top sees the newest row arrive').toBe(0);
+		} finally {
+			rowTop.mockRestore();
+		}
+	});
+});
+
+describe('LiveLogTail resume', () => {
+	it('leaves the scroll alone when the held rows push the row read out of the table', async () => {
+		const rowTop = vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(function (this: HTMLElement) {
+			return this instanceof HTMLTableRowElement ? this.sectionRowIndex * 20 : 0;
+		});
+		// An animation that never finishes, so a row that fades out stays in the
+		// table, inert, as it does in a browser for the length of its fade.
+		const animate = Element.prototype.animate;
+		Element.prototype.animate = () => ({ cancel() {}, onfinish: null, currentTime: 0, playState: 'running', effect: null }) as unknown as Animation;
+		try {
+			const { container, getByRole } = render(LiveLogTail, { props: { running: true } });
+			for (const m of ['one', 'two', 'three']) last().emit('log', entry(m));
+			await tick();
+			const box = container.querySelector('tbody')!.closest('.overflow-y-auto') as HTMLElement;
+			let top = 30;
+			Object.defineProperty(box, 'scrollTop', { configurable: true, get: () => top, set: (v: number) => (top = v) });
+			const pause = getByRole('button', { name: 'Pause' });
+			await fireEvent.click(pause);
+			for (let i = 0; i < 200; i++) last().emit('log', entry(`held ${i}`));
+			await fireEvent.click(pause);
+			await tick();
+			await tick();
+			// The row read is fading out below two hundred new ones, so it marks no place.
+			expect(top).toBe(30);
+		} finally {
+			Element.prototype.animate = animate;
+			rowTop.mockRestore();
+		}
 	});
 });
