@@ -77,9 +77,13 @@
 					]}
 				/>
 				<div class="flex flex-wrap gap-2">
-					<Button variant="secondary" size="sm" href="/admin/settings/mfa">
-						<ShieldCheck size={ICON.sm} /> Two-factor authentication
-					</Button>
+					<!-- The account menu hides the same entry while the plugin is not
+					     running, because the page behind it has nothing to offer. -->
+					{#if data.hasMfa}
+						<Button variant="secondary" size="sm" href="/admin/settings/mfa">
+							<ShieldCheck size={ICON.sm} /> Two-factor authentication
+						</Button>
+					{/if}
 					{#if data.remembersDevices}
 						<Button variant="secondary" size="sm" href="/admin/settings/devices">
 							<MonitorSmartphone size={ICON.sm} /> Trusted devices
