@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { motion } from '@lyeve-labs/ui-kit';
 	import { ChevronRight } from '@lucide/svelte';
 	import JsonTree from './JsonTree.svelte';
 	import { ICON } from '#lib/icon.ts';
@@ -57,12 +58,16 @@
 			<span class="text-faint">{summary}</span>
 		</button>
 		{#if open}
-			<div class="ml-2 border-l border-line pl-3">
-				{#each entries as [k, v] (k)}
-					<JsonTree value={v} name={k} depth={depth + 1} />
-				{:else}
-					<span class="text-faint">empty</span>
-				{/each}
+			<div class="grid" transition:motion.collapse>
+				<div class="min-h-0">
+					<div class="ml-2 border-l border-line pl-3">
+						{#each entries as [k, v] (k)}
+							<JsonTree value={v} name={k} depth={depth + 1} />
+						{:else}
+							<span class="text-faint">empty</span>
+						{/each}
+					</div>
+				</div>
 			</div>
 		{/if}
 	{:else}

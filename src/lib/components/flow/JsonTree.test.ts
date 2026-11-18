@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import JsonTree from './JsonTree.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -29,6 +30,22 @@ describe('JsonTree', () => {
 		await fireEvent.click(toggle);
 		expect(toggle.querySelector('svg')).toBe(chevron);
 		expect(chevron.classList).toContain('rotate-90');
+	});
+
+	it('opens and closes the children of a node on their row', async () => {
+		render(JsonTree, { props: { value: { order: { customer: { email: 'a@example.com' } } } } });
+		const toggle = screen.getByRole('button', { name: /customer/ });
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(toggle);
+			const row = toggle.nextElementSibling as HTMLElement;
+			expect(row.classList).toContain('grid');
+			expect(watch.entered).toContain(row);
+			await fireEvent.click(toggle);
+			expect(watch.left).toContain(row);
+		} finally {
+			watch.stop();
+		}
 	});
 
 	it('keeps a third level folded until it is opened', async () => {

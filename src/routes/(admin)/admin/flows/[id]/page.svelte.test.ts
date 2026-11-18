@@ -9,6 +9,7 @@ import { BLOCKED_TEXT } from '#lib/flow/blocked.ts';
 import { FOCUS_KEY } from '#lib/flow/prefs.ts';
 import { SHELL_KEY, type Shell } from '#lib/shell.svelte.ts';
 import { outlineSkips } from '#lib/test-outline.ts';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/flows/f1') } }));
 vi.mock('$app/state', () => state);
@@ -291,6 +292,21 @@ describe('flow editor page', () => {
 		expect(queryByTestId('keyboard-hints')).toBeNull();
 		await pickOverflow(getByRole, 'Shortcuts');
 		expect(queryByTestId('keyboard-hints')?.textContent).toContain('remove the selection');
+	});
+
+	it('opens and closes the keyboard hints on their row under the toolbar', async () => {
+		const { queryByTestId, getByRole } = setup();
+		const watch = watchTransitions();
+		try {
+			await pickOverflow(getByRole, 'Shortcuts');
+			const row = queryByTestId('keyboard-hints')!.parentElement!.parentElement!;
+			expect(row.classList).toContain('grid');
+			expect(watch.entered).toContain(row);
+			await pickOverflow(getByRole, 'Shortcuts');
+			expect(watch.left).toContain(row);
+		} finally {
+			watch.stop();
+		}
 	});
 
 	it('keeps the toolbar to the way back, the shortcuts, a menu, the name, the status, focus, delete and three actions', () => {
