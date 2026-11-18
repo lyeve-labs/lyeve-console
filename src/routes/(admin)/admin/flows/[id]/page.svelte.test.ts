@@ -778,7 +778,7 @@ describe('flow editor page', () => {
 		const { getByRole, getByTestId, container, queryByText } = setup(null, { flow: { ...fixtureFlow, status: 'active', version: 1 } });
 		await fireEvent.click(getByRole('button', { name: 'Test' }));
 		await vi.waitFor(() => expect(getByTestId('flow-problems')).toBeTruthy());
-		expect(container.textContent).toContain('One element uses a feature that is not enabled on this instance: orders.');
+		expect(container.textContent).toContain('One element uses a feature that is not enabled on this engine: orders.');
 		expect(container.querySelector('[data-node-id="orders"]')?.className).toContain('border-danger');
 		expect(queryByText('payment_required')).toBeNull();
 	});
@@ -1013,7 +1013,7 @@ describe('flow editor refusal', () => {
 		};
 		const { getByTestId, getByRole, container } = setup(form);
 		const alert = getByTestId('flow-refusal');
-		expect(alert.textContent).toContain('Not enabled on this instance');
+		expect(alert.textContent).toContain('Not enabled on this engine');
 		expect(alert.textContent).toContain('the trigger, orders');
 		expect(getByRole('button', { name: /2 problems/ })).toBeTruthy();
 		// One notice, not the warn alert and the danger one both saying it.

@@ -320,7 +320,7 @@ describe('NodeConfigForm locked options and choice lists', () => {
 		const { getByTestId, queryByTestId } = render(NodeConfigForm, {
 			props: { schema: trigger, value: {}, onchange: vi.fn() },
 		});
-		expect(getByTestId('option-locked-path').textContent).toContain('path: only the default is enabled on this instance.');
+		expect(getByTestId('option-locked-path').textContent).toContain('path: only the default is enabled on this engine.');
 		expect(queryByTestId('option-locked-protocols')).toBeNull();
 		expect(queryByTestId('option-locked-auth')).toBeNull();
 	});

@@ -686,7 +686,7 @@
 				     are in the problems list and on the canvas, and this says
 				     what they have in common and where the feature is turned on. -->
 				<div class="shrink-0 px-3 pt-2" data-testid="flow-refusal">
-					<Alert tone="warn" title={refusal.limit !== null ? 'Flow limit reached' : 'Not enabled on this instance'} dismissible>
+					<Alert tone="warn" title={refusal.limit !== null ? 'Flow limit reached' : 'Not enabled on this engine'} dismissible>
 						{#snippet children()}
 							{form && 'error' in form ? form.error : ''}
 							{#if enableLink}
@@ -913,7 +913,7 @@
 		<NotEnabled
 			level={2}
 			title="Flows"
-			description="Flows are not enabled on this instance."
+			description="Flows are not enabled on this engine."
 		/>
 	</PageShell>
 {/if}

@@ -224,7 +224,7 @@ function refused(err: unknown, fallback: string) {
 	}
 	if (err instanceof FlowRefusal) return refusalFailure(err);
 	if (err instanceof ApiError && err.status === 402) {
-		return fail(402, { error: 'Flows are not enabled on this instance.', locked: true });
+		return fail(402, { error: 'Flows are not enabled on this engine.', locked: true });
 	}
 	if (err instanceof ApiError && err.status === 403) return forbiddenFailure(err);
 	return fail(400, { error: actionError(err, fallback) });
@@ -368,7 +368,7 @@ export const actions: Actions = {
 			}
 			if (err instanceof FlowRefusal) return importFailed(refusalFailure(err));
 			if (err instanceof ImportError && err.status === 402) {
-				return fail(402, { action: 'import', error: 'Flows are not enabled on this instance.', locked: true });
+				return fail(402, { action: 'import', error: 'Flows are not enabled on this engine.', locked: true });
 			}
 			if (err instanceof ImportError) {
 				return fail(400, { action: 'import', error: err.status < 500 && err.message ? err.message : 'Could not import the flow. Try again.' });

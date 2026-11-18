@@ -98,7 +98,7 @@
 								<Badge tone="brand" size="sm">Saved</Badge>
 							{/if}
 							{#if t.enabled === false}
-								<span data-testid="template-locked"><Badge tone="neutral" size="sm"><Lock size={ICON.xs} aria-hidden="true" /> Not enabled on this instance</Badge></span>
+								<span data-testid="template-locked"><Badge tone="neutral" size="sm"><Lock size={ICON.xs} aria-hidden="true" /> Not enabled on this engine</Badge></span>
 							{/if}
 							<span class="text-xs text-faint">{triggerLabel(t.definition.trigger.type)} trigger, {t.definition.nodes.length} node{t.definition.nodes.length === 1 ? '' : 's'}</span>
 							{#if t.source === 'saved' && canDelete}

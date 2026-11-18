@@ -33,7 +33,7 @@ describe('parseTrigger', () => {
 describe('testFailure', () => {
 	it('names the nodes a 402 refused', () => {
 		const out = testFailure(new FlowRefusal([{ node_id: 'orders', path: '/type', message: 'x' }]));
-		expect(out).toMatchObject({ kind: 'refused', text: 'One element uses a feature that is not enabled on this instance: orders.' });
+		expect(out).toMatchObject({ kind: 'refused', text: 'One element uses a feature that is not enabled on this engine: orders.' });
 	});
 
 	it('reads the blocked message as the blocked state and a 422 list as problems', () => {

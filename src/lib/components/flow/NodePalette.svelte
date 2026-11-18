@@ -18,7 +18,7 @@
 	// explanation than a row that will not move.
 	let { catalog, unread = false, onadd }: Props = $props();
 
-	const LOCKED = 'Not enabled on this instance';
+	const LOCKED = 'Not enabled on this engine';
 
 	let filter = $state('');
 

@@ -75,7 +75,7 @@
 		origin = '',
 	}: Props = $props();
 
-	const LOCKED = 'Not enabled on this instance';
+	const LOCKED = 'Not enabled on this engine';
 
 	const endpoints = $derived(flowEndpoints(origin, flowId ?? '', definition));
 	const slugProblem = $derived(slugError(definition.slug ?? ''));
@@ -285,7 +285,7 @@
 		{#if triggerLocked}
 			<p class="flex items-center gap-2 text-xs text-muted" data-testid="trigger-locked">
 				<Lock size={ICON.xs} aria-hidden="true" class="shrink-0" />
-				<span>This trigger is not enabled on this instance. A flow that uses it cannot be saved.</span>
+				<span>This trigger is not enabled on this engine. A flow that uses it cannot be saved.</span>
 			</p>
 		{/if}
 		{#if triggerSpec && isEventTriggerSchema(triggerSpec.config_schema)}

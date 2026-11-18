@@ -18,7 +18,7 @@ export const BLOCKED_MESSAGE = 'flow is blocked: a node type it uses is not avai
 export const BLOCKED_MESSAGE_BEFORE = 'flow is blocked: a node type it uses is not available on this instance';
 
 /** What every blocked surface says, before the plugin is known. */
-export const BLOCKED_TEXT = 'A node type this flow uses is not available on this instance.';
+export const BLOCKED_TEXT = 'A node type this flow uses is not available on this engine.';
 
 export function isBlockedMessage(message: string | null | undefined): boolean {
 	const trimmed = (message ?? '').trim();
@@ -58,7 +58,7 @@ export function blockedText(plugin: string | null = null): string {
  * a test run each say it in these words.
  */
 export function notEnabledText(nodeIds: readonly string[]): string {
-	if (nodeIds.length === 0) return 'Flows are not enabled on this instance.';
+	if (nodeIds.length === 0) return 'Flows are not enabled on this engine.';
 	const named = nodeIds.map((id) => (id === 'trigger' ? 'the trigger' : id)).join(', ');
-	return `${nodeIds.length === 1 ? 'One element uses' : `${nodeIds.length} elements use`} a feature that is not enabled on this instance: ${named}.`;
+	return `${nodeIds.length === 1 ? 'One element uses' : `${nodeIds.length} elements use`} a feature that is not enabled on this engine: ${named}.`;
 }
