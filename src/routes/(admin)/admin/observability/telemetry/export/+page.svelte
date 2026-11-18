@@ -12,6 +12,7 @@
 		SegmentedControl,
 		Table,
 		toast,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import RefreshButton from '#lib/components/RefreshButton.svelte';
 	import { untrack } from 'svelte';
@@ -203,7 +204,7 @@
 					<!-- A save the license refuses is not offered. The fields stay in
 					     sight, so the reader sees what is set, and the reason is
 					     beside the button. -->
-					<fieldset class="contents" disabled={!licensed}>
+					<fieldset class="flex min-w-0 flex-col gap-4" disabled={!licensed}>
 						<SegmentedControl label="Protocol" name="kind" bind:value={kind} options={[...DESTINATION_KINDS]} disabled={!licensed} />
 						<Input
 							id="destination-url"
@@ -241,30 +242,34 @@
 						{/if}
 
 						{#if headersMode === 'replace'}
-							<div class="flex flex-col gap-3">
-								{#each headers as h (h.id)}
-									<div class="grid items-end gap-2 sm:grid-cols-[1fr_1fr_auto]">
-										<Input id="header-name-{h.id}" name="header_name" label="Header" placeholder="Authorization" bind:value={h.name} />
-										<PasswordInput
-											id="header-value-{h.id}"
-											name="header_value"
-											label="Value"
-											autocomplete="off"
-											bind:value={h.value}
-										/>
-										<Button variant="ghost" size="sm" aria-label="Remove header {h.name || h.id}" onclick={() => dropHeader(h.id)}>
-											<Trash2 size={ICON.sm} class="text-danger" />
-										</Button>
+							<div class="grid" transition:motion.collapse|global>
+								<div class="min-h-0">
+									<div class="flex flex-col gap-3">
+										{#each headers as h (h.id)}
+											<div class="grid items-end gap-2 sm:grid-cols-[1fr_1fr_auto]" transition:motion.fade|global animate:motion.reorder>
+												<Input id="header-name-{h.id}" name="header_name" label="Header" placeholder="Authorization" bind:value={h.name} />
+												<PasswordInput
+													id="header-value-{h.id}"
+													name="header_value"
+													label="Value"
+													autocomplete="off"
+													bind:value={h.value}
+												/>
+												<Button variant="ghost" size="sm" aria-label="Remove header {h.name || h.id}" onclick={() => dropHeader(h.id)}>
+													<Trash2 size={ICON.sm} class="text-danger" />
+												</Button>
+											</div>
+										{/each}
+										<div>
+											<Button variant="secondary" size="sm" onclick={addHeader}>
+												<Plus size={ICON.sm} /> Add header
+											</Button>
+										</div>
+										{#if destination && destination.header_names.length > 0 && headers.length === 0}
+											<p class="text-xs text-muted">Saving with no headers clears the stored ones.</p>
+										{/if}
 									</div>
-								{/each}
-								<div>
-									<Button variant="secondary" size="sm" onclick={addHeader}>
-										<Plus size={ICON.sm} /> Add header
-									</Button>
 								</div>
-								{#if destination && destination.header_names.length > 0 && headers.length === 0}
-									<p class="text-xs text-muted">Saving with no headers clears the stored ones.</p>
-								{/if}
 							</div>
 						{/if}
 

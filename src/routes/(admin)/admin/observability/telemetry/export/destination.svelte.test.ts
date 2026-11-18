@@ -19,6 +19,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 });
 
 import TelemetryPage from './+page.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -264,5 +265,50 @@ describe('the stored headers note', () => {
 		const ids = (group.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
 		const described = ids.map((id) => document.getElementById(id)?.textContent ?? '').join(' ');
 		expect(described).toContain('Stored: Authorization, X-Scope. Their values are never shown.');
+	});
+});
+
+/** Whether a collapse row holding `el` started its entrance (or exit). */
+const onRow = (list: Element[], el: Element | null) => !!el && list.some((row) => row.classList.contains('grid') && row.contains(el));
+
+describe('the destination headers in motion', () => {
+	it('opens the header editor on its row when the stored headers are replaced', async () => {
+		render(TelemetryPage, props({ destination: STORED, licensed: true }));
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(screen.getByRole('radio', { name: 'Replace them' }));
+			expect(onRow(watch.entered, screen.getByRole('button', { name: /Add header/ }))).toBe(true);
+		} finally {
+			watch.stop();
+		}
+	});
+
+	it('opens the header editor inside a flex column, so the collapse closes the gap above it', async () => {
+		render(TelemetryPage, props({ destination: STORED, licensed: true }));
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(screen.getByRole('radio', { name: 'Replace them' }));
+			const add = screen.getByRole('button', { name: /Add header/ });
+			const band = watch.entered.find((el) => el.classList.contains('grid') && el.contains(add));
+			// A display: contents parent gives the preset no gap to close, and the form's gap jumps.
+			expect(band?.parentElement?.classList.contains('contents')).toBe(false);
+			expect([...(band?.parentElement?.classList ?? [])]).toEqual(expect.arrayContaining(['flex', 'flex-col', 'gap-4']));
+		} finally {
+			watch.stop();
+		}
+	});
+
+	it('fades a header row in on Add header and out on remove', async () => {
+		render(TelemetryPage, props({ destination: null, licensed: true }));
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(screen.getByRole('button', { name: /Add header/ }));
+			const row = (document.querySelector('input[name="header_name"]') as HTMLElement).closest('.sm\\:grid-cols-\\[1fr_1fr_auto\\]') as HTMLElement;
+			expect(watch.entered).toContain(row);
+			await fireEvent.click(screen.getByRole('button', { name: /^Remove header/ }));
+			expect(watch.left).toContain(row);
+		} finally {
+			watch.stop();
+		}
 	});
 });

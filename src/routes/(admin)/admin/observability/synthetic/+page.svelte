@@ -19,6 +19,7 @@
 		Pagination,
 		RadioGroup,
 		SearchInput,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import { enhance } from '#lib/enhance.ts';
@@ -290,7 +291,7 @@
 				<SectionHeading level={2}>Unacknowledged alerts</SectionHeading>
 				<div class="flex flex-col gap-3">
 					{#each data.alerts.value as a (a.id)}
-						<div class="rounded border border-line bg-surface-2 p-3">
+						<div class="rounded border border-line bg-surface-2 p-3" transition:motion.fade|global animate:motion.reorder>
 							<div class="flex flex-wrap items-start justify-between gap-2">
 								<div class="min-w-0">
 									<div class="flex items-center gap-2">

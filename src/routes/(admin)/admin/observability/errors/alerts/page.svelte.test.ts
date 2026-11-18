@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render } from '@testing-library/svelte';
+import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
@@ -7,6 +7,7 @@ vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/obse
 
 import SpikePage from './+page.svelte';
 import { outlineSkips } from '#lib/test-outline.ts';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -85,5 +86,21 @@ describe('heading outline', () => {
 		const { container } = setup(BASE, null, { state: 'locked', upgradeUrl: '' } as never);
 		expect(container.querySelector('[data-testid="not-enabled"]')).toBeTruthy();
 		expect(outlineSkips(container)).toEqual([]);
+	});
+});
+
+/** Whether a collapse row holding `el` started its entrance (or exit). */
+const onRow = (list: Element[], el: Element | null) => !!el && list.some((row) => row.classList.contains('grid') && row.contains(el));
+
+describe('the custom threshold in motion', () => {
+	it('opens its two fields on their row when Custom is chosen', async () => {
+		const { getByRole, container } = setup(BASE);
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(getByRole('radio', { name: 'Custom' }));
+			expect(onRow(watch.entered, container.querySelector('#spike-z-score'))).toBe(true);
+		} finally {
+			watch.stop();
+		}
 	});
 });

@@ -10,6 +10,7 @@ vi.mock('$app/state', () => appState);
 
 import SyntheticPage from './+page.svelte';
 import type { Probe, ProbeAlert } from '#lib/api/synthetic.ts';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -407,5 +408,22 @@ describe('the probe search box', () => {
 	it('is named for a screen reader', () => {
 		const { container } = render(SyntheticPage, { props: props() });
 		expect(container.querySelector('label[for="probe-search"]')?.textContent).toBe('Search probes');
+	});
+});
+
+describe('an alert acknowledged', () => {
+	it('fades its card out of the band', async () => {
+		const first = alert();
+		const second = alert({ id: 'a2' } as Partial<ProbeAlert>);
+		const { container, rerender } = render(SyntheticPage, { props: props({ alerts: [first, second] }) });
+		const watch = watchTransitions();
+		try {
+			const cards = [...container.querySelectorAll('section .rounded.border')];
+			expect(cards).toHaveLength(2);
+			await rerender(props({ alerts: [second] }));
+			expect(watch.left).toContain(cards[0]);
+		} finally {
+			watch.stop();
+		}
 	});
 });

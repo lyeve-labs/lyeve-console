@@ -9,6 +9,7 @@
 		PageShell,
 		SectionHeading,
 		SegmentedControl,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import GateNotice from '#lib/components/GateNotice.svelte';
@@ -113,26 +114,30 @@
 					{:else}
 						<SegmentedControl label="Threshold" name="threshold_mode" bind:value={threshold.mode} options={MODES} />
 						{#if threshold.mode === 'custom'}
-							<div class="grid gap-4 sm:grid-cols-2">
-								<NumberInput
-									id="spike-min-count"
-									name="spike_min_count"
-									label="Minimum errors in a window"
-									hint="A window with fewer errors is never a spike."
-									min={1}
-									step={1}
-									bind:value={threshold.minCount}
-								/>
-								<NumberInput
-									id="spike-z-score"
-									name="spike_z_score"
-									label="Z-score"
-									hint="How far above earlier windows, from 0.5 to 20."
-									min={0.5}
-									max={20}
-									step={0.1}
-									bind:value={threshold.zScore}
-								/>
+							<div class="grid" transition:motion.collapse|global>
+								<div class="min-h-0">
+									<div class="grid gap-4 sm:grid-cols-2">
+										<NumberInput
+											id="spike-min-count"
+											name="spike_min_count"
+											label="Minimum errors in a window"
+											hint="A window with fewer errors is never a spike."
+											min={1}
+											step={1}
+											bind:value={threshold.minCount}
+										/>
+										<NumberInput
+											id="spike-z-score"
+											name="spike_z_score"
+											label="Z-score"
+											hint="How far above earlier windows, from 0.5 to 20."
+											min={0.5}
+											max={20}
+											step={0.1}
+											bind:value={threshold.zScore}
+										/>
+									</div>
+								</div>
 							</div>
 						{/if}
 					{/if}

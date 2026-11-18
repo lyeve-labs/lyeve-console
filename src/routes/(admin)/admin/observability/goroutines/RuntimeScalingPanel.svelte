@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Alert, Button, Card, NumberInput, SectionHeading, SegmentedControl, Stat } from '@lyeve-labs/ui-kit';
+	import { Alert, Button, Card, NumberInput, SectionHeading, SegmentedControl, Stat, motion } from '@lyeve-labs/ui-kit';
 	import { untrack } from 'svelte';
 	import { enhance } from '#lib/enhance.ts';
 	import { formRefusal } from '#lib/api/refusal.ts';
@@ -304,16 +304,20 @@
 								hint="Automatic follows the CPU limit of the container or machine."
 							/>
 							{#if f.cpuMode === 'fixed'}
-								<NumberInput
-									id="rt-cpu-threads"
-									name={cpuDirty ? 'cpu_threads' : undefined}
-									label="Threads"
-									min={1}
-									max={hostCores}
-									hint={hostCores ? `1 to ${formatCount(hostCores)}.` : undefined}
-									error={errors.cpu_threads}
-									bind:value={draft.fields.cpuThreads}
-								/>
+								<div class="grid" transition:motion.collapse|global>
+									<div class="min-h-0">
+										<NumberInput
+											id="rt-cpu-threads"
+											name={cpuDirty ? 'cpu_threads' : undefined}
+											label="Threads"
+											min={1}
+											max={hostCores}
+											hint={hostCores ? `1 to ${formatCount(hostCores)}.` : undefined}
+											error={errors.cpu_threads}
+											bind:value={draft.fields.cpuThreads}
+										/>
+									</div>
+								</div>
 							{/if}
 						</fieldset>
 						{@render advice('cpu', read.settings.cpu)}
@@ -336,27 +340,34 @@
 								bind:value={draft.fields.memoryMode}
 								hint="Automatic uses 85% of the memory limit and follows it when it changes."
 							/>
-							{#if f.memoryMode === 'ratio'}
-								<NumberInput
-									id="rt-memory-percent"
-									name={memoryDirty ? 'memory_percent' : undefined}
-									label="Share of limit (%)"
-									min={MEMORY_PERCENT.min}
-									max={MEMORY_PERCENT.max}
-									hint="{MEMORY_PERCENT.min} to {MEMORY_PERCENT.max} percent of the memory limit."
-									error={errors.memory_percent}
-									bind:value={draft.fields.memoryPercent}
-								/>
-							{:else if f.memoryMode === 'bytes'}
-								<NumberInput
-									id="rt-memory-mb"
-									name={memoryDirty ? 'memory_mb' : undefined}
-									label="Size (MB)"
-									min={MEMORY_MB_MIN}
-									hint="At least {MEMORY_MB_MIN} MB."
-									error={errors.memory_mb}
-									bind:value={draft.fields.memoryMb}
-								/>
+							<!-- A share and a size swap in place. Only Automatic opens or shuts the row. -->
+							{#if f.memoryMode === 'ratio' || f.memoryMode === 'bytes'}
+								<div class="grid" transition:motion.collapse|global>
+									<div class="min-h-0">
+										{#if f.memoryMode === 'ratio'}
+											<NumberInput
+												id="rt-memory-percent"
+												name={memoryDirty ? 'memory_percent' : undefined}
+												label="Share of limit (%)"
+												min={MEMORY_PERCENT.min}
+												max={MEMORY_PERCENT.max}
+												hint="{MEMORY_PERCENT.min} to {MEMORY_PERCENT.max} percent of the memory limit."
+												error={errors.memory_percent}
+												bind:value={draft.fields.memoryPercent}
+											/>
+										{:else if f.memoryMode === 'bytes'}
+											<NumberInput
+												id="rt-memory-mb"
+												name={memoryDirty ? 'memory_mb' : undefined}
+												label="Size (MB)"
+												min={MEMORY_MB_MIN}
+												hint="At least {MEMORY_MB_MIN} MB."
+												error={errors.memory_mb}
+												bind:value={draft.fields.memoryMb}
+											/>
+										{/if}
+									</div>
+								</div>
 							{/if}
 						</fieldset>
 						{@render advice('memory', read.settings.memory)}
