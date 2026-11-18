@@ -13,7 +13,7 @@
 		toast,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
-	import { Building2, Coins, Pencil, Plus, Trash2, ToggleLeft, ToggleRight } from '@lucide/svelte';
+	import { Building2, Coins, Pencil, Plus, Power, PowerOff, Trash2 } from '@lucide/svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import ListToolbar from '#lib/components/ListToolbar.svelte';
 	import { confirmed, drawerFailure, fieldErrors, tracked } from '#lib/forms.svelte.ts';
@@ -61,15 +61,24 @@
 		);
 	}
 
+	/** The tenant whose enable or disable is on its way, so only its button waits. */
+	let toggling = $state<string | null>(null);
+
 	/** Enabling and disabling both leave the row in place, so the toast says it worked. */
-	function toggleTenant(name: string, enabled: boolean): SubmitFunction {
-		return async () =>
-			async ({ result, update }) => {
-				await update();
+	function toggleTenant(id: string, name: string, enabled: boolean): SubmitFunction {
+		return () => {
+			toggling = id;
+			return async ({ result, update }) => {
+				try {
+					await update();
+				} finally {
+					toggling = null;
+				}
 				if (result.type === 'success') {
-					toast.success(`${enabled ? 'Disabled' : 'Enabled'} ${name}`);
+					toast.success(`${name} ${enabled ? 'disabled' : 'enabled'}.`);
 				}
 			};
+		};
 	}
 
 	// The plan is a label stored with the tenant, typed rather than picked:
@@ -98,11 +107,11 @@
 	/** Closes the drawer once the write lands. A failure keeps it open beside the message. */
 	const saveTenant: SubmitFunction = () => {
 		const subject = name;
-		const verb = editing ? 'Updated' : 'Created';
+		const verb = editing ? 'saved' : 'created';
 		return async ({ result, update }) => {
 			if (result.type !== 'failure') open = false;
 			await update();
-			if (result.type === 'success') toast.success(`${verb} ${subject}`);
+			if (result.type === 'success') toast.success(`${subject} ${verb}.`);
 		};
 	};
 
@@ -267,7 +276,7 @@
 								<form
 									method="post"
 									action="?/toggle"
-									use:enhance={toggleTenant(tenant.name, tenant.enabled)}
+									use:enhance={toggleTenant(tenant.id, tenant.name, tenant.enabled)}
 								>
 									<input type="hidden" name="id" value={tenant.id} />
 									<input type="hidden" name="enabled" value={String(tenant.enabled)} />
@@ -275,12 +284,16 @@
 										variant="ghost"
 										size="sm"
 										type="submit"
+										loading={toggling === tenant.id}
 										aria-label="{tenant.enabled ? 'Disable' : 'Enable'} {tenant.name}"
 									>
+										<!-- A power glyph names the action. A switch glyph drew a
+										     setting the button does not hold, beside the Status badge
+										     that already shows it. -->
 										{#if tenant.enabled}
-											<ToggleRight size={ICON.sm} class="text-brand" />
+											<PowerOff size={ICON.sm} aria-hidden="true" />
 										{:else}
-											<ToggleLeft size={ICON.sm} />
+											<Power size={ICON.sm} aria-hidden="true" />
 										{/if}
 									</Button>
 								</form>

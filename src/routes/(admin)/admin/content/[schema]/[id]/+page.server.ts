@@ -239,8 +239,15 @@ export const load: PageServerLoad = async (event) => {
 		loadReview(client, params.id, runs(plugins, PLUGIN.review), user).then(async (r) =>
 			r ? { ...r, people: await people } : null,
 		),
-		loadComments(client, params.id, people, tenant, runs(plugins, PLUGIN.multitenant)).catch(() => null),
-		loadReleases(client, params.id).catch(() => null),
+		// A read that throws is a failed read, so each panel stays on the entry
+		// and says so. Only a build without the plugin leaves a panel off.
+		loadComments(client, params.id, people, tenant, runs(plugins, PLUGIN.multitenant)).catch(() => ({
+			threads: [],
+			people: [],
+			mentionable: [],
+			unavailable: true,
+		})),
+		loadReleases(client, params.id).catch(() => ({ open: [], holding: [], failed: true })),
 	]);
 
 	// A many_to_many link is a row beside the entry, never a key in its body.
@@ -578,7 +585,11 @@ export const actions: Actions = {
 			const failed = actionFailure(err, 'Could not restore the revision. Try again.');
 			return fail(failed.status, { ...failed.data, revision: true });
 		}
-		redirect(303, entryAddress(event));
+		// An enhanced post reports the revision on the page. Without scripts the
+		// browser shows the answer at the post's address, where a reload would
+		// restore again, so that post goes back to the entry.
+		if (request.headers.get('x-sveltekit-action') !== 'true') redirect(303, entryAddress(event));
+		return { restored: toRevision };
 	},
 
 	/**

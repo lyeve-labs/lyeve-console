@@ -20,6 +20,10 @@
 		form && 'refusal' in form && typeof form.refusal === 'string' && form.refusal ? form.refusal : data.refusal
 	);
 
+	/** Whether the view reports a decision just posted, rather than the page's own read. */
+	const decided = $derived(!!form && 'outcome' in form);
+	const DECISION_UNKNOWN = 'Could not confirm the decision. Check whether the device was signed in, then try again.';
+
 	/** A refused confirmation: the request is still open and the field says why. */
 	const stepUp = $derived(form && 'stepUp' in form ? form.stepUp : null);
 	const mfa = $derived(data.mfaEnrolled || !!stepUp?.needsMfa);
@@ -77,6 +81,18 @@
 		},
 	};
 
+	/**
+	 * What a decision just posted is read out as. The form the reader pressed
+	 * in unmounts with the request card, so focus falls to the page, and only
+	 * a region already on the page announces what replaced it. A failure, a
+	 * rate refusal and a 402 draw the kit's alert, which is read out already.
+	 */
+	const spoken = $derived.by(() => {
+		if (!decided) return '';
+		const outcome = outcomes[view];
+		return outcome ? `${outcome.title}. ${outcome.description}` : '';
+	});
+
 	const showCodeField = $derived(view === 'enter' || view === 'unknown' || view === 'expired' || view === 'decided');
 </script>
 
@@ -88,6 +104,7 @@
 	back={{ href: '/admin', label: 'Dashboard' }}
 >
 	<div class="space-y-6">
+		<div class="sr-only" aria-live="polite" aria-atomic="true" data-testid="device-live">{spoken}</div>
 		{#if view === 'pending' && data.request}
 			<Card heading="Sign-in request" headingLevel={2} pad="lg">
 				<div class="space-y-5">
@@ -154,7 +171,14 @@
 		{:else if view === 'refused'}
 			<Alert tone="warn" title="Device sign-in is not available">{refusal}</Alert>
 		{:else if view === 'error'}
-			<Alert tone="danger" title={OUTAGE.title}>{OUTAGE.body}</Alert>
+			<!-- An approval or denial can land before the connection drops, and an
+			     engine refusal with no sentence lands here too, so a failed
+			     decision claims nothing about the device or the engine. -->
+			{#if decided}
+				<Alert tone="danger">{DECISION_UNKNOWN}</Alert>
+			{:else}
+				<Alert tone="danger" title={OUTAGE.title}>{OUTAGE.body}</Alert>
+			{/if}
 			<Button href="/admin/device?code={encodeURIComponent(data.code)}" variant="secondary">Try again</Button>
 		{:else if view !== 'enter'}
 			{@const outcome = outcomes[view]}

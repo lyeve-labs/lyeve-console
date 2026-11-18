@@ -270,7 +270,7 @@
 				return 'Your role cannot list datasources. Type the name.';
 			case 'locked':
 			case 'full':
-				return 'Datasources are not enabled on this instance. Type the name.';
+				return 'Datasources are not enabled on this engine. Type the name.';
 			case 'absent':
 				return 'Datasources are not included in this build. Type the name.';
 			default:
@@ -290,7 +290,7 @@
 		{#if isLockedOption(field.schema)}
 			<p class="-mb-2 flex items-center gap-2 text-xs text-muted" data-testid="option-locked-{field.key}">
 				<Lock size={ICON.xs} aria-hidden="true" class="shrink-0" />
-				<span>{label}: only the default is enabled on this instance.</span>
+				<span>{label}: only the default is enabled on this engine.</span>
 			</p>
 		{/if}
 		{#if gridKeys && field.key === gridKeys.columns && widget !== 'grid'}

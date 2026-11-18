@@ -91,12 +91,12 @@
 
 	const saveRegion: SubmitFunction = () => {
 		const subject = displayName;
-		const verb = editing ? 'Saved' : 'Created';
+		const verb = editing ? 'saved' : 'created';
 		return async ({ result, update }) => {
 			const closeFailed = result.type === 'failure' && result.data?.action === 'close';
 			if (result.type !== 'failure' || closeFailed) open = false;
 			await update();
-			if (result.type === 'success') toast.success(`${verb} ${subject}`);
+			if (result.type === 'success') toast.success(`${subject} ${verb}.`);
 		};
 	};
 

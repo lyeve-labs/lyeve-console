@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const forms = vi.hoisted(() => ({
 	submits: new Map<HTMLFormElement, (input: unknown) => unknown>(),
 	confirm: vi.fn(async () => false),
+	success: vi.fn(),
 }));
 vi.mock('$app/forms', () => ({
 	enhance: (node: HTMLFormElement, submit: (input: unknown) => unknown) => {
@@ -17,6 +18,7 @@ vi.mock('$app/forms', () => ({
 vi.mock('@lyeve-labs/ui-kit', async (original) => ({
 	...(await original<typeof import('@lyeve-labs/ui-kit')>()),
 	confirm: forms.confirm,
+	toast: { success: forms.success },
 }));
 
 import TenantsPage from './+page.svelte';
@@ -61,6 +63,34 @@ const props = (over: Record<string, unknown> = {}, form: unknown = null) =>
 
 const ADD_ON = 'https://shop.example.com/pricing?skus=example-pro&utm_campaign=example';
 const PLAN = 'https://shop.example.com/pricing?plan=larger&utm_campaign=tenants';
+
+describe('Tenants enable and disable', () => {
+	it('offers a row action named for what it does, and shows it pending while the write runs', async () => {
+		const { container } = render(TenantsPage, { props: props({ tenants: tenants(1) }) });
+		const form = container.querySelector('form[action="?/toggle"]') as HTMLFormElement;
+		const button = form.querySelector('button') as HTMLButtonElement;
+		expect(button.getAttribute('aria-label')).toBe('Disable Tenant 0');
+		expect(form.querySelector('.lucide-toggle-right, .lucide-toggle-left')).toBeNull();
+
+		const after = (await forms.submits.get(form)?.({})) as (o: unknown) => Promise<void>;
+		await Promise.resolve();
+		expect(button.getAttribute('aria-busy')).toBe('true');
+
+		await after({ result: { type: 'success' }, update: async () => {} });
+		expect(button.getAttribute('aria-busy')).toBeNull();
+		expect(forms.success).toHaveBeenLastCalledWith('Tenant 0 disabled.');
+	});
+
+	it('stops waiting when applying the result throws', async () => {
+		const { container } = render(TenantsPage, { props: props({ tenants: tenants(1) }) });
+		const form = container.querySelector('form[action="?/toggle"]') as HTMLFormElement;
+		const button = form.querySelector('button') as HTMLButtonElement;
+		const after = (await forms.submits.get(form)?.({})) as (o: unknown) => Promise<void>;
+		await after({ result: { type: 'error' }, update: async () => { throw new Error('navigation failed'); } }).catch(() => {});
+		await Promise.resolve();
+		expect(button.getAttribute('aria-busy')).toBeNull();
+	});
+});
 
 describe('Tenants provisioning gate', () => {
 	// The list is always drawn. Only a create is refused where the plugin does

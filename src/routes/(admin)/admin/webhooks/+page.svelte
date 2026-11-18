@@ -1,6 +1,6 @@
 <script lang="ts">
 	import FormErrors from '#lib/components/FormErrors.svelte';
-	import { filtersText, keptJSON, type WebhookRecord } from '#lib/api/webhook-options.ts';
+	import { ROTATE_DETAIL, filtersText, keptJSON, type WebhookRecord } from '#lib/api/webhook-options.ts';
 	import { formRefusal, type Refusal } from '#lib/api/refusal.ts';
 	import {
 		Alert,
@@ -21,11 +21,13 @@
 		Table,
 		Textarea,
 		Toggle,
+		confirm,
 		type ChoiceOption
 	} from '@lyeve-labs/ui-kit';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import type { PageData, ActionData } from './$types';
 	import type { Webhook } from '@lyeve-labs/client';
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { confirmed, drawerFailure, fieldErrors, submitter } from '#lib/forms.svelte.ts';
@@ -207,6 +209,10 @@
 		Record<string, { success: boolean; status_code: number; message: string }>
 	>({});
 
+	// The result line mounts under its row, and a region created holding its
+	// text is not announced, so the result is spoken from one drawn empty.
+	let testSpoken = $state('');
+
 	// The map is read untracked: an effect that tracks the map it rewrites
 	// reruns on its own write until Svelte stops it.
 	$effect(() => {
@@ -218,8 +224,29 @@
 				message: string;
 			};
 			testResults = { ...untrack(() => testResults), [tr.id]: tr };
+			const name = untrack(() => rows.find((w) => w.id === tr.id)?.name) ?? 'the webhook';
+			const said = `Test of ${name} ${tr.success ? 'succeeded' : 'failed'}. HTTP ${tr.status_code}: ${tr.message}`;
+			// Emptied first, so a second test with the same result changes the
+			// region and is read out again.
+			testSpoken = '';
+			void tick().then(() => (testSpoken = said));
 		}
 	});
+
+	/** The webhook whose test is calling its receiver, so only its button waits. */
+	let testing = $state<string | null>(null);
+	function runTest(id: string): SubmitFunction {
+		return () => {
+			testing = id;
+			return async ({ update }) => {
+				try {
+					await update();
+				} finally {
+					testing = null;
+				}
+			};
+		};
+	}
 
 	// A row's history and the queue open from the address, so a link or a
 	// reload opens them too, and the list keeps its page under them.
@@ -238,15 +265,26 @@
 	let reveal = $state<{ name: string; secret: string } | null>(null);
 	// The secret is taken straight from the result and never applied to the
 	// page's form, so closing the panel leaves no copy of it behind.
-	const takeSecret: SubmitFunction = () => async ({ result, update }) => {
-		if (result.type === 'success' && result.data && 'rotated' in result.data) {
-			const r = result.data.rotated as { name: string; secret: string };
-			reveal = { name: r.name, secret: r.secret };
-			settled = form;
-			return;
-		}
-		await update();
-	};
+	// It asks first, because the old secret stops verifying the moment a new
+	// one is made.
+	function rotateSecret(name: string): SubmitFunction {
+		return async ({ cancel, formData }) => {
+			if (!(await confirm(`Rotate the signing secret for ${name}?`, ROTATE_DETAIL, { confirmLabel: 'Rotate' }))) {
+				cancel();
+				return;
+			}
+			formData.set(CONFIRM_FIELD, CONFIRMED);
+			return async ({ result, update }) => {
+				if (result.type === 'success' && result.data && 'rotated' in result.data) {
+					const r = result.data.rotated as { name: string; secret: string };
+					reveal = { name: r.name, secret: r.secret };
+					settled = form;
+					return;
+				}
+				await update();
+			};
+		};
+	}
 
 	function truncate(url: string, max = 48): string {
 		return url.length > max ? url.slice(0, max) + '...' : url;
@@ -281,6 +319,7 @@
 	{/snippet}
 
 	<FormErrors message={pageError} refused={pageRefusal} />
+	<div class="sr-only" aria-live="polite" aria-atomic="true" data-testid="webhook-test-live">{testSpoken}</div>
 
 	{#if data.webhooks.ok && !isSuperAdmin}
 		<Alert tone="brand">You can view and test webhooks. Only a super admin can create, change or delete them.</Alert>
@@ -383,12 +422,13 @@
 						</td>
 						<td>
 							<div class="flex items-center gap-2">
-								<form method="POST" action="?/test" use:enhance>
+								<form method="POST" action="?/test" use:enhance={runTest(wh.id)}>
 									<input type="hidden" name="id" value={wh.id} />
 									<Button
 										variant="ghost"
 										size="sm"
 										type="submit"
+										loading={testing === wh.id}
 										title="Test webhook"
 										aria-label="Test {wh.name}"
 									>
@@ -405,7 +445,7 @@
 									<History size={ICON.sm} />
 								</Button>
 								{#if isSuperAdmin}
-									<form method="POST" action="?/rotate-secret" use:enhance={takeSecret}>
+									<form method="POST" action="?/rotate-secret" use:enhance={rotateSecret(wh.name)}>
 										<input type="hidden" name="id" value={wh.id} />
 										<Button
 											variant="ghost"

@@ -387,7 +387,7 @@
 	<div class="flex items-center gap-3 rounded-lg border border-dashed border-line/50 bg-surface/60 p-3">
 		<span class="w-3.5 shrink-0"></span>
 		<div class="min-w-0 flex-1">
-			<span class="text-sm font-medium text-brand/70">{name}</span>
+			<span class="text-sm font-medium text-brand">{name}</span>
 			<span class="ms-2 text-xs text-faint italic">{role}</span>
 			<p class="mt-0.5 text-xs text-faint">{note}</p>
 		</div>
@@ -813,7 +813,7 @@
 							label="Target content type"
 							error={problemAt(`relation-target-${rowId}`)}
 							searchable
-							placeholder="Pick a content type"
+							placeholder="Choose a content type"
 							options={targetOptions(schema, field)}
 							value={field.relation_to ?? ''}
 							onvaluechange={(v) => {
@@ -879,7 +879,7 @@
 						{/if}
 					{:else}
 						<p class="text-xs text-faint">
-							Pick a target content type to see which table stores this relation and
+							Choose a target content type to see which table stores this relation and
 							what saving creates.
 						</p>
 					{/if}

@@ -27,7 +27,7 @@ describe('AddToRelease', () => {
 
 	it('says the releases could not be read instead of claiming none is open', () => {
 		render(AddToRelease, { props: { releases: [], holding: [], failed: true } });
-		expect(screen.getByText(/Could not load releases/)).toBeTruthy();
+		expect(screen.getByText(/Could not load releases/).closest('[role="alert"]')).not.toBeNull();
 		expect(screen.queryByText(/No release is open/)).toBeNull();
 	});
 

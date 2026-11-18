@@ -1,13 +1,34 @@
 // @vitest-environment jsdom
 import { render, cleanup, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { tick } from 'svelte';
 
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
+const forms = vi.hoisted(() => ({ submits: new Map<HTMLFormElement, unknown>() }));
+vi.mock('$app/forms', () => ({
+	enhance: (node: HTMLFormElement, submit?: unknown) => {
+		forms.submits.set(node, submit);
+		return { destroy: () => forms.submits.delete(node) };
+	},
+}));
+vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
+	...(await importOriginal<Record<string, unknown>>()),
+	confirm: vi.fn(async () => true),
+}));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import SetsPage from './+page.svelte';
 
 afterEach(cleanup);
+
+type After = (o: { result: { type: string }; update: () => Promise<void> }) => Promise<void>;
+
+/** Sends the form through its enhance handler, as a click would, and returns the result callback. */
+async function send(form: HTMLFormElement): Promise<After> {
+	const submit = forms.submits.get(form) as (o: { cancel: () => void; formData: FormData; formElement: HTMLFormElement }) => Promise<After>;
+	const after = await submit({ cancel: vi.fn(), formData: new FormData(form), formElement: form });
+	await tick();
+	return after;
+}
 
 function said(c: HTMLElement): string {
 	return (c.textContent ?? '').replace(/\s+/g, ' ');
@@ -120,5 +141,37 @@ describe('a failed side read', () => {
 			props: props({ sets: [], setsRead: false, setsGate: { state: 'forbidden' } }),
 		});
 		expect(said(container)).toContain('Your role cannot open the replay sets');
+	});
+});
+
+describe('replaying a set', () => {
+	it('spins only the button that was pressed when the set is offered twice', async () => {
+		render(SetsPage, props({}, { error: 'writes', needsWrites: 's1' }));
+		const withWrites = screen.getByRole('button', { name: 'Replay including writes' });
+		const row = screen.getByRole('button', { name: 'Replay Checkout' });
+		await send(withWrites.closest('form') as HTMLFormElement);
+		expect(withWrites.getAttribute('aria-busy')).toBe('true');
+		expect(row.getAttribute('aria-busy')).toBeNull();
+	});
+
+	it('stops waiting when applying the result throws', async () => {
+		render(SetsPage, props());
+		const form = document.querySelector('form[action="?/replaySet"]') as HTMLFormElement;
+		const button = screen.getByRole('button', { name: 'Replay Checkout' });
+		const after = await send(form);
+		await after({ result: { type: 'error' }, update: async () => { throw new Error('navigation failed'); } }).catch(() => {});
+		await tick();
+		expect(button.getAttribute('aria-busy')).toBeNull();
+	});
+
+	it('shows Replay pending once the reader agreed, until the replay returns', async () => {
+		render(SetsPage, props());
+		const form = document.querySelector('form[action="?/replaySet"]') as HTMLFormElement;
+		const button = screen.getByRole('button', { name: 'Replay Checkout' });
+		const after = await send(form);
+		expect(button.getAttribute('aria-busy')).toBe('true');
+		await after({ result: { type: 'success' }, update: async () => {} });
+		await tick();
+		expect(button.getAttribute('aria-busy')).toBeNull();
 	});
 });

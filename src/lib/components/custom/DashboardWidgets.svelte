@@ -26,7 +26,7 @@
 </script>
 
 {#snippet unreadable(what: string)}
-	<p class="text-sm text-muted">{couldNotLoad(what, { reload: true })}</p>
+	<Alert tone="danger">{couldNotLoad(what, { reload: true })}</Alert>
 {/snippet}
 
 <div class="grid grid-cols-1 gap-4 lg:grid-cols-6" data-testid="dashboard-widgets">

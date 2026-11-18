@@ -58,6 +58,7 @@ function mount({ ent = entitlements(), licensing = served, roles, form = null }:
 			data: {
 				user: user(roles),
 				migrations: null,
+				sidebarCollapsed: null,
 				customization: NO_CUSTOMIZATION,
 				brand: STOCK_BRAND,
 				plugins: UNNAMED,

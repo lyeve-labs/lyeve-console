@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Alert, Badge, Button, Card, Input, PageShell, SectionHeading, Textarea } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Button, Card, ColorField, Input, PageShell, SectionHeading, Textarea } from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import NotEnabled from '#lib/components/NotEnabled.svelte';
@@ -62,7 +62,17 @@
 	const logoState = $derived(imageState('logo'));
 	const faviconState = $derived(imageState('favicon'));
 
-	const keep: SubmitFunction = () => async ({ update }) => update({ reset: false });
+	let brandSaving = $state(false);
+	const saveBrand: SubmitFunction = () => {
+		brandSaving = true;
+		return async ({ update }) => {
+			try {
+				await update({ reset: false });
+			} finally {
+				brandSaving = false;
+			}
+		};
+	};
 </script>
 
 <PageShell
@@ -99,7 +109,7 @@
 				{#snippet header()}
 					<SectionHeading level={2}>Brand</SectionHeading>
 				{/snippet}
-				<form method="POST" action="?/brand" class="flex flex-col gap-4" use:enhance={keep}>
+				<form method="POST" action="?/brand" class="flex flex-col gap-4" use:enhance={saveBrand}>
 					{#if form?.brandError}
 						<Alert tone="danger">{form.brandError}</Alert>
 					{:else if form && 'brandSaved' in form}
@@ -107,14 +117,11 @@
 					{/if}
 					<Input id="brand-name" name="name" label="Name" hint="Replaces the product name in the sidebar, on the sign-in pages and in every tab title." bind:value={brand.name} />
 					<div class="flex flex-col gap-2">
-						<Input
+						<ColorField
 							id="brand-accent"
 							name="accent"
 							label="Accent color"
-							mono
-							placeholder="#0a7cff"
-							hint={accentNote || 'Use the format #RRGGBB. Buttons, links and highlights use this color, adjusted per theme when needed to stay readable.'}
-							error={brand.accent && accentOk === null ? 'Use the format #RRGGBB' : undefined}
+							hint={accentNote || 'Buttons, links and highlights use this color, adjusted per theme when needed to stay readable.'}
 							bind:value={brand.accent}
 						/>
 						{#if preview}
@@ -133,7 +140,7 @@
 						{/if}
 					</div>
 					<Textarea id="brand-welcome" name="welcome" label="Welcome line" rows={2} hint="Shown at the top of the dashboard. At most 280 characters." bind:value={brand.welcome} />
-					<div><Button variant="primary" type="submit">Save</Button></div>
+					<div><Button variant="primary" type="submit" loading={brandSaving}>Save</Button></div>
 				</form>
 			</Card>
 

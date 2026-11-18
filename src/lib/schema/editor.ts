@@ -158,7 +158,7 @@ export function problemsOf(schema: Schema, others: Schema[], isNew: boolean): Pr
 		}
 		if (f.field_type === 'relation') {
 			if (!f.relation_to) {
-				out.push({ fieldId: id, target: `relation-target-${id}`, where, message: 'Pick the content type this relation points at.' });
+				out.push({ fieldId: id, target: `relation-target-${id}`, where, message: 'Choose the content type this relation points at.' });
 			} else if (f.relation_to === schema.name && f.relation_type !== 'has_many') {
 				out.push({ fieldId: id, target: `relation-type-${id}`, where, message: 'A relation to its own content type has to be Has many.' });
 			}

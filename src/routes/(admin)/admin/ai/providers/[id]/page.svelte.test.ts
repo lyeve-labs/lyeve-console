@@ -1,14 +1,31 @@
 // @vitest-environment jsdom
-import { cleanup, render } from '@testing-library/svelte';
+import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { tick } from 'svelte';
 import Page from './+page.svelte';
 import { fixtureLocalProvider, fixtureProvider, fixtureSettings } from '#lib/components/ai/test-support/fixtures.ts';
 import { outlineSkips } from '#lib/test-outline.ts';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+const forms = vi.hoisted(() => ({ submits: new Map<HTMLFormElement, unknown>() }));
+vi.mock('$app/forms', () => ({
+	enhance: (node: HTMLFormElement, submit?: unknown) => {
+		forms.submits.set(node, submit);
+		return { destroy: () => forms.submits.delete(node) };
+	},
+}));
 
 afterEach(cleanup);
+
+type After = (o: { result: { type: string }; update: () => Promise<void> }) => Promise<void>;
+
+/** Sends the form through its enhance handler, as a click would, and returns the result callback. */
+async function send(form: HTMLFormElement): Promise<After> {
+	const submit = forms.submits.get(form) as (o: { cancel: () => void; formData: FormData; formElement: HTMLFormElement }) => Promise<After>;
+	const after = await submit({ cancel: vi.fn(), formData: new FormData(form), formElement: form });
+	await tick();
+	return after;
+}
 
 function setup(overrides: Record<string, unknown> = {}, form: unknown = null) {
 	return render(Page, {
@@ -108,5 +125,21 @@ describe('heading outline', () => {
 		const { container } = setup({ gate: { state: 'locked' } });
 		expect(container.querySelector('[data-testid="not-enabled"]')).toBeTruthy();
 		expect(outlineSkips(container)).toEqual([]);
+	});
+});
+
+describe('provider checks that wait on the vendor', () => {
+	it.each([
+		['?/models', 'List models'],
+		['?/capabilities', 'Check'],
+	])('shows the button pending while %s runs', async (action, name) => {
+		setup();
+		const form = document.querySelector(`form[action="${action}"]`) as HTMLFormElement;
+		const button = screen.getByRole('button', { name });
+		const after = await send(form);
+		expect(button.getAttribute('aria-busy')).toBe('true');
+		await after({ result: { type: 'success' }, update: async () => {} });
+		await tick();
+		expect(button.getAttribute('aria-busy')).toBeNull();
 	});
 });

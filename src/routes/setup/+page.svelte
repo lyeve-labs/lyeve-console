@@ -17,6 +17,7 @@
 		StepIndicator,
 	} from '@lyeve-labs/ui-kit';
 	import { ICON } from '#lib/icon.ts';
+	import { liveText } from '#lib/live-text.svelte.ts';
 	import type { SetupModeStatus } from '#lib/api/setup.ts';
 	import type { ActionData, PageData } from './$types';
 	import type { SubmitFunction } from '$app/forms';
@@ -45,6 +46,14 @@
 	// StepIndicator counts from 1.
 	const currentStep = $derived(data.state === 'needs_admin' ? 3 : modeStatus ? 2 : 1);
 	const polling = $derived(data.state === 'unreachable' || (data.state === 'setup_mode' && modeStatus !== null));
+
+	const CHECKING = 'Checking again every few seconds.';
+	const RESTARTING = 'Waiting for the engine to restart with its settings.';
+
+	// Orca reads nothing from a status role, so the wait is spoken from a live
+	// region that fills once it has been in the page for two frames.
+	const waiting = $derived(!polling ? '' : data.state === 'unreachable' ? CHECKING : RESTARTING);
+	const spoken = liveText(() => waiting);
 
 	// Waiting on the engine is the one thing this screen cannot do for the
 	// operator, so it re-runs the load until the state moves on.
@@ -120,6 +129,7 @@
 <PageShell width="narrow" title="Set up LyEve" documentTitle="Set up" description="Finish configuring the engine and create the first super admin.">
 	<div class="space-y-6">
 		<StepIndicator {steps} current={currentStep} />
+		<div class="sr-only" aria-live="polite" aria-atomic="true" data-testid="setup-live">{spoken.text}</div>
 
 		{#if formError}
 			<Alert tone="danger">{formError}</Alert>
@@ -133,9 +143,9 @@
 						Could not reach the engine. If it is starting or restarting, this page continues once it is up. If
 						this lasts, check that the engine is running and that the console's CORE_INTERNAL_URL points at it.
 					</p>
-					<p class="flex items-center gap-2 text-sm text-muted" role="status">
+					<p class="flex items-center gap-2 text-sm text-muted">
 						<Spinner size={ICON.sm} />
-						Checking again every few seconds.
+						{CHECKING}
 					</p>
 				</div>
 			</Card>
@@ -217,9 +227,9 @@
 						</ul>
 					</div>
 
-					<p class="flex items-center gap-2 text-sm text-muted" role="status" data-state="waiting">
+					<p class="flex items-center gap-2 text-sm text-muted" data-state="waiting">
 						<Spinner size={ICON.sm} />
-						Waiting for the engine to restart with its settings.
+						{RESTARTING}
 					</p>
 				</div>
 			</Card>

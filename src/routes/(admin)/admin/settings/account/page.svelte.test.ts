@@ -20,7 +20,7 @@ import { outlineSkips } from '#lib/test-outline.ts';
 
 vi.mock('#lib/api/csrf.ts', () => ({ csrfHeaders: () => ({}) }));
 
-const data = { user: { email: 'a@b.c', roles: ['super_admin'] }, remembersDevices: false };
+const data = { user: { email: 'a@b.c', roles: ['super_admin'] }, remembersDevices: false, hasMfa: true };
 
 /** Answers both spellings of the query, so either direction reads the desktop. */
 function desktopPrefers(theme: 'light' | 'dark'): void {
@@ -32,8 +32,8 @@ function desktopPrefers(theme: 'light' | 'dark'): void {
 	}));
 }
 
-function mount() {
-	render(AccountPage, { props: { data } as never });
+function mount(over: Record<string, unknown> = {}) {
+	render(AccountPage, { props: { data: { ...data, ...over } } as never });
 }
 
 function segment(name: string): HTMLElement {
@@ -56,6 +56,22 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
+});
+
+describe('the account card', () => {
+	it('offers two-factor authentication only while the plugin runs', () => {
+		mount();
+		expect(screen.getByRole('link', { name: /Two-factor authentication/ })).toBeTruthy();
+		cleanup();
+		mount({ hasMfa: false });
+		expect(screen.queryByRole('link', { name: /Two-factor authentication/ })).toBeNull();
+	});
+
+	it('names each role in words, as the account menu does', () => {
+		mount();
+		expect(document.body.textContent).toContain('super admin');
+		expect(document.body.textContent).not.toContain('super_admin');
+	});
 });
 
 describe('appearance', () => {

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { tick } from 'svelte';
 import { render, cleanup, fireEvent } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,6 +10,13 @@ vi.mock('$app/state', () => appState);
 
 import ExportPage from './+page.svelte';
 import type { ExportJob, ExportSchedule } from '#lib/api/data-export.ts';
+
+// A live region reads its text only after it has been in the page for two
+// frames, the way the kit's notices do.
+async function twoFrames(): Promise<void> {
+	await new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+	await tick();
+}
 
 afterEach(cleanup);
 
@@ -218,7 +226,7 @@ describe('Data export schedules', () => {
 });
 
 describe('Data export while a job runs', () => {
-	it('says which step a running export is on and how far the writing got', () => {
+	it('says which step a running export is on and how far the writing got', async () => {
 		const { container } = render(ExportPage, {
 			props: props({
 				jobs: [job({ status: 'running', stage: 'writing', rows_processed: 340, rows_total: 1200 })],
@@ -227,6 +235,12 @@ describe('Data export while a job runs', () => {
 		expect(said(container)).toContain('Writing 340 of 1,200 entries');
 		expect(said(container)).toContain('One export is running');
 		expect(container.querySelector('[role="progressbar"]')).not.toBeNull();
+		expect(container.querySelector('[role="status"]')).toBeNull();
+		const live = container.querySelector('[data-testid="running-live"]') as HTMLElement;
+		expect(live.getAttribute('aria-live')).toBe('polite');
+		expect(live.textContent).toBe('');
+		await twoFrames();
+		expect(live.textContent).toBe('One export is running.');
 	});
 
 	it('says where a failed export stopped beside its reason', () => {

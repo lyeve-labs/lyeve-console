@@ -102,7 +102,7 @@ function setup(form: unknown = null, overrides: Record<string, unknown> = {}, co
 				schemas: [],
 				runs: { ok: true, value: { rows: [fixtureRun], limit: 20, offset: 0, total: 1, hasMore: false } },
 				versions: { ok: true, value: [] },
-				templates: fixtureTemplates,
+				templates: { ok: true, value: fixtureTemplates },
 				entitlements: licensed,
 				assistant: 'ready',
 				user: { roles: ['admin'] },
@@ -466,7 +466,7 @@ describe('flow editor page', () => {
 		});
 
 		it('says so when the engine offered no templates, and leaves the other two doors open', async () => {
-			const { getByRole, container } = setup(null, { flow: blank, templates: [] });
+			const { getByRole, container } = setup(null, { flow: blank, templates: { ok: true, value: [] } });
 			await fireEvent.click(getByRole('button', { name: 'Use a template' }));
 			const dialog = container.ownerDocument.querySelector('[role="dialog"]') as HTMLElement;
 			expect(dialog.textContent).toContain('No templates');
@@ -778,7 +778,7 @@ describe('flow editor page', () => {
 		const { getByRole, getByTestId, container, queryByText } = setup(null, { flow: { ...fixtureFlow, status: 'active', version: 1 } });
 		await fireEvent.click(getByRole('button', { name: 'Test' }));
 		await vi.waitFor(() => expect(getByTestId('flow-problems')).toBeTruthy());
-		expect(container.textContent).toContain('One element uses a feature that is not enabled on this instance: orders.');
+		expect(container.textContent).toContain('One element uses a feature that is not enabled on this engine: orders.');
 		expect(container.querySelector('[data-node-id="orders"]')?.className).toContain('border-danger');
 		expect(queryByText('payment_required')).toBeNull();
 	});
@@ -1013,7 +1013,7 @@ describe('flow editor refusal', () => {
 		};
 		const { getByTestId, getByRole, container } = setup(form);
 		const alert = getByTestId('flow-refusal');
-		expect(alert.textContent).toContain('Not enabled on this instance');
+		expect(alert.textContent).toContain('Not enabled on this engine');
 		expect(alert.textContent).toContain('the trigger, orders');
 		expect(getByRole('button', { name: /2 problems/ })).toBeTruthy();
 		// One notice, not the warn alert and the danger one both saying it.
@@ -1032,7 +1032,7 @@ describe('flow editor locked types', () => {
 	it('marks a template the plugin says is not enabled, and still offers it', async () => {
 		const templates = [{ ...fixtureTemplates[0], enabled: false }, { ...fixtureTemplates[1], enabled: true }];
 		const blank = { ...fixtureFlow, draft: { ...fixtureFlow.draft!, nodes: [], edges: [], notes: [] } };
-		const { getByRole, getByTestId, getAllByTestId } = setup(null, { flow: blank, templates });
+		const { getByRole, getByTestId, getAllByTestId } = setup(null, { flow: blank, templates: { ok: true, value: templates } });
 		await fireEvent.click(getByRole('button', { name: 'Use a template' }));
 		expect(getAllByTestId('template-locked')).toHaveLength(1);
 		const uses = [...getByTestId('template-gallery').querySelectorAll('button')].filter((b) => b.textContent?.trim() === 'Use');

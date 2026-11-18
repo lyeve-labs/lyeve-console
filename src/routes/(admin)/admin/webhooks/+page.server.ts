@@ -5,7 +5,7 @@ import type { DeadLetter, HttpClient, Webhook, WebhookDelivery } from '@lyeve-la
 import { getSchemas } from '@lyeve-labs/client-rest';
 import { deleteWebhook, testWebhook, listDeliveries, rotateSecret, retryDelivery, replayDeadLetter, dismissDeadLetter, deleteDeadLetter } from '@lyeve-labs/client-rest';
 import { actionFailure, tagged } from '#lib/server/action-error.ts';
-import { createWebhookRecord, updateWebhookRecord, webhookBodyFrom } from '#lib/api/webhook-options.ts';
+import { ROTATE_DETAIL, createWebhookRecord, updateWebhookRecord, webhookBodyFrom } from '#lib/api/webhook-options.ts';
 import { section, type Section } from '#lib/api/gate.ts';
 import { chipOf, pageOf, pageWindow, pastEndOffset, query, rowsOf, searchOf, statedTotal, withOffset, type ListEnvelope } from '#lib/api/list.ts';
 import { asked } from '#lib/server/asked.ts';
@@ -194,7 +194,9 @@ export const actions: Actions = {
 		}
 	},
 
-		'rotate-secret': async (event) => {
+	'rotate-secret': asked(
+		{ question: "Rotate this webhook's signing secret?", detail: ROTATE_DETAIL, label: 'Rotate' },
+		async (event) => {
 			// The plugin serves this write to a super admin only.
 			await requireRole(event, ['super_admin']);
 			const { request } = event;
@@ -215,6 +217,7 @@ export const actions: Actions = {
 				return tagged('rotate-secret', actionFailure(err, 'Could not rotate the signing secret. Try again.'));
 			}
 		},
+	),
 
 		'retry-delivery': async (event) => {
 			await requireUser(event);

@@ -48,6 +48,11 @@
 
 	const MAX_LOG_ENTRIES = 200;
 
+	// A message is whatever a plugin logged, so one line can be a whole
+	// request body. Two hundred of those held in the table would take the
+	// tab's memory, so each is cut when it arrives.
+	const MAX_MESSAGE_LENGTH = 2000;
+
 	// The stream reads the level and the keyword to build its URL, so it is
 	// reopened by the effect below whenever either changes. The keyword is
 	// applied after a pause, because a stream reopened on every keystroke would
@@ -84,10 +89,15 @@
 		});
 
 		es.addEventListener('log', (e: MessageEvent) => {
-			if (logPaused) return;
 			try {
 				const entry: LogEntry = JSON.parse(e.data as string);
-				logEntries = [entry, ...logEntries].slice(0, MAX_LOG_ENTRIES);
+				if (typeof entry.message === 'string' && entry.message.length > MAX_MESSAGE_LENGTH) {
+					entry.message = `${entry.message.slice(0, MAX_MESSAGE_LENGTH)}\u2026`;
+				}
+				// A pause holds the table still for reading, so what arrives
+				// meanwhile waits and joins the table on resume.
+				if (logPaused) held = [entry, ...held].slice(0, MAX_LOG_ENTRIES);
+				else logEntries = [entry, ...logEntries].slice(0, MAX_LOG_ENTRIES);
 			} catch { /* ignore malformed */ }
 		});
 
@@ -102,6 +112,16 @@
 				logState = 'connecting';
 			}
 		});
+	}
+
+	let held: LogEntry[] = [];
+
+	function togglePause() {
+		if (logPaused) {
+			logEntries = [...held, ...logEntries].slice(0, MAX_LOG_ENTRIES);
+			held = [];
+		}
+		logPaused = !logPaused;
 	}
 
 	function retryLogStream() {
@@ -203,10 +223,12 @@
 						onchange={setMinLevel}
 					/>
 				</div>
-				<Button variant={logPaused ? 'primary' : 'secondary'} onclick={() => { logPaused = !logPaused; }}>
-					{logPaused ? 'Resume' : 'Pause'}
+				<!-- One label with a pressed state, so a screen reader hears a toggle
+				     rather than a button whose name changes under it. -->
+				<Button variant={logPaused ? 'primary' : 'secondary'} aria-pressed={logPaused} onclick={togglePause}>
+					Pause
 				</Button>
-				<Button variant="secondary" onclick={() => { logEntries = []; }}>
+				<Button variant="secondary" onclick={() => { logEntries = []; held = []; }}>
 					<Trash2 size={ICON.sm} /> Clear
 				</Button>
 			{/snippet}

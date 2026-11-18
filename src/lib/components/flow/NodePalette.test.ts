@@ -90,7 +90,7 @@ describe('NodePalette lock marker', () => {
 		const onadd = vi.fn();
 		const { container } = render(NodePalette, { props: { catalog: withLocked(fixtureCatalog, ['content.query']), onadd } });
 		const row = container.querySelector('[data-node-type="content.query"]') as HTMLElement;
-		expect(row.querySelector('[data-testid="node-locked"]')?.textContent).toContain('Not enabled on this instance');
+		expect(row.querySelector('[data-testid="node-locked"]')?.textContent).toContain('Not enabled on this engine');
 		expect(row.getAttribute('draggable')).toBe('true');
 		await fireEvent.click(row);
 		expect(onadd).toHaveBeenCalledWith('content.query');

@@ -42,6 +42,9 @@
 	 * A replay sends each request again with the caller's own credentials in
 	 * place of the redacted ones, so the confirm says that before it runs.
 	 */
+	/** The replay that is running, by set and by whether it repeats writes, so only its button waits. */
+	let replaying = $state<string | null>(null);
+
 	function runSet(s: ReplaySet, writes: boolean): SubmitFunction {
 		return async ({ cancel, formData }) => {
 			const ok = await confirmDialog(
@@ -56,8 +59,13 @@
 				return;
 			}
 			formData.set(CONFIRM_FIELD, CONFIRMED);
+			replaying = `${s.id}:${writes}`;
 			return async ({ update }) => {
-				await update({ reset: false });
+				try {
+					await update({ reset: false });
+				} finally {
+					replaying = null;
+				}
 			};
 		};
 	}
@@ -90,7 +98,7 @@
 					<form method="POST" action="?/replaySet" class="mt-3" use:enhance={runSet(s, true)}>
 						<input type="hidden" name="id" value={s.id} />
 						<input type="hidden" name="confirm_mutating" value="true" />
-						<Button variant="secondary" size="sm" type="submit">Replay including writes</Button>
+						<Button variant="secondary" size="sm" type="submit" loading={replaying === `${s.id}:true`}>Replay including writes</Button>
 					</form>
 				{/if}
 			</Alert>
@@ -140,7 +148,7 @@
 									<div class="flex items-center justify-end gap-1">
 										<form method="POST" action="?/replaySet" use:enhance={runSet(s, false)}>
 											<input type="hidden" name="id" value={s.id} />
-											<Button variant="ghost" size="sm" type="submit" aria-label="Replay {s.name}" title="Replay">
+											<Button variant="ghost" size="sm" type="submit" loading={replaying === `${s.id}:false`} aria-label="Replay {s.name}" title="Replay">
 												<Play size={ICON.sm} />
 											</Button>
 										</form>

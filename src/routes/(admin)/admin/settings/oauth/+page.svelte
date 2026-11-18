@@ -103,11 +103,11 @@
 	/** Closes the drawer once the write lands. A failure keeps it open beside the message. */
 	const saveProvider: SubmitFunction = () => {
 		const subject = providerLabel(name);
-		const verb = editing ? 'Updated' : 'Created';
+		const verb = editing ? 'saved' : 'created';
 		return async ({ result, update }) => {
 			if (result.type !== 'failure') open = false;
 			await update();
-			if (result.type === 'success') toast.success(`${verb} ${subject}`);
+			if (result.type === 'success') toast.success(`${subject} ${verb}.`);
 		};
 	};
 

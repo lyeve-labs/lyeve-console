@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { tick } from 'svelte';
 import { render, cleanup, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,6 +10,13 @@ vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/impo
 import ImportsPage from './+page.svelte';
 import type { ImportJob } from '#lib/api/bulk-import.ts';
 import { outlineSkips } from '#lib/test-outline.ts';
+
+// A live region reads its text only after it has been in the page for two
+// frames, the way the kit's notices do.
+async function twoFrames(): Promise<void> {
+	await new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+	await tick();
+}
 
 afterEach(cleanup);
 
@@ -105,12 +113,20 @@ describe('Imports', () => {
 		expect(said(container)).toContain('25% of the 4 rows read');
 	});
 
-	it('follows a running import with its row count', () => {
+	it('follows a running import with its row count', async () => {
 		const { container } = render(ImportsPage, {
 			props: props({ jobs: [job({ status: 'running', processed_rows: 400, total_rows: 1000 })] }),
 		});
 		expect(said(container)).toContain('400 of 1,000 rows');
 		expect(said(container)).toContain('One import is running');
+		// Orca reads nothing from a status role, so the count is spoken from a
+		// polite region the page always draws.
+		expect(container.querySelector('[role="status"]')).toBeNull();
+		const live = container.querySelector('[data-testid="running-live"]') as HTMLElement;
+		expect(live.getAttribute('aria-live')).toBe('polite');
+		expect(live.textContent).toBe('');
+		await twoFrames();
+		expect(live.textContent).toBe('One import is running.');
 	});
 
 	it('marks a dry run as having written nothing', () => {

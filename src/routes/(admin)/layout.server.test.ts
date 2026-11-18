@@ -544,4 +544,20 @@ describe('the console frame', () => {
 		expect(result!.user).toEqual(user);
 		expect(result!.entitlements).toEqual(entitlements);
 	});
+
+	it.each([
+		[{ 'lyeve-admin-sidebar-collapsed': '1' }, true],
+		[{ 'lyeve-admin-sidebar-collapsed': '0' }, false],
+		[{}, null],
+	])('reads the stored sidebar choice from the cookie, so the server draws it (%o)', async (stored, collapsed) => {
+		const user = { id: 'u1', email: 'a@b.co', roles: ['editor'], tenant_id: 't', disabled: false, created_at: '' };
+		const fetch = vi.fn(async (url: string, _init: RequestInit) =>
+			String(url).includes('/api/admin/auth/me') ? json(user) : json({})
+		) as unknown as typeof globalThis.fetch;
+		const cookies = mockCookies({ '__Host-sys_session': 'valid-token', ...stored });
+
+		const result = await load({ fetch, depends: vi.fn(), cookies } as never);
+
+		expect(result!.sidebarCollapsed).toBe(collapsed);
+	});
 });

@@ -96,6 +96,44 @@ describe('the outcome of a decision', () => {
 	});
 });
 
+describe('the outcome is announced', () => {
+	// The form the reader pressed in unmounts, so focus falls to the page and
+	// nothing would be read out without a region that was already there.
+	it('speaks the outcome from a polite region that was on the page before the decision', async () => {
+		const { rerender } = render(DevicePage, { props: props({ view: 'pending', code: 'WDJB-MJHT', request }) });
+		const live = screen.getByTestId('device-live');
+		expect(live.getAttribute('aria-live')).toBe('polite');
+		expect(live.textContent).toBe('');
+		await rerender(props({ view: 'pending', code: 'WDJB-MJHT', request }, { outcome: 'approved' }));
+		expect(screen.getByTestId('device-live')).toBe(live);
+		expect(live.textContent).toContain('Device signed in.');
+	});
+
+	// A failure, a rate refusal and a 402 draw the kit's alert, which is read
+	// out already, so the region would say it twice.
+	it.each([{ outcome: 'error' }, { outcome: 'busy' }, { outcome: 'refused', refusal: 'The license does not include it.' }])(
+		'leaves the region empty for %o',
+		async (form) => {
+			const { rerender } = render(DevicePage, { props: props({ view: 'pending', code: 'WDJB-MJHT', request }) });
+			await rerender(props({ view: 'pending', code: 'WDJB-MJHT', request }, form));
+			expect(screen.getByTestId('device-live').textContent).toBe('');
+		},
+	);
+});
+
+describe('a decision that met an outage', () => {
+	// An engine 400, 422 or 500 lands here too, so the sentence claims
+	// nothing about whether the engine answered.
+	it('makes no claim about the device or the engine, and says how to check', () => {
+		render(DevicePage, { props: props({ view: 'pending', code: 'WDJB-MJHT', request }, { outcome: 'error' }) });
+		expect(document.body.textContent).toContain('Could not confirm the decision. Check whether the device was signed in, then try again.');
+		expect(screen.queryByText(OUTAGE.title)).toBeNull();
+		expect(document.body.textContent).not.toContain('reach the engine');
+		expect(document.body.textContent).not.toContain('nothing was changed');
+		expect(screen.getByRole('link', { name: 'Try again' }).getAttribute('href')).toBe('/admin/device?code=WDJB-MJHT');
+	});
+});
+
 describe('a refusal that is not an outage', () => {
 	it('says the engine is busy and retries the same code', () => {
 		render(DevicePage, { props: props({ view: 'busy', code: 'WDJB-MJHT' }) });

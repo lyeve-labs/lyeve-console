@@ -30,7 +30,7 @@
 					<SectionHeading level={3}>{block.title || `Latest in ${block.schema}`}</SectionHeading>
 				{/snippet}
 				{#if block.entries === null}
-					<p class="text-sm text-muted">{couldNotLoad('these entries', { reload: true })}</p>
+					<Alert tone="danger">{couldNotLoad('these entries', { reload: true })}</Alert>
 				{:else if block.entries.length === 0}
 					<p class="text-sm text-muted">No entries yet.</p>
 				{:else}

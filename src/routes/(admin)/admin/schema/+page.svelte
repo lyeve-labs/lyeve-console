@@ -891,7 +891,7 @@
 						<div class="flex h-full items-center justify-center">
 							<EmptyState
 								title="No content type selected"
-								description={canWrite ? 'Pick one from the list, or start one with New content type in the toolbar.' : 'Pick one from the list.'}
+								description={canWrite ? 'Choose one from the list, or start one with New content type in the toolbar.' : 'Choose one from the list.'}
 							>
 								{#snippet iconSnippet()}
 									<Table2 size={ICON.lg} />

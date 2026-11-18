@@ -34,7 +34,8 @@
 	import { rolesLabel } from '#lib/device-login.ts';
 	import { couldNotLoad } from '#lib/outage.ts';
 	import type { LayoutData } from './$types';
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
+	import { OLD_SIDEBAR_KEY, storeSidebarChoice } from '#lib/sidebar-choice.ts';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
@@ -122,32 +123,39 @@
 	const support = $derived(instance.supportLink());
 
 	// The sidebar is 240px the schema canvas and the content tables would
-	// rather have. Remembered per browser: a reader who puts it away wants it
-	// away on the next page too, and the server cannot know either way, so the
-	// first paint is always the expanded one.
-	const COLLAPSE_KEY = 'lyeve-admin-sidebar-collapsed';
-	let sidebarCollapsed = $state(false);
-	let restored = false;
+	// rather have. Remembered per browser in a cookie the layout's load reads,
+	// so the server draws the reader's choice and nothing moves at hydration.
+	let sidebarCollapsed = $state(untrack(() => data.sidebarCollapsed) ?? false);
+	let carried = false;
+
+	/**
+	 * Takes a choice stored before the cookie, once, so nobody loses it. The
+	 * sidebar can move on that one load.
+	 */
+	function takeOldChoice(): boolean {
+		try {
+			const old = localStorage.getItem(OLD_SIDEBAR_KEY);
+			localStorage.removeItem(OLD_SIDEBAR_KEY);
+			return old === '1';
+		} catch {
+			// A browser refusing storage has no old choice to carry.
+			return false;
+		}
+	}
 
 	$effect(() => {
-		// Read first and unconditionally: an effect that only writes the state
-		// on its first pass never depends on it, so it never runs again and the
-		// toggle stops being remembered.
+		// Read first and unconditionally, so the effect depends on the choice
+		// and runs again at every toggle.
 		const collapsed = sidebarCollapsed;
-		if (!restored) {
-			restored = true;
-			try {
-				sidebarCollapsed = localStorage.getItem(COLLAPSE_KEY) === '1';
-			} catch {
-				// A browser refusing storage is not a reason to lose the sidebar.
+		if (!carried) {
+			carried = true;
+			if (untrack(() => data.sidebarCollapsed) !== null) return;
+			if (takeOldChoice()) {
+				sidebarCollapsed = true;
+				return;
 			}
-			return;
 		}
-		try {
-			localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
-		} catch {
-			// Same: the toggle still works, it just does not survive a reload.
-		}
+		storeSidebarChoice(collapsed);
 	});
 
 	// A separate origin from the instance being administered, like the

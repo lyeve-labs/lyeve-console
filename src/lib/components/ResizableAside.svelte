@@ -307,7 +307,7 @@
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 			<div
-				class="absolute inset-y-0 z-10 hidden w-2 cursor-col-resize outline-none hover:bg-brand/40 focus-visible:bg-brand/40 {at.block} {side === 'start' ? '-right-1' : '-left-1'} {drag ? 'bg-brand/40' : ''}"
+				class="absolute inset-y-0 z-10 hidden w-2 cursor-col-resize outline-none hover:bg-brand/40 focus-visible:bg-brand {at.block} {side === 'start' ? '-right-1' : '-left-1'} {drag ? 'bg-brand/40' : ''}"
 				role="separator"
 				aria-orientation="vertical"
 				aria-label="Resize {label}"

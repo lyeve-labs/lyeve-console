@@ -287,11 +287,11 @@ describe('FlowInspector locked triggers', () => {
 		const { container, getByTestId } = render(FlowInspector, {
 			props: { definition: joinFlow, catalog: withLocked(fixtureCatalog, ['trigger.http']), selected: null, onchange: vi.fn(), onselect: vi.fn() },
 		});
-		expect(getByTestId('trigger-locked').textContent).toContain('not enabled on this instance');
+		expect(getByTestId('trigger-locked').textContent).toContain('not enabled on this engine');
 		await fireEvent.click(container.querySelector('#trigger-type') as HTMLElement);
 		const options = [...document.querySelectorAll('[role="option"]')].map((o) => o.textContent?.trim());
 		expect(options.slice(0, 3)).toEqual(['Schedule', 'Event', 'HTTP request']);
-		expect([...document.querySelectorAll('[role="group"]')].map((g) => g.getAttribute('aria-label'))).toEqual(['Not enabled on this instance', 'Email']);
+		expect([...document.querySelectorAll('[role="group"]')].map((g) => g.getAttribute('aria-label'))).toEqual(['Not enabled on this engine', 'Email']);
 	});
 
 	it('marks nothing when the trigger is enabled', () => {

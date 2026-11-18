@@ -7,10 +7,14 @@
 	import type { FlowTemplate } from '#lib/api/flows.ts';
 	import { triggerLabel } from '#lib/flow/triggers.ts';
 	import { ICON } from '#lib/icon.ts';
+	import GateNotice from '#lib/components/GateNotice.svelte';
+	import { GATE_OK, type Gate } from '#lib/api/gate.ts';
 
 	interface Props {
 		open?: boolean;
 		templates: FlowTemplate[];
+		/** How the templates read went. A failed read is never drawn as an empty gallery. */
+		gate?: Gate;
 		/** The flow as a template document, posted by "Save this flow as a template". */
 		flowDocument: string;
 		/** Whether the role may save a template. */
@@ -21,7 +25,7 @@
 		onuse: (template: FlowTemplate) => void;
 	}
 
-	let { open = $bindable(false), templates, flowDocument, canUpdate, canDelete, onuse }: Props = $props();
+	let { open = $bindable(false), templates, gate = GATE_OK, flowDocument, canUpdate, canDelete, onuse }: Props = $props();
 
 	// Templates the tenant keeps: this flow, a URL, a file or a paste.
 	let templateError = $state('');
@@ -81,7 +85,9 @@
 				</div>
 			</Collapsible>
 		{/if}
-		{#if templates.length === 0}
+		{#if gate.state !== 'ok'}
+			<GateNotice {gate} title="Flow templates" absent="Flow templates are not included in this build." />
+		{:else if templates.length === 0}
 			<EmptyState title="No templates" description="Start from the palette or import a definition instead." />
 		{:else}
 			<div class="grid gap-3 sm:grid-cols-2" data-testid="template-gallery">
@@ -92,7 +98,7 @@
 								<Badge tone="brand" size="sm">Saved</Badge>
 							{/if}
 							{#if t.enabled === false}
-								<span data-testid="template-locked"><Badge tone="neutral" size="sm"><Lock size={ICON.xs} aria-hidden="true" /> Not enabled on this instance</Badge></span>
+								<span data-testid="template-locked"><Badge tone="neutral" size="sm"><Lock size={ICON.xs} aria-hidden="true" /> Not enabled on this engine</Badge></span>
 							{/if}
 							<span class="text-xs text-faint">{triggerLabel(t.definition.trigger.type)} trigger, {t.definition.nodes.length} node{t.definition.nodes.length === 1 ? '' : 's'}</span>
 							{#if t.source === 'saved' && canDelete}

@@ -27,7 +27,7 @@
 <div class="flex h-8 items-end gap-0.5" aria-hidden="true" data-testid="trend-bars">
 	{#each days as n, i (dates[i])}
 		<div class="flex h-full flex-1 items-end" title="{formatDate(dates[i], dates[i])}: {formatCount(n)} changed">
-			<div class="w-full rounded-t-xs {n === 0 ? 'h-px bg-line' : 'bg-brand'}" style={n === 0 ? undefined : `height: ${height(n)}%`}></div>
+			<div class="w-full rounded-t-xs transition-[height] duration-progress {n === 0 ? 'h-px bg-line' : 'bg-brand'}" style={n === 0 ? undefined : `height: ${height(n)}%`}></div>
 		</div>
 	{/each}
 </div>

@@ -1,14 +1,31 @@
 // @vitest-environment jsdom
 import { render, cleanup, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { tick } from 'svelte';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+const forms = vi.hoisted(() => ({ submits: new Map<HTMLFormElement, unknown>() }));
+vi.mock('$app/forms', () => ({
+	enhance: (node: HTMLFormElement, submit?: unknown) => {
+		forms.submits.set(node, submit);
+		return { destroy: () => forms.submits.delete(node) };
+	},
+}));
 
 import SettingsPage from './+page.svelte';
 import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(cleanup);
+
+type After = (o: { result: { type: string }; update: () => Promise<void> }) => Promise<void>;
+
+/** Sends the form through its enhance handler, as a click would, and returns the result callback. */
+async function send(form: HTMLFormElement): Promise<After> {
+	const submit = forms.submits.get(form) as (o: { cancel: () => void; formData: FormData; formElement: HTMLFormElement }) => Promise<After>;
+	const after = await submit({ cancel: vi.fn(), formData: new FormData(form), formElement: form });
+	await tick();
+	return after;
+}
 
 const ok = (value: unknown) => ({ ok: true, value });
 
@@ -124,5 +141,18 @@ describe('heading outline', () => {
 	it('steps its headings down one level at a time', () => {
 		const { container } = render(SettingsPage, { props: { data: data({ canReindex: true }) as never, form: null } });
 		expect(outlineSkips(container)).toEqual([]);
+	});
+});
+
+describe('Search settings rebuild', () => {
+	it('shows Rebuild index pending while the index is rebuilt', async () => {
+		render(SettingsPage, { props: { data: data({ canReindex: true }), form: null } as never });
+		const form = document.querySelector('form[action="?/reindex"]') as HTMLFormElement;
+		const button = screen.getByRole('button', { name: 'Rebuild index' });
+		const after = await send(form);
+		expect(button.getAttribute('aria-busy')).toBe('true');
+		await after({ result: { type: 'success' }, update: async () => {} });
+		await tick();
+		expect(button.getAttribute('aria-busy')).toBeNull();
 	});
 });

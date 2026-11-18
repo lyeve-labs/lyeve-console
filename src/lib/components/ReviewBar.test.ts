@@ -225,7 +225,7 @@ describe('ReviewBar, picking the assignees', () => {
 describe('ReviewBar with no definitions to offer', () => {
 	it('says the definitions could not be read instead of hiding the start form', () => {
 		render(ReviewBar, { props: { entryId: 'e1', assignment: null, stages: [], definitionsFailed: true } });
-		expect(screen.getByText(/Could not load the review definitions/)).toBeTruthy();
+		expect(screen.getByText(/Could not load the review definitions/).closest('[role="alert"]')).not.toBeNull();
 	});
 
 	it('says nothing more for a reader who may not start a review', () => {

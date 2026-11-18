@@ -325,6 +325,18 @@ function postEvent(fields: Record<string, string>, answer: (url: string) => Resp
 }
 
 describe('rotating a webhook signing secret', () => {
+	it('rotates nothing on a post that skipped the question, and asks it on the page', async () => {
+		const fetch = vi.fn();
+		const body = new FormData();
+		body.set('id', 'w1');
+		const url = new URL('http://localhost/admin/webhooks?/rotate-secret');
+		const out = (await actions['rotate-secret']({ fetch, cookies: mockCookies(), url, request: new Request(url, { method: 'POST', body }) } as never)) as {
+			unconfirmed: { question: string; label: string };
+		};
+		expect(fetch).not.toHaveBeenCalled();
+		expect(out.unconfirmed).toMatchObject({ question: "Rotate this webhook's signing secret?", label: 'Rotate' });
+	});
+
 	// The plugin answers the webhook and the secret it generated, and shows
 	// the secret this once.
 	it('hands the page the new secret and the webhook it signs for', async () => {

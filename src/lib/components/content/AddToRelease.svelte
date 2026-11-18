@@ -57,7 +57,7 @@
 			</p>
 		{/if}
 		{#if failed}
-			<p class="text-sm text-muted">{couldNotLoad('releases', { reload: true })}</p>
+			<Alert tone="danger">{couldNotLoad('releases', { reload: true })}</Alert>
 		{:else if options.length === 0}
 			<p class="text-sm text-muted">
 				No release is open for changes. <a class="text-brand" href="/admin/releases">Create one</a> to publish this entry with others.

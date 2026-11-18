@@ -9,6 +9,7 @@ import { NO_LICENSING, readLicensing } from '#lib/api/license.ts';
 import { readRunningPlugins, runningFromStatus, type RunningRead } from '#lib/api/plugins-running.ts';
 import { PLUGIN } from '#lib/plugin-names.ts';
 import { notRunning, pluginSetOf } from '#lib/plugins.ts';
+import { SIDEBAR_COOKIE, sidebarChoice } from '#lib/sidebar-choice.ts';
 
 /**
  * Roles the engine lets read and apply the DDL queue. The queue holds every
@@ -111,5 +112,7 @@ export const load: LayoutServerLoad = async (event) => {
 	// replaces the public copy the root layout would read by address.
 	const brand = brandOf(customization.settings.brand);
 
-	return { user, entitlements, plugins, pluginStatus: status, migrations, customization, licensing, brand };
+	const sidebarCollapsed = sidebarChoice(event.cookies.get(SIDEBAR_COOKIE));
+
+	return { user, entitlements, plugins, pluginStatus: status, migrations, customization, licensing, brand, sidebarCollapsed };
 };

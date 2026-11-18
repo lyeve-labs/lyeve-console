@@ -2,7 +2,10 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tick } from 'svelte';
+vi.mock('$app/state', () => ({ page: { url: new URL('http://admin.test/admin/flows/f1') } }));
+
 import FlowTemplateGallery from './FlowTemplateGallery.svelte';
+import type { Gate } from '#lib/api/gate.ts';
 import { fixtureTemplates } from '#lib/flow/fixtures.ts';
 
 type After = (o: { result: { type: string; data?: unknown }; update: (o?: unknown) => Promise<void>; formElement: HTMLFormElement }) => Promise<void>;
@@ -36,7 +39,7 @@ beforeEach(() => {
 
 const saved = { ...fixtureTemplates[1], source: 'saved' as const };
 
-function setup(props: Partial<{ templates: typeof fixtureTemplates; canUpdate: boolean; canDelete: boolean }> = {}) {
+function setup(props: Partial<{ templates: typeof fixtureTemplates; gate: Gate; canUpdate: boolean; canDelete: boolean }> = {}) {
 	const onuse = vi.fn();
 	const result = render(FlowTemplateGallery, {
 		props: { open: true, templates: fixtureTemplates, flowDocument: '{"slug":"orders_sync"}', canUpdate: true, canDelete: true, onuse, ...props },
@@ -64,6 +67,19 @@ describe('FlowTemplateGallery', () => {
 		const { queryByTestId } = setup({ templates: [] });
 		expect(queryByTestId('template-gallery')).toBeNull();
 		expect(document.body.textContent).toContain('No templates');
+	});
+
+	it('draws a failed read as a failure with a retry, never as no templates', () => {
+		const { queryByTestId, getByRole } = setup({ templates: [], gate: { state: 'error', message: 'Could not load templates.' } });
+		expect(queryByTestId('template-gallery')).toBeNull();
+		expect(document.body.textContent).toContain('Could not load templates.');
+		expect(document.body.textContent).not.toContain('No templates');
+		expect(getByRole('link', { name: 'Try again' }).getAttribute('href')).toBe('/admin/flows/f1');
+	});
+
+	it('names the feature in a heading of its own when templates are not enabled', () => {
+		const { getByRole } = setup({ templates: [], gate: { state: 'locked', upgradeUrl: '' } });
+		expect(getByRole('heading', { name: 'Flow templates' })).toBeTruthy();
 	});
 
 	it('posts this flow as a template, and draws no save for a role that cannot update', async () => {

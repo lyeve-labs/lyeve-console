@@ -39,6 +39,14 @@ function setup(props: Props = {}) {
 }
 
 describe('ResizableAside', () => {
+	// The tinted handle measures under 3:1 on both surfaces, so a focused
+	// handle takes the full brand color.
+	it('marks a focused handle in the full brand color', () => {
+		const handle = setup().handle() as HTMLElement;
+		expect(handle.classList).toContain('focus-visible:bg-brand');
+		expect(handle.classList).not.toContain('focus-visible:bg-brand/40');
+	});
+
 	it('opens at its default width, or at the remembered width and lock', () => {
 		expect(setup().widthOf()).toBe('260px');
 		cleanup();

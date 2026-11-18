@@ -217,6 +217,57 @@ describe('the result of a webhook test', () => {
 		await rerender(props({ testResult: { id: 'w1', success: true, status_code: 200, message: 'OK' } }));
 		expect(container.querySelector('tbody')?.textContent).toContain('HTTP 200: OK');
 	});
+
+	it('stops waiting when applying the test result throws', async () => {
+		const { getByRole } = render(WebhooksPage, { props: props(null) });
+		const entry = forms.submits.find((f) => f.node.getAttribute('action') === '?/test');
+		const after = (await (entry?.submit as () => Promise<(o: unknown) => Promise<void>>)()) as (o: unknown) => Promise<void>;
+		await after({ result: { type: 'error' }, update: async () => { throw new Error('navigation failed'); } }).catch(() => {});
+		await tick();
+		expect(getByRole('button', { name: 'Test Ship it' }).getAttribute('aria-busy')).toBeNull();
+	});
+
+	// The same result twice writes the same text, which a live region does
+	// not read out again unless it was emptied in between.
+	it('speaks a second test with the same result again', async () => {
+		const { getByTestId, rerender } = render(WebhooksPage, { props: props(null) });
+		const live = getByTestId('webhook-test-live');
+		const result = { id: 'w1', success: true, status_code: 200, message: 'OK' };
+		await rerender(props({ testResult: { ...result } }));
+		await tick();
+		const seen: string[] = [];
+		const watch = new MutationObserver(() => seen.push(live.textContent ?? ''));
+		watch.observe(live, { childList: true, characterData: true, subtree: true });
+		await rerender(props({ testResult: { ...result } }));
+		await tick();
+		await tick();
+		watch.disconnect();
+		expect(seen).toContain('');
+		expect(live.textContent).toBe('Test of Ship it succeeded. HTTP 200: OK');
+	});
+
+	it('shows Test pending while the receiver is called', async () => {
+		const { getByRole } = render(WebhooksPage, { props: props(null) });
+		const entry = forms.submits.find((f) => f.node.getAttribute('action') === '?/test');
+		const after = (await (entry?.submit as () => Promise<(o: unknown) => Promise<void>>)()) as (o: unknown) => Promise<void>;
+		await tick();
+		const button = getByRole('button', { name: 'Test Ship it' });
+		expect(button.getAttribute('aria-busy')).toBe('true');
+		await after({ result: { type: 'success' }, update: async () => {} });
+		await tick();
+		expect(button.getAttribute('aria-busy')).toBeNull();
+	});
+
+	// The result line mounts under the row, and a region created holding its
+	// text is not announced, so the result is also spoken from one drawn empty.
+	it('speaks the result from a polite region that was on the page before the test', async () => {
+		const { getByTestId, rerender } = render(WebhooksPage, { props: props(null) });
+		const live = getByTestId('webhook-test-live');
+		expect(live.getAttribute('aria-live')).toBe('polite');
+		expect(live.textContent).toBe('');
+		await rerender(props({ testResult: { id: 'w1', success: false, status_code: 502, message: 'Bad gateway' } }));
+		expect(live.textContent).toBe('Test of Ship it failed. HTTP 502: Bad gateway');
+	});
 });
 
 /*
@@ -233,15 +284,37 @@ describe('a rotated signing secret', () => {
 
 	type After = (input: { result: { type: string; data?: unknown }; update: () => Promise<void> }) => Promise<void>;
 
-	/** Runs the rotation's submit with a result, as enhance would. */
+	type Submit = (input: { cancel: () => void; formData: FormData }) => Promise<After | undefined>;
+	const rotation = () => forms.submits.find((f) => f.node.getAttribute('action') === '?/rotate-secret' && f.node.isConnected)?.submit as Submit;
+
+	/** Runs the rotation's submit with a result, as enhance would, once the reader agrees. */
 	async function rotate(result: { type: string; data?: unknown }) {
-		const entry = forms.submits.find((f) => f.node.getAttribute('action') === '?/rotate-secret' && f.node.isConnected);
-		const after = (await (entry?.submit as () => Promise<After>)()) as After;
+		kit.confirm.mockResolvedValue(true);
+		const after = (await rotation()({ cancel: vi.fn(), formData: new FormData() })) as After;
 		const update = vi.fn(async () => {});
 		await after({ result, update });
 		await tick();
 		return update;
 	}
+
+	// The old secret stops verifying the moment a new one is made, so
+	// receivers start refusing deliveries. One click never does that.
+	it('asks before rotating, names the webhook, and sends the answer with the post', async () => {
+		render(WebhooksPage, { props: props(null) });
+		const cancel = vi.fn();
+		await rotation()({ cancel, formData: new FormData() });
+		expect(kit.confirm).toHaveBeenCalledWith(
+			'Rotate the signing secret for Ship it?',
+			expect.stringContaining('rejects deliveries'),
+			expect.objectContaining({ confirmLabel: 'Rotate' }),
+		);
+		expect(cancel).toHaveBeenCalled();
+
+		kit.confirm.mockResolvedValue(true);
+		const formData = new FormData();
+		await rotation()({ cancel: vi.fn(), formData });
+		expect(formData.get('confirmed')).toBe('yes');
+	});
 
 	const secretShown = () =>
 		[...document.body.querySelectorAll('[role="dialog"] input')].some((i) => (i as HTMLInputElement).value === 'c0ffee-secret');
