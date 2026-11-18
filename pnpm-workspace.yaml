@@ -11,3 +11,14 @@ minimumReleaseAgeStrict: true
 # pnpm only warns when the running Node misses engines.node, so this makes
 # an install on an older Node fail instead.
 engineStrict: true
+
+# GHSA-fc5q-39xc-vjpf: a ReDoS in picomatch through 4.0.7 when an attacker
+# writes the glob pattern, with no fixed release yet. picomatch runs only in
+# the build and test tooling (vite, vitest, tinyglobby, fdir, svelte-check),
+# whose patterns come from this repository's configuration. The server bundle
+# holds none of its code, and the runtime image has no node_modules.
+# src/lib/audit-exceptions.test.ts fails once shipped source imports a glob
+# matcher and once a picomatch above 4.0.7 is installed.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-fc5q-39xc-vjpf
