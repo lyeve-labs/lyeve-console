@@ -138,3 +138,23 @@ describe('a delivery retry result arriving', () => {
 		}
 	});
 });
+
+// A cut sentence hid the part of a failure that says what to fix, and a
+// title is never shown on a touch screen.
+describe('the full text of a failure', () => {
+	const long = 'dial tcp 203.0.113.7:443: connect: connection refused by the receiver';
+
+	it('shows a delivery error in full on its row', () => {
+		render(DeliveriesDrawer, { props: props(read([{ ...delivery('d2', false), error: long }])) });
+		const row = document.body.querySelector('tbody tr') as HTMLElement;
+		expect(row.textContent).toContain(long);
+	});
+
+	it('shows a retry result in full under its row', async () => {
+		const listed = read([delivery('d2', false)]);
+		const { rerender } = render(DeliveriesDrawer, { props: props(listed) });
+		await rerender(props(listed, { retryResult: { delivery_id: 'd2', success: false, status_code: 502, message: long } }));
+		const row = document.body.querySelector('tbody tr') as HTMLElement;
+		expect(row.textContent?.split(long).length).toBe(2);
+	});
+});
