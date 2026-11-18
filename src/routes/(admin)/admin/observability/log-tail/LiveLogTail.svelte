@@ -216,7 +216,7 @@
 	{:else}
 		{#if logState === 'refused'}
 			<Alert tone="warn" title="Could not connect to the live log tail">
-				<p>The connection was refused, and it does not reconnect on its own. Choose Try again.</p>
+				<p>The connection was refused. Choose Try again to reconnect.</p>
 				<div class="mt-3">
 					<Button variant="secondary" size="sm" onclick={retryLogStream}>
 						<RefreshCw size={ICON.sm} aria-hidden="true" /> Try again
@@ -227,8 +227,7 @@
 
 		<ListToolbar label="Filter the log tail">
 			{#snippet search()}
-				<label for="tail-keyword" class="sr-only">Filter</label>
-				<Input id="tail-keyword" bind:value={logKeyword} placeholder="Keyword, then Enter" onkeydown={applyKeyword} />
+				<Input id="tail-keyword" label="Keyword" hint="Press Enter to apply." bind:value={logKeyword} onkeydown={applyKeyword} />
 			{/snippet}
 			{#snippet filters()}
 				<div id="tail-level">
@@ -263,6 +262,14 @@
 		{:else}
 			<div bind:this={scroller} class="max-h-96 overflow-y-auto overscroll-contain rounded-xl [overflow-anchor:none]">
 				<Table hoverable label="Live log tail">
+					<thead>
+						<tr>
+							<th scope="col">Time</th>
+							<th scope="col">Level</th>
+							<th scope="col">Message</th>
+							<th scope="col">Source</th>
+						</tr>
+					</thead>
 					<tbody>
 						{#each logEntries as entry (entry.sequence)}
 							<tr class="align-top" transition:motion.fade>

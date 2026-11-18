@@ -234,3 +234,30 @@ describe('LiveLogTail resume', () => {
 		}
 	});
 });
+
+describe('LiveLogTail words', () => {
+	it('labels the keyword box and says how to apply it, with no placeholder to remember', () => {
+		const { getByLabelText, container } = render(LiveLogTail, { props: { running: true } });
+		const box = getByLabelText('Keyword') as HTMLInputElement;
+		expect(box.id).toBe('tail-keyword');
+		expect(box.getAttribute('placeholder') ?? '').toBe('');
+		expect(container.textContent).toContain('Press Enter to apply.');
+	});
+
+	it('tells the reader to reconnect with Try again, and the product does not speak', async () => {
+		const { container } = render(LiveLogTail, { props: { running: true } });
+		last().readyState = StubEventSource.CLOSED;
+		last().emit('error');
+		await tick();
+		expect(container.textContent).toContain('The connection was refused. Choose Try again to reconnect.');
+	});
+
+	it('names the four columns of the table', async () => {
+		const { container } = render(LiveLogTail, { props: { running: true } });
+		last().emit('log', entry('first'));
+		await tick();
+		const heads = [...container.querySelectorAll('thead th')].map((th) => th.textContent?.trim());
+		expect(heads).toEqual(['Time', 'Level', 'Message', 'Source']);
+		for (const th of container.querySelectorAll('thead th')) expect(th.getAttribute('scope')).toBe('col');
+	});
+});
