@@ -20,6 +20,13 @@ async function answered(administrator: boolean, ...answer: (() => Response)[]) {
 }
 
 describe('AssistantPanel', () => {
+	it('marks its heading Beta', () => {
+		render(AssistantPanel, { props: { session: new AssistantSession(), administrator: false, page } });
+		const heading = screen.getByRole('heading', { level: 2 });
+		expect(heading.textContent?.replace(/\s+/g, ' ').trim()).toBe('Assistant Beta');
+		expect(within(heading).getByText('Beta')).toBeTruthy();
+	});
+
 	it('opens on its empty state', () => {
 		render(AssistantPanel, { props: { session: new AssistantSession(), administrator: false, page } });
 		expect(screen.getByText('Ask the assistant')).toBeTruthy();

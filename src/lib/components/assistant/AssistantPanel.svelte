@@ -85,7 +85,12 @@
 <div class="flex min-h-0 flex-1 flex-col" data-testid="assistant-panel">
 	<!-- Below lg the shell draws the drawer's own title and close. -->
 	<div class="hidden h-14 shrink-0 items-center gap-2 border-b border-line px-4 lg:flex">
-		<h2 class="flex-1 text-sm font-semibold text-fg">Assistant</h2>
+		<h2 class="flex-1 text-sm font-semibold text-fg">
+			<span class="flex items-center gap-2">
+				Assistant
+				<Badge tone="violet" size="sm">Beta</Badge>
+			</span>
+		</h2>
 		{#if session.turns.length > 0}
 			<Button variant="ghost" size="icon" aria-label="New conversation" onclick={() => session.reset()}>
 				<SquarePen size={ICON.sm} aria-hidden="true" />

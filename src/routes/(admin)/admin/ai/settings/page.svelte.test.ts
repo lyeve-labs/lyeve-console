@@ -24,6 +24,12 @@ function setup(overrides: Record<string, unknown> = {}, form: unknown = null) {
 }
 
 describe('AI settings page', () => {
+	it('marks the page Beta beside its title', () => {
+		const { getByTestId } = setup();
+		expect(getByTestId('page-title').textContent?.trim()).toBe('AI settings');
+		expect(getByTestId('page-actions').textContent).toContain('Beta');
+	});
+
 	it('shows both switches with the plain words under the tenant switch', () => {
 		const { getByTestId, getByLabelText } = setup();
 		expect(getByLabelText('AI for this tenant').getAttribute('aria-checked')).toBe('true');

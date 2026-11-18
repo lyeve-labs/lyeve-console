@@ -15,6 +15,10 @@
 	description="Edit the system prompt for each use case. The shipped text is version 0. Each save creates a new version, and each transcript shows the version it used."
 	width="wide"
 >
+	{#snippet actions()}
+		<Badge tone="violet" size="sm">Beta</Badge>
+	{/snippet}
+
 	<AiSection level={2} tab="prompts" gate={data.gate} layoutGate={data.aiLayoutGate} noun="prompts">
 		{#if data.prompts.length === 0}
 			<EmptyState level={2} title="No use cases yet">

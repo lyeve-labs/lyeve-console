@@ -32,6 +32,10 @@
 </script>
 
 <PageShell title="AI settings" description="Turn AI on or off for this tenant, and choose whether and how long transcripts are kept." width="wide">
+	{#snippet actions()}
+		<Badge tone="violet" size="sm">Beta</Badge>
+	{/snippet}
+
 	<AiSection level={2} tab="settings" gate={GATE_OK} layoutGate={data.aiLayoutGate} noun="settings">
 		{#if settings}
 			<section class="flex flex-col gap-4">

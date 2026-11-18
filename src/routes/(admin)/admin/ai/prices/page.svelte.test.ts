@@ -49,6 +49,12 @@ async function saveOnce() {
 }
 
 describe('AI prices page', () => {
+	it('marks the page Beta beside its title', () => {
+		const { getByTestId } = setup();
+		expect(getByTestId('page-title').textContent?.trim()).toBe('AI prices');
+		expect(getByTestId('page-actions').textContent).toContain('Beta');
+	});
+
 	it('edits a row in the drawer, keyed by its kind and model, and offers Save', async () => {
 		const { container, getByLabelText } = setup();
 		const row = container.querySelector('tbody tr') as HTMLElement;

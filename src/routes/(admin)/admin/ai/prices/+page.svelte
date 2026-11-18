@@ -116,6 +116,7 @@
 	width="wide"
 >
 	{#snippet actions()}
+		<Badge tone="violet" size="sm">Beta</Badge>
 		{#if canWrite}
 			<Button variant="primary" size="sm" onclick={openCreate}>
 				<Plus size={ICON.sm} aria-hidden="true" /> New price

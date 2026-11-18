@@ -47,6 +47,12 @@ function draft(over: Partial<AssistantDraft['draft']> = {}): AssistantDraft {
 }
 
 describe('AssistantPanel', () => {
+	it('marks its heading Beta', () => {
+		const { getByRole } = setup();
+		const heading = getByRole('heading', { level: 3, name: /^Assistant/ });
+		expect(heading.textContent?.replace(/\s+/g, ' ').trim()).toBe('Assistant Beta');
+	});
+
 	it('posts the prompt with the flow on the canvas and the conversation it continues', () => {
 		const { form } = setup({ prompt: 'Add a retry', conversationId: 'c-7' });
 		expect(form.getAttribute('action')).toBe('?/assist');

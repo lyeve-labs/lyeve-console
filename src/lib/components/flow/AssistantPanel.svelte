@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Alert, Button, Spinner, Textarea } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Button, Spinner, Textarea } from '@lyeve-labs/ui-kit';
 	import { Check, WandSparkles, X } from '@lucide/svelte';
 	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
@@ -102,6 +102,12 @@
 		data-testid="assist-form"
 		onkeydown={sendOnEnter}
 	>
+		<h3 class="text-sm font-semibold text-fg">
+			<span class="flex items-center gap-2">
+				Assistant
+				<Badge tone="violet" size="sm">Beta</Badge>
+			</span>
+		</h3>
 		<input type="hidden" name="definition" value={definitionJSON} />
 		<input type="hidden" name="conversation_id" value={conversationId} />
 		<Textarea

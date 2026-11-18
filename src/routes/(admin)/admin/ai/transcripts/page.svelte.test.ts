@@ -33,6 +33,12 @@ function setup(overrides: Record<string, unknown> = {}) {
 }
 
 describe('AI transcripts page', () => {
+	it('marks the page Beta beside its title', () => {
+		const { getByTestId } = setup();
+		expect(getByTestId('page-title').textContent?.trim()).toBe('AI transcripts');
+		expect(getByTestId('page-actions').textContent).toContain('Beta');
+	});
+
 	it('lists use case, kind, caller, model, message count and time per row', () => {
 		const { container } = setup({ transcripts: [fixtureTranscript], total: 1 });
 		const row = container.querySelector('tbody tr') as HTMLElement;
