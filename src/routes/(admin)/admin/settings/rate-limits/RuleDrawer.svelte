@@ -100,11 +100,11 @@
 
 	const saveRule: SubmitFunction = () => {
 		const subject = endpoint;
-		const verb = editing ? 'Saved' : 'Created';
+		const verb = editing ? 'saved' : 'created';
 		return async ({ result, update }) => {
 			if (result.type !== 'failure') open = false;
 			await update();
-			if (result.type === 'success') toast.success(`${verb} ${subject}`);
+			if (result.type === 'success') toast.success(`${subject} ${verb}.`);
 		};
 	};
 

@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const forms = vi.hoisted(() => ({
 	submits: new Map<HTMLFormElement, (input: unknown) => unknown>(),
 	confirm: vi.fn(async () => false),
+	success: vi.fn(),
 }));
 vi.mock('$app/forms', () => ({
 	enhance: (node: HTMLFormElement, submit: (input: unknown) => unknown) => {
@@ -17,6 +18,7 @@ vi.mock('$app/forms', () => ({
 vi.mock('@lyeve-labs/ui-kit', async (original) => ({
 	...(await original<typeof import('@lyeve-labs/ui-kit')>()),
 	confirm: forms.confirm,
+	toast: { success: forms.success },
 }));
 
 import TenantsPage from './+page.svelte';
@@ -76,6 +78,7 @@ describe('Tenants enable and disable', () => {
 
 		await after({ result: { type: 'success' }, update: async () => {} });
 		expect(button.getAttribute('aria-busy')).toBeNull();
+		expect(forms.success).toHaveBeenLastCalledWith('Tenant 0 disabled.');
 	});
 
 	it('stops waiting when applying the result throws', async () => {

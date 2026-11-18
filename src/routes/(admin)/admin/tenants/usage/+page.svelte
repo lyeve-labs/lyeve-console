@@ -162,7 +162,7 @@
 			return async ({ result, update }) => {
 				await update();
 				if (result.type === 'success') {
-					toast.success(decision === 'approve' ? 'Approved' : 'Denied');
+					toast.success(decision === 'approve' ? 'Request approved.' : 'Request denied.');
 				}
 			};
 		};
