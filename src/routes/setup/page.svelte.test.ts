@@ -8,6 +8,7 @@ vi.mock('$app/navigation', () => nav);
 
 import SetupPage from './+page.svelte';
 import type { SetupModeStatus } from '#lib/api/setup.ts';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 // A live region reads its text only after it has been in the page for two
 // frames, the way the kit's notices do.
@@ -314,5 +315,22 @@ describe('the restart commands', () => {
 		expect(compose.readOnly).toBe(true);
 		expect(compose.value).toBe('docker compose up -d');
 		expect((getByLabelText('Kubernetes') as HTMLTextAreaElement).value).toBe('kubectl rollout restart deployment/<engine deployment>');
+	});
+});
+
+describe('Setup page: moving between steps', () => {
+	it('fades the step it leaves out and the next in, in the same place', async () => {
+		const { container, rerender } = render(SetupPage, { props: { data: data('setup_mode'), form: null } });
+		const before = container.querySelector('[data-state]')!.closest('.row-start-1') as HTMLElement;
+		expect(before.parentElement?.classList).toContain('grid');
+		const watch = watchTransitions();
+		try {
+			await rerender({ data: data('setup_mode'), form: { status: fullStatus } as never });
+			const cells = [...container.querySelectorAll('.row-start-1.col-start-1')];
+			expect(watch.left).toContain(before);
+			expect(watch.entered.some((el) => cells.includes(el) && el !== before)).toBe(true);
+		} finally {
+			watch.stop();
+		}
 	});
 });

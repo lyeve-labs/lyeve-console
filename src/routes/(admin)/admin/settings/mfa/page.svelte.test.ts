@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Page from './+page.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 vi.mock('qrcode', () => ({ default: { toDataURL: vi.fn(async () => 'data:image/png;base64,AA') } }));
@@ -254,5 +255,21 @@ describe('a first factor on a sign-in that is not recent', () => {
 		expect(container.textContent).toContain('Sign in again to add a second factor.');
 		expect(getByRole('button', { name: 'Sign in again' }).closest('form')?.getAttribute('action')).toBe('/logout');
 		expect(container.querySelector('input[name="password"]')).toBeNull();
+	});
+});
+
+describe('moving between the steps', () => {
+	it('fades the step it leaves out and the next in, in the same place', async () => {
+		const { container, rerender } = setup(false);
+		const before = container.querySelector('form[action="?/setup"]')!.closest('.row-start-1') as HTMLElement;
+		expect(before.parentElement?.classList).toContain('grid');
+		const watch = watchTransitions();
+		try {
+			await rerender({ data: { mfa: { ok: true, value: { enabled: false, hasPasskeys: false } }, entitlements: licensed }, form: { step: 'password' } } as never);
+			expect(watch.left).toContain(before);
+			expect(watch.entered.some((el) => el.classList.contains('row-start-1') && el !== before)).toBe(true);
+		} finally {
+			watch.stop();
+		}
 	});
 });

@@ -15,6 +15,7 @@
 		SectionHeading,
 		Spinner,
 		StepIndicator,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { ICON } from '#lib/icon.ts';
 	import { liveText } from '#lib/live-text.svelte.ts';
@@ -135,170 +136,180 @@
 			<Alert tone="danger">{formError}</Alert>
 		{/if}
 
-		{#if data.state === 'unreachable'}
-			<Card pad="lg">
-				<div class="space-y-4" data-state="unreachable">
-					<SectionHeading level={2}>Waiting for the engine</SectionHeading>
-					<p class="text-muted">
-						Could not reach the engine. If it is starting or restarting, this page continues once it is up. If
-						this lasts, check that the engine is running and that the console's CORE_INTERNAL_URL points at it.
-					</p>
-					<p class="flex items-center gap-2 text-sm text-muted">
-						<Spinner size={ICON.sm} />
-						{CHECKING}
-					</p>
-				</div>
-			</Card>
-		{:else if data.state === 'setup_mode' && !modeStatus}
-			<Card pad="lg">
-				<form method="POST" action="?/status" use:enhance={read.enhance} class="space-y-5" data-state="setup-mode">
-					<SectionHeading level={2}>The engine is missing settings</SectionHeading>
-					<p class="text-muted">
-						The engine started in setup mode and shows only this screen until its configuration is complete.
-						Enter the setup token to see what to set.
-					</p>
-					{#if data.tokenSource === null}
-						<Alert tone="warn">
-							This engine has no setup token, so setup cannot continue. Set LYEVE_SETUP_TOKEN in its environment and
-							restart it, or restart it to print a new one-time token to its log.
-						</Alert>
-					{/if}
-					<PasswordInput id="setup_token" name="setup_token" label="Setup token" autocomplete="off" required hint={tokenHint} />
-					<Button type="submit" variant="primary" full loading={read.pending}>Show what to set</Button>
-				</form>
-			</Card>
-		{:else if data.state === 'setup_mode' && modeStatus}
-			<Card pad="lg">
-				<div class="space-y-5" data-state="configure">
-					<SectionHeading level={2}>Set these, then restart the engine</SectionHeading>
-					<ul class="space-y-2 text-sm text-fg">
-						{#if missingDatabase}
-							<li data-missing="database">
-								<span class="font-medium">Database.</span>
-								<span class="text-muted">
-									DATABASE_URL points the engine at PostgreSQL, MySQL or SQL Server. Replace the placeholder with your
-									own connection string.
-								</span>
-							</li>
-						{/if}
-						{#each generatedSecrets as secret (secret.env)}
-							<li data-missing="secret">
-								<span class="font-medium">{secret.env}.</span>
-								<span class="text-muted">A new random value for it is shown below.</span>
-							</li>
-						{/each}
-					</ul>
-
-					{#if modeStatus.secrets_included}
-						<Alert tone="warn">
-							These secrets are shown only once. Copy them now and store them with the engine's settings.
-							The engine does not save them, so they are gone after it restarts.
-						</Alert>
-					{:else if generatedSecrets.length > 0}
-						<Alert tone="warn">
-							The generated secrets were already shown once. Restart the engine to generate new ones, or set values
-							of your own.
-						</Alert>
-					{/if}
-
-					<div class="space-y-2">
-						<div class="flex items-center justify-between gap-3">
-							<SectionHeading level={3}>Environment variables</SectionHeading>
-							<CopyButton value={modeStatus.env} label="Copy" />
+		<div class="grid">
+			{#if data.state === 'unreachable'}
+				<div class="col-start-1 row-start-1 min-w-0" transition:motion.fade>
+					<Card pad="lg">
+						<div class="space-y-4" data-state="unreachable">
+							<SectionHeading level={2}>Waiting for the engine</SectionHeading>
+							<p class="text-muted">
+								Could not reach the engine. If it is starting or restarting, this page continues once it is up. If
+								this lasts, check that the engine is running and that the console's CORE_INTERNAL_URL points at it.
+							</p>
+							<p class="flex items-center gap-2 text-sm text-muted">
+								<Spinner size={ICON.sm} />
+								{CHECKING}
+							</p>
 						</div>
-						<pre class="overflow-x-auto rounded-md border border-line bg-surface-2 p-3 text-xs text-fg" data-block="env">{modeStatus.env}</pre>
-					</div>
-
-					<div class="space-y-2">
-						<div class="flex items-center justify-between gap-3">
-							<SectionHeading level={3}>Or in lyeve.yaml</SectionHeading>
-							<CopyButton value={modeStatus.yaml} label="Copy" />
-						</div>
-						<pre class="overflow-x-auto rounded-md border border-line bg-surface-2 p-3 text-xs text-fg" data-block="yaml">{modeStatus.yaml}</pre>
-					</div>
-
-					<div class="space-y-2">
-						<SectionHeading level={3}>Restart the engine</SectionHeading>
-						<p class="text-sm text-muted">The engine cannot restart itself. Use the command for how you run it:</p>
-						<ul class="space-y-2">
-							{#each modeStatus.restart as step (step.label)}
-								<li><CopyField label={step.label} value={step.command} wrap /></li>
-							{/each}
-						</ul>
-					</div>
-
-					<p class="flex items-center gap-2 text-sm text-muted" data-state="waiting">
-						<Spinner size={ICON.sm} />
-						{RESTARTING}
-					</p>
+					</Card>
 				</div>
-			</Card>
-		{:else}
-			<Card pad="lg">
-				<form
-					method="POST"
-					action="?/create"
-					novalidate
-					use:enhance={createAdmin}
-					class="space-y-5"
-					data-state="create-admin"
-				>
-					<Alert tone="success">The engine is configured and its database is reachable.</Alert>
-					<SectionHeading level={2}>Create the first super admin</SectionHeading>
-					{#if data.tokenSource === null}
-						<Alert tone="warn">
-							This engine has no setup token, so setup cannot continue. Set LYEVE_SETUP_TOKEN in its environment and
-							restart it, or restart it to print a new one-time token to its log.
-						</Alert>
-					{:else if data.tokenSource === 'log'}
-						<p class="text-sm text-muted">
-							If the engine restarted since you last read its log, it printed a new token. Use the latest one.
-						</p>
-					{/if}
+			{:else if data.state === 'setup_mode' && !modeStatus}
+				<div class="col-start-1 row-start-1 min-w-0" transition:motion.fade>
+					<Card pad="lg">
+						<form method="POST" action="?/status" use:enhance={read.enhance} class="space-y-5" data-state="setup-mode">
+							<SectionHeading level={2}>The engine is missing settings</SectionHeading>
+							<p class="text-muted">
+								The engine started in setup mode and shows only this screen until its configuration is complete.
+								Enter the setup token to see what to set.
+							</p>
+							{#if data.tokenSource === null}
+								<Alert tone="warn">
+									This engine has no setup token, so setup cannot continue. Set LYEVE_SETUP_TOKEN in its environment and
+									restart it, or restart it to print a new one-time token to its log.
+								</Alert>
+							{/if}
+							<PasswordInput id="setup_token" name="setup_token" label="Setup token" autocomplete="off" required hint={tokenHint} />
+							<Button type="submit" variant="primary" full loading={read.pending}>Show what to set</Button>
+						</form>
+					</Card>
+				</div>
+			{:else if data.state === 'setup_mode' && modeStatus}
+				<div class="col-start-1 row-start-1 min-w-0" transition:motion.fade>
+					<Card pad="lg">
+						<div class="space-y-5" data-state="configure">
+							<SectionHeading level={2}>Set these, then restart the engine</SectionHeading>
+							<ul class="space-y-2 text-sm text-fg">
+								{#if missingDatabase}
+									<li data-missing="database">
+										<span class="font-medium">Database.</span>
+										<span class="text-muted">
+											DATABASE_URL points the engine at PostgreSQL, MySQL or SQL Server. Replace the placeholder with your
+											own connection string.
+										</span>
+									</li>
+								{/if}
+								{#each generatedSecrets as secret (secret.env)}
+									<li data-missing="secret">
+										<span class="font-medium">{secret.env}.</span>
+										<span class="text-muted">A new random value for it is shown below.</span>
+									</li>
+								{/each}
+							</ul>
 
-					<PasswordInput
-						id="setup_token"
-						name="setup_token"
-						label="Setup token"
-						autocomplete="off"
-						required
-						hint={tokenHint}
-						error={errors.setup_token}
-					/>
+							{#if modeStatus.secrets_included}
+								<Alert tone="warn">
+									These secrets are shown only once. Copy them now and store them with the engine's settings.
+									The engine does not save them, so they are gone after it restarts.
+								</Alert>
+							{:else if generatedSecrets.length > 0}
+								<Alert tone="warn">
+									The generated secrets were already shown once. Restart the engine to generate new ones, or set values
+									of your own.
+								</Alert>
+							{/if}
 
-					<Input
-						id="email"
-						name="email"
-						type="email"
-						label="Email"
-						placeholder="admin@example.com"
-						autocomplete="email"
-						required
-						error={errors.email}
-					/>
+							<div class="space-y-2">
+								<div class="flex items-center justify-between gap-3">
+									<SectionHeading level={3}>Environment variables</SectionHeading>
+									<CopyButton value={modeStatus.env} label="Copy" />
+								</div>
+								<pre class="overflow-x-auto rounded-md border border-line bg-surface-2 p-3 text-xs text-fg" data-block="env">{modeStatus.env}</pre>
+							</div>
 
-					<PasswordInput
-						id="password"
-						name="password"
-						label="Password"
-						autocomplete="new-password"
-						required
-						hint="It must meet the engine's password policy. If it breaks a rule, you'll see which one."
-						error={errors.password ?? serverFields.password}
-					/>
+							<div class="space-y-2">
+								<div class="flex items-center justify-between gap-3">
+									<SectionHeading level={3}>Or in lyeve.yaml</SectionHeading>
+									<CopyButton value={modeStatus.yaml} label="Copy" />
+								</div>
+								<pre class="overflow-x-auto rounded-md border border-line bg-surface-2 p-3 text-xs text-fg" data-block="yaml">{modeStatus.yaml}</pre>
+							</div>
 
-					<PasswordInput
-						id="confirm"
-						name="confirm"
-						label="Confirm password"
-						autocomplete="new-password"
-						required
-						error={errors.confirm}
-					/>
+							<div class="space-y-2">
+								<SectionHeading level={3}>Restart the engine</SectionHeading>
+								<p class="text-sm text-muted">The engine cannot restart itself. Use the command for how you run it:</p>
+								<ul class="space-y-2">
+									{#each modeStatus.restart as step (step.label)}
+										<li><CopyField label={step.label} value={step.command} wrap /></li>
+									{/each}
+								</ul>
+							</div>
 
-					<Button type="submit" variant="primary" full loading={create.pending}>Create super admin account</Button>
-				</form>
-			</Card>
-		{/if}
+							<p class="flex items-center gap-2 text-sm text-muted" data-state="waiting">
+								<Spinner size={ICON.sm} />
+								{RESTARTING}
+							</p>
+						</div>
+					</Card>
+				</div>
+			{:else}
+				<div class="col-start-1 row-start-1 min-w-0" transition:motion.fade>
+					<Card pad="lg">
+						<form
+							method="POST"
+							action="?/create"
+							novalidate
+							use:enhance={createAdmin}
+							class="space-y-5"
+							data-state="create-admin"
+						>
+							<Alert tone="success">The engine is configured and its database is reachable.</Alert>
+							<SectionHeading level={2}>Create the first super admin</SectionHeading>
+							{#if data.tokenSource === null}
+								<Alert tone="warn">
+									This engine has no setup token, so setup cannot continue. Set LYEVE_SETUP_TOKEN in its environment and
+									restart it, or restart it to print a new one-time token to its log.
+								</Alert>
+							{:else if data.tokenSource === 'log'}
+								<p class="text-sm text-muted">
+									If the engine restarted since you last read its log, it printed a new token. Use the latest one.
+								</p>
+							{/if}
+
+							<PasswordInput
+								id="setup_token"
+								name="setup_token"
+								label="Setup token"
+								autocomplete="off"
+								required
+								hint={tokenHint}
+								error={errors.setup_token}
+							/>
+
+							<Input
+								id="email"
+								name="email"
+								type="email"
+								label="Email"
+								placeholder="admin@example.com"
+								autocomplete="email"
+								required
+								error={errors.email}
+							/>
+
+							<PasswordInput
+								id="password"
+								name="password"
+								label="Password"
+								autocomplete="new-password"
+								required
+								hint="It must meet the engine's password policy. If it breaks a rule, you'll see which one."
+								error={errors.password ?? serverFields.password}
+							/>
+
+							<PasswordInput
+								id="confirm"
+								name="confirm"
+								label="Confirm password"
+								autocomplete="new-password"
+								required
+								error={errors.confirm}
+							/>
+
+							<Button type="submit" variant="primary" full loading={create.pending}>Create super admin account</Button>
+						</form>
+					</Card>
+				</div>
+			{/if}
+		</div>
 	</div>
 </PageShell>
