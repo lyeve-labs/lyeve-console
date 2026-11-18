@@ -112,7 +112,7 @@
 								id="retention-fixed"
 								label="Retention"
 								value={retentionDays(fixedRetention.value)}
-								hint="On the free tier, transcripts are kept for {retentionDays(fixedRetention.value)}, and the AI license lets you choose how long."
+								hint={fixedRetention.reason}
 								disabled
 								class="sm:max-w-xs"
 							/>

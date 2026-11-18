@@ -91,9 +91,9 @@ describe('AI providers page', () => {
 		expect(container.querySelector('table')).toBeNull();
 	});
 
-	// Without the AI license a tenant holds one provider. The page says so
-	// before a create would be refused, and the create control waits.
-	describe('the free tier', () => {
+	// Under a ceiling the list states, the page says so before a create would
+	// be refused, and the create control waits.
+	describe('the provider ceiling', () => {
 		const CEILING = "You're using 1 of 1 AI providers.";
 
 		it('shows the ceiling and holds the create control once the one provider exists', () => {

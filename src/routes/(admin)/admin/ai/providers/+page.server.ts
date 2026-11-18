@@ -6,9 +6,7 @@ import { GATE_OK, section } from '#lib/api/gate.ts';
 import { readProviderForm } from '#lib/server/ai-provider-form.ts';
 import { pageWindow, pastEndOffset, withOffset } from '#lib/api/list.ts';
 import {
-	aiFreeTier,
 	createProvider,
-	FREE_PROVIDERS,
 	getAiDashboard,
 	listProviders,
 	type AiDashboard,
@@ -36,16 +34,9 @@ export const load: PageServerLoad = async (event) => {
 	// The spend row is a courtesy. A page of providers stands without it.
 	const dashboard: AiDashboard | null = gate.state === 'ok' ? await getAiDashboard(client).catch(() => null) : null;
 
-	// The ceiling the list answers, 0 meaning none. A plugin older than that
-	// answer states none, so the free tier is read from the settings answer
-	// the layout already holds and from what the entitlements withhold.
-	let ceiling: ProviderCeiling = { limit: 0, upgradeUrl: '' };
-	if (page.ok && page.value.ceiling) {
-		ceiling = page.value.ceiling;
-	} else {
-		const { aiSettings, entitlements } = await event.parent();
-		if (aiFreeTier(aiSettings, entitlements?.withheld)) ceiling = { limit: FREE_PROVIDERS, upgradeUrl: '' };
-	}
+	// The ceiling the list answers, 0 meaning none. An answer that states
+	// none shows none, and a create past a ceiling draws the engine's refusal.
+	const ceiling: ProviderCeiling = page.ok && page.value.ceiling ? page.value.ceiling : { limit: 0, upgradeUrl: '' };
 
 	return { gate, providers, total, limit, offset, hasMore, dashboard, ceiling };
 };

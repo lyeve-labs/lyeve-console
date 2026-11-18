@@ -111,7 +111,7 @@ describe('MCP settings page', () => {
 		expect(getByLabelText('Disconnect grace@example.com')).toBeTruthy();
 	});
 
-	it('says how many agents can connect on the free tier while there is room', () => {
+	it('says how many agents can connect while there is room', () => {
 		const { getByTestId, getByText, queryByText } = setup();
 		expect(getByTestId('mcp-agent-limit').textContent).toContain('You can connect 1 agent.');
 		expect(getByText('No connected agents yet')).toBeTruthy();
