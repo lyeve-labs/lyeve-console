@@ -368,6 +368,17 @@ describe('permissions page role disclosure', () => {
 		expect(container.querySelectorAll('#rules-editor tr').length).toBe(0);
 	});
 
+	it('turns its chevron on the movement rung', async () => {
+		const { container } = setupWith([rule('editor', 'article', ['read'])], ['article']);
+		const button = container.querySelector('button[aria-controls="rules-editor"]') as HTMLButtonElement;
+		const chevron = button.querySelector('svg') as SVGElement;
+		expect(chevron.classList).toContain('transition-transform');
+		expect(chevron.classList).toContain('duration-base');
+		expect(chevron.classList).toContain('rotate-90');
+		await fireEvent.click(button);
+		expect(chevron.classList).not.toContain('rotate-90');
+	});
+
 	it('renders no row for a role that holds no rule', () => {
 		// One row per role and schema would bury a dozen rules among hundreds
 		// of empty rows, so only a rule draws a row.

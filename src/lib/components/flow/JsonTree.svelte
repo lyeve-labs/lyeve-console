@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronDown, ChevronRight } from '@lucide/svelte';
+	import { ChevronRight } from '@lucide/svelte';
 	import JsonTree from './JsonTree.svelte';
 	import { ICON } from '#lib/icon.ts';
 
@@ -52,7 +52,7 @@
 			aria-expanded={open}
 			onclick={() => (open = !open)}
 		>
-			{#if open}<ChevronDown size={ICON.xs} class="shrink-0 text-faint" />{:else}<ChevronRight size={ICON.xs} class="shrink-0 text-faint" />{/if}
+			<ChevronRight size={ICON.xs} class="shrink-0 text-faint transition-transform duration-base {open ? 'rotate-90' : ''}" />
 			{#if name !== undefined}<span class="text-muted">{name}:</span>{/if}
 			<span class="text-faint">{summary}</span>
 		</button>

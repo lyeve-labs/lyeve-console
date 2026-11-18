@@ -292,7 +292,7 @@
 									>
 										<ChevronRight
 											size={ICON.sm}
-											class="shrink-0 text-faint transition-transform {open
+											class="shrink-0 text-faint transition-transform duration-base {open
 												? 'rotate-90'
 												: ''}"
 										/>

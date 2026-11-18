@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button, Tabs } from '@lyeve-labs/ui-kit';
-	import { ChevronDown, ChevronUp } from '@lucide/svelte';
+	import { ChevronUp } from '@lucide/svelte';
 	import type { Snippet } from 'svelte';
 	import { clampDrawerHeight, readDrawerHeight, writeDrawerHeight } from '#lib/flow/drawer.ts';
 	import { ICON } from '#lib/icon.ts';
@@ -121,7 +121,7 @@
 			aria-expanded={open}
 			onclick={() => (open = !open)}
 		>
-			{#if open}<ChevronDown size={ICON.sm} />{:else}<ChevronUp size={ICON.sm} />{/if}
+			<ChevronUp size={ICON.sm} class="transition-transform duration-base {open ? 'rotate-180' : ''}" />
 		</Button>
 	</div>
 	{#if open}

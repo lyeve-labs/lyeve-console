@@ -28,6 +28,18 @@ describe('EditorDrawer', () => {
 		expect(handle.classList).toContain('transition-colors');
 	});
 
+	it('turns one chevron on the movement rung as it shuts and opens', async () => {
+		const { getByRole } = setup();
+		const toggle = getByRole('button', { name: 'Collapse drawer' });
+		const chevron = toggle.querySelector('svg') as SVGElement;
+		expect(chevron.classList).toContain('transition-transform');
+		expect(chevron.classList).toContain('duration-base');
+		expect(chevron.classList).toContain('rotate-180');
+		await fireEvent.click(toggle);
+		expect(toggle.querySelector('svg')).toBe(chevron);
+		expect(chevron.classList).not.toContain('rotate-180');
+	});
+
 	it('marks a focused handle in the full brand color', () => {
 		const { handle } = setup();
 		expect(handle.classList).toContain('focus-visible:bg-brand');

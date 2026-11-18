@@ -19,6 +19,18 @@ describe('JsonTree', () => {
 		expect(screen.getByRole('button', { name: /order/ }).classList).toContain('transition-colors');
 	});
 
+	it('turns one chevron on the movement rung as a node opens and shuts', async () => {
+		render(JsonTree, { props: { value: { order: { customer: { email: 'a@example.com' } } } } });
+		const toggle = screen.getByRole('button', { name: /customer/ });
+		const chevron = toggle.querySelector('svg') as SVGElement;
+		expect(chevron.classList).toContain('transition-transform');
+		expect(chevron.classList).toContain('duration-base');
+		expect(chevron.classList).not.toContain('rotate-90');
+		await fireEvent.click(toggle);
+		expect(toggle.querySelector('svg')).toBe(chevron);
+		expect(chevron.classList).toContain('rotate-90');
+	});
+
 	it('keeps a third level folded until it is opened', async () => {
 		const { container } = render(JsonTree, { props: { value: { order: { customer: { email: 'a@example.com' } } } } });
 		expect(container.textContent).not.toContain('a@example.com');
