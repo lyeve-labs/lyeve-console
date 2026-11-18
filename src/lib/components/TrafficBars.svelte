@@ -68,7 +68,7 @@
 		{#each hours as h (h.hour)}
 			<div class="flex h-full flex-1 items-end" title={describe(h)}>
 				<div
-					class="w-full rounded-t-xs {fill(h)}"
+					class="w-full rounded-t-xs transition-[height] duration-progress {fill(h)}"
 					style="height: {height(h)}%"
 					data-requests={h.requests}
 				></div>

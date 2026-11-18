@@ -125,7 +125,7 @@
 											<li class="grid grid-cols-[6rem_minmax(0,1fr)_7rem] items-center gap-3 text-sm">
 												<span class="text-muted">{share.label}</span>
 												<span class="h-2 overflow-hidden rounded-full bg-surface-2" aria-hidden="true">
-													<span class="block h-full rounded-full bg-brand" style="width: {share.percent}%"></span>
+													<span class="block h-full rounded-full bg-brand transition-[width] duration-progress" style="width: {share.percent}%"></span>
 												</span>
 												<span class="text-right font-mono text-xs text-fg">{money(share.amount, summary.currency)}</span>
 											</li>

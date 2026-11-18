@@ -60,6 +60,13 @@ describe('tenant costs page', () => {
 		expect(screen.queryByTestId('not-enabled')).toBeNull();
 	});
 
+	it('moves each share bar to its new width on the progress rung', () => {
+		render(CostsPage, { props: { data: data(), form: null } });
+		const fills = [...screen.getByTestId('cost-summary').querySelectorAll<HTMLElement>('[style*="width"]')];
+		expect(fills.length).toBeGreaterThan(0);
+		for (const fill of fills) expect(fill.className).toContain('transition-[width] duration-progress');
+	});
+
 	it('shows only that the feature is not enabled when the ledger refused, and no control', () => {
 		render(CostsPage, {
 			props: { data: data({ enabled: false, summary: null, dashboard: null }), form: null },
