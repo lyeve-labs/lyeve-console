@@ -175,3 +175,17 @@ describe('Try again', () => {
 		}
 	});
 });
+
+// The console's notice is the kit's, with the console's words, so the two
+// can never draw a refusal differently.
+describe('GateNotice drawing', () => {
+	it.each<Gate>([
+		{ state: 'absent' },
+		{ state: 'unavailable' },
+		{ state: 'error', message: 'Could not load the cache.' },
+		{ state: 'locked', upgradeUrl: '' },
+	])('draws the %o state through the kit notice, which marks its state', (gate) => {
+		const { container } = mount(gate);
+		expect(container.querySelector(`[data-state="${gate.state}"]`)).not.toBeNull();
+	});
+});
