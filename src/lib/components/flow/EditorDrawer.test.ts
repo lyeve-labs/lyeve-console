@@ -23,6 +23,12 @@ function setup() {
 }
 
 describe('EditorDrawer', () => {
+	it('marks a focused handle in the full brand color', () => {
+		const { handle } = setup();
+		expect(handle.classList).toContain('focus-visible:bg-brand');
+		expect(handle.classList).not.toContain('focus-visible:bg-brand/40');
+	});
+
 	it('opens at the remembered height', () => {
 		localStorage.setItem(DRAWER_HEIGHT_KEY, '400');
 		const { drawer } = setup();
