@@ -421,11 +421,11 @@
 			{:else if result.count === 0}
 				<!-- The commonest way a rule is wrong. It saves, it enables, and
 				     it hides nothing, and no other screen would ever say so. -->
-				<Alert tone="warn">
+				<Alert tone="warn" announce>
 					The pattern matched nothing in this sample, so it would mask nothing.
 				</Alert>
 			{:else}
-				<Alert tone="success">
+				<Alert tone="success" announce>
 					{result.count}
 					{plural(result.count, 'match', 'matches')}.
 				</Alert>

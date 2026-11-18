@@ -327,7 +327,7 @@
 							Fix every problem below, here or in the bundle, before you apply. Nothing is written until then.
 						</Alert>
 					{:else if plan.changes === 0}
-						<Alert tone="success">This engine already matches the bundle.</Alert>
+						<Alert tone="success" announce>This engine already matches the bundle.</Alert>
 					{/if}
 
 					{#each sections as name (name)}
