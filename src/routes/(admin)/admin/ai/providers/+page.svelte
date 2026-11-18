@@ -34,6 +34,7 @@
 
 <PageShell title="AI providers" description="Set up the models this tenant can call and the keys used to call them." width="wide">
 	{#snippet actions()}
+		<Badge tone="violet" size="sm">Beta</Badge>
 		{#if canWrite}
 			<Button variant="primary" size="sm" onclick={() => (open = true)} disabled={ceiling !== null}>
 				<Plus size={ICON.sm} aria-hidden="true" /> New provider

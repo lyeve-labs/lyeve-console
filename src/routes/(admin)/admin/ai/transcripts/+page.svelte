@@ -28,6 +28,10 @@
 	description="Review every AI request from routes, flow nodes, the editor assistant and other plugins, with the prompt and the reply."
 	width="wide"
 >
+	{#snippet actions()}
+		<Badge tone="violet" size="sm">Beta</Badge>
+	{/snippet}
+
 	<AiSection level={2} tab="transcripts" gate={data.gate} layoutGate={data.aiLayoutGate} noun="transcripts">
 		{#if !data.aiSettings?.transcripts_enabled}
 			<p class="text-xs text-warn" role="status">

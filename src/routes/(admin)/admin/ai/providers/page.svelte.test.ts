@@ -32,6 +32,12 @@ function setup(overrides: Record<string, unknown> = {}, form: unknown = null) {
 }
 
 describe('AI providers page', () => {
+	it('marks the page Beta beside its title', () => {
+		const { getByTestId } = setup();
+		expect(getByTestId('page-title').textContent?.trim()).toBe('AI providers');
+		expect(getByTestId('page-actions').textContent).toContain('Beta');
+	});
+
 	it('lists kind, priority, modalities and the key state per row', () => {
 		const { container } = setup({ providers: [fixtureProvider, fixtureLocalProvider], total: 2 });
 		const rows = container.querySelectorAll('tbody tr');
