@@ -43,4 +43,14 @@ describe('ConfirmFallback', () => {
 		expect(screen.getByRole('button', { name: 'Delete' }).getAttribute('type')).toBe('submit');
 		expect(screen.getByRole('link', { name: 'Cancel' }).getAttribute('href')).toBe('/admin/webhooks');
 	});
+
+	it('cancels back to the list as it was, with its filters and page and without the action', () => {
+		state.page.url = new URL('http://admin.test/admin/webhooks?q=ship&status=failing&offset=50&/delete');
+		state.page.form = {
+			unconfirmed: { question: 'Delete this webhook?', label: 'Delete', action: '/admin/webhooks?/delete', fields: [['id', 'wh-1']] },
+		};
+		render(ConfirmFallback);
+		expect(screen.getByRole('link', { name: 'Cancel' }).getAttribute('href')).toBe('/admin/webhooks?q=ship&status=failing&offset=50');
+		state.page.url = new URL('http://admin.test/admin/webhooks?/delete');
+	});
 });
