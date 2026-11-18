@@ -387,7 +387,7 @@
 	<div class="flex items-center gap-3 rounded-lg border border-dashed border-line/50 bg-surface/60 p-3">
 		<span class="w-3.5 shrink-0"></span>
 		<div class="min-w-0 flex-1">
-			<span class="text-sm font-medium text-brand/70">{name}</span>
+			<span class="text-sm font-medium text-brand">{name}</span>
 			<span class="ms-2 text-xs text-faint italic">{role}</span>
 			<p class="mt-0.5 text-xs text-faint">{note}</p>
 		</div>

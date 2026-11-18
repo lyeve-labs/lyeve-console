@@ -57,6 +57,16 @@ function setup(over: Record<string, unknown> = {}) {
 }
 
 describe('SchemaEditor', () => {
+	// The tinted brand measures 3.79 to 1 on white and 3.39 on the raised
+	// surface in the light theme, under the 4.5 a 14px name needs. The dashed
+	// border is what marks the column as planned.
+	it('names a planned column in the full brand color', () => {
+		setup({ schema: { name: 'notes', display_name: 'Notes', fields: [] }, saved: null, isNewSchema: true });
+		const name = screen.getByText('id', { selector: 'span' });
+		expect(name.classList).toContain('text-brand');
+		expect(name.classList).not.toContain('text-brand/70');
+	});
+
 	it('adds a field and a typed relation to the schema it was handed', async () => {
 		const { props } = setup();
 		await fireEvent.click(screen.getByRole('button', { name: 'Add field' }));
