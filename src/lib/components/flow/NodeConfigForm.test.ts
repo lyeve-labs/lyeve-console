@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import NodeConfigForm from './NodeConfigForm.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 import { fixtureCatalog, fixtureEventTypes, fixtureFlowOptions, fixtureGroupedEventTypes } from '#lib/flow/fixtures.ts';
 import type { JsonSchema, SchemaOption } from '#lib/flow/types.ts';
 
@@ -82,6 +83,24 @@ describe('NodeConfigForm', () => {
 		await fireEvent.input(draft, { target: { value: 'x-b' } });
 		await fireEvent.keyDown(draft, { key: 'Enter' });
 		expect(onchange).toHaveBeenLastCalledWith({ headers: { 'x-a': '1', 'x-b': '' } });
+	});
+
+	it('keeps each map entry with its row when one above it is removed, and plays the removed row out', async () => {
+		const onchange = vi.fn();
+		const { getByRole, getAllByLabelText, rerender } = render(NodeConfigForm, {
+			props: { schema: respond.config_schema, value: { headers: { 'x-a': '1', 'x-b': '2' } }, onchange },
+		});
+		const [first, second] = getAllByLabelText('Value') as HTMLInputElement[];
+		const removedRow = first.parentElement!.closest('.flex.items-end')!;
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(getByRole('button', { name: 'Remove x-a' }));
+			await rerender({ value: onchange.mock.lastCall![0] });
+			expect(watch.left).toContain(removedRow);
+			expect(getAllByLabelText('Value')).toEqual([second]);
+		} finally {
+			watch.stop();
+		}
 	});
 
 	it('shows an error on a path below a field under that field, with the rest of the path', () => {

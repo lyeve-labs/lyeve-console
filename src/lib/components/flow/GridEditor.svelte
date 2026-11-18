@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { Button, Input, Table } from '@lyeve-labs/ui-kit';
+	import { Button, Input, Table, motion } from '@lyeve-labs/ui-kit';
 	import { Plus, Trash2 } from '@lucide/svelte';
 	import { ICON } from '#lib/icon.ts';
+	import { rowKeys, withRow, withoutRow } from '#lib/row-keys.ts';
 
 	/**
 	 * A small table typed in place: editable column headers and cells, rows
@@ -17,6 +18,15 @@
 	}
 
 	let { columns, rows, idPrefix = 'grid', onchange }: Props = $props();
+
+	// The table is stored as plain strings, so each column and row is keyed
+	// beside it, and a removed one leaves from where it stood.
+	let keptColumns = $state<number[]>();
+	let keptRows = $state<number[]>();
+	const columnKeys = $derived(rowKeys(keptColumns, columns.length));
+	const rowKeyed = $derived(rowKeys(keptRows, rows.length));
+	const head = $derived(columns.map((name, i) => ({ key: columnKeys[i], name })));
+	const body = $derived(rows.map((cells, i) => ({ key: rowKeyed[i], cells })));
 
 	/** A row padded or cut to the column count, so a removed column never leaves a stray cell. */
 	function fit(row: string[], width: number): string[] {
@@ -35,10 +45,12 @@
 	}
 
 	function addColumn() {
+		keptColumns = withRow(columnKeys);
 		emit([...columns, `column_${columns.length + 1}`], rows);
 	}
 
 	function removeColumn(i: number) {
+		keptColumns = withoutRow(columnKeys, i);
 		emit(
 			columns.filter((_, j) => j !== i),
 			rows.map((r) => r.filter((_, j) => j !== i))
@@ -46,10 +58,12 @@
 	}
 
 	function addRow() {
+		keptRows = withRow(rowKeyed);
 		emit(columns, [...rows, fit([], columns.length)]);
 	}
 
 	function removeRow(i: number) {
+		keptRows = withoutRow(rowKeyed, i);
 		emit(
 			columns,
 			rows.filter((_, j) => j !== i)
@@ -71,8 +85,8 @@
 		<Table label="Inline table" cell="auto">
 			<thead>
 				<tr>
-					{#each columns as name, c (c)}
-						<th scope="col">
+					{#each head as { key, name }, c (key)}
+						<th scope="col" transition:motion.fade|global animate:motion.reorder>
 							<div class="flex items-center gap-1">
 								<Input
 									id="{idPrefix}-col-{c}"
@@ -91,10 +105,10 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each rows as row, r (r)}
-					<tr>
-						{#each columns as _, c (c)}
-							<td>
+				{#each body as { key, cells: row }, r (key)}
+					<tr transition:motion.fade|global>
+						{#each head as col, c (col.key)}
+							<td transition:motion.fade|global animate:motion.reorder>
 								<Input
 									id="{idPrefix}-cell-{r}-{c}"
 									aria-label="Row {r + 1} {columns[c] || `column ${c + 1}`}"
