@@ -63,3 +63,16 @@ for (const name of isDom ? (['localStorage', 'sessionStorage'] as const) : []) {
     value: Object.create(StorageCtor.prototype) as Storage,
   });
 }
+
+// jsdom implements none of the Web Animations API. Svelte's `animate:`
+// directive reads `getAnimations()` on an element about to leave a keyed each,
+// and throws where the method does not exist. The kit's presets return a zero
+// duration wherever `Element.animate` is missing, so an empty list is the
+// truthful answer in an environment that cannot animate.
+if (isDom && typeof Element.prototype.getAnimations !== 'function') {
+  define(Element.prototype, 'getAnimations', {
+    configurable: true,
+    writable: true,
+    value: () => [],
+  });
+}

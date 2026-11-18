@@ -2,7 +2,7 @@
 # client releases are listed here. Every third-party package stays subject to
 # the rule.
 minimumReleaseAgeExclude:
-  - '@lyeve-labs/ui-kit@0.62.0'
+  - '@lyeve-labs/ui-kit@0.63.1'
 overrides:
   # GHSA-68fv-2mgg-jv7q: source-map-js before 1.2.2, reached through postcss.
   source-map-js: ^1.2.2

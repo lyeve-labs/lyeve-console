@@ -323,16 +323,21 @@ describe('admin shell stored sidebar choice', () => {
 });
 
 describe('admin shell focus mode', () => {
+	// The kit keeps a put-away header mounted, its row inert and hidden, so the
+	// row can close on its height. Svelte sets inert as a property, which jsdom
+	// does not reflect to the attribute.
+	const headerAway = () => (document.querySelector('header')?.parentElement?.parentElement as HTMLElement | null)?.inert === true;
+
 	it('narrows the sidebar to the rail and puts the header away when the page asks, and restores the sidebar choice after', async () => {
 		setViewport(false);
 		render(AdminLayout, { props: { data, children: FocusChild } as never });
 		await tick();
-		expect(document.querySelector('header')).not.toBeNull();
+		expect(headerAway()).toBe(false);
 		expect(document.querySelector('aside')).not.toBeNull();
 		expect(screen.queryByTestId('app-rail')).toBeNull();
 
 		await fireEvent.click(screen.getByTestId('ask-focus'));
-		expect(document.querySelector('header')).toBeNull();
+		expect(headerAway()).toBe(true);
 		// The sidebar stays, as the icon rail: every section is still one hover
 		// or one Tab away, and the labels stay in the accessible names.
 		const rail = screen.getByTestId('app-rail');
@@ -342,7 +347,7 @@ describe('admin shell focus mode', () => {
 		expect(document.cookie).not.toContain('lyeve-admin-sidebar-collapsed=1');
 
 		await fireEvent.click(screen.getByTestId('ask-focus'));
-		expect(document.querySelector('header')).not.toBeNull();
+		expect(headerAway()).toBe(false);
 		expect(screen.queryByTestId('app-rail')).toBeNull();
 		expect(document.querySelector('aside')).not.toBeNull();
 	});
@@ -363,7 +368,7 @@ describe('admin shell focus mode', () => {
 		render(AdminLayout, { props: { data, children: FocusChild } as never });
 		await tick();
 		await fireEvent.click(screen.getByTestId('ask-focus'));
-		expect(document.querySelector('header')).not.toBeNull();
+		expect(headerAway()).toBe(false);
 		expect(screen.getByRole('button', { name: /open navigation/i })).toBeTruthy();
 	});
 });
