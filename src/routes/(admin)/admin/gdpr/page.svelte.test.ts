@@ -136,6 +136,36 @@ describe('the export download under a finger', () => {
 	});
 });
 
+describe('an export some plugins could not finish', () => {
+	const partial = (errors: { index: number; error: string }[]) => ({
+		data: { stepUp: null } as never,
+		form: {
+			action: 'export',
+			ok: true,
+			subject: 'jane@example.com',
+			result: { identifier: 'jane@example.com', plugins: {}, errors, summary: { total_records: 4, plugins_with_data: 1, plugins_queried: 3 } },
+		} as never,
+	});
+
+	it('warns above the download that the file is incomplete, in the console words', () => {
+		const { getByText, getByRole } = render(GdprPage, { props: partial([{ index: 1, error: 'pq: relation "orders" does not exist' }, { index: 2, error: 'dial tcp: i/o timeout' }]) });
+		const warning = getByText('This export is incomplete').closest('[role="alert"]') as HTMLElement;
+		expect(warning.textContent).toContain('2 plugins could not export this subject');
+		const download = getByRole('link', { name: /Download JSON/ });
+		expect(warning.compareDocumentPosition(download) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	});
+
+	it('keeps the exporters raw error text out of the page, except in the file itself', () => {
+		const { container } = render(GdprPage, { props: partial([{ index: 1, error: 'pq: relation "orders" does not exist' }]) });
+		const outside = [...container.querySelectorAll('section')].map((el) => {
+			const copy = el.cloneNode(true) as HTMLElement;
+			copy.querySelectorAll('pre').forEach((pre) => pre.remove());
+			return copy.textContent ?? '';
+		});
+		expect(outside.join(' ')).not.toContain('pq: relation');
+	});
+});
+
 describe('what a person proves before exporting', () => {
 	const stepUp = (factors: string[], form: unknown = null) => ({
 		data: { stepUp: { ok: true, value: { factors } } } as never,

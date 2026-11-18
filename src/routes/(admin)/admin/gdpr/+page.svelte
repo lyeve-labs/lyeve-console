@@ -151,6 +151,14 @@
 		</Card>
 
 		{#if exportResult}
+			<!-- The exporters' own error text is the engine's, so it stays in the
+			     file and the page says what it means for the file. -->
+			{#if exportResult.errors.length > 0}
+				<Alert tone="warn" title="This export is incomplete">
+					{exportResult.errors.length === 1 ? 'One plugin' : `${exportResult.errors.length} plugins`} could not export this subject's data, so the file is missing it.
+					Export again before you send the file.
+				</Alert>
+			{/if}
 			<Card pad="none">
 				{#snippet header()}
 					<div class="flex flex-wrap items-center justify-between gap-3">
@@ -173,13 +181,6 @@
 						</a>
 					</div>
 				{/snippet}
-				{#if exportResult.errors.length > 0}
-					<div class="border-b border-line px-5 py-2 text-xs text-warn">
-						{exportResult.errors.length === 1 ? 'An exporter failed' : `${exportResult.errors.length} exporters failed`}: {exportResult.errors
-							.map((e) => e.error)
-							.join('; ')}
-					</div>
-				{/if}
 				<pre class="max-h-96 overflow-auto p-4 text-xs text-fg">{exportJson}</pre>
 			</Card>
 		{/if}
