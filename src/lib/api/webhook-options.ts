@@ -9,6 +9,13 @@
 import type { HttpClient, Webhook } from '@lyeve-labs/client';
 import { checked } from '#lib/checkbox.ts';
 
+/**
+ * What a rotation does to the receivers, asked before it runs: the page's
+ * dialog and the no-script question both say it.
+ */
+export const ROTATE_DETAIL =
+	'The current secret stops working immediately. Each receiver rejects deliveries until it verifies with the new secret.';
+
 /** A webhook as the engine answers it, options included. */
 export interface WebhookRecord extends Webhook {
 	headers?: Record<string, string> | null;

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import FormErrors from '#lib/components/FormErrors.svelte';
-	import { filtersText, keptJSON, type WebhookRecord } from '#lib/api/webhook-options.ts';
+	import { ROTATE_DETAIL, filtersText, keptJSON, type WebhookRecord } from '#lib/api/webhook-options.ts';
 	import { formRefusal, type Refusal } from '#lib/api/refusal.ts';
 	import {
 		Alert,
@@ -21,8 +21,10 @@
 		Table,
 		Textarea,
 		Toggle,
+		confirm,
 		type ChoiceOption
 	} from '@lyeve-labs/ui-kit';
+	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import type { PageData, ActionData } from './$types';
 	import type { Webhook } from '@lyeve-labs/client';
 	import { untrack } from 'svelte';
@@ -238,15 +240,26 @@
 	let reveal = $state<{ name: string; secret: string } | null>(null);
 	// The secret is taken straight from the result and never applied to the
 	// page's form, so closing the panel leaves no copy of it behind.
-	const takeSecret: SubmitFunction = () => async ({ result, update }) => {
-		if (result.type === 'success' && result.data && 'rotated' in result.data) {
-			const r = result.data.rotated as { name: string; secret: string };
-			reveal = { name: r.name, secret: r.secret };
-			settled = form;
-			return;
-		}
-		await update();
-	};
+	// It asks first, because the old secret stops verifying the moment a new
+	// one is made.
+	function rotateSecret(name: string): SubmitFunction {
+		return async ({ cancel, formData }) => {
+			if (!(await confirm(`Rotate the signing secret for ${name}?`, ROTATE_DETAIL, { confirmLabel: 'Rotate' }))) {
+				cancel();
+				return;
+			}
+			formData.set(CONFIRM_FIELD, CONFIRMED);
+			return async ({ result, update }) => {
+				if (result.type === 'success' && result.data && 'rotated' in result.data) {
+					const r = result.data.rotated as { name: string; secret: string };
+					reveal = { name: r.name, secret: r.secret };
+					settled = form;
+					return;
+				}
+				await update();
+			};
+		};
+	}
 
 	function truncate(url: string, max = 48): string {
 		return url.length > max ? url.slice(0, max) + '...' : url;
@@ -405,7 +418,7 @@
 									<History size={ICON.sm} />
 								</Button>
 								{#if isSuperAdmin}
-									<form method="POST" action="?/rotate-secret" use:enhance={takeSecret}>
+									<form method="POST" action="?/rotate-secret" use:enhance={rotateSecret(wh.name)}>
 										<input type="hidden" name="id" value={wh.id} />
 										<Button
 											variant="ghost"

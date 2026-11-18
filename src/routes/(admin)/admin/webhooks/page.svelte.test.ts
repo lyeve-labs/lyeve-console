@@ -233,15 +233,37 @@ describe('a rotated signing secret', () => {
 
 	type After = (input: { result: { type: string; data?: unknown }; update: () => Promise<void> }) => Promise<void>;
 
-	/** Runs the rotation's submit with a result, as enhance would. */
+	type Submit = (input: { cancel: () => void; formData: FormData }) => Promise<After | undefined>;
+	const rotation = () => forms.submits.find((f) => f.node.getAttribute('action') === '?/rotate-secret' && f.node.isConnected)?.submit as Submit;
+
+	/** Runs the rotation's submit with a result, as enhance would, once the reader agrees. */
 	async function rotate(result: { type: string; data?: unknown }) {
-		const entry = forms.submits.find((f) => f.node.getAttribute('action') === '?/rotate-secret' && f.node.isConnected);
-		const after = (await (entry?.submit as () => Promise<After>)()) as After;
+		kit.confirm.mockResolvedValue(true);
+		const after = (await rotation()({ cancel: vi.fn(), formData: new FormData() })) as After;
 		const update = vi.fn(async () => {});
 		await after({ result, update });
 		await tick();
 		return update;
 	}
+
+	// The old secret stops verifying the moment a new one is made, so
+	// receivers start refusing deliveries. One click never does that.
+	it('asks before rotating, names the webhook, and sends the answer with the post', async () => {
+		render(WebhooksPage, { props: props(null) });
+		const cancel = vi.fn();
+		await rotation()({ cancel, formData: new FormData() });
+		expect(kit.confirm).toHaveBeenCalledWith(
+			'Rotate the signing secret for Ship it?',
+			expect.stringContaining('rejects deliveries'),
+			expect.objectContaining({ confirmLabel: 'Rotate' }),
+		);
+		expect(cancel).toHaveBeenCalled();
+
+		kit.confirm.mockResolvedValue(true);
+		const formData = new FormData();
+		await rotation()({ cancel: vi.fn(), formData });
+		expect(formData.get('confirmed')).toBe('yes');
+	});
 
 	const secretShown = () =>
 		[...document.body.querySelectorAll('[role="dialog"] input')].some((i) => (i as HTMLInputElement).value === 'c0ffee-secret');
