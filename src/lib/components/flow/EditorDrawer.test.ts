@@ -3,12 +3,22 @@ import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import EditorDrawer from './EditorDrawer.svelte';
-import { DRAWER_HEIGHT_KEY } from '#lib/flow/drawer.ts';
+import { CANVAS_MIN, DRAWER_HEIGHT_KEY } from '#lib/flow/drawer.ts';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
-afterEach(cleanup);
+// jsdom lays out nothing, so the tab row reports the height a browser gives it.
+const TAB_ROW = 41;
+
+afterEach(() => {
+	cleanup();
+	vi.restoreAllMocks();
+});
 beforeEach(() => {
 	localStorage.clear();
 	vi.stubGlobal('innerHeight', 900);
+	vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+		return this.dataset.testid === 'editor-drawer-tabs' ? TAB_ROW : 0;
+	});
 });
 
 const body = createRawSnippet(() => ({ render: () => '<p>body</p>' }));
@@ -19,7 +29,10 @@ function setup() {
 	});
 	const drawer = result.getByTestId('editor-drawer');
 	const handle = result.getByTestId('drawer-handle');
-	return { ...result, drawer, handle };
+	const bodyHeight = () => parseFloat(result.getByTestId('editor-drawer-body').style.height);
+	// The remembered height is the whole drawer's: the tab row and the body under it.
+	const height = () => TAB_ROW + bodyHeight();
+	return { ...result, drawer, handle, height, bodyHeight };
 }
 
 describe('EditorDrawer', () => {
@@ -40,43 +53,59 @@ describe('EditorDrawer', () => {
 		expect(chevron.classList).not.toContain('rotate-180');
 	});
 
+	it('closes and opens its body on the collapse row, so the drawer moves as one', async () => {
+		const { getByRole, getByTestId } = setup();
+		const row = getByTestId('editor-drawer-body').parentElement!.parentElement!;
+		expect(row.classList).toContain('grid');
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(getByRole('button', { name: 'Collapse drawer' }));
+			expect(watch.left).toContain(row);
+			watch.clear();
+			await fireEvent.click(getByRole('button', { name: 'Expand drawer' }));
+			expect(watch.entered).toContain(getByTestId('editor-drawer-body').parentElement!.parentElement!);
+		} finally {
+			watch.stop();
+		}
+	});
+
 	it('marks a focused handle in the full brand color', () => {
 		const { handle } = setup();
 		expect(handle.classList).toContain('focus-visible:bg-brand');
 		expect(handle.classList).not.toContain('focus-visible:bg-brand/40');
 	});
 
-	it('opens at the remembered height', () => {
+	it('opens at the remembered height, the tab row included', () => {
 		localStorage.setItem(DRAWER_HEIGHT_KEY, '400');
-		const { drawer } = setup();
-		expect(drawer.style.height).toBe('400px');
+		const { bodyHeight } = setup();
+		expect(bodyHeight()).toBe(400 - TAB_ROW);
 	});
 
 	it('resizes by dragging the top edge and remembers the height on release', async () => {
-		const { drawer, handle } = setup();
-		expect(drawer.style.height).toBe('288px');
+		const { handle, height } = setup();
+		expect(height()).toBe(288);
 		await fireEvent.pointerDown(handle, { button: 0, clientY: 600, pointerId: 1 });
 		await fireEvent.pointerMove(handle, { clientY: 500, pointerId: 1 });
-		expect(drawer.style.height).toBe('388px');
+		expect(height()).toBe(388);
 		await fireEvent.pointerUp(handle, { clientY: 500, pointerId: 1 });
 		expect(localStorage.getItem(DRAWER_HEIGHT_KEY)).toBe('388');
 	});
 
 	it('never shrinks below the minimum or grows over the canvas', async () => {
-		const { drawer, handle } = setup();
+		const { handle, height } = setup();
 		await fireEvent.pointerDown(handle, { button: 0, clientY: 600, pointerId: 1 });
 		await fireEvent.pointerMove(handle, { clientY: 900, pointerId: 1 });
-		expect(drawer.style.height).toBe('160px');
+		expect(height()).toBe(160);
 		await fireEvent.pointerMove(handle, { clientY: 0, pointerId: 1 });
-		expect(drawer.style.height).toBe('660px');
+		expect(innerHeight - height()).toBe(CANVAS_MIN);
 	});
 
 	it('resizes from the keyboard', async () => {
-		const { drawer, handle } = setup();
+		const { handle, height } = setup();
 		await fireEvent.keyDown(handle, { key: 'ArrowUp' });
-		expect(drawer.style.height).toBe('312px');
+		expect(height()).toBe(312);
 		await fireEvent.keyDown(handle, { key: 'ArrowDown', shiftKey: true });
-		expect(drawer.style.height).toBe('232px');
+		expect(height()).toBe(232);
 		expect(localStorage.getItem(DRAWER_HEIGHT_KEY)).toBe('232');
 	});
 
@@ -84,8 +113,8 @@ describe('EditorDrawer', () => {
 		const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
 			throw new Error('denied');
 		});
-		const { drawer } = setup();
-		expect(drawer.style.height).toBe('288px');
+		const { height } = setup();
+		expect(height()).toBe(288);
 		spy.mockRestore();
 	});
 });

@@ -76,3 +76,18 @@ if (isDom && typeof Element.prototype.getAnimations !== 'function') {
     value: () => [],
   });
 }
+
+// jsdom has no ResizeObserver, and Svelte observes an element whose size is
+// bound. jsdom lays nothing out, so no size ever changes and an observer that
+// never reports is the truthful one. A test stubs the size it needs.
+if (isDom && typeof globalThis.ResizeObserver !== 'function') {
+  define(globalThis, 'ResizeObserver', {
+    configurable: true,
+    writable: true,
+    value: class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  });
+}

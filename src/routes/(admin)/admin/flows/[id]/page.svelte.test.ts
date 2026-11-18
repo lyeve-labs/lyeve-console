@@ -266,13 +266,14 @@ describe('flow editor page', () => {
 	});
 
 	it('collapses the drawer from a kit button', async () => {
-		const { getByLabelText, getByTestId } = setup();
+		const { getByLabelText, queryByTestId } = setup();
 		const toggle = getByLabelText('Collapse drawer');
 		// Every kit control carries the kit's touch class, and the raw-button rule
 		// refuses a hand-styled copy of a kit button.
 		expect(toggle.className).toContain('coarse:min-h-control');
+		expect(queryByTestId('editor-drawer-body')).not.toBeNull();
 		await fireEvent.click(toggle);
-		expect(getByTestId('editor-drawer').style.height).toBe('');
+		expect(queryByTestId('editor-drawer-body')).toBeNull();
 	});
 
 	it('collapses a palette category and reopens it for a search', async () => {
