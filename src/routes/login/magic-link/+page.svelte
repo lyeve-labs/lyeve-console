@@ -17,7 +17,7 @@
 	const send = submitter();
 </script>
 
-<PageTitle title="Email a sign-in link" />
+<PageTitle title="Sign in with an email link" />
 
 <AuthShell title="Sign in with an email link" description="Get a link by email that signs you in.">
 	{#if form && 'sent' in form && form.sent}

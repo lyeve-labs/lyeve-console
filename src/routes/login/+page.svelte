@@ -26,6 +26,24 @@
 	);
 	const email = $derived(form && 'email' in form && typeof form.email === 'string' ? form.email : '');
 	const typedOrganization = $derived(form && 'tenant' in form && typeof form.tenant === 'string' ? form.tenant : null);
+
+	// An OAuth provider is a lowercase key such as google or azure_ad. A
+	// provider whose owner spells it another way is named as its owner does.
+	// Any other name is capitalized word by word, and the sentence around it
+	// stays in sentence case.
+	const PROVIDER_NAMES: Record<string, string> = {
+		github: 'GitHub',
+		gitlab: 'GitLab',
+		azure_ad: 'Azure AD',
+		auth0: 'Auth0',
+		oidc: 'OpenID Connect',
+	};
+	const providerName = (key: string) =>
+		PROVIDER_NAMES[key] ??
+		key
+			.split('_')
+			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+			.join(' ');
 </script>
 
 <PageTitle title="Sign in" />
@@ -127,9 +145,8 @@
 						href="/api/admin/auth/oauth/{encodeURIComponent(provider)}"
 						variant="secondary"
 						full
-						class="capitalize"
 					>
-						Sign in with {provider.replace(/_/g, ' ')}
+						Sign in with {providerName(provider)}
 					</Button>
 				{/each}
 				<!-- A SAML provider is named by whoever configured it, so the label

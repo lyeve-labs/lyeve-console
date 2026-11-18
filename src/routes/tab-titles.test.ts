@@ -120,7 +120,7 @@ const TAB_TITLES: [string, Expected][] = [
 	['auth/magic-link/verify/+page.svelte', 'Sign in with your link'],
 	['forgot-password/+page.svelte', 'Reset your password'],
 	['login/+page.svelte', 'Sign in'],
-	['login/magic-link/+page.svelte', 'Email a sign-in link'],
+	['login/magic-link/+page.svelte', 'Sign in with an email link'],
 	['reset-password/+page.svelte', 'Choose a new password'],
 	['setup/+page.svelte', 'Set up'],
 ];
