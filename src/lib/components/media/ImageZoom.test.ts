@@ -84,4 +84,20 @@ describe('ImageZoom', () => {
 		expect(wheel.defaultPrevented).toBe(true);
 		expect(Number(shown()?.replace('%', ''))).toBeGreaterThan(25);
 	});
+
+	it('eases a step to its new view, and follows the wheel directly', async () => {
+		const { frame } = setup();
+		const img = () => frame.querySelector('img') as HTMLImageElement;
+		const eased = () => ['transition-transform', 'duration-base', 'ease-move'].every((c) => img().classList.contains(c));
+		expect(eased()).toBe(false);
+		await fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }));
+		expect(eased()).toBe(true);
+		frame.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, clientX: 100, clientY: 100, cancelable: true, bubbles: true }));
+		await tick();
+		expect(eased()).toBe(false);
+		await fireEvent.dblClick(frame, { clientX: 200, clientY: 150 });
+		expect(eased()).toBe(true);
+		await fireEvent.input(screen.getByRole('slider', { name: 'Zoom level' }), { target: { value: '500' } });
+		expect(eased()).toBe(false);
+	});
 });
