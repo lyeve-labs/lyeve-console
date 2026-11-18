@@ -45,7 +45,7 @@
 					id="rl-global-burst"
 					name="burst"
 					label="Burst"
-					hint="How many requests can arrive at once."
+					hint="How many requests can arrive together in a burst."
 					bind:value={globalBurst}
 				/>
 			</div>
