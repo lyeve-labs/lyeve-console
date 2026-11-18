@@ -84,10 +84,12 @@
 		});
 
 		es.addEventListener('log', (e: MessageEvent) => {
-			if (logPaused) return;
 			try {
 				const entry: LogEntry = JSON.parse(e.data as string);
-				logEntries = [entry, ...logEntries].slice(0, MAX_LOG_ENTRIES);
+				// A pause holds the table still for reading, so what arrives
+				// meanwhile waits and joins the table on resume.
+				if (logPaused) held = [entry, ...held].slice(0, MAX_LOG_ENTRIES);
+				else logEntries = [entry, ...logEntries].slice(0, MAX_LOG_ENTRIES);
 			} catch { /* ignore malformed */ }
 		});
 
@@ -102,6 +104,16 @@
 				logState = 'connecting';
 			}
 		});
+	}
+
+	let held: LogEntry[] = [];
+
+	function togglePause() {
+		if (logPaused) {
+			logEntries = [...held, ...logEntries].slice(0, MAX_LOG_ENTRIES);
+			held = [];
+		}
+		logPaused = !logPaused;
 	}
 
 	function retryLogStream() {
@@ -203,10 +215,12 @@
 						onchange={setMinLevel}
 					/>
 				</div>
-				<Button variant={logPaused ? 'primary' : 'secondary'} onclick={() => { logPaused = !logPaused; }}>
-					{logPaused ? 'Resume' : 'Pause'}
+				<!-- One label with a pressed state, so a screen reader hears a toggle
+				     rather than a button whose name changes under it. -->
+				<Button variant={logPaused ? 'primary' : 'secondary'} aria-pressed={logPaused} onclick={togglePause}>
+					Pause
 				</Button>
-				<Button variant="secondary" onclick={() => { logEntries = []; }}>
+				<Button variant="secondary" onclick={() => { logEntries = []; held = []; }}>
 					<Trash2 size={ICON.sm} /> Clear
 				</Button>
 			{/snippet}

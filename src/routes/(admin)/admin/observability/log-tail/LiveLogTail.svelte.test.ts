@@ -74,15 +74,20 @@ describe('LiveLogTail', () => {
 		expect(container.textContent).toContain('2 entries');
 	});
 
-	it('drops what arrives while paused, and clears on request', async () => {
+	it('holds what arrives while paused, adds it on resume, and clears on request', async () => {
 		const { container, getByRole } = render(LiveLogTail, { props: { running: true } });
 		last().emit('log', entry('before the pause'));
 		await tick();
-		await fireEvent.click(getByRole('button', { name: 'Pause' }));
+		const pause = getByRole('button', { name: 'Pause' });
+		expect(pause.getAttribute('aria-pressed')).toBe('false');
+		await fireEvent.click(pause);
+		expect(pause.getAttribute('aria-pressed')).toBe('true');
 		last().emit('log', entry('during the pause'));
 		await tick();
 		expect(container.textContent).not.toContain('during the pause');
-		await fireEvent.click(getByRole('button', { name: 'Resume' }));
+		await fireEvent.click(pause);
+		expect(pause.getAttribute('aria-pressed')).toBe('false');
+		expect(container.textContent).toContain('during the pause');
 		await fireEvent.click(getByRole('button', { name: /clear/i }));
 		expect(container.textContent).not.toContain('before the pause');
 		expect(StubEventSource.all).toHaveLength(1);
