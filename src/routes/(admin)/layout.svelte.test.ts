@@ -280,6 +280,48 @@ describe('admin shell mobile drawer', () => {
 	});
 });
 
+describe('admin shell stored sidebar choice', () => {
+	const KEY = 'lyeve-admin-sidebar-collapsed';
+	const cookieValue = () => document.cookie.split('; ').find((c) => c.startsWith(`${KEY}=`))?.split('=')[1];
+	const toggle = () => screen.getByRole('button', { name: /(Collapse|Expand) navigation/ });
+
+	const forget = () => {
+		document.cookie = `${KEY}=; path=/; max-age=0`;
+		localStorage.removeItem(KEY);
+	};
+	beforeEach(forget);
+	afterEach(forget);
+
+	it('draws the choice the server read, with no change after hydration', async () => {
+		setViewport(false);
+		render(AdminLayout, { props: { data: { ...data, sidebarCollapsed: true }, children: EmptyChildren } as never });
+		await tick();
+		expect(toggle().getAttribute('aria-label')).toBe('Expand navigation');
+	});
+
+	it('keeps a toggle in the cookie the server reads', async () => {
+		setViewport(false);
+		render(AdminLayout, { props: { data: { ...data, sidebarCollapsed: false }, children: EmptyChildren } as never });
+		await tick();
+		await fireEvent.click(toggle());
+		await tick();
+		expect(cookieValue()).toBe('1');
+		await fireEvent.click(toggle());
+		await tick();
+		expect(cookieValue()).toBe('0');
+	});
+
+	it('carries a choice stored before the cookie over to it once', async () => {
+		localStorage.setItem(KEY, '1');
+		setViewport(false);
+		render(AdminLayout, { props: { data: { ...data, sidebarCollapsed: null }, children: EmptyChildren } as never });
+		await tick();
+		expect(toggle().getAttribute('aria-label')).toBe('Expand navigation');
+		expect(cookieValue()).toBe('1');
+		expect(localStorage.getItem(KEY)).toBeNull();
+	});
+});
+
 describe('admin shell focus mode', () => {
 	it('narrows the sidebar to the rail and puts the header away when the page asks, and restores the sidebar choice after', async () => {
 		setViewport(false);
@@ -297,7 +339,7 @@ describe('admin shell focus mode', () => {
 		expect(rail.querySelector('aside')).not.toBeNull();
 		expect(rail.querySelector('a[href="/admin/content"]')?.textContent).toContain('Content');
 		// The reader's own preference was never touched.
-		expect(localStorage.getItem('lyeve-admin-sidebar-collapsed')).not.toBe('1');
+		expect(document.cookie).not.toContain('lyeve-admin-sidebar-collapsed=1');
 
 		await fireEvent.click(screen.getByTestId('ask-focus'));
 		expect(document.querySelector('header')).not.toBeNull();
