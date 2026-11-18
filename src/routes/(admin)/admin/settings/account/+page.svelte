@@ -14,6 +14,7 @@
 	import { Monitor, MonitorSmartphone, Moon, ShieldCheck, Sun } from '@lucide/svelte';
 	import { ICON } from '#lib/icon.ts';
 	import { roleTone } from '#lib/roles.ts';
+	import { rolesLabel } from '#lib/device-login.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -50,7 +51,7 @@
 {#snippet roleBadges()}
 	<span class="flex flex-wrap gap-1">
 		{#each data.user.roles as role (role)}
-			<Badge tone={roleTone(role)} size="sm">{role}</Badge>
+			<Badge tone={roleTone(role)} size="sm">{rolesLabel([role])}</Badge>
 		{:else}
 			<span class="text-faint">none</span>
 		{/each}
@@ -73,7 +74,7 @@
 					layout="inline"
 					items={[
 						{ term: 'Email', value: data.user.email },
-						{ term: 'Roles', value: data.user.roles.join(', ') || 'none', detail: roleBadges },
+						{ term: 'Roles', value: rolesLabel(data.user.roles), detail: roleBadges },
 					]}
 				/>
 				<div class="flex flex-wrap gap-2">

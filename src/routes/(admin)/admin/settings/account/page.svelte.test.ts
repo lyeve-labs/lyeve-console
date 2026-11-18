@@ -66,6 +66,12 @@ describe('the account card', () => {
 		mount({ hasMfa: false });
 		expect(screen.queryByRole('link', { name: /Two-factor authentication/ })).toBeNull();
 	});
+
+	it('names each role in words, as the account menu does', () => {
+		mount();
+		expect(document.body.textContent).toContain('super admin');
+		expect(document.body.textContent).not.toContain('super_admin');
+	});
 });
 
 describe('appearance', () => {
