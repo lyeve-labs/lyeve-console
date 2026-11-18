@@ -135,6 +135,51 @@ export const FORM_KEY_SAID = {
 	label: 'Revoke previous key',
 } as const;
 
+/** A site's server key: the API key its server reads refused form posts back with. */
+export interface ServerKey {
+	site: string;
+	key_id: string;
+	bound_at: string;
+}
+
+/**
+ * The scopes of a site's server key: what a server that draws pages on
+ * request reads, and the refused form posts of its own site. A refused post
+ * answers only the key bound to the site that collected it.
+ */
+export const SERVER_KEY_SCOPES = [
+	'content.lyeve_builder_sites:read',
+	'content.lyeve_builder_pages:read',
+	'content.lyeve_builder_sections:read',
+	'content.lyeve_builder_themes:read',
+	'builder.form_refusals:read',
+	'builder.sheet:read',
+] as const;
+
+/** The name a site's server key carries in the API keys list. */
+export const serverKeyName = (site: string): string => `Server key: ${site}`;
+
+/** Every site's server key in the tenant. */
+export async function listServerKeys(client: HttpClient): Promise<ServerKey[]> {
+	const res = await client.get<{ server_keys?: ServerKey[] }>('/api/admin/builder/server-keys');
+	return res.server_keys ?? [];
+}
+
+/** Binds the API key `keyId` to `site` as its server key, in place of the site's earlier one. */
+export function bindServerKey(client: HttpClient, site: string, keyId: string): Promise<ServerKey> {
+	return client.put<ServerKey>(`/api/admin/builder/sites/${encodeURIComponent(site)}/server-key`, { key_id: keyId });
+}
+
+/** What the server key card says. */
+export const SERVER_KEY_SAID = {
+	tooOld: 'Server keys need a newer version of the builder plugin.',
+	chooseSite: 'Choose a site first.',
+	failed: 'Could not create the server key. Try again.',
+	unconfirmed: 'Check whether the server key was created, then try again.',
+	detail: "The site's current server key stops reading refused form posts immediately. Set the new key on the site's server and deploy it.",
+	label: 'Create server key',
+} as const;
+
 /** What the static sites field says when the engine refuses the list. */
 export const STATIC_SITES_REFUSED = 'Choose up to 50 sites whose last production build does not sign its forms.';
 

@@ -302,7 +302,12 @@
 					{@const pct = usagePct(key.id)}
 					{@const u = data.usageMap?.[key.id]}
 					<tr>
-						<td data-cell="nowrap" class="font-medium">{key.name}</td>
+						<td data-cell="nowrap" class="font-medium">
+							{key.name}
+							{#if data.serverKeySites?.[key.id]}
+								<Badge tone="brand" size="sm">Server key of {data.serverKeySites[key.id]}</Badge>
+							{/if}
+						</td>
 						<td data-cell="nowrap">
 							<div class="flex flex-wrap gap-1">
 								{#each key.roles as role (role)}

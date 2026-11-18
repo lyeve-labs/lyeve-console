@@ -26,7 +26,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => {
 
 import Page from './+page.svelte';
 import { refreshAll } from '$app/navigation';
-import { FORM_KEY_SAID, SAID, STATIC_SITES_REFUSED } from '#lib/api/connected-editors.ts';
+import { FORM_KEY_SAID, SAID, SERVER_KEY_SAID, STATIC_SITES_REFUSED } from '#lib/api/connected-editors.ts';
 import { FORMS_TYPE_TAKEN, SUBMISSIONS_PUBLIC } from '#lib/api/form-destinations.ts';
 
 afterEach(cleanup);
@@ -526,6 +526,52 @@ describe('previous form signing key', () => {
 		render(Page, { props: props({ sites: { ok: false, gate: { state: 'error', message: 'Could not load sites. The static sites saved before stay as they are.' } } }) });
 		expect(card().textContent).toContain('Could not load sites.');
 		expect(card().textContent).not.toContain('static sites');
+		expect(card().querySelector('button[type="submit"]')).toBeNull();
+	});
+});
+
+describe('server keys', () => {
+	const A = '0a9e2c4e-1d4b-4c9a-9f3e-5b1c2d3e4f50';
+	const B = '7f1b2a3c-4d5e-4f60-8a9b-0c1d2e3f4a5b';
+	const SITES = {
+		ok: true,
+		value: [
+			{ id: A, name: 'Agency' },
+			{ id: B, name: 'Shop' },
+		],
+	};
+	const KEYS = { ok: true, value: [{ site: A, key_id: 'k9', bound_at: '2026-11-18T09:00:00Z' }] };
+	const card = () => document.querySelector('form[action="?/createServerKey"]') as HTMLFormElement;
+
+	it('says which sites have a server key, with the specific verb on the button', () => {
+		render(Page, { props: props({ sites: SITES, serverKeys: KEYS }) });
+		const rows = [...card().querySelectorAll('li')].map((li) => li.textContent?.replace(/\s+/g, ' ').trim());
+		expect(rows[0]).toMatch(/^Agency Created /);
+		expect(rows[1]).toBe('Shop No server key');
+		const buttons = [...card().querySelectorAll('button[type="submit"]')].map((b) => b.textContent?.trim());
+		expect(buttons).toEqual([SERVER_KEY_SAID.label]);
+	});
+
+	it('asks first, naming the site and what stops working', async () => {
+		render(Page, { props: props({ sites: SITES, serverKeys: KEYS }) });
+		const formData = new FormData();
+		formData.set('site', A);
+		const cancel = vi.fn();
+		await forms.submits.get('?/createServerKey')!({ formData, cancel, action: new URL('http://admin'), formElement: card(), controller: new AbortController(), submitter: null });
+		expect(kit.confirm).toHaveBeenCalledWith('Create a new server key for Agency?', SERVER_KEY_SAID.detail, { confirmLabel: SERVER_KEY_SAID.label });
+		expect(cancel).toHaveBeenCalled();
+	});
+
+	it('shows the new key once, with where to set it', () => {
+		render(Page, { props: props({ sites: SITES, serverKeys: KEYS }, { serverKeyCreated: { site: A, name: 'Server key: Agency', raw_key: 'lyeve_secret' } }) });
+		expect(card().textContent).toContain('Server key of Agency created.');
+		expect((card().querySelector('#server-key-value') as HTMLInputElement | HTMLTextAreaElement).value).toBe('lyeve_secret');
+		expect(card().textContent).toContain('LYEVE_API_KEY');
+	});
+
+	it('says a plugin from before server keys is too old instead of offering the button', () => {
+		render(Page, { props: props({ sites: SITES, serverKeys: { ok: false, gate: { state: 'absent' } } }) });
+		expect(card().textContent).toContain(SERVER_KEY_SAID.tooOld);
 		expect(card().querySelector('button[type="submit"]')).toBeNull();
 	});
 });

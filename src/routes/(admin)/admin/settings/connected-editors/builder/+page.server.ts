@@ -7,7 +7,7 @@ import { notRunning, runs } from '#lib/plugins.ts';
 import { forbiddenText, gateOf, GATE_OK, isOutage, section, type Gate, type Section } from '#lib/api/gate.ts';
 import { bodyString, errorCodeOf } from '#lib/api/limits.ts';
 import type { HttpClient } from '@lyeve-labs/client';
-import { getSchemas } from '@lyeve-labs/client-rest';
+import { deleteAPIKey, getSchemas } from '@lyeve-labs/client-rest';
 import { applySchemaPreset, readSchemaPresets } from '#lib/api/schema-preset-catalog.ts';
 import {
 	FORMS_PRESET,
@@ -29,17 +29,24 @@ import {
 	WITHHELD,
 	STATIC_SITES_REFUSED,
 	FORM_KEY_SAID,
+	SERVER_KEY_SAID,
+	SERVER_KEY_SCOPES,
 	SITE_NOT_FOUND,
+	bindServerKey,
+	listServerKeys,
 	revokePreviousFormKey,
+	serverKeyName,
 	getSettings,
 	listSites,
 	saveSettings,
 	showable,
 	type ConnectionsGate,
+	type ServerKey,
 	type Settings,
 	type SettingsPatch,
 	type SiteOption,
 } from '#lib/api/connected-editors.ts';
+import { createKey } from '#lib/api/api-keys.ts';
 import { OWNER_ROLES, isOwner, refusalSentence } from '../shared.server';
 import { asked } from '#lib/server/asked.ts';
 
@@ -93,6 +100,7 @@ export const load: PageServerLoad = async (event) => {
 			flows: null as Section<FlowTargets> | null,
 			formsPreset: null as Section<boolean> | null,
 			sites: null as Section<SiteOption[]> | null,
+			serverKeys: null as Section<ServerKey[]> | null,
 		};
 	}
 
@@ -108,6 +116,7 @@ export const load: PageServerLoad = async (event) => {
 			)
 		: null;
 	const sites = section(listSites(client), 'Could not load sites. The static sites saved before stay as they are.');
+	const serverKeys = section(listServerKeys(client), 'Could not load server keys.');
 	const read = await section(getSettings(client), settingsGate);
 	const schemaList = await schemas;
 	// A tenant the plugin is withheld from is the page's gate, and every other
@@ -125,6 +134,7 @@ export const load: PageServerLoad = async (event) => {
 			flows: null,
 			formsPreset: null,
 			sites: null,
+			serverKeys: null,
 		};
 	}
 	const rows = schemaList.ok ? schemaList.value : [];
@@ -140,6 +150,7 @@ export const load: PageServerLoad = async (event) => {
 		flows: flows ? await flows : null,
 		formsPreset: formsPreset ? await formsPreset : null,
 		sites: await sites,
+		serverKeys: await serverKeys,
 	};
 };
 
@@ -251,6 +262,41 @@ export const actions: Actions = {
 				if (isOutage(e)) return fail(503, { formKeyError: FORM_KEY_SAID.unconfirmed });
 				return fail(e instanceof ApiError ? e.status : 400, { formKeyError: refusalSentence(e, FORM_KEY_SAID.failed) });
 			}
+		},
+		(form) => !!String(form.get('site') ?? '').trim(),
+	),
+
+	// Creates an API key that reads what a site's server needs, binds it to
+	// the site as its server key and shows it once. A key the bind refuses is
+	// deleted, so no unbound key is left behind with the refusal scope.
+	createServerKey: asked(
+		{ question: 'Create a new server key for this site?', detail: SERVER_KEY_SAID.detail, label: SERVER_KEY_SAID.label },
+		async (event) => {
+			const site = String((await event.request.formData()).get('site') ?? '').trim();
+			if (!site) return fail(400, { serverKeyError: SERVER_KEY_SAID.chooseSite });
+			const client = authedClient(event);
+			let created: { id: string; raw_key: string; name: string };
+			try {
+				const name = (await listSites(client)).find((s) => s.id === site)?.name;
+				if (!name) return fail(404, { serverKeyError: FORM_KEY_SAID.siteGone });
+				created = await createKey(client, { name: serverKeyName(name), roles: [], schemas: [], scopes: [...SERVER_KEY_SCOPES], expires_at: null });
+			} catch (e) {
+				if (isOutage(e)) return fail(503, { serverKeyError: SERVER_KEY_SAID.unconfirmed });
+				return fail(e instanceof ApiError ? e.status : 400, { serverKeyError: refusalSentence(e, SERVER_KEY_SAID.failed) });
+			}
+			try {
+				await bindServerKey(client, site, created.id);
+			} catch (e) {
+				await deleteAPIKey(created.id, client).catch(() => undefined);
+				if (e instanceof ApiError && e.status === 404) {
+					const gone = errorCodeOf(e) === SITE_NOT_FOUND;
+					return fail(404, { serverKeyError: gone ? FORM_KEY_SAID.siteGone : SERVER_KEY_SAID.tooOld });
+				}
+				if (e instanceof ApiError && e.status === 405) return fail(405, { serverKeyError: SERVER_KEY_SAID.tooOld });
+				if (isOutage(e)) return fail(503, { serverKeyError: SERVER_KEY_SAID.unconfirmed });
+				return fail(e instanceof ApiError ? e.status : 400, { serverKeyError: refusalSentence(e, SERVER_KEY_SAID.failed) });
+			}
+			return { serverKeyCreated: { site, name: created.name, raw_key: created.raw_key } };
 		},
 		(form) => !!String(form.get('site') ?? '').trim(),
 	),

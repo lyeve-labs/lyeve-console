@@ -10,11 +10,12 @@ function json(body: unknown, status = 200): Response {
 const cookies = { get: () => 'tok', set: vi.fn(), delete: vi.fn(), getAll: () => [], serialize: () => '' } as unknown as Cookies;
 
 /** A load event whose fetch answers each path with what `answer` returns. */
-function event(answer: (path: string) => Response, search = '') {
+function event(answer: (path: string) => Response, search = '', plugins: unknown = { state: 'named', running: [], withheld: [] }) {
 	return {
 		fetch: signedIn(vi.fn(async (url: string) => answer(String(url))) as unknown as typeof fetch, { roles: ['super_admin'] }),
 		cookies,
 		url: new URL(`http://localhost/admin/api-keys${search}`),
+		parent: async () => ({ plugins }),
 	} as never;
 }
 
@@ -211,5 +212,30 @@ describe('API keys create', () => {
 		const out = await actions.create({ fetch, cookies, url, request: new Request(url, { method: 'POST', body: form }) } as never);
 		expect(out).toMatchObject({ status: 400, data: { action: 'create', fields: { roles: expect.stringContaining('editor') } } });
 		expect(calls).toEqual([]);
+	});
+});
+
+describe('API keys of sites', () => {
+	it('marks a key bound to a site as its server key, by the site\'s name', async () => {
+		const answer = (path: string) => {
+			if (path.startsWith('/api/admin/api-keys?')) return json({ data: [key, { ...key, id: 'k2', name: 'other' }], total_count: 2 });
+			if (path.startsWith('/api/admin/builder/server-keys')) return json({ server_keys: [{ site: 's1', key_id: 'k1', bound_at: '2026-11-18T09:00:00Z' }] });
+			if (path.startsWith('/api/admin/content?')) return json({ data: [{ id: 's1', title: '', body: { name: 'Agency' } }], total_count: 1 });
+			return json([]);
+		};
+		const out = (await load(event(answer, '', { state: 'named', running: ['builder'], withheld: [] }))) as Loaded;
+		expect(out.serverKeySites).toEqual({ k1: 'Agency' });
+	});
+
+	it('marks no key when the builder does not run', async () => {
+		const calls: string[] = [];
+		const answer = (path: string) => {
+			calls.push(path);
+			if (path.startsWith('/api/admin/api-keys?')) return json({ data: [key], total_count: 1 });
+			return json([]);
+		};
+		const out = (await load(event(answer))) as Loaded;
+		expect(out.serverKeySites).toEqual({});
+		expect(calls.some((p) => p.startsWith('/api/admin/builder'))).toBe(false);
 	});
 });

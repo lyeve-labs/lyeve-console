@@ -8,6 +8,7 @@
 		Button,
 		Card,
 		CheckboxGroup,
+		CopyField,
 		MultiSelect,
 		NumberInput,
 		PageShell,
@@ -22,7 +23,8 @@
 	import GateNotice from '#lib/components/GateNotice.svelte';
 	import NotEnabled from '#lib/components/NotEnabled.svelte';
 	import { confirmed, tracked } from '#lib/forms.svelte.ts';
-	import { FORM_KEY_SAID, SAID, type Settings } from '#lib/api/connected-editors.ts';
+	import { FORM_KEY_SAID, SAID, SERVER_KEY_SAID, type Settings } from '#lib/api/connected-editors.ts';
+	import { formatDate } from '#lib/format.ts';
 	import { refreshAll } from '$app/navigation';
 	import { FORMS_TYPE_TAKEN, FORM_SUBMISSIONS, SUBMISSIONS_PUBLIC, flowNotes, flowOptions } from '#lib/api/form-destinations.ts';
 	import type { ActionData, PageData } from './$types';
@@ -41,6 +43,8 @@
 		presetCreated?: boolean;
 		formKeyRevoked?: { site: string; status: 'revoked' | 'none' };
 		formKeyError?: string;
+		serverKeyCreated?: { site: string; name: string; raw_key: string };
+		serverKeyError?: string;
 	}
 
 	const answer = $derived((form ?? {}) as Answer);
@@ -141,6 +145,17 @@
 		if (!site) return;
 		return confirmed(`Revoke the previous form signing key of ${siteName(site)}?`, FORM_KEY_SAID.detail, {
 			confirmLabel: FORM_KEY_SAID.label,
+		})(input);
+	});
+	// A site's server key, created and bound after the reader confirms.
+	const serverKeys = $derived(data.serverKeys?.ok ? data.serverKeys.value : []);
+	const serverKeyOf = (site: string) => serverKeys.find((k) => k.site === site);
+	let serverKeySite = $state<string | null>(null);
+	const createServerKey = tracked((input) => {
+		const site = String(input.formData.get('site') ?? '');
+		if (!site) return;
+		return confirmed(`Create a new server key for ${siteName(site)}?`, SERVER_KEY_SAID.detail, {
+			confirmLabel: SERVER_KEY_SAID.label,
 		})(input);
 	});
 	// When the preset created its types but the save after it failed, the page reloads its data so it offers to allow them.
@@ -484,6 +499,66 @@
 							<Alert tone="danger">{answer.formKeyError}</Alert>
 						{/if}
 						<Button variant="danger" type="submit" loading={revokeFormKey.pending} disabled={!online}>{FORM_KEY_SAID.label}</Button>
+					{/if}
+				</form>
+			</Card>
+			<Card>
+				<form
+					id="server-key"
+					method="POST"
+					action="?/createServerKey"
+					use:enhance={createServerKey.enhance}
+					class="flex flex-col items-start gap-6"
+				>
+					<SectionHeading level={3}>Server keys</SectionHeading>
+					<p class="text-sm text-muted">
+						A site's server uses its server key to show visitors what they typed after a form post is refused. Only the key of the site that
+						received the post can read it, so each site needs its own.
+					</p>
+					{#if answer.serverKeyCreated}
+						<Alert tone="success">Server key of {siteName(answer.serverKeyCreated.site)} created.</Alert>
+						<CopyField
+							id="server-key-value"
+							label="Server key"
+							value={answer.serverKeyCreated.raw_key}
+							mono
+							wrap
+							copyLabel="Copy key"
+							hint="Copy it now, because it is not shown again. Set it as LYEVE_API_KEY on the site's server, then deploy."
+							class="w-full max-w-xl"
+						/>
+					{/if}
+					{#if sitesGate}
+						<GateNotice gate={sitesGate} title="Sites" absent="Sites are not included in this build." />
+					{:else if data.serverKeys && !data.serverKeys.ok}
+						<GateNotice gate={data.serverKeys.gate} title="Server keys" absent={SERVER_KEY_SAID.tooOld} />
+					{:else if siteOptions.length === 0}
+						<p class="text-sm text-muted">No sites yet. Create a site in the builder to choose it here.</p>
+					{:else}
+						<ul class="flex w-full max-w-xl flex-col gap-2 text-sm">
+							{#each siteOptions as site (site.value)}
+								{@const key = serverKeyOf(site.value)}
+								<li class="flex justify-between gap-4">
+									<span class="text-fg">{site.label}</span>
+									<span class="text-muted">{key ? `Created ${formatDate(key.bound_at)}` : 'No server key'}</span>
+								</li>
+							{/each}
+						</ul>
+						<Select
+							id="server-key-site"
+							name="site"
+							label="Site"
+							placeholder="Choose a site"
+							bind:value={serverKeySite}
+							options={siteOptions}
+							searchable={siteOptions.length > 10}
+							class="w-full max-w-sm"
+							error={answer.serverKeyError === SERVER_KEY_SAID.chooseSite ? answer.serverKeyError : undefined}
+						/>
+						{#if answer.serverKeyError && answer.serverKeyError !== SERVER_KEY_SAID.chooseSite}
+							<Alert tone="danger">{answer.serverKeyError}</Alert>
+						{/if}
+						<Button variant="primary" type="submit" loading={createServerKey.pending} disabled={!online}>{SERVER_KEY_SAID.label}</Button>
 					{/if}
 				</form>
 			</Card>
