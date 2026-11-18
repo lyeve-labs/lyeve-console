@@ -8,6 +8,7 @@ vi.mock('$app/navigation', () => nav);
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/webhooks?offset=50&deliveries=w1') } }));
 
 import DeliveriesDrawer from './DeliveriesDrawer.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(() => {
 	cleanup();
@@ -119,5 +120,21 @@ describe('the history and its own failures', () => {
 		cleanup();
 		render(DeliveriesDrawer, { props: props(listed(2, 3)) });
 		expect(document.body.querySelector('[role="dialog"]')?.textContent).not.toContain('Showing the newest');
+	});
+});
+
+describe('a delivery retry result arriving', () => {
+	it('opens on its row under the retry button', async () => {
+		const listed = read([delivery('d1', true), delivery('d2', false)]);
+		const { rerender } = render(DeliveriesDrawer, { props: props(listed) });
+		const watch = watchTransitions();
+		try {
+			await rerender(props(listed, { retryResult: { delivery_id: 'd2', success: true, status_code: 200, message: 'Delivered' } }));
+			const row = [...document.body.querySelectorAll('tbody tr')][1];
+			const line = [...row.querySelectorAll('span')].find((s) => s.textContent?.trim() === 'Delivered')!;
+			expect(watch.entered.some((el) => el.classList.contains('grid') && el.contains(line))).toBe(true);
+		} finally {
+			watch.stop();
+		}
 	});
 });

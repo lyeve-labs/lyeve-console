@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Alert, Button, Card, Input, NumberInput, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
+	import { Alert, Button, Card, Input, NumberInput, PageShell, SectionHeading, motion } from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import { Download, Flame } from '@lucide/svelte';
 	import { PROFILE_SECONDS, PROFILE_TYPES } from '#lib/api/profiler.ts';
@@ -132,16 +132,20 @@
 	</div>
 
 	{#if graph && graphSrc}
-		<Card>
-			{#snippet header()}
-				<div class="flex flex-wrap items-center gap-2">
-					<SectionHeading level={3}><span class="font-mono">{graph.endpoint}</span></SectionHeading>
-					<span class="ms-auto text-xs text-faint">{graph.duration_sec}s CPU, captured {formatDateTime(graph.captured_at, NO_VALUE)}</span>
-				</div>
-			{/snippet}
-			<div class="overflow-x-auto" data-testid="flamegraph">
-				<img src={graphSrc} alt="CPU flamegraph for {graph.endpoint}" class="max-w-none" />
+		<div class="grid" transition:motion.collapse|global>
+			<div class="min-h-0">
+				<Card>
+					{#snippet header()}
+						<div class="flex flex-wrap items-center gap-2">
+							<SectionHeading level={3}><span class="font-mono">{graph.endpoint}</span></SectionHeading>
+							<span class="ms-auto text-xs text-faint">{graph.duration_sec}s CPU, captured {formatDateTime(graph.captured_at, NO_VALUE)}</span>
+						</div>
+					{/snippet}
+					<div class="overflow-x-auto" data-testid="flamegraph">
+						<img src={graphSrc} alt="CPU flamegraph for {graph.endpoint}" class="max-w-none" />
+					</div>
+				</Card>
 			</div>
-		</Card>
+		</div>
 	{/if}
 </PageShell>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge, Button, Drawer, EmptyState, Table } from '@lyeve-labs/ui-kit';
+	import { Badge, Button, Drawer, EmptyState, Table, motion } from '@lyeve-labs/ui-kit';
 	import type { WebhookDelivery } from '@lyeve-labs/client';
 	import { untrack } from 'svelte';
 	import { enhance } from '#lib/enhance.ts';
@@ -143,9 +143,13 @@
 									     another try. -->
 									{#if retryResults[d.id]}
 										{@const rr = retryResults[d.id]}
-										<span class="text-xs {rr.success ? 'text-success' : 'text-danger'}">
-											{rr.message.slice(0, 30)}
-										</span>
+										<div class="grid" transition:motion.collapse>
+											<div class="min-h-0">
+												<span class="text-xs {rr.success ? 'text-success' : 'text-danger'}">
+													{rr.message.slice(0, 30)}
+												</span>
+											</div>
+										</div>
 									{/if}
 								</td>
 							</tr>

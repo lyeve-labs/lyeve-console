@@ -22,7 +22,8 @@
 		Textarea,
 		Toggle,
 		confirm,
-		type ChoiceOption
+		type ChoiceOption,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import type { PageData, ActionData } from './$types';
@@ -491,14 +492,18 @@
 
 							{#if testResults[wh.id]}
 								{@const tr = testResults[wh.id]}
-								<div class="mt-1 flex items-center gap-1 text-xs">
-									{#if tr.success}
-										<CheckCircle size={ICON.xs} class="text-success" />
-										<span class="text-success">HTTP {tr.status_code}: {tr.message}</span>
-									{:else}
-										<XCircle size={ICON.xs} class="text-danger" />
-										<span class="text-danger">HTTP {tr.status_code}: {tr.message}</span>
-									{/if}
+								<div class="mt-1 grid" transition:motion.collapse>
+									<div class="min-h-0">
+										<div class="flex items-center gap-1 text-xs">
+											{#if tr.success}
+												<CheckCircle size={ICON.xs} class="text-success" />
+												<span class="text-success">HTTP {tr.status_code}: {tr.message}</span>
+											{:else}
+												<XCircle size={ICON.xs} class="text-danger" />
+												<span class="text-danger">HTTP {tr.status_code}: {tr.message}</span>
+											{/if}
+										</div>
+									</div>
 								</div>
 							{/if}
 

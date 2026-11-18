@@ -6,6 +6,7 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn(async () => {}), refreshAll: vi.
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 
 import CapturePage from './+page.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 function props(form: Record<string, unknown> | null = null) {
 	return { data: {} as never, form: form as never };
@@ -46,5 +47,20 @@ describe('the profiler capture page', () => {
 	it('carries the profiler tabs with Profiles marked', () => {
 		const { getByRole } = render(CapturePage, props());
 		expect(getByRole('tab', { name: 'Profiles' }).getAttribute('aria-selected')).toBe('true');
+	});
+});
+
+describe('a flamegraph arriving', () => {
+	it('opens its card on its row when the capture returns', async () => {
+		const graph = { endpoint: '/api/v1/content', duration_sec: 5, svg: '<svg xmlns="http://www.w3.org/2000/svg"></svg>', profile_type: 'cpu', captured_at: '2026-09-21T10:00:00Z' };
+		const { rerender, getByTestId } = render(CapturePage, props());
+		const watch = watchTransitions();
+		try {
+			await rerender(props({ form: 'flamegraph', graph }));
+			const card = getByTestId('flamegraph');
+			expect(watch.entered.some((el) => el.classList.contains('grid') && el.contains(card))).toBe(true);
+		} finally {
+			watch.stop();
+		}
 	});
 });
