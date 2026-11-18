@@ -30,6 +30,8 @@ describe('DashboardWidgets', () => {
 		expect(widget('Activity')).toContain('Could not load the audit log.');
 		expect(widget('Media')).toContain('Could not load the media library.');
 		expect(widget('API')).toContain('Could not load API usage.');
+		// Each is drawn as a failure, not a muted note.
+		expect(screen.getByText(/Could not load the counts\./).closest('[role="alert"]')).not.toBeNull();
 	});
 
 	it('tells an empty read apart from a failed one', () => {

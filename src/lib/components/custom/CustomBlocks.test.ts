@@ -29,7 +29,7 @@ describe('CustomBlocks', () => {
 			{ type: 'content', schema: 'posts', title: 'Failed', entries: null },
 			{ type: 'content', schema: 'pages', title: 'Empty', entries: [] },
 		]);
-		expect(screen.getByText('Could not load these entries. Reload the page to try again.')).toBeTruthy();
+		expect(screen.getByText('Could not load these entries. Reload the page to try again.').closest('[role="alert"]')).not.toBeNull();
 		expect(screen.getByText('No entries yet.')).toBeTruthy();
 	});
 

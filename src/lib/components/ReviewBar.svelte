@@ -250,7 +250,7 @@
 					</div>
 				</form>
 			{:else if definitionsFailed}
-				<p class="text-sm text-muted">{couldNotLoad('the review definitions', { reload: true })}</p>
+				<Alert tone="danger">{couldNotLoad('the review definitions', { reload: true })}</Alert>
 			{:else if error}
 				<Alert tone="danger">{error}</Alert>
 			{/if}
