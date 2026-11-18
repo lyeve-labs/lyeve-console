@@ -58,7 +58,7 @@ describe('problemsOf', () => {
 		]);
 		expect(problemsOf(fresh, [], false)).toEqual([
 			{ fieldId: 'b', target: 'field-name-b', where: 'New relation field, row 2', message: 'Enter a field name.' },
-			{ fieldId: 'b', target: 'relation-target-b', where: 'New relation field, row 2', message: 'Pick the content type this relation points at.' },
+			{ fieldId: 'b', target: 'relation-target-b', where: 'New relation field, row 2', message: 'Choose the content type this relation points at.' },
 		]);
 	});
 

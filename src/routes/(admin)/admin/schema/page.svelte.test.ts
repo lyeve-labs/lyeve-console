@@ -442,8 +442,8 @@ describe('schema builder saving', () => {
 		await fireEvent.click(screen.getByRole('button', { name: /2 problems/ }));
 		const list = screen.getByTestId('schema-problems');
 		expect(list.textContent).toContain('New relation field, row 2');
-		expect(list.textContent).toContain('Pick the content type this relation points at.');
-		await fireEvent.click(screen.getByRole('button', { name: /Pick the content type this relation points at/ }));
+		expect(list.textContent).toContain('Choose the content type this relation points at.');
+		await fireEvent.click(screen.getByRole('button', { name: /Choose the content type this relation points at/ }));
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.queryByTestId('schema-problems')).toBeNull();
 		expect(document.activeElement?.id).toMatch(/^relation-target-/);
@@ -456,7 +456,7 @@ describe('schema builder saving', () => {
 		await fireEvent.click(screen.getByRole('tab', { name: 'API' }));
 		expect(screen.queryByRole('button', { name: 'Add relation' })).toBeNull();
 		await fireEvent.click(screen.getByRole('button', { name: /2 problems/ }));
-		await fireEvent.click(screen.getByRole('button', { name: /Pick the content type this relation points at/ }));
+		await fireEvent.click(screen.getByRole('button', { name: /Choose the content type this relation points at/ }));
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.getByRole('tab', { name: 'Definition' }).getAttribute('aria-selected')).toBe('true');
 		expect(document.activeElement?.id).toMatch(/^relation-target-/);

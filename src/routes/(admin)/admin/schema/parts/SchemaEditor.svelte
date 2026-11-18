@@ -813,7 +813,7 @@
 							label="Target content type"
 							error={problemAt(`relation-target-${rowId}`)}
 							searchable
-							placeholder="Pick a content type"
+							placeholder="Choose a content type"
 							options={targetOptions(schema, field)}
 							value={field.relation_to ?? ''}
 							onvaluechange={(v) => {
@@ -879,7 +879,7 @@
 						{/if}
 					{:else}
 						<p class="text-xs text-faint">
-							Pick a target content type to see which table stores this relation and
+							Choose a target content type to see which table stores this relation and
 							what saving creates.
 						</p>
 					{/if}
