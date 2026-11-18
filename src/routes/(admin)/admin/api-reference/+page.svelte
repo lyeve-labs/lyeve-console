@@ -5,7 +5,7 @@
 	import { curlFor, gateSentence } from '#lib/api/request-preview.ts';
 	import { isWriteMethod, unfilledParameters, type TryResult } from '#lib/api/try-it.ts';
 	import { enhance } from '#lib/enhance.ts';
-	import { ChevronDown, ChevronRight, Download, Play } from '@lucide/svelte';
+	import { ChevronRight, Download, Play } from '@lucide/svelte';
 	import {
 		Alert,
 		Badge,
@@ -22,6 +22,7 @@
 		Table,
 		Textarea,
 		Collapsible,
+		motion,
 		type AccentTone,
 	} from '@lyeve-labs/ui-kit';
 	import ResizableAside from '#lib/components/ResizableAside.svelte';
@@ -237,11 +238,15 @@
 						Plugins <span class="font-normal tracking-normal normal-case">({pluginGroups.length})</span>
 					</span>
 					<span class="text-faint">
-						{#if pluginsOpen}<ChevronDown size={ICON.xs} />{:else}<ChevronRight size={ICON.xs} />{/if}
+						<ChevronRight size={ICON.xs} class="transition-transform duration-base {pluginsOpen ? 'rotate-90' : ''}" />
 					</span>
 				</button>
 				{#if pluginsOpen}
-					{@render groupLinks(pluginGroups)}
+					<div class="grid" transition:motion.collapse>
+						<div class="min-h-0">
+							{@render groupLinks(pluginGroups)}
+						</div>
+					</div>
 				{/if}
 			{/if}
 
@@ -317,11 +322,7 @@
 												{@render endpointSummary(ep)}
 
 												<span class="shrink-0 text-faint">
-													{#if expanded}
-														<ChevronDown size={ICON.sm} />
-													{:else}
-														<ChevronRight size={ICON.sm} />
-													{/if}
+													<ChevronRight size={ICON.sm} class="transition-transform duration-base {expanded ? 'rotate-90' : ''}" />
 												</span>
 											</button>
 										{:else}
@@ -344,146 +345,150 @@
 										<!-- aria-controls names this only while it exists. The panel is
 										     rendered rather than hidden, so a collapsed row naming it would
 										     point at an element that is not on the page. -->
-										<div id={panelId(key)} class="space-y-4 border-t border-line px-4 py-4">
-											{#if ep.description}
-												<p class="text-sm text-muted">{ep.description}</p>
-											{/if}
+										<div class="grid" transition:motion.collapse>
+											<div class="min-h-0">
+												<div id={panelId(key)} class="space-y-4 border-t border-line px-4 py-4">
+													{#if ep.description}
+														<p class="text-sm text-muted">{ep.description}</p>
+													{/if}
 
-											<div>
-												<p class="mb-1.5 text-xs font-medium text-faint">Gate</p>
-												<p class="text-sm text-muted">{gateSentence(ep)}</p>
-											</div>
-
-											{@render tryIt(ep, key)}
-
-											{#if ep.roles?.length}
-												<div>
-													<p class="mb-1.5 text-xs font-medium text-faint">Required roles</p>
-													<div class="flex flex-wrap gap-1.5">
-														{#each ep.roles as role (role)}
-															<Badge tone="violet" class="font-mono">{role}</Badge>
-														{/each}
+													<div>
+														<p class="mb-1.5 text-xs font-medium text-faint">Gate</p>
+														<p class="text-sm text-muted">{gateSentence(ep)}</p>
 													</div>
-												</div>
-											{/if}
 
-											{#if ep.params?.length}
-												<div>
-													<p class="mb-2 text-xs font-medium text-faint">Parameters</p>
-													<Table label="API reference">
-														<thead>
-															<tr>
-																<th scope="col">Name</th>
-																<th scope="col">In</th>
-																<th scope="col">Type</th>
-																<th scope="col">Required</th>
-																<th scope="col">Description</th>
-															</tr>
-														</thead>
-														<tbody>
-															{#each ep.params as param (`${param.in}:${param.name}`)}
-																<tr>
-																	<td data-cell="nowrap" class="font-mono">{param.name}</td>
-																	<td data-cell="nowrap" class="text-faint">{param.in}</td>
-																	<td data-cell="nowrap" class="font-mono text-faint">{param.type}</td>
-																	<td data-cell="nowrap">
-																		{#if param.required}
-																			<span class="text-danger">yes</span>
-																		{:else}
-																			<span class="text-faint">no</span>
-																		{/if}
-																	</td>
-																	<td class="text-muted">
-																		{param.description}
-																		{#if param.values?.length}
-																			{@const vk = valuesKey(key, param)}
-																			{@const open = openedValues.has(vk)}
-																			<span class="mt-1 flex flex-wrap items-center gap-1">
-																				{#each shownValues(param, open) as v}
-																					<code class="rounded bg-surface-2 px-1 font-mono text-xs text-fg">{v}</code>
-																				{/each}
-																				{#if param.values.length > VALUES_SHOWN}
-																					<button
-																						type="button"
-																						class="text-xs text-brand hover:underline"
-																						onclick={() => toggleValues(vk)}
-																						aria-expanded={open}
-																					>
-																						{open ? 'Show fewer' : `and ${param.values.length - VALUES_SHOWN} more`}
-																					</button>
+													{@render tryIt(ep, key)}
+
+													{#if ep.roles?.length}
+														<div>
+															<p class="mb-1.5 text-xs font-medium text-faint">Required roles</p>
+															<div class="flex flex-wrap gap-1.5">
+																{#each ep.roles as role (role)}
+																	<Badge tone="violet" class="font-mono">{role}</Badge>
+																{/each}
+															</div>
+														</div>
+													{/if}
+
+													{#if ep.params?.length}
+														<div>
+															<p class="mb-2 text-xs font-medium text-faint">Parameters</p>
+															<Table label="API reference">
+																<thead>
+																	<tr>
+																		<th scope="col">Name</th>
+																		<th scope="col">In</th>
+																		<th scope="col">Type</th>
+																		<th scope="col">Required</th>
+																		<th scope="col">Description</th>
+																	</tr>
+																</thead>
+																<tbody>
+																	{#each ep.params as param (`${param.in}:${param.name}`)}
+																		<tr>
+																			<td data-cell="nowrap" class="font-mono">{param.name}</td>
+																			<td data-cell="nowrap" class="text-faint">{param.in}</td>
+																			<td data-cell="nowrap" class="font-mono text-faint">{param.type}</td>
+																			<td data-cell="nowrap">
+																				{#if param.required}
+																					<span class="text-danger">yes</span>
+																				{:else}
+																					<span class="text-faint">no</span>
 																				{/if}
-																			</span>
-																		{/if}
-																	</td>
-																</tr>
-															{/each}
-														</tbody>
-													</Table>
-												</div>
-											{/if}
+																			</td>
+																			<td class="text-muted">
+																				{param.description}
+																				{#if param.values?.length}
+																					{@const vk = valuesKey(key, param)}
+																					{@const open = openedValues.has(vk)}
+																					<span class="mt-1 flex flex-wrap items-center gap-1">
+																						{#each shownValues(param, open) as v}
+																							<code class="rounded bg-surface-2 px-1 font-mono text-xs text-fg">{v}</code>
+																						{/each}
+																						{#if param.values.length > VALUES_SHOWN}
+																							<button
+																								type="button"
+																								class="text-xs text-brand hover:underline"
+																								onclick={() => toggleValues(vk)}
+																								aria-expanded={open}
+																							>
+																								{open ? 'Show fewer' : `and ${param.values.length - VALUES_SHOWN} more`}
+																							</button>
+																						{/if}
+																					</span>
+																				{/if}
+																			</td>
+																		</tr>
+																	{/each}
+																</tbody>
+															</Table>
+														</div>
+													{/if}
 
-											{#if ep.requestBody}
-												<div>
-													<p class="mb-1.5 text-xs font-medium text-faint">
-														Request body
-														{#if ep.requestBody.description}
-															<span class="font-normal text-faint">
-																- {ep.requestBody.description}</span
-															>
-														{/if}
-													</p>
-													{#if ep.requestBody.example}
+													{#if ep.requestBody}
+														<div>
+															<p class="mb-1.5 text-xs font-medium text-faint">
+																Request body
+																{#if ep.requestBody.description}
+																	<span class="font-normal text-faint">
+																		- {ep.requestBody.description}</span
+																	>
+																{/if}
+															</p>
+															{#if ep.requestBody.example}
+																<div class="group/code relative">
+																	<pre class="overflow-x-auto rounded-lg border border-line bg-ink p-3 font-mono text-xs leading-relaxed text-fg">{ep.requestBody.example}</pre>
+																	<CopyButton
+																		value={ep.requestBody.example}
+																		label="Copy the example request body for {ep.method} {ep.path}"
+																		title="Copy the example request body for {ep.method} {ep.path}"
+																		size={ICON.xs}
+																		class="absolute top-2 right-2 rounded bg-surface-2 opacity-0 transition-opacity group-hover/code:opacity-100 has-[:focus-visible]:opacity-100 pointer-coarse:opacity-100"
+																	/>
+																</div>
+															{/if}
+														</div>
+													{/if}
+
+													{#if ep.response}
+														<div>
+															<p class="mb-1.5 text-xs font-medium text-faint">
+																Response
+																{#if ep.response.description}
+																	<span class="font-normal text-faint"> - {ep.response.description}</span>
+																{/if}
+															</p>
+															{#if ep.response.example}
+																<div class="group/code relative">
+																	<pre class="overflow-x-auto rounded-lg border border-line bg-ink p-3 font-mono text-xs leading-relaxed text-fg">{ep.response.example}</pre>
+																	<CopyButton
+																		value={ep.response.example}
+																		label="Copy the example response body for {ep.method} {ep.path}"
+																		title="Copy the example response body for {ep.method} {ep.path}"
+																		size={ICON.xs}
+																		class="absolute top-2 right-2 rounded bg-surface-2 opacity-0 transition-opacity group-hover/code:opacity-100 has-[:focus-visible]:opacity-100 pointer-coarse:opacity-100"
+																	/>
+																</div>
+															{/if}
+														</div>
+													{/if}
+
+													<div>
+														<p class="mb-1.5 text-xs font-medium text-faint">
+															Request
+															<span class="font-normal text-faint"> (paste it, then fill in the placeholders)</span>
+														</p>
 														<div class="group/code relative">
-															<pre class="overflow-x-auto rounded-lg border border-line bg-ink p-3 font-mono text-xs leading-relaxed text-fg">{ep.requestBody.example}</pre>
+															<pre class="overflow-x-auto rounded-lg border border-line bg-ink p-3 font-mono text-xs leading-relaxed text-fg">{preview}</pre>
 															<CopyButton
-																value={ep.requestBody.example}
-																label="Copy the example request body for {ep.method} {ep.path}"
-																title="Copy the example request body for {ep.method} {ep.path}"
+																value={preview}
+																label="Copy a curl request for {ep.method} {ep.path}"
+																title="Copy a curl request for {ep.method} {ep.path}"
 																size={ICON.xs}
 																class="absolute top-2 right-2 rounded bg-surface-2 opacity-0 transition-opacity group-hover/code:opacity-100 has-[:focus-visible]:opacity-100 pointer-coarse:opacity-100"
 															/>
 														</div>
-													{/if}
-												</div>
-											{/if}
-
-											{#if ep.response}
-												<div>
-													<p class="mb-1.5 text-xs font-medium text-faint">
-														Response
-														{#if ep.response.description}
-															<span class="font-normal text-faint"> - {ep.response.description}</span>
-														{/if}
-													</p>
-													{#if ep.response.example}
-														<div class="group/code relative">
-															<pre class="overflow-x-auto rounded-lg border border-line bg-ink p-3 font-mono text-xs leading-relaxed text-fg">{ep.response.example}</pre>
-															<CopyButton
-																value={ep.response.example}
-																label="Copy the example response body for {ep.method} {ep.path}"
-																title="Copy the example response body for {ep.method} {ep.path}"
-																size={ICON.xs}
-																class="absolute top-2 right-2 rounded bg-surface-2 opacity-0 transition-opacity group-hover/code:opacity-100 has-[:focus-visible]:opacity-100 pointer-coarse:opacity-100"
-															/>
-														</div>
-													{/if}
-												</div>
-											{/if}
-
-											<div>
-												<p class="mb-1.5 text-xs font-medium text-faint">
-													Request
-													<span class="font-normal text-faint"> (paste it, then fill in the placeholders)</span>
-												</p>
-												<div class="group/code relative">
-													<pre class="overflow-x-auto rounded-lg border border-line bg-ink p-3 font-mono text-xs leading-relaxed text-fg">{preview}</pre>
-													<CopyButton
-														value={preview}
-														label="Copy a curl request for {ep.method} {ep.path}"
-														title="Copy a curl request for {ep.method} {ep.path}"
-														size={ICON.xs}
-														class="absolute top-2 right-2 rounded bg-surface-2 opacity-0 transition-opacity group-hover/code:opacity-100 has-[:focus-visible]:opacity-100 pointer-coarse:opacity-100"
-													/>
+													</div>
 												</div>
 											</div>
 										</div>

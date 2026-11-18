@@ -9,6 +9,7 @@ const writeText = vi.fn(async (_text: string) => {});
 import ApiReferencePage from './+page.svelte';
 import type { EndpointGroup } from '#lib/api/reference.ts';
 import type { PageData } from './$types';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(() => {
 	cleanup();
@@ -355,5 +356,73 @@ describe('try it', () => {
 		await fireEvent.click(getByRole('button', { name: /GET one/ }));
 		expect(container.textContent).toContain('{schema}');
 		expect(container.textContent).toContain('{id}');
+	});
+});
+
+describe('api reference disclosures', () => {
+	const withPlugin = [
+		...groups,
+		{
+			id: 'plugin-waf',
+			label: 'Plugin \u00b7 waf',
+			description: '',
+			server: 'admin',
+			baseUrl: '/api/admin',
+			endpoints: [{ method: 'GET', path: '/api/admin/waf/config', summary: 'Read the WAF config', auth: 'bearer-or-cookie' }],
+		},
+	] as EndpointGroup[];
+
+	function chevronTurns(button: HTMLElement) {
+		const chevron = button.querySelector('svg') as SVGElement;
+		expect(chevron.classList).toContain('transition-transform');
+		expect(chevron.classList).toContain('duration-base');
+		return chevron;
+	}
+
+	it('turns one chevron on an endpoint row as it opens', async () => {
+		const { container } = setup();
+		const [first] = disclosures(container);
+		const chevron = chevronTurns(first);
+		expect(chevron.classList).not.toContain('rotate-90');
+		await fireEvent.click(first);
+		expect(first.querySelector('svg')).toBe(chevron);
+		expect(chevron.classList).toContain('rotate-90');
+	});
+
+	it("opens and closes an endpoint's details on their row", async () => {
+		const { container } = setup();
+		const [first] = disclosures(container);
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(first);
+			const panel = document.getElementById(first.getAttribute('aria-controls')!)!;
+			const row = watch.entered.find((el) => el.classList.contains('grid') && el.contains(panel));
+			expect(row).toBeTruthy();
+			await fireEvent.click(first);
+			expect(watch.left).toContain(row);
+		} finally {
+			watch.stop();
+		}
+	});
+
+	it('opens the plugin groups in the rail on their row, with one turning chevron', async () => {
+		const { getByRole } = render(ApiReferencePage, {
+			props: { data: { groups: withPlugin, collections: 0, source: 'engine' } as unknown as PageData, form: null },
+		});
+		const fold = getByRole('button', { name: /Plugins \(1\)/ });
+		const chevron = chevronTurns(fold);
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(fold);
+			expect(fold.querySelector('svg')).toBe(chevron);
+			expect(chevron.classList).toContain('rotate-90');
+			const link = getByRole('button', { name: 'waf' });
+			const row = watch.entered.find((el) => el.classList.contains('grid') && el.contains(link));
+			expect(row).toBeTruthy();
+			await fireEvent.click(fold);
+			expect(watch.left).toContain(row);
+		} finally {
+			watch.stop();
+		}
 	});
 });
