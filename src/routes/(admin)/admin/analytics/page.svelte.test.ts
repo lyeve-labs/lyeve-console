@@ -162,3 +162,16 @@ describe('a read that failed', () => {
 		expect(text.split('not included in this build').length - 1).toBe(1);
 	});
 });
+
+describe('response mix', () => {
+	it('moves each segment to its new share on the progress rung', () => {
+		const { container } = render(AnalyticsPage, { props: props() });
+		const bar = container.querySelector('[role="img"][aria-label*="successful"]') as HTMLElement;
+		const segments = [...bar.children];
+		expect(segments).toHaveLength(3);
+		for (const segment of segments) {
+			expect(segment.classList).toContain('transition-[width]');
+			expect(segment.classList).toContain('duration-progress');
+		}
+	});
+});
