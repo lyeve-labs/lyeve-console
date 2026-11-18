@@ -54,7 +54,7 @@
 	async function askPrune() {
 		pruneDate = '';
 		const ok = await openDialog<boolean>({
-			title: 'Prune audit entries',
+			title: 'Delete older audit entries?',
 			body: pruneBody,
 			footer: pruneFooter,
 			size: 'sm',
