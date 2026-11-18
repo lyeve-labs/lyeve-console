@@ -45,6 +45,7 @@
 	let confirming = $state(false);
 	let syncing = $state(false);
 	let error = $state('');
+	let applied = $state('');
 
 	// The engine queues only what removes data: a column, a key or a table
 	// dropped, or a column cleared for one tenant. Each is marked by its own
@@ -55,6 +56,7 @@
 	const applying: SubmitFunction = () => {
 		syncing = true;
 		error = '';
+		applied = '';
 		return async ({ result }) => {
 			syncing = false;
 			confirming = false;
@@ -80,6 +82,8 @@
 			 * their place.
 			 */
 			await refreshAll();
+			await overlayClosed();
+			applied = 'Migrations applied.';
 		};
 	};
 
@@ -157,9 +161,10 @@
 	</Modal>
 {/if}
 <!-- One element is both the message and the live region, on the page and
-     empty until a sync fails, because a screen reader announces a region only
+     empty until a sync ends, because a screen reader announces a region only
      when text arrives in one already there. Empty, it is visually hidden and
-     adds no gap to the header. A div because in Firefox Orca drops a quick
+     adds no gap to the header. A success is spoken only, since the chip shows
+     it. A div because in Firefox Orca drops a quick
      insertion into a paragraph, and no status role because Orca reads a
      status bar as chrome and says nothing. -->
-<div class="text-xs text-danger empty:sr-only" aria-live="polite" aria-atomic="true" data-testid="db-status-live">{#if error}{error}{/if}</div>
+<div class={error ? 'text-xs text-danger empty:sr-only' : 'sr-only'} aria-live="polite" aria-atomic="true" data-testid="db-status-live">{error || applied}</div>

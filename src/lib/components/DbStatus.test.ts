@@ -237,6 +237,20 @@ describe('DbStatus', () => {
 		expect(nav.refreshAll).toHaveBeenCalledTimes(1);
 		expect(screen.queryByText('Could not apply the migrations. Check your connection and try again.')).toBeNull();
 	});
+
+	// The chip turns to synced, which a screen reader is not told, so the
+	// region that speaks a failure speaks the success too, for a screen
+	// reader only, since the chip already shows it.
+	it('announces applied migrations from the same region, to a screen reader only', async () => {
+		render(DbStatus, { props: { pending: 2, redirectTo: '/admin/schema' } });
+		const live = screen.getByTestId('db-status-live');
+		await fireEvent.click(screen.getByTestId('db-status'));
+		await submit({ type: 'redirect', status: 303, location: '/admin/schema' });
+		await waitFor(() => expect(live.textContent).toBe('Migrations applied.'));
+		expect(screen.getByTestId('db-status-live')).toBe(live);
+		expect(live.classList).toContain('sr-only');
+		expect(live.classList).not.toContain('text-danger');
+	});
 });
 
 /*
