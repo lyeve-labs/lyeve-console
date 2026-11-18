@@ -239,8 +239,15 @@ export const load: PageServerLoad = async (event) => {
 		loadReview(client, params.id, runs(plugins, PLUGIN.review), user).then(async (r) =>
 			r ? { ...r, people: await people } : null,
 		),
-		loadComments(client, params.id, people, tenant, runs(plugins, PLUGIN.multitenant)).catch(() => null),
-		loadReleases(client, params.id).catch(() => null),
+		// A read that throws is a failed read, so each panel stays on the entry
+		// and says so. Only a build without the plugin leaves a panel off.
+		loadComments(client, params.id, people, tenant, runs(plugins, PLUGIN.multitenant)).catch(() => ({
+			threads: [],
+			people: [],
+			mentionable: [],
+			unavailable: true,
+		})),
+		loadReleases(client, params.id).catch(() => ({ open: [], holding: [], failed: true })),
 	]);
 
 	// A many_to_many link is a row beside the entry, never a key in its body.
