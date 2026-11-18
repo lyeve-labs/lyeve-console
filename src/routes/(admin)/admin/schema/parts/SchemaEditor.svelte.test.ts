@@ -6,6 +6,7 @@ import type { Schema } from '@lyeve-labs/client';
 import type { Problem } from '#lib/schema/editor.ts';
 import { DdlHistory } from './ddl-history.svelte';
 import SchemaEditor from './SchemaEditor.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 let teardown: (() => void) | undefined;
 afterEach(() => {
@@ -486,5 +487,56 @@ describe('SchemaEditor remove control', () => {
 		const remove = screen.getByRole('button', { name: 'Remove field title' });
 		expect(remove.classList).toContain('transition-colors');
 		expect(remove.classList).not.toContain('duration-base');
+	});
+});
+
+describe('SchemaEditor rows in motion', () => {
+	function rowOf(el: Element): Element {
+		return el.closest('[data-field-row]') as Element;
+	}
+
+	it('fades a field row in on Add field and out on remove', async () => {
+		setup();
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(screen.getByRole('button', { name: 'Add field' }));
+			const added = rowOf(screen.getByRole('button', { name: 'Remove field new field' }));
+			expect(added).toBeTruthy();
+			expect(watch.entered).toContain(added);
+			const title = rowOf(screen.getByRole('button', { name: 'Remove field title' }));
+			await fireEvent.click(screen.getByRole('button', { name: 'Remove field title' }));
+			expect(watch.left).toContain(title);
+		} finally {
+			watch.stop();
+		}
+	});
+
+	it('opens the help text band on its row as its chevron turns', async () => {
+		setup();
+		const toggle = screen.getByRole('button', { name: 'Help text, title' });
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(toggle);
+			const band = document.getElementById('help-band-f-title') as HTMLElement;
+			const row = watch.entered.find((el) => el.classList.contains('grid') && el.contains(band));
+			expect(row).toBeTruthy();
+			await fireEvent.click(toggle);
+			expect(watch.left).toContain(row);
+		} finally {
+			watch.stop();
+		}
+	});
+
+	it('opens the relation band on its row when the type becomes a relation', async () => {
+		const { props } = setup();
+		const watch = watchTransitions();
+		try {
+			props.schema.fields[1].field_type = 'relation';
+			flushSync();
+			const band = screen.getByTestId('relation-panel-f-title');
+			expect(watch.entered.some((el) => el.classList.contains('grid') && el.contains(band))).toBe(true);
+		} finally {
+			watch.stop();
+		}
 	});
 });

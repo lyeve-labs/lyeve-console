@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-	import { Alert, Badge, Button, Checkbox, Collapsible, CopyButton, Input, NumberInput, SectionHeading, SegmentedControl, Select, Tabs, type SelectOption } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Button, Checkbox, Collapsible, CopyButton, Input, NumberInput, SectionHeading, SegmentedControl, Select, Tabs, motion, type SelectOption } from '@lyeve-labs/ui-kit';
 	import type { FieldType, Schema, SchemaField, TransportMode, TransportName } from '@lyeve-labs/client';
 	import { dndzone, type DndEvent } from 'svelte-dnd-action';
 	import { tick } from 'svelte';
@@ -638,7 +638,7 @@
 		{@const plan = planRelation(schema, field, schemas)}
 		{@const keys = keyOptions(schema, field)}
 		{@const inert = inertFlags(field)}
-		<div class="rounded-lg border border-line bg-surface-2">
+		<div class="rounded-lg border border-line bg-surface-2" data-field-row transition:motion.fade animate:motion.reorder>
 			<div class="flex items-center gap-3 p-3">
 				<GripVertical size={ICON.sm} class="shrink-0 cursor-grab text-faint" />
 				<div class="flex min-w-0 flex-1 flex-wrap items-center gap-3" use:keysStayInRow>
@@ -760,17 +760,21 @@
 			{#if helpOpen[rowId]}
 				<!-- Its own band under the row, as the relation's is: on the row's
 				     line a sentence-long input has no room to be read. -->
-				<div id="help-band-{rowId}" class="border-t border-line/60 bg-surface/60 p-3" use:keysStayInRow>
-					<Input
-						id="help-text-{rowId}"
-						name="help-text-{rowId}"
-						label="Help text"
-						hint="Shown under the field to editors and followed by the assistant, up to 500 characters."
-						maxlength={HELP_TEXT_MAX}
-						autocomplete="off"
-						value={field.help_text ?? ''}
-						oninput={(e: Event & { currentTarget: HTMLInputElement }) => (field.help_text = e.currentTarget.value || undefined)}
-					/>
+				<div class="grid" transition:motion.collapse>
+					<div class="min-h-0">
+						<div id="help-band-{rowId}" class="border-t border-line/60 bg-surface/60 p-3" use:keysStayInRow>
+							<Input
+								id="help-text-{rowId}"
+								name="help-text-{rowId}"
+								label="Help text"
+								hint="Shown under the field to editors and followed by the assistant, up to 500 characters."
+								maxlength={HELP_TEXT_MAX}
+								autocomplete="off"
+								value={field.help_text ?? ''}
+								oninput={(e: Event & { currentTarget: HTMLInputElement }) => (field.help_text = e.currentTarget.value || undefined)}
+							/>
+						</div>
+					</div>
 				</div>
 			{/if}
 
@@ -785,131 +789,139 @@
 				     inside it. On the same line as the name, the type and two
 				     checkboxes, every relation control is too narrow to read
 				     and nothing has room to say what the relation does. -->
-				<div
-					class="space-y-3 border-t border-line/60 bg-surface/60 p-3"
-					data-testid="relation-panel-{rowId}"
-					use:keysStayInRow
-				>
-					<!-- The problem list moves focus to the kind's radio group by its
-					     id, and the group names the problem as its description. -->
-					<div class="min-w-0">
-						<SegmentedControl
-							id="relation-type-{rowId}"
-							label="Relation"
-							size="sm"
-							class="max-w-full overflow-x-auto"
-							options={RELATION_OPTIONS}
-							value={field.relation_type ?? 'belongs_to'}
-							onchange={(v) => {
-								field.relation_type = v;
-								dropInertFlags(field);
-							}}
-							error={problemAt(`relation-type-${rowId}`)}
-						/>
-					</div>
-					<div class="grid gap-3 @xl:grid-cols-2">
-						<Select
-							id="relation-target-{rowId}"
-							label="Target content type"
-							error={problemAt(`relation-target-${rowId}`)}
-							searchable
-							placeholder="Choose a content type"
-							options={targetOptions(schema, field)}
-							value={field.relation_to ?? ''}
-							onvaluechange={(v) => {
-								field.relation_to = v;
-							}}
-						/>
-						{#if keys}
-							<Select
-								id="relation-key-{rowId}"
-								label="Key field"
-								hint="The field on {targetLabel(field)} whose value links each entry back here."
-								placeholder="Choose a field"
-								options={keys}
-								value={field.relation_fk_name ?? ''}
-								onvaluechange={(v) => {
-									field.relation_fk_name = v || undefined;
-								}}
-							/>
-						{/if}
-					</div>
-					{#if unservedTarget(field)}
-						<p class="text-xs text-muted">
-							Public delivery does not serve this relation until {unservedTarget(field)} is public too.
-						</p>
-					{/if}
-
-					{#if plan}
-						<p class="text-sm text-fg">{plan.sentence}</p>
-
-						<dl class="grid gap-x-6 gap-y-1 text-xs sm:grid-cols-[auto_1fr]">
-							<dt class="text-faint">Cardinality</dt>
-							<dd class="text-muted">{plan.kind.cardinality}</dd>
-							<dt class="text-faint">Stored as</dt>
-							<dd class="font-mono text-muted">{plan.kind.type}</dd>
-							<dt class="text-faint">Key stored in</dt>
-							<dd class="text-muted">{plan.kind.storage}</dd>
-							<dt class="text-faint">Read through</dt>
-							<dd class="font-mono text-muted">{plan.reads}</dd>
-							<dt class="text-faint">Req and Idx</dt>
-							<dd class="text-muted">{plan.flags}</dd>
-						</dl>
-
-						{#if plan.creates.length > 0}
-							<div>
-								<p class="mb-1 text-xs text-faint">Saving creates</p>
-								<ul class="space-y-0.5 text-xs text-muted">
-									{#each plan.creates as line (line)}
-										<li>{line}</li>
-									{/each}
-								</ul>
+				<div class="grid" transition:motion.collapse>
+					<div class="min-h-0">
+						<div
+							class="space-y-3 border-t border-line/60 bg-surface/60 p-3"
+							data-testid="relation-panel-{rowId}"
+							use:keysStayInRow
+						>
+							<!-- The problem list moves focus to the kind's radio group by its
+							     id, and the group names the problem as its description. -->
+							<div class="min-w-0">
+								<SegmentedControl
+									id="relation-type-{rowId}"
+									label="Relation"
+									size="sm"
+									class="max-w-full overflow-x-auto"
+									options={RELATION_OPTIONS}
+									value={field.relation_type ?? 'belongs_to'}
+									onchange={(v) => {
+										field.relation_type = v;
+										dropInertFlags(field);
+									}}
+									error={problemAt(`relation-type-${rowId}`)}
+								/>
 							</div>
-						{:else}
-							<p class="text-xs text-faint">
-								Saving adds nothing to this table. This side of the relation comes
-								from the other content type.
-							</p>
-						{/if}
+							<div class="grid gap-3 @xl:grid-cols-2">
+								<Select
+									id="relation-target-{rowId}"
+									label="Target content type"
+									error={problemAt(`relation-target-${rowId}`)}
+									searchable
+									placeholder="Choose a content type"
+									options={targetOptions(schema, field)}
+									value={field.relation_to ?? ''}
+									onvaluechange={(v) => {
+										field.relation_to = v;
+									}}
+								/>
+								{#if keys}
+									<Select
+										id="relation-key-{rowId}"
+										label="Key field"
+										hint="The field on {targetLabel(field)} whose value links each entry back here."
+										placeholder="Choose a field"
+										options={keys}
+										value={field.relation_fk_name ?? ''}
+										onvaluechange={(v) => {
+											field.relation_fk_name = v || undefined;
+										}}
+									/>
+								{/if}
+							</div>
+							{#if unservedTarget(field)}
+								<p class="text-xs text-muted">
+									Public delivery does not serve this relation until {unservedTarget(field)} is public too.
+								</p>
+							{/if}
 
-						{#if plan.problem}
-							<Alert tone="warn">
-								{plan.problem}
-							</Alert>
-						{/if}
-					{:else}
-						<p class="text-xs text-faint">
-							Choose a target content type to see which table stores this relation and
-							what saving creates.
-						</p>
-					{/if}
+							{#if plan}
+								<p class="text-sm text-fg">{plan.sentence}</p>
+
+								<dl class="grid gap-x-6 gap-y-1 text-xs sm:grid-cols-[auto_1fr]">
+									<dt class="text-faint">Cardinality</dt>
+									<dd class="text-muted">{plan.kind.cardinality}</dd>
+									<dt class="text-faint">Stored as</dt>
+									<dd class="font-mono text-muted">{plan.kind.type}</dd>
+									<dt class="text-faint">Key stored in</dt>
+									<dd class="text-muted">{plan.kind.storage}</dd>
+									<dt class="text-faint">Read through</dt>
+									<dd class="font-mono text-muted">{plan.reads}</dd>
+									<dt class="text-faint">Req and Idx</dt>
+									<dd class="text-muted">{plan.flags}</dd>
+								</dl>
+
+								{#if plan.creates.length > 0}
+									<div>
+										<p class="mb-1 text-xs text-faint">Saving creates</p>
+										<ul class="space-y-0.5 text-xs text-muted">
+											{#each plan.creates as line (line)}
+												<li>{line}</li>
+											{/each}
+										</ul>
+									</div>
+								{:else}
+									<p class="text-xs text-faint">
+										Saving adds nothing to this table. This side of the relation comes
+										from the other content type.
+									</p>
+								{/if}
+
+								{#if plan.problem}
+									<Alert tone="warn">
+										{plan.problem}
+									</Alert>
+								{/if}
+							{:else}
+								<p class="text-xs text-faint">
+									Choose a target content type to see which table stores this relation and
+									what saving creates.
+								</p>
+							{/if}
+						</div>
+					</div>
 				</div>
 			{:else if field.field_type === 'decimal'}
 				<!-- Precision and scale decide the column, so they sit in a band
 				     under the row, as a relation's settings do. An absent value
 				     is the engine's default, which is what each box shows. -->
-				<div
-					class="grid gap-3 border-t border-line/60 bg-surface/60 p-3 @xl:grid-cols-2"
-					data-testid="decimal-panel-{rowId}"
-					use:keysStayInRow
-				>
-					<NumberInput
-						id="decimal-precision-{rowId}"
-						label="Precision"
-						hint="The most digits a value can have, from {DECIMAL_PRECISION_MIN} to {DECIMAL_PRECISION_MAX}."
-						min={DECIMAL_PRECISION_MIN}
-						max={DECIMAL_PRECISION_MAX}
-						bind:value={() => field.precision ?? DECIMAL_PRECISION_DEFAULT, (next: number) => setPrecision(field, next, `decimal-precision-${rowId}`)}
-					/>
-					<NumberInput
-						id="decimal-scale-{rowId}"
-						label="Scale"
-						hint="How many of those digits come after the decimal point, from 0 to {maxScale(field)}."
-						min={0}
-						max={maxScale(field)}
-						bind:value={() => decimalScale(field), (next: number) => setScale(field, next, `decimal-scale-${rowId}`)}
-						error={problemAt(`decimal-scale-${rowId}`)}
-					/>
+				<div class="grid" transition:motion.collapse>
+					<div class="min-h-0">
+						<div
+							class="grid gap-3 border-t border-line/60 bg-surface/60 p-3 @xl:grid-cols-2"
+							data-testid="decimal-panel-{rowId}"
+							use:keysStayInRow
+						>
+							<NumberInput
+								id="decimal-precision-{rowId}"
+								label="Precision"
+								hint="The most digits a value can have, from {DECIMAL_PRECISION_MIN} to {DECIMAL_PRECISION_MAX}."
+								min={DECIMAL_PRECISION_MIN}
+								max={DECIMAL_PRECISION_MAX}
+								bind:value={() => field.precision ?? DECIMAL_PRECISION_DEFAULT, (next: number) => setPrecision(field, next, `decimal-precision-${rowId}`)}
+							/>
+							<NumberInput
+								id="decimal-scale-{rowId}"
+								label="Scale"
+								hint="How many of those digits come after the decimal point, from 0 to {maxScale(field)}."
+								min={0}
+								max={maxScale(field)}
+								bind:value={() => decimalScale(field), (next: number) => setScale(field, next, `decimal-scale-${rowId}`)}
+								error={problemAt(`decimal-scale-${rowId}`)}
+							/>
+						</div>
+					</div>
 				</div>
 			{/if}
 		</div>
