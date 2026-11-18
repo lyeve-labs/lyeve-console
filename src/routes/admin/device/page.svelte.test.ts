@@ -96,6 +96,19 @@ describe('the outcome of a decision', () => {
 	});
 });
 
+describe('a decision that met an outage', () => {
+	// An engine 400, 422 or 500 lands here too, so the sentence claims
+	// nothing about whether the engine answered.
+	it('makes no claim about the device or the engine, and says how to check', () => {
+		render(DevicePage, { props: props({ view: 'pending', code: 'WDJB-MJHT', request }, { outcome: 'error' }) });
+		expect(document.body.textContent).toContain('Could not confirm the decision. Check whether the device was signed in, then try again.');
+		expect(screen.queryByText(OUTAGE.title)).toBeNull();
+		expect(document.body.textContent).not.toContain('reach the engine');
+		expect(document.body.textContent).not.toContain('nothing was changed');
+		expect(screen.getByRole('link', { name: 'Try again' }).getAttribute('href')).toBe('/admin/device?code=WDJB-MJHT');
+	});
+});
+
 describe('a refusal that is not an outage', () => {
 	it('says the engine is busy and retries the same code', () => {
 		render(DevicePage, { props: props({ view: 'busy', code: 'WDJB-MJHT' }) });
