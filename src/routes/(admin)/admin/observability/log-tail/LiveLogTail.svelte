@@ -48,6 +48,11 @@
 
 	const MAX_LOG_ENTRIES = 200;
 
+	// A message is whatever a plugin logged, so one line can be a whole
+	// request body. Two hundred of those held in the table would take the
+	// tab's memory, so each is cut when it arrives.
+	const MAX_MESSAGE_LENGTH = 2000;
+
 	// The stream reads the level and the keyword to build its URL, so it is
 	// reopened by the effect below whenever either changes. The keyword is
 	// applied after a pause, because a stream reopened on every keystroke would
@@ -86,6 +91,9 @@
 		es.addEventListener('log', (e: MessageEvent) => {
 			try {
 				const entry: LogEntry = JSON.parse(e.data as string);
+				if (typeof entry.message === 'string' && entry.message.length > MAX_MESSAGE_LENGTH) {
+					entry.message = `${entry.message.slice(0, MAX_MESSAGE_LENGTH)}\u2026`;
+				}
 				// A pause holds the table still for reading, so what arrives
 				// meanwhile waits and joins the table on resume.
 				if (logPaused) held = [entry, ...held].slice(0, MAX_LOG_ENTRIES);

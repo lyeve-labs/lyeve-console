@@ -74,6 +74,14 @@ describe('LiveLogTail', () => {
 		expect(container.textContent).toContain('2 entries');
 	});
 
+	it('cuts a long message when it arrives, so the table holds a bounded amount', async () => {
+		const { container } = render(LiveLogTail, { props: { running: true } });
+		last().emit('log', entry('x'.repeat(50_000)));
+		await tick();
+		const cell = [...container.querySelectorAll('tbody td')].find((td) => td.textContent?.startsWith('x'));
+		expect(cell?.textContent).toBe(`${'x'.repeat(2000)}\u2026`);
+	});
+
 	it('holds what arrives while paused, adds it on resume, and clears on request', async () => {
 		const { container, getByRole } = render(LiveLogTail, { props: { running: true } });
 		last().emit('log', entry('before the pause'));
