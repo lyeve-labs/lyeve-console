@@ -1,11 +1,22 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PageData } from './$types';
 
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/content/article/e1') } }));
 vi.mock('$app/state', () => state);
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+const forms = vi.hoisted(() => ({ submits: new Map<HTMLFormElement, unknown>(), confirm: vi.fn(async () => false) }));
+vi.mock('$app/forms', () => ({
+	enhance: (node: HTMLFormElement, submit?: unknown) => {
+		forms.submits.set(node, submit);
+		return { destroy: () => forms.submits.delete(node) };
+	},
+}));
+vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
+	...(await importOriginal<Record<string, unknown>>()),
+	confirm: forms.confirm,
+}));
 
 import EntryPage from './+page.svelte';
 
@@ -170,6 +181,43 @@ describe('content entry editor, revision history', () => {
 		expect(row.classList).toContain('lg:flex-row');
 		expect(aside.classList).not.toContain('w-64');
 		expect(aside.classList).toContain('lg:w-64');
+	});
+
+	type After = (o: { result: { type: string }; update: () => Promise<void> }) => Promise<void>;
+	type Submit = (o: { cancel: () => void; formData: FormData; formElement: HTMLFormElement }) => Promise<After | undefined>;
+	const restoreForm = () => screen.getByTestId('opened-revision').querySelector('form') as HTMLFormElement;
+	const opened = () => ({ data: data({ revisions: [revision(9)], revisionWindow: { hiddenOlder: 0, windowDays: null } }), form: { openedRevision: revision(4) } as never });
+
+	it('restores without asking when nothing is unsaved, and shows Restore pending while it runs', async () => {
+		forms.confirm.mockClear();
+		render(EntryPage, { props: opened() });
+		const form = restoreForm();
+		const after = (await (forms.submits.get(form) as Submit)({ cancel: vi.fn(), formData: new FormData(form), formElement: form })) as After;
+		await tick();
+		expect(forms.confirm).not.toHaveBeenCalled();
+		const button = form.querySelector('button') as HTMLButtonElement;
+		expect(button.getAttribute('aria-busy')).toBe('true');
+		await after({ result: { type: 'success' }, update: async () => {} });
+		await tick();
+		expect(button.getAttribute('aria-busy')).toBeNull();
+	});
+
+	it('asks before a restore throws away unsaved edits', async () => {
+		forms.confirm.mockClear();
+		forms.confirm.mockResolvedValue(false);
+		render(EntryPage, { props: opened() });
+		await fireEvent.input(document.querySelector('input[name="title"]') as HTMLInputElement, { target: { value: 'Changed' } });
+		const form = restoreForm();
+		const cancel = vi.fn();
+		await (forms.submits.get(form) as Submit)({ cancel, formData: new FormData(form), formElement: form });
+		expect(forms.confirm).toHaveBeenCalledWith('Restore revision 4?', 'Your unsaved changes to this entry are lost.', expect.objectContaining({ confirmLabel: 'Restore' }));
+		expect(cancel).toHaveBeenCalled();
+	});
+
+	it('reports a restore that landed', async () => {
+		render(EntryPage, { props: { data: data(), form: { restored: 4 } as never } });
+		// The kit fills an outcome's live region a tick after it mounts, so it is read out.
+		expect(await screen.findByText('Revision 4 restored.')).toBeTruthy();
 	});
 
 	it('shows a revision the plugin opened, with a way to restore it', () => {

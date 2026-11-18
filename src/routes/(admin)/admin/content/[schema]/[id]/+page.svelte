@@ -1,7 +1,7 @@
 <script lang="ts">
 	import FormErrors from '#lib/components/FormErrors.svelte';
 	import OlderHidden from '#lib/components/OlderHidden.svelte';
-	import { Alert, Badge, Breadcrumb, Button, Card, NumberInput, PageShell, SectionHeading } from '@lyeve-labs/ui-kit';
+	import { Alert, Badge, Breadcrumb, Button, Card, NumberInput, PageShell, SectionHeading, confirm } from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { SchemaField } from '@lyeve-labs/client';
 	import { enhance } from '#lib/enhance.ts';
@@ -36,9 +36,10 @@
 		buildFromData(data.schemaDef?.fields ?? [], data.item?.data ?? {}),
 	);
 
-	// Every action on this page redirects back to this same route, which swaps
-	// `data` without remounting, so a one-time initializer would go on showing
-	// the pre-action values and restore would appear to do nothing. Plain
+	// Every action on this page ends back on this same route, by a redirect
+	// or by the data reload after an enhanced post, which swaps `data` without
+	// remounting, so a one-time initializer would go on showing the
+	// pre-action values and restore would appear to do nothing. Plain
 	// variable, not $state, so the effect does not depend on what it writes.
 	// svelte-ignore state_referenced_locally
 	let seededVersion = `${data.item?.id}:${data.item?.updated_at}`;
@@ -51,6 +52,18 @@
 	let validationErrors = $state<Record<string, string>>({});
 	let errorKeys = $state<Record<string, string>>({});
 	const save = tracked(() => {});
+
+	// What the form held when the entry was read, so a restore can tell
+	// whether it would throw away edits nobody saved.
+	const pristine = $derived(serialize(userFields, buildFromData(data.schemaDef?.fields ?? [], data.item?.data ?? {})));
+	const restore = tracked(async ({ cancel, formData }) => {
+		if (serialized === pristine) return;
+		const revision = String(formData.get('rev_num') ?? '');
+		if (!(await confirm(`Restore revision ${revision}?`, 'Your unsaved changes to this entry are lost.', { confirmLabel: 'Restore' }))) {
+			cancel();
+		}
+	});
+	const restored = $derived(form && 'restored' in form ? Number(form.restored) : null);
 
 	let serialized = $derived(serialize(userFields, formValues));
 	// A field whose links could not be read opened empty, and posting it would
@@ -254,6 +267,11 @@
 
 	<div class="flex flex-col gap-5 lg:flex-row lg:items-start">
 		<div class="min-w-0 flex-1">
+			{#if restored !== null}
+				<div class="mb-5">
+					<Alert tone="success" autoDismiss>Revision {restored} restored.</Alert>
+				</div>
+			{/if}
 			{#if data.review}
 				<div class="mb-5">
 					<ReviewBar
@@ -385,9 +403,9 @@
 									<span class="mt-0.5 block truncate text-xs text-faint">{revDiff(rev)}</span>
 								</button>
 								{#if selectedRev === rev.id && canUpdate}
-									<form method="POST" action={actionWithQuery('restore', listQuery)} use:enhance class="mt-2">
+									<form method="POST" action={actionWithQuery('restore', listQuery)} use:enhance={restore.enhance} class="mt-2">
 										<input type="hidden" name="rev_num" value={rev.revision_num} />
-										<Button variant="secondary" size="sm" type="submit">
+										<Button variant="secondary" size="sm" type="submit" loading={restore.pending}>
 											<RotateCcw size={ICON.sm} /> Restore
 										</Button>
 									</form>
@@ -401,9 +419,9 @@
 							<p class="mt-0.5 text-xs text-faint">{formatDateTime(openedRevision.created_at)}</p>
 							<p class="mt-0.5 truncate text-xs text-faint">{revDiff(openedRevision)}</p>
 							{#if canUpdate}
-								<form method="POST" action={actionWithQuery('restore', listQuery)} use:enhance class="mt-2">
+								<form method="POST" action={actionWithQuery('restore', listQuery)} use:enhance={restore.enhance} class="mt-2">
 									<input type="hidden" name="rev_num" value={openedRevision.revision_num} />
-									<Button variant="secondary" size="sm" type="submit">
+									<Button variant="secondary" size="sm" type="submit" loading={restore.pending}>
 										<RotateCcw size={ICON.sm} /> Restore
 									</Button>
 								</form>

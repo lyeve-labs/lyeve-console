@@ -585,7 +585,11 @@ export const actions: Actions = {
 			const failed = actionFailure(err, 'Could not restore the revision. Try again.');
 			return fail(failed.status, { ...failed.data, revision: true });
 		}
-		redirect(303, entryAddress(event));
+		// An enhanced post reports the revision on the page. Without scripts the
+		// browser shows the answer at the post's address, where a reload would
+		// restore again, so that post goes back to the entry.
+		if (request.headers.get('x-sveltekit-action') !== 'true') redirect(303, entryAddress(event));
+		return { restored: toRevision };
 	},
 
 	/**

@@ -679,7 +679,8 @@ describe('content editor save, many_to_many fields', () => {
 
 // restore: the rollback payload
 
-function restoreEvent(fetchFn: typeof globalThis.fetch, revNum: string) {
+/** A restore post. An enhanced one carries the header SvelteKit's enhance sends. */
+function restoreEvent(fetchFn: typeof globalThis.fetch, revNum: string, enhanced = true) {
 	const fd = new FormData();
 	fd.set('rev_num', revNum);
 	return {
@@ -687,13 +688,13 @@ function restoreEvent(fetchFn: typeof globalThis.fetch, revNum: string) {
 		cookies: mockCookies(),
 		url: new URL('http://localhost/admin/content/article/e1?/restore'),
 		params: { schema: 'article', id: 'e1' },
-		request: { formData: async () => fd }
+		request: { formData: async () => fd, headers: new Headers(enhanced ? { 'x-sveltekit-action': 'true' } : {}) }
 	} as never;
 }
 
 async function runRestore(event: never) {
 	try {
-		return (await actions.restore(event)) as { data?: { error?: string } } | undefined;
+		return (await actions.restore(event)) as { data?: { error?: string }; restored?: number } | undefined;
 	} catch (e) {
 		const err = e as { status?: number };
 		if (err.status === 303) return undefined;
@@ -728,14 +729,22 @@ describe('content editor restore', () => {
 	it('names the revision by its number under the key the route reads', async () => {
 		const { fn, calls } = relationFetch([]);
 
-		const failure = await runRestore(restoreEvent(fn, '2'));
-		expect(failure, 'restoring a listed revision must not fail').toBeUndefined();
+		const outcome = await runRestore(restoreEvent(fn, '2'));
+		expect(outcome, 'restoring a listed revision must not fail').toEqual({ restored: 2 });
 
 		const rollback = calls.find((c) => c.path.endsWith('/rollback'));
 		expect(rollback?.method).toBe('POST');
 		// The route reads the sequence number under `to_revision` and no other
 		// key.
 		expect(JSON.parse(rollback?.body ?? '{}')).toEqual({ to_revision: 2 });
+	});
+
+	// Without scripts the browser shows the action's answer at the post's
+	// address, and a reload there would restore again.
+	it('redirects a post that was not enhanced back to the entry', async () => {
+		const { fn } = relationFetch([]);
+		const outcome = await runRestore(restoreEvent(fn, '2', false));
+		expect(outcome).toBeUndefined();
 	});
 
 	it('refuses a submission that names no revision instead of calling rollback', async () => {
