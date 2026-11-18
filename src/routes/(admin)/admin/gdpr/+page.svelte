@@ -252,7 +252,7 @@
 
 		{#if eraseResult && eraseHolds.length > 0}
 			<!-- Stays until dismissed: nothing was erased, and the reader has to act on it. -->
-			<Alert tone="warn" title="Erasure held">
+			<Alert tone="warn" title="Erasure held" dismissible>
 				<p>
 					Nothing was erased for <span class="font-mono text-xs">{eraseResult.identifier}</span>, because
 					{eraseHolds.length === 1 ? 'a legal hold covers' : 'legal holds cover'} this subject. Release
@@ -266,7 +266,7 @@
 			</Alert>
 		{:else if eraseResult && eraseKeptShared}
 			<!-- Stays until dismissed: records are still held, and the reader has to know why. -->
-			<Alert tone="warn" title="Erasure kept some records">
+			<Alert tone="warn" title="Erasure kept some records" dismissible>
 				<p>
 					Erased <span class="font-medium">{eraseResult.total_rows}</span>
 					{plural(eraseResult.total_rows, 'row')} for
@@ -276,7 +276,7 @@
 			</Alert>
 		{:else if eraseResult && eraseFailures.length > 0}
 			<!-- Stays until dismissed: data is still held, and the reader has to act on it. -->
-			<Alert tone="warn" title="Erasure incomplete">
+			<Alert tone="warn" title="Erasure incomplete" dismissible>
 				<p>
 					Erased <span class="font-medium">{eraseResult.total_rows}</span>
 					{plural(eraseResult.total_rows, 'row')} for
