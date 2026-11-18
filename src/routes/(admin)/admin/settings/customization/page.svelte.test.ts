@@ -2,7 +2,13 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
+const forms = vi.hoisted(() => ({ submits: new Map<HTMLFormElement, (input: unknown) => unknown>() }));
+vi.mock('$app/forms', () => ({
+	enhance: (node: HTMLFormElement, submit: (input: unknown) => unknown) => {
+		forms.submits.set(node, submit);
+		return { destroy: () => forms.submits.delete(node) };
+	},
+}));
 
 import CustomizationPage from './+page.svelte';
 import { outlineSkips } from '#lib/test-outline.ts';
@@ -28,6 +34,37 @@ function props(over: Record<string, unknown> = {}, form: unknown = null) {
 		form,
 	} as never;
 }
+
+describe('the brand form', () => {
+	it("takes the accent through the kit's color field, which draws the color it holds", () => {
+		render(CustomizationPage, { props: props({ settings: { ...settings, brand: { ...settings.brand, accent: '#0A7CFF' } } }) });
+		const field = document.getElementById('brand-accent') as HTMLInputElement;
+		expect(field.getAttribute('name')).toBe('accent');
+		const swatch = field.parentElement?.querySelector('span[aria-hidden="true"]') as HTMLElement;
+		expect(swatch.style.backgroundColor).not.toBe('');
+	});
+
+	it('shows Save pending while the brand write runs', async () => {
+		render(CustomizationPage, { props: props() });
+		const form = document.querySelector('form[action="?/brand"]') as HTMLFormElement;
+		const save = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+		const after = (await forms.submits.get(form)?.({})) as (o: unknown) => Promise<void>;
+		await Promise.resolve();
+		expect(save.getAttribute('aria-busy')).toBe('true');
+		await after({ result: { type: 'success' }, update: async () => {} });
+		expect(save.getAttribute('aria-busy')).toBeNull();
+	});
+
+	it('stops waiting when applying the result throws', async () => {
+		render(CustomizationPage, { props: props() });
+		const form = document.querySelector('form[action="?/brand"]') as HTMLFormElement;
+		const save = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+		const after = (await forms.submits.get(form)?.({})) as (o: unknown) => Promise<void>;
+		await after({ result: { type: 'error' }, update: async () => { throw new Error('navigation failed'); } }).catch(() => {});
+		await Promise.resolve();
+		expect(save.getAttribute('aria-busy')).toBeNull();
+	});
+});
 
 describe('customization when it could not be read', () => {
 	it('says the engine did not answer rather than that customization is not enabled', () => {
