@@ -94,7 +94,7 @@
 				role="region"
 				aria-label={title}
 				data-testid={id}
-				transition:motion.popover
+				transition:motion.popover|global
 				class="absolute start-0 top-full z-dropdown mt-1 w-96 max-w-[calc(100vw-2rem)] origin-top-left overflow-hidden rounded-xl border border-line bg-surface text-fg shadow-popover inset-shadow-highlight"
 			>
 				<p class="px-3 pb-1 pt-2.5 text-xs font-medium text-muted">{title}</p>

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 import { afterEach, describe, expect, it } from 'vitest';
 import EditorPage from './+page.svelte';
 import { outlineSkips } from '#lib/test-outline.ts';
@@ -34,6 +35,45 @@ function mount() {
 }
 
 describe('custom page editor', () => {
+	it('moves a block with its own fields, so a reorder travels rather than redrawing both cards', async () => {
+		mount();
+		const text = screen.getByLabelText('Text');
+		await fireEvent.click(screen.getByRole('button', { name: 'Move block 1 down' }));
+		expect(screen.getByLabelText('Text')).toBe(text);
+	});
+
+	it('plays a removed block out', async () => {
+		mount();
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(screen.getByRole('button', { name: 'Remove block 1' }));
+			expect(watch.left.some((el) => el.textContent?.includes('1. Callout'))).toBe(true);
+		} finally {
+			watch.stop();
+		}
+	});
+
+	it('keeps every block and link in place when a save reloads the page as it was', async () => {
+		const props = (customPage: unknown) =>
+			({ data: { customPage, schemas: ['articles'], schemasGate: { state: 'ok' }, user: { roles: ['admin'] } }, form: null }) as never;
+		const { rerender } = render(EditorPage, { props: props(stored) });
+		await fireEvent.click(screen.getByRole('button', { name: 'Move block 1 down' }));
+		const text = screen.getByLabelText('Text');
+		const link = screen.getByLabelText('Label');
+		const watch = watchTransitions();
+		try {
+			const saved = structuredClone(stored);
+			saved.blocks = [saved.blocks[1], saved.blocks[0], ...saved.blocks.slice(2)];
+			await rerender(props(saved));
+			expect(watch.left).toEqual([]);
+			expect(watch.entered).toEqual([]);
+			expect(screen.getByLabelText('Text')).toBe(text);
+			expect(screen.getByLabelText('Label')).toBe(link);
+		} finally {
+			watch.stop();
+		}
+	});
+
 	it('opens a stored page whose blocks omit their empty fields', () => {
 		expect(mount).not.toThrow();
 		expect(screen.getByRole('heading', { level: 1, name: 'Launch checklist' })).toBeTruthy();

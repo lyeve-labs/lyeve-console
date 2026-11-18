@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import JsonTree from './JsonTree.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -12,6 +13,39 @@ describe('JsonTree', () => {
 	it('opens the two top levels and prints each scalar as JSON', () => {
 		const { container } = render(JsonTree, { props: { value: [{ id: 7, name: 'Ada', active: true, note: null }] } });
 		expect(text(container)).toContain('[1]0:{4}id:7name:"Ada"active:truenote:null');
+	});
+
+	it('eases the hover color of a toggle rather than switching it in a frame', () => {
+		render(JsonTree, { props: { value: { order: { id: 1 } } } });
+		expect(screen.getByRole('button', { name: /order/ }).classList).toContain('transition-colors');
+	});
+
+	it('turns one chevron on the movement rung as a node opens and shuts', async () => {
+		render(JsonTree, { props: { value: { order: { customer: { email: 'a@example.com' } } } } });
+		const toggle = screen.getByRole('button', { name: /customer/ });
+		const chevron = toggle.querySelector('svg') as SVGElement;
+		expect(chevron.classList).toContain('transition-transform');
+		expect(chevron.classList).toContain('duration-base');
+		expect(chevron.classList).not.toContain('rotate-90');
+		await fireEvent.click(toggle);
+		expect(toggle.querySelector('svg')).toBe(chevron);
+		expect(chevron.classList).toContain('rotate-90');
+	});
+
+	it('opens and closes the children of a node on their row', async () => {
+		render(JsonTree, { props: { value: { order: { customer: { email: 'a@example.com' } } } } });
+		const toggle = screen.getByRole('button', { name: /customer/ });
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(toggle);
+			const row = toggle.nextElementSibling as HTMLElement;
+			expect(row.classList).toContain('grid');
+			expect(watch.entered).toContain(row);
+			await fireEvent.click(toggle);
+			expect(watch.left).toContain(row);
+		} finally {
+			watch.stop();
+		}
 	});
 
 	it('keeps a third level folded until it is opened', async () => {

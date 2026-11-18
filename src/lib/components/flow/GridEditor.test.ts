@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import GridEditor from './GridEditor.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -33,6 +34,31 @@ describe('GridEditor', () => {
 		expect(onchange).toHaveBeenLastCalledWith({ columns: ['sku', 'qty'], rows: [['a1', '5']] });
 		await fireEvent.input(screen.getByLabelText('Column 2 name'), { target: { value: 'count' } });
 		expect(onchange).toHaveBeenLastCalledWith({ columns: ['sku', 'count'], rows: [['a1', '2']] });
+	});
+
+	it('keeps each column and row with its cells when one before it is removed, and plays the removed one out', async () => {
+		const onchange = vi.fn();
+		const { rerender } = render(GridEditor, { props: { columns: ['sku', 'qty'], rows: [['a1', '2'], ['b2', '7']], onchange } });
+		const qty = screen.getByLabelText('Column 2 name');
+		const sku = screen.getByLabelText('Column 1 name').closest('th')!;
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(screen.getByRole('button', { name: 'Remove column sku' }));
+			await rerender(onchange.mock.lastCall![0]);
+			expect(watch.left).toContain(sku);
+			expect(screen.getByLabelText('Column 1 name')).toBe(qty);
+
+			const second = screen.getByLabelText('Row 2 qty');
+			const firstRow = screen.getByLabelText('Row 1 qty').closest('tr')!;
+			await fireEvent.click(screen.getByRole('button', { name: 'Remove row 1' }));
+			await rerender(onchange.mock.lastCall![0]);
+			expect(watch.left).toContain(firstRow);
+			// A leaving row pinned out of flow turns into a block and its cells bunch to one side.
+			expect(firstRow.style.position).toBe('');
+			expect(screen.getByLabelText('Row 1 qty')).toBe(second);
+		} finally {
+			watch.stop();
+		}
 	});
 
 	it('removes a column with its cells, and a row', async () => {

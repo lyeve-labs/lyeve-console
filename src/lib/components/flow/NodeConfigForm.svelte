@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Input, MultiSelect, NumberInput, SectionHeading, Select, Tag, Textarea, Toggle } from '@lyeve-labs/ui-kit';
+	import { Button, Input, MultiSelect, NumberInput, SectionHeading, Select, Tag, Textarea, Toggle, motion } from '@lyeve-labs/ui-kit';
 	import { Lock, Plus, Trash2 } from '@lucide/svelte';
 	import NodeConfigForm from './NodeConfigForm.svelte';
 	import SourcePicker from './SourcePicker.svelte';
@@ -30,6 +30,7 @@
 	} from '#lib/flow/schema.ts';
 	import { fillableFieldsOf, fillProblem } from '#lib/flow/fill.ts';
 	import { ICON } from '#lib/icon.ts';
+	import { rowKeys, withRow, withoutRow } from '#lib/row-keys.ts';
 
 	interface Props {
 		schema: JsonSchema;
@@ -236,8 +237,20 @@
 		writeMap(key, rows, s);
 	}
 
+	// A map is stored as an object, so each entry is keyed beside it, and a
+	// removed entry leaves from where it stood while a renamed one stays put.
+	let mapKeys = $state<Record<string, number[]>>({});
+
+	function keyedEntries(key: string, v: unknown): { id: number; k: string; v: string }[] {
+		const rows = entries(v);
+		const ids = rowKeys(mapKeys[key], rows.length);
+		return rows.map(([k, val], i) => ({ id: ids[i], k, v: val }));
+	}
+
 	function mapRemove(key: string, s: JsonSchema, index: number) {
-		writeMap(key, entries(value[key]).filter((_, i) => i !== index), s);
+		const rows = entries(value[key]);
+		mapKeys = { ...mapKeys, [key]: withoutRow(rowKeys(mapKeys[key], rows.length), index) };
+		writeMap(key, rows.filter((_, i) => i !== index), s);
 	}
 
 	let draftKeys = $state<Record<string, string>>({});
@@ -245,7 +258,9 @@
 	function mapAdd(key: string, s: JsonSchema) {
 		const k = (draftKeys[key] ?? '').trim();
 		if (!k) return;
-		writeMap(key, [...entries(value[key]), [k, '']], s);
+		const rows = entries(value[key]);
+		mapKeys = { ...mapKeys, [key]: withRow(rowKeys(mapKeys[key], rows.length)) };
+		writeMap(key, [...rows, [k, '']], s);
 		draftKeys = { ...draftKeys, [key]: '' };
 	}
 
@@ -539,8 +554,8 @@
 				<SectionHeading level={3} variant="eyebrow">{label}</SectionHeading>
 				{#if hint}<span class="text-xs text-muted">{hint}</span>{/if}
 				{#if error}<span class="text-xs text-danger">{error}</span>{/if}
-				{#each entries(current) as [k, v], i (i)}
-					<div class="flex items-end gap-2">
+				{#each keyedEntries(field.key, current) as { id: entry, k, v }, i (entry)}
+					<div class="flex items-end gap-2" transition:motion.fade|global animate:motion.reorder>
 						<Input
 							id="{id}-k{i}"
 							label="Key"

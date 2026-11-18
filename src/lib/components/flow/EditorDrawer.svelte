@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Button, Tabs } from '@lyeve-labs/ui-kit';
-	import { ChevronDown, ChevronUp } from '@lucide/svelte';
+	import { Button, Tabs, motion } from '@lyeve-labs/ui-kit';
+	import { ChevronUp } from '@lucide/svelte';
 	import type { Snippet } from 'svelte';
 	import { clampDrawerHeight, readDrawerHeight, writeDrawerHeight } from '#lib/flow/drawer.ts';
 	import { ICON } from '#lib/icon.ts';
@@ -35,6 +35,9 @@
 	}
 
 	let height = $state(readDrawerHeight(storage(), windowHeight()));
+	// The remembered height is the whole drawer's, as the canvas above counts
+	// it, so the body takes what the tab row leaves.
+	let tabRow = $state(0);
 
 	// The drag overlays the height while the pointer moves and writes it once
 	// on release, so storage sees one value per gesture.
@@ -72,15 +75,13 @@
 	}
 </script>
 
-<!-- The height moves on the base rung when the drawer opens or shuts, and not
-     while the pointer is dragging the edge, where a transition would lag the
-     hand. interpolate-size lets the shut height, which is auto, animate too.
-     A browser without it jumps. -->
+<!-- The body sits in a row that opens and closes on the collapse preset, so
+     the drawer and what it holds move as one and the canvas above takes the
+     room back as it goes. The drag sets the body's height directly, with
+     nothing easing behind the pointer. The drawer's top border sits on the
+     tab row, so the measured row holds everything above the body. -->
 <section
-	class="relative flex shrink-0 flex-col border-t border-line bg-surface [interpolate-size:allow-keywords] {drag
-		? ''
-		: 'transition-[height] duration-base'}"
-	style={open ? `height:${height}px` : ''}
+	class="relative flex shrink-0 flex-col bg-surface"
 	aria-label="Editor drawer"
 	data-testid="editor-drawer"
 >
@@ -90,7 +91,7 @@
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div
-			class="absolute -top-1 left-0 right-0 z-10 h-2 cursor-row-resize outline-none hover:bg-brand/40 focus-visible:bg-brand {drag ? 'bg-brand/40' : ''}"
+			class="absolute -top-1 left-0 right-0 z-10 h-2 cursor-row-resize outline-none transition-colors hover:bg-brand/40 focus-visible:bg-brand {drag ? 'bg-brand/40' : ''}"
 			role="separator"
 			aria-orientation="horizontal"
 			aria-label="Resize drawer"
@@ -104,7 +105,7 @@
 			onkeydown={resizeKey}
 		></div>
 	{/if}
-	<div class="flex shrink-0 items-center justify-between pr-2">
+	<div class="flex shrink-0 items-center justify-between border-t border-line pr-2" data-testid="editor-drawer-tabs" bind:offsetHeight={tabRow}>
 		<Tabs
 			{items}
 			{active}
@@ -121,12 +122,16 @@
 			aria-expanded={open}
 			onclick={() => (open = !open)}
 		>
-			{#if open}<ChevronDown size={ICON.sm} />{:else}<ChevronUp size={ICON.sm} />{/if}
+			<ChevronUp size={ICON.sm} class="transition-transform duration-base {open ? 'rotate-180' : ''}" />
 		</Button>
 	</div>
 	{#if open}
-		<div class="min-h-0 flex-1 overflow-hidden border-t border-line">
-			{@render children()}
+		<div class="grid" transition:motion.collapse>
+			<div class="min-h-0">
+				<div class="flex flex-col overflow-hidden border-t border-line" style="height:{Math.max(0, height - tabRow)}px" data-testid="editor-drawer-body">
+					{@render children()}
+				</div>
+			</div>
 		</div>
 	{/if}
 </section>

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { ChevronDown, ChevronRight } from '@lucide/svelte';
+	import { motion } from '@lyeve-labs/ui-kit';
+	import { ChevronRight } from '@lucide/svelte';
 	import JsonTree from './JsonTree.svelte';
 	import { ICON } from '#lib/icon.ts';
 
@@ -48,21 +49,25 @@
 	{#if isList || isObject}
 		<button
 			type="button"
-			class="inline-flex items-center gap-1 rounded text-left text-fg outline-none hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-focus"
+			class="inline-flex items-center gap-1 rounded text-left text-fg outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-focus"
 			aria-expanded={open}
 			onclick={() => (open = !open)}
 		>
-			{#if open}<ChevronDown size={ICON.xs} class="shrink-0 text-faint" />{:else}<ChevronRight size={ICON.xs} class="shrink-0 text-faint" />{/if}
+			<ChevronRight size={ICON.xs} class="shrink-0 text-faint transition-transform duration-base {open ? 'rotate-90' : ''}" />
 			{#if name !== undefined}<span class="text-muted">{name}:</span>{/if}
 			<span class="text-faint">{summary}</span>
 		</button>
 		{#if open}
-			<div class="ml-2 border-l border-line pl-3">
-				{#each entries as [k, v] (k)}
-					<JsonTree value={v} name={k} depth={depth + 1} />
-				{:else}
-					<span class="text-faint">empty</span>
-				{/each}
+			<div class="grid" transition:motion.collapse>
+				<div class="min-h-0">
+					<div class="ml-2 border-l border-line pl-3">
+						{#each entries as [k, v] (k)}
+							<JsonTree value={v} name={k} depth={depth + 1} />
+						{:else}
+							<span class="text-faint">empty</span>
+						{/each}
+					</div>
+				</div>
 			</div>
 		{/if}
 	{:else}

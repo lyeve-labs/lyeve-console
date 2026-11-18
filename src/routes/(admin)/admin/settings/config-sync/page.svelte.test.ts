@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 
 import ConfigSyncPage from './+page.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(() => {
 	cleanup();
@@ -117,5 +118,20 @@ describe('config sync page', () => {
 		const { getByText, queryByTestId } = setup({ scope: 'sync', mode: 'diff', error: 'the passphrase does not open this bundle' });
 		expect(getByText('the passphrase does not open this bundle')).toBeTruthy();
 		expect(queryByTestId('sync-plan')).toBeNull();
+	});
+});
+
+describe('config sync results', () => {
+	it('opens the plan on its row when a comparison returns, so the page below moves with it', async () => {
+		const { rerender, getByTestId } = setup();
+		const watch = watchTransitions();
+		try {
+			await rerender({ data: {}, form: { scope: 'sync', mode: 'diff', plan } } as never);
+			const row = getByTestId('sync-plan').parentElement!.parentElement!;
+			expect(row.classList).toContain('grid');
+			expect(watch.entered).toContain(row);
+		} finally {
+			watch.stop();
+		}
 	});
 });

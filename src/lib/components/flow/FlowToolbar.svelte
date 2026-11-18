@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge, Button, ButtonGroup, Dropdown, Input, Kbd, Toolbar, Tooltip } from '@lyeve-labs/ui-kit';
+	import { Badge, Button, ButtonGroup, Dropdown, Input, Kbd, Toolbar, Tooltip, motion } from '@lyeve-labs/ui-kit';
 	import {
 		ArrowLeft,
 		Ban,
@@ -115,7 +115,7 @@
 		<a
 			href={back.href}
 			data-testid="page-back"
-			class="relative hit-area -ms-1 inline-flex shrink-0 items-center gap-1 rounded-md px-1 py-1 text-xs text-muted outline-none transition-colors duration-base hover:text-fg focus-visible:ring-2 focus-visible:ring-focus"
+			class="relative hit-area -ms-1 inline-flex shrink-0 items-center gap-1 rounded-md px-1 py-1 text-xs text-muted outline-none transition-colors hover:text-fg focus-visible:ring-2 focus-visible:ring-focus"
 		>
 			<ArrowLeft size={ICON.sm} aria-hidden="true" class="shrink-0" />
 			{back.label}
@@ -232,23 +232,27 @@
 		{/snippet}
 	</Toolbar>
 	{#if showKeys}
-		<p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-faint" data-testid="keyboard-hints">
-			{#if hasFlowCanvas}
-				<span><Kbd>Ctrl</Kbd> <Kbd>Z</Kbd> undo</span>
-				<span><Kbd>Ctrl</Kbd> <Kbd>Shift</Kbd> <Kbd>Z</Kbd> redo</span>
-			{/if}
-			<span><Kbd>Del</Kbd> remove the selection</span>
-			{#if hasFlowCanvas}
-				<span><Kbd>Shift</Kbd> drag to select several, <Kbd>Shift</Kbd> click to add one</span>
-				<span><Kbd>Space</Kbd> drag to pan</span>
-				<span><Kbd>Alt</Kbd> drag off the grid</span>
-				<span><Kbd>+</Kbd> <Kbd>-</Kbd> zoom, <Kbd>Shift</Kbd> <Kbd>1</Kbd> fit, <Kbd>Shift</Kbd> <Kbd>0</Kbd> 100%</span>
-				<span><Kbd>Tab</Kbd> to a node, <Kbd>Enter</Kbd> to select it, arrows to nudge</span>
-			{:else}
-				<span><Kbd>Tab</Kbd> to a node, <Kbd>Enter</Kbd> to select it</span>
-			{/if}
-			<span><Kbd>Ctrl</Kbd> <Kbd>S</Kbd> save</span>
-			<span><Kbd>Ctrl</Kbd> <Kbd>Shift</Kbd> <Kbd>F</Kbd> focus mode</span>
-		</p>
+		<div class="mt-2 grid" transition:motion.collapse>
+			<div class="min-h-0">
+				<p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-faint" data-testid="keyboard-hints">
+					{#if hasFlowCanvas}
+						<span><Kbd>Ctrl</Kbd> <Kbd>Z</Kbd> undo</span>
+						<span><Kbd>Ctrl</Kbd> <Kbd>Shift</Kbd> <Kbd>Z</Kbd> redo</span>
+					{/if}
+					<span><Kbd>Del</Kbd> remove the selection</span>
+					{#if hasFlowCanvas}
+						<span><Kbd>Shift</Kbd> drag to select several, <Kbd>Shift</Kbd> click to add one</span>
+						<span><Kbd>Space</Kbd> drag to pan</span>
+						<span><Kbd>Alt</Kbd> drag off the grid</span>
+						<span><Kbd>+</Kbd> <Kbd>-</Kbd> zoom, <Kbd>Shift</Kbd> <Kbd>1</Kbd> fit, <Kbd>Shift</Kbd> <Kbd>0</Kbd> 100%</span>
+						<span><Kbd>Tab</Kbd> to a node, <Kbd>Enter</Kbd> to select it, arrows to nudge</span>
+					{:else}
+						<span><Kbd>Tab</Kbd> to a node, <Kbd>Enter</Kbd> to select it</span>
+					{/if}
+					<span><Kbd>Ctrl</Kbd> <Kbd>S</Kbd> save</span>
+					<span><Kbd>Ctrl</Kbd> <Kbd>Shift</Kbd> <Kbd>F</Kbd> focus mode</span>
+				</p>
+			</div>
+		</div>
 	{/if}
 </div>

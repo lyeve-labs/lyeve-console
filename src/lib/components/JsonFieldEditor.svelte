@@ -60,7 +60,7 @@
 </script>
 
 <script lang="ts">
-	import { Button, Collapsible, Input, SegmentedControl, Textarea, assistField } from '@lyeve-labs/ui-kit';
+	import { Button, Collapsible, Input, SegmentedControl, Textarea, assistField, motion } from '@lyeve-labs/ui-kit';
 	import { Plus, Trash2 } from '@lucide/svelte';
 	import { ICON } from '#lib/icon.ts';
 	import AssistChoice from './AssistChoice.svelte';
@@ -202,7 +202,7 @@
 	{#if mode === 'pairs'}
 		<div class="flex flex-col gap-2" role="group" aria-label="Keys and values">
 			{#each pairs as pair, index (pair.id)}
-				<div class="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] items-start gap-2">
+				<div class="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] items-start gap-2" transition:motion.fade|global animate:motion.reorder>
 					<Input
 						label="Key"
 						id={index === 0 ? id : undefined}

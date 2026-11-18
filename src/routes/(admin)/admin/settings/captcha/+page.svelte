@@ -12,6 +12,7 @@
 		PasswordInput,
 		SectionHeading,
 		SegmentedControl,
+		motion,
 		toast,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
@@ -131,14 +132,18 @@
 						required={!tenant?.has_secret}
 					/>
 					{#if provider === 'recaptcha'}
-						<Input
-							id="captcha-score-floor"
-							name="score_floor"
-							label="Score floor"
-							hint="reCAPTCHA v3 scores each check from 0 to 1. A check below this fails. Leave empty to use the provider's default."
-							placeholder="0.5"
-							bind:value={scoreFloor}
-						/>
+						<div class="grid" transition:motion.collapse|global>
+							<div class="min-h-0">
+								<Input
+									id="captcha-score-floor"
+									name="score_floor"
+									label="Score floor"
+									hint="reCAPTCHA v3 scores each check from 0 to 1. A check below this fails. Leave empty to use the provider's default."
+									placeholder="0.5"
+									bind:value={scoreFloor}
+								/>
+							</div>
+						</div>
 					{/if}
 					<div class="flex flex-wrap items-center gap-2">
 						<!-- The plugin refuses an unlicensed save, so the button is off and

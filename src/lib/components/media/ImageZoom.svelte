@@ -73,6 +73,15 @@
 		return { x: frame.w / 2, y: frame.h / 2 };
 	}
 
+	// A step from a button, a key or a double click eases to the new view. The
+	// wheel, a drag and the range follow the hand, so they move it directly.
+	let eased = $state(false);
+
+	function step(run: () => void) {
+		eased = true;
+		run();
+	}
+
 	function setScale(next: number, at: Point = center()) {
 		const r = zoomAt(scale, next, at, pan, image, frame);
 		chosen = r.scale;
@@ -91,6 +100,7 @@
 
 	function onwheel(e: WheelEvent) {
 		e.preventDefault();
+		eased = false;
 		// A trackpad sends many small deltas and a mouse a few large ones. The
 		// exponent makes both land on the same zoom per distance scrolled.
 		setScale(scale * Math.exp(-e.deltaY * 0.0015), local(e));
@@ -100,6 +110,7 @@
 	let dragging = $state(false);
 	function onpointerdown(e: PointerEvent) {
 		if (!zoomed || e.button !== 0) return;
+		eased = false;
 		frameEl!.setPointerCapture(e.pointerId);
 		drag = { from: { x: e.clientX, y: e.clientY }, pan };
 		dragging = true;
@@ -116,8 +127,7 @@
 	}
 
 	function ondblclick(e: MouseEvent) {
-		if (chosen === null && fit < 1) setScale(1, local(e));
-		else fitView();
+		step(() => (chosen === null && fit < 1 ? setScale(1, local(e)) : fitView()));
 	}
 
 	function onkeydown(e: KeyboardEvent) {
@@ -136,7 +146,7 @@
 		const run = keys[e.key];
 		if (run) {
 			e.preventDefault();
-			run();
+			step(run);
 		}
 	}
 
@@ -146,6 +156,7 @@
 	const logMax = Math.log(MAX_SCALE);
 	const rangeValue = $derived(Math.round(((Math.log(scale) - logMin) / (logMax - logMin)) * 1000));
 	function onrange(e: Event) {
+		eased = false;
 		const v = Number((e.currentTarget as HTMLInputElement).value) / 1000;
 		setScale(Math.exp(logMin + v * (logMax - logMin)));
 	}
@@ -177,14 +188,14 @@
 			{alt}
 			decoding="async"
 			draggable="false"
-			class="pointer-events-none absolute left-1/2 top-1/2 max-w-none"
+			class="pointer-events-none absolute left-1/2 top-1/2 max-w-none {eased ? 'transition-transform duration-base ease-move' : ''}"
 			style="width: {image.w ? `${image.w}px` : 'auto'}; transform: translate(-50%, -50%) translate({pan.x}px, {pan.y}px) scale({scale}); transform-origin: center;"
 			bind:this={imgEl}
 		/>
 	</div>
 
 	<div class="flex flex-wrap items-center gap-2" role="group" aria-label="Zoom">
-		<Button variant="ghost" size="sm" type="button" aria-label="Zoom out" disabled={scale <= MIN_SCALE} onclick={() => setScale(stepScale(scale, -1))}>
+		<Button variant="ghost" size="sm" type="button" aria-label="Zoom out" disabled={scale <= MIN_SCALE} onclick={() => step(() => setScale(stepScale(scale, -1)))}>
 			<Minus size={ICON.sm} />
 		</Button>
 		<input
@@ -197,14 +208,14 @@
 			aria-valuetext="{percent}%"
 			class="w-40 accent-brand"
 		/>
-		<Button variant="ghost" size="sm" type="button" aria-label="Zoom in" disabled={scale >= MAX_SCALE} onclick={() => setScale(stepScale(scale, 1))}>
+		<Button variant="ghost" size="sm" type="button" aria-label="Zoom in" disabled={scale >= MAX_SCALE} onclick={() => step(() => setScale(stepScale(scale, 1)))}>
 			<Plus size={ICON.sm} />
 		</Button>
 		<span class="w-14 text-center font-mono text-xs text-muted" aria-live="polite">{percent}%</span>
-		<Button variant="secondary" size="sm" type="button" onclick={fitView} disabled={chosen === null}>
+		<Button variant="secondary" size="sm" type="button" onclick={() => step(fitView)} disabled={chosen === null}>
 			<Maximize2 size={ICON.sm} /> Fit
 		</Button>
-		<Button variant="secondary" size="sm" type="button" onclick={() => setScale(1)} disabled={Math.abs(scale - 1) < 0.001}>100%</Button>
+		<Button variant="secondary" size="sm" type="button" onclick={() => step(() => setScale(1))} disabled={Math.abs(scale - 1) < 0.001}>100%</Button>
 		<span class="ms-auto text-xs text-faint">Scroll to zoom, drag to pan, double click to switch between fit and 100%.</span>
 	</div>
 </div>

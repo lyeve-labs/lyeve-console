@@ -11,6 +11,7 @@
 		SegmentedControl,
 		Select,
 		Stat,
+		motion,
 		toast,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
@@ -201,24 +202,28 @@
 						/>
 
 						{#if mode === 'selected'}
-							{#if !data.schemas.ok}
-								<GateNotice
-									gate={data.schemas.gate}
-									title="Content types"
-									absent="The content type list is not included in this build, so you cannot choose types below."
-								/>
-							{:else if typeOptions.length === 0}
-								<p class="text-sm text-muted">No content types yet.</p>
-							{:else}
-								<CheckboxGroup
-									label="Content types that keep history"
-									orientation="horizontal"
-									options={typeOptions}
-									disabled={isLocked('schemas')}
-									error={fields.schemas}
-									bind:value={schemas}
-								/>
-							{/if}
+							<div class="grid" transition:motion.collapse|global>
+								<div class="min-h-0">
+									{#if !data.schemas.ok}
+										<GateNotice
+											gate={data.schemas.gate}
+											title="Content types"
+											absent="The content type list is not included in this build, so you cannot choose types below."
+										/>
+									{:else if typeOptions.length === 0}
+										<p class="text-sm text-muted">No content types yet.</p>
+									{:else}
+										<CheckboxGroup
+											label="Content types that keep history"
+											orientation="horizontal"
+											options={typeOptions}
+											disabled={isLocked('schemas')}
+											error={fields.schemas}
+											bind:value={schemas}
+										/>
+									{/if}
+								</div>
+							</div>
 						{/if}
 
 						<div class="grid gap-5 md:grid-cols-2">
@@ -231,16 +236,20 @@
 									bind:value={daysLimit}
 								/>
 								{#if daysLimit === 'set'}
-									<NumberInput
-										id="keep-days"
-										label="Days"
-										min={1}
-										max={MAX_KEEP_DAYS}
-										step={1}
-										disabled={isLocked('keep_days')}
-										error={fields.keep_days}
-										bind:value={keepDays}
-									/>
+									<div class="grid" transition:motion.collapse|global>
+										<div class="min-h-0">
+											<NumberInput
+												id="keep-days"
+												label="Days"
+												min={1}
+												max={MAX_KEEP_DAYS}
+												step={1}
+												disabled={isLocked('keep_days')}
+												error={fields.keep_days}
+												bind:value={keepDays}
+											/>
+										</div>
+									</div>
 								{/if}
 							</div>
 							<div class="flex flex-col gap-3">
@@ -252,16 +261,20 @@
 									bind:value={versionsLimit}
 								/>
 								{#if versionsLimit === 'set'}
-									<NumberInput
-										id="keep-versions"
-										label="Versions"
-										min={1}
-										max={MAX_KEEP_VERSIONS}
-										step={1}
-										disabled={isLocked('keep_versions')}
-										error={fields.keep_versions}
-										bind:value={keepVersions}
-									/>
+									<div class="grid" transition:motion.collapse|global>
+										<div class="min-h-0">
+											<NumberInput
+												id="keep-versions"
+												label="Versions"
+												min={1}
+												max={MAX_KEEP_VERSIONS}
+												step={1}
+												disabled={isLocked('keep_versions')}
+												error={fields.keep_versions}
+												bind:value={keepVersions}
+											/>
+										</div>
+									</div>
 								{/if}
 							</div>
 						</div>
@@ -301,20 +314,24 @@
 								bind:value={activityLimit}
 							/>
 							{#if activityLimit === 'set'}
-								<NumberInput
-									id="activity-keep-days"
-									label="Days"
-									min={1}
-									max={MAX_KEEP_DAYS}
-									step={1}
-									disabled={isLocked('activity_keep_days')}
-									error={fields.activity_keep_days}
-									bind:value={activityDays}
-								/>
+								<div class="grid" transition:motion.collapse|global>
+									<div class="min-h-0">
+										<NumberInput
+											id="activity-keep-days"
+											label="Days"
+											min={1}
+											max={MAX_KEEP_DAYS}
+											step={1}
+											disabled={isLocked('activity_keep_days')}
+											error={fields.activity_keep_days}
+											bind:value={activityDays}
+										/>
+									</div>
+								</div>
 							{/if}
 						</div>
 						<p class="text-xs text-muted">
-							Read it under <a href="/admin/content-activity" class="underline hover:text-fg">Content activity</a>.
+							Read it under <a href="/admin/content-activity" class="underline transition-colors hover:text-fg">Content activity</a>.
 						</p>
 					</div>
 				</Card>

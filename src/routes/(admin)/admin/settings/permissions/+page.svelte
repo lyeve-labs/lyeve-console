@@ -5,13 +5,14 @@
 		Alert,
 		Badge,
 		Button,
-		PageShell,
 		EmptyState,
+		PageShell,
 		SearchInput,
 		SectionHeading,
 		Table,
 		Toggle,
 		confirm as confirmDialog,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { Asterisk, ChevronRight, Plus } from '@lucide/svelte';
 	import { enhance } from '#lib/enhance.ts';
@@ -292,7 +293,7 @@
 									>
 										<ChevronRight
 											size={ICON.sm}
-											class="shrink-0 text-faint transition-transform {open
+											class="shrink-0 text-faint transition-transform duration-base {open
 												? 'rotate-90'
 												: ''}"
 										/>
@@ -330,7 +331,7 @@
 
 						<tbody id="rules-{role}">
 							{#if open}
-								<tr class="bg-brand/5">
+								<tr class="bg-brand/5" transition:motion.fade|global>
 									<td data-cell="nowrap">
 										<span class="flex items-center gap-2 pl-6">
 											<Asterisk size={ICON.sm} class="shrink-0 text-brand" aria-hidden="true" />
@@ -345,7 +346,7 @@
 								</tr>
 
 								{#each rows as row (row.schema)}
-									<tr class={row.schema === ALL_FLOWS ? 'bg-brand/5' : ''}>
+									<tr class={row.schema === ALL_FLOWS ? 'bg-brand/5' : ''} transition:motion.fade|global>
 										<td data-cell="nowrap">
 											<span class="flex items-center gap-2 pl-6">
 												<span class="font-mono text-xs text-fg">{row.schema}</span>
@@ -372,7 +373,7 @@
 								{/each}
 
 								{#if rows.length === 0}
-									<tr>
+									<tr transition:motion.fade|global>
 										<td colspan="8" class="text-sm text-muted">
 											{#if filterText}
 												No content types in this role match this search.

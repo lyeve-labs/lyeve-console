@@ -6,6 +6,7 @@ vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import LabsPage from './+page.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 import type { LabEndpoint, LabResult } from '#lib/api/labs.ts';
 
 afterEach(cleanup);
@@ -153,5 +154,21 @@ describe('the REST tab', () => {
 		expect(getByRole('tab', { name: 'REST' }).getAttribute('aria-selected')).toBe('true');
 		expect(queryByRole('tab', { name: 'gRPC' })).toBeNull();
 		expect(queryByRole('radio', { name: /grpc/i })).toBeNull();
+	});
+});
+
+describe('the lab answer', () => {
+	it('opens on its row below the form when a request returns', async () => {
+		const { container, rerender } = render(LabsPage, { props: props() });
+		const watch = watchTransitions();
+		try {
+			await rerender(props({}, { rest: result() }));
+			const row = watch.entered.find((el) => el.classList.contains('grid'));
+			expect(row).toBeTruthy();
+			expect(container.contains(row!)).toBe(true);
+			expect(row!.textContent).toContain('200');
+		} finally {
+			watch.stop();
+		}
 	});
 });

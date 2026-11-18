@@ -4,6 +4,7 @@
 	import {
 		Badge,
 		Button,
+		Card,
 		Drawer,
 		EmptyState,
 		Input,
@@ -11,12 +12,12 @@
 		PageShell,
 		PasswordInput,
 		SectionHeading,
-		Card,
 		SegmentedControl,
 		Select,
 		Table,
 		Textarea,
 		Toggle,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { Copy, FileText, Lock, Mail, Pencil, Plus, Terminal, Trash2, MailPlus } from '@lucide/svelte';
 	import { duplicateRow } from '#lib/duplicate.ts';
@@ -410,8 +411,8 @@
 					<p class="text-xs text-muted">
 						Write <span class="font-mono">{'{{api_key}}'}</span> where the key goes, or <span class="font-mono">{'{{basic:<user>}}'}</span> for a basic-auth header built from that user and the key. Both are filled in at send time and never stored in the header.
 					</p>
-					{#each apiHeaders as h, i}
-						<div class="flex items-end gap-2">
+					{#each apiHeaders as h, i (h)}
+						<div class="flex items-end gap-2" transition:motion.fade|global animate:motion.reorder>
 							<Input id="ep-header-key-{i}" name="api_header_key" label="Header" bind:value={h.key} class="min-w-0 flex-1" />
 							<Input id="ep-header-value-{i}" name="api_header_value" label="Value" bind:value={h.value} class="min-w-0 flex-1" />
 							<Button variant="ghost" size="sm" aria-label="Remove header {h.key || i + 1}" onclick={() => (apiHeaders = apiHeaders.filter((_, j) => j !== i))}>
@@ -448,8 +449,8 @@
 				<fieldset class="flex flex-col gap-2">
 					<legend class="text-xs font-semibold uppercase tracking-wide text-faint">Event map</legend>
 					<p class="text-xs text-muted">Map each event value the provider sends to what it means.</p>
-					{#each eventMap as m, i}
-						<div class="flex items-end gap-2">
+					{#each eventMap as m, i (m)}
+						<div class="flex items-end gap-2" transition:motion.fade|global animate:motion.reorder>
 							<Input id="ep-event-key-{i}" name="event_map_key" label="Provider value" bind:value={m.key} class="min-w-0 flex-1" />
 							<div class="min-w-0 flex-1">
 								<Select id="ep-event-value-{i}" name="event_map_value" label="Means" options={EVENT_OPTIONS} value={m.value || 'delivered'} onvaluechange={(v) => (m.value = v)} />

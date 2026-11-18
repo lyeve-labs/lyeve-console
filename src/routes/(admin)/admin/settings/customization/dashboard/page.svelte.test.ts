@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
 
 import EditorPage from './+page.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 import { outlineSkips } from '#lib/test-outline.ts';
 
 afterEach(cleanup);
@@ -56,6 +57,62 @@ describe('dashboard editor page', () => {
 		mount();
 		expect(screen.getByRole('button', { name: 'Add latest entries' })).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Add API usage' })).toBeNull();
+	});
+
+	it('keeps each link row with its link when one above it is removed, and plays the removed row out', async () => {
+		mount([{ id: 'c', type: 'links', links: [{ label: 'Docs', url: 'https://d.e' }, { label: 'Blog', url: 'https://b.e' }] }], true);
+		const [first, second] = screen.getAllByLabelText('Label') as HTMLInputElement[];
+		const removedRow = first.closest('.grid')!;
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(screen.getByRole('button', { name: 'Remove link 1' }));
+			expect(watch.left).toContain(removedRow);
+			expect(screen.getAllByLabelText('Label')).toEqual([second]);
+			expect(second.value).toBe('Blog');
+		} finally {
+			watch.stop();
+		}
+	});
+
+	it('keeps each link row in place when a save reloads the layout as it was', async () => {
+		const widgets = [{ id: 'c', type: 'links', links: [{ label: 'Docs', url: 'https://d.e' }, { label: 'Blog', url: 'https://b.e' }] }];
+		const props = (updated_at: string) =>
+			({
+				data: {
+					layout: { entitled: true, custom: true, widgets: structuredClone(widgets), updated_at },
+					schemas: ['posts', 'authors'],
+					schemasGate: { state: 'ok' },
+					plugins: { state: 'named', running: ['content'], withheld: [] },
+					user: { roles: ['admin'] },
+					gate: { state: 'ok' },
+					entitled: true,
+					pages: [],
+					homePage: '',
+				},
+				form: null,
+			}) as never;
+		const { rerender } = render(EditorPage, { props: props('2026-09-26T10:00:00Z') });
+		const labels = screen.getAllByLabelText('Label');
+		const watch = watchTransitions();
+		try {
+			await rerender(props('2026-09-26T10:05:00Z'));
+			expect(watch.left).toEqual([]);
+			expect(watch.entered).toEqual([]);
+			expect(screen.getAllByLabelText('Label')).toEqual(labels);
+		} finally {
+			watch.stop();
+		}
+	});
+
+	it('plays a removed widget out', async () => {
+		mount([{ id: 'a', type: 'text', body: 'One' }, { id: 'b', type: 'text', body: 'Two' }], true);
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(screen.getByRole('button', { name: 'Remove widget 1' }));
+			expect(watch.left.some((el) => el.textContent?.includes('1. Text'))).toBe(true);
+		} finally {
+			watch.stop();
+		}
 	});
 
 	it('adds, reorders and removes widgets', async () => {

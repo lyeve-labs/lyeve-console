@@ -12,6 +12,7 @@
 		SectionHeading,
 		Table,
 		confirm,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
@@ -198,18 +199,22 @@
 				<Alert tone="danger">{exportMessage}</Alert>
 			{/if}
 			{#if exported}
-				<div class="flex flex-col gap-3" data-testid="export-ready">
-					<Alert tone="success" autoDismiss>The bundle is ready.</Alert>
-					<p class="text-sm text-muted">
-						Sections: {namesOrNone(exported.sections, sectionLabel)}.
-					</p>
-					<div class="flex flex-col items-start gap-1">
-						<Button variant="secondary" href={downloadHref || undefined} disabled={!downloadHref} download={exported.filename}>
-							<Download size={ICON.sm} /> Download {exported.filename}
-						</Button>
-						<!-- A standing caveat, so it stays beside the download rather
-						     than clearing itself with the outcome above. -->
-						<p class="text-xs text-muted">Anyone holding the bundle and the passphrase can read every secret in it.</p>
+				<div class="grid" transition:motion.collapse|global>
+					<div class="min-h-0">
+						<div class="flex flex-col gap-3" data-testid="export-ready">
+							<Alert tone="success" autoDismiss>The bundle is ready.</Alert>
+							<p class="text-sm text-muted">
+								Sections: {namesOrNone(exported.sections, sectionLabel)}.
+							</p>
+							<div class="flex flex-col items-start gap-1">
+								<Button variant="secondary" href={downloadHref || undefined} disabled={!downloadHref} download={exported.filename}>
+									<Download size={ICON.sm} /> Download {exported.filename}
+								</Button>
+								<!-- A standing caveat, so it stays beside the download rather
+								     than clearing itself with the outcome above. -->
+								<p class="text-xs text-muted">Anyone holding the bundle and the passphrase can read every secret in it.</p>
+							</div>
+						</div>
 					</div>
 				</div>
 			{/if}
@@ -275,97 +280,109 @@
 	</Card>
 
 	{#if result && result.applied}
-		<Alert tone="success" autoDismiss>Applied. This engine now matches the bundle.</Alert>
-		<DescriptionList
-			items={[
-				{ term: 'Content types written', value: namesOrNone(result.schemas_applied) },
-				{ term: 'Sections written', value: namesOrNone(result.sections_applied, sectionLabel) },
-			]}
-		/>
+		<div class="grid" transition:motion.collapse|global>
+			<div class="min-h-0 flex flex-col gap-section">
+				<Alert tone="success" autoDismiss>Applied. This engine now matches the bundle.</Alert>
+				<DescriptionList
+					items={[
+						{ term: 'Content types written', value: namesOrNone(result.schemas_applied) },
+						{ term: 'Sections written', value: namesOrNone(result.sections_applied, sectionLabel) },
+					]}
+				/>
+			</div>
+		</div>
 	{:else if failed && result}
-		<div data-testid="apply-failure" class="flex flex-col gap-3">
-			<Alert tone="danger" title="The apply stopped at {failedAt(failed)}">
-				<p>{sentence(failed.message)}</p>
-			</Alert>
-			<DescriptionList
-				items={[
-					{ term: 'Stopped at', value: failedAt(failed) },
-					{ term: 'Applied and kept', value: namesOrNone(result.schemas_applied) },
-					{ term: 'Not applied', value: namesOrNone(result.not_applied, sectionLabel) },
-				]}
-			/>
-			<p class="text-sm text-muted">
-				Content types listed as applied were saved and stay. Every other section was rolled back. Fix the cause and
-				apply the same bundle again. Anything that already matches is left unchanged.
-			</p>
+		<div class="grid" transition:motion.collapse|global>
+			<div class="min-h-0">
+				<div data-testid="apply-failure" class="flex flex-col gap-3">
+					<Alert tone="danger" title="The apply stopped at {failedAt(failed)}">
+						<p>{sentence(failed.message)}</p>
+					</Alert>
+					<DescriptionList
+						items={[
+							{ term: 'Stopped at', value: failedAt(failed) },
+							{ term: 'Applied and kept', value: namesOrNone(result.schemas_applied) },
+							{ term: 'Not applied', value: namesOrNone(result.not_applied, sectionLabel) },
+						]}
+					/>
+					<p class="text-sm text-muted">
+						Content types listed as applied were saved and stay. Every other section was rolled back. Fix the cause and
+						apply the same bundle again. Anything that already matches is left unchanged.
+					</p>
+				</div>
+			</div>
 		</div>
 	{/if}
 
 	{#if plan}
-		<section class="flex flex-col gap-4" data-testid="sync-plan" aria-label="Plan">
-			<SectionHeading level={2}>{planHeading}</SectionHeading>
-			{#if mode === 'dry-run'}
-				<p class="text-sm text-muted">Nothing was written.</p>
-			{/if}
-			{#if blocked}
-				<Alert tone="danger" title="{plan.problems} {plural(plan.problems, 'problem stops', 'problems stop')} the apply">
-					Fix every problem below, here or in the bundle, before you apply. Nothing is written until then.
-				</Alert>
-			{:else if plan.changes === 0}
-				<Alert tone="success">This engine already matches the bundle.</Alert>
-			{/if}
-
-			{#each sections as name (name)}
-				{@const section = plan.sections[name]}
-				{@const counts = actionCounts(section)}
-				{@const rows = section.changes.filter((c) => c.action !== 'unchanged' || c.note)}
-				<div class="flex flex-col gap-3" data-testid="plan-section-{name}">
-					<div class="flex flex-wrap items-center gap-2">
-						<SectionHeading level={3}>{sectionLabel(name)}</SectionHeading>
-						{#each ['create', 'update', 'delete', 'unchanged'] as const as a (a)}
-							{#if counts[a] > 0}
-								<Badge tone={actionTone(a)} size="sm">{counts[a]} {ACTION_LABELS[a].toLowerCase()}</Badge>
-							{/if}
-						{/each}
-					</div>
-					{#if section.problems && section.problems.length > 0}
-						<Alert tone="danger">
-							<ul class="flex flex-col gap-1">
-								{#each section.problems as p, i (i)}
-									<li>
-										{#if p.key}<span class="font-mono text-xs">{p.key}</span>:{/if}
-										{p.message}{#if p.feature}&nbsp;(needs {featureName(p.feature)}){/if}
-									</li>
-								{/each}
-							</ul>
+		<div class="grid" transition:motion.collapse|global>
+			<div class="min-h-0">
+				<section class="flex flex-col gap-4" data-testid="sync-plan" aria-label="Plan">
+					<SectionHeading level={2}>{planHeading}</SectionHeading>
+					{#if mode === 'dry-run'}
+						<p class="text-sm text-muted">Nothing was written.</p>
+					{/if}
+					{#if blocked}
+						<Alert tone="danger" title="{plan.problems} {plural(plan.problems, 'problem stops', 'problems stop')} the apply">
+							Fix every problem below, here or in the bundle, before you apply. Nothing is written until then.
 						</Alert>
+					{:else if plan.changes === 0}
+						<Alert tone="success">This engine already matches the bundle.</Alert>
 					{/if}
-					{#if rows.length > 0}
-						<Table label="{sectionLabel(name)} changes">
-							<thead>
-								<tr>
-									<th scope="col">Name</th>
-									<th scope="col">Change</th>
-									<th scope="col">Fields</th>
-									<th scope="col">Note</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each rows as c (c.key + c.action)}
-									<tr>
-										<td class="font-mono text-xs">{c.key}</td>
-										<td><Badge tone={actionTone(c.action)} size="sm">{ACTION_LABELS[c.action] ?? c.action}</Badge></td>
-										<td class="text-xs text-muted">{c.fields?.join(', ') ?? ''}</td>
-										<td class="text-xs text-muted">{c.note ?? ''}</td>
-									</tr>
+
+					{#each sections as name (name)}
+						{@const section = plan.sections[name]}
+						{@const counts = actionCounts(section)}
+						{@const rows = section.changes.filter((c) => c.action !== 'unchanged' || c.note)}
+						<div class="flex flex-col gap-3" data-testid="plan-section-{name}">
+							<div class="flex flex-wrap items-center gap-2">
+								<SectionHeading level={3}>{sectionLabel(name)}</SectionHeading>
+								{#each ['create', 'update', 'delete', 'unchanged'] as const as a (a)}
+									{#if counts[a] > 0}
+										<Badge tone={actionTone(a)} size="sm">{counts[a]} {ACTION_LABELS[a].toLowerCase()}</Badge>
+									{/if}
 								{/each}
-							</tbody>
-						</Table>
-					{:else if !section.problems?.length}
-						<p class="text-sm text-muted">Nothing to change.</p>
-					{/if}
-				</div>
-			{/each}
-		</section>
+							</div>
+							{#if section.problems && section.problems.length > 0}
+								<Alert tone="danger">
+									<ul class="flex flex-col gap-1">
+										{#each section.problems as p, i (i)}
+											<li>
+												{#if p.key}<span class="font-mono text-xs">{p.key}</span>:{/if}
+												{p.message}{#if p.feature}&nbsp;(needs {featureName(p.feature)}){/if}
+											</li>
+										{/each}
+									</ul>
+								</Alert>
+							{/if}
+							{#if rows.length > 0}
+								<Table label="{sectionLabel(name)} changes">
+									<thead>
+										<tr>
+											<th scope="col">Name</th>
+											<th scope="col">Change</th>
+											<th scope="col">Fields</th>
+											<th scope="col">Note</th>
+										</tr>
+									</thead>
+									<tbody>
+										{#each rows as c (c.key + c.action)}
+											<tr>
+												<td class="font-mono text-xs">{c.key}</td>
+												<td><Badge tone={actionTone(c.action)} size="sm">{ACTION_LABELS[c.action] ?? c.action}</Badge></td>
+												<td class="text-xs text-muted">{c.fields?.join(', ') ?? ''}</td>
+												<td class="text-xs text-muted">{c.note ?? ''}</td>
+											</tr>
+										{/each}
+									</tbody>
+								</Table>
+							{:else if !section.problems?.length}
+								<p class="text-sm text-muted">Nothing to change.</p>
+							{/if}
+						</div>
+					{/each}
+				</section>
+			</div>
+		</div>
 	{/if}
 </PageShell>

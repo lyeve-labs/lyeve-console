@@ -11,6 +11,7 @@
 		Table,
 		Textarea,
 		confirm as confirmDialog,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
@@ -236,6 +237,10 @@
 	{/if}
 
 	{#if restResult}
-		<LabAnswer result={restResult} expected={expectedFor} />
+		<div class="grid" transition:motion.collapse|global>
+			<div class="min-h-0">
+				<LabAnswer result={restResult} expected={expectedFor} />
+			</div>
+		</div>
 	{/if}
 </PageShell>

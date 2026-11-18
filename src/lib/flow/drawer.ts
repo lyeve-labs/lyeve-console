@@ -9,7 +9,7 @@ export const DRAWER_DEFAULT = 288;
 export const DRAWER_MIN = 160;
 
 /** The tallest the drawer may be: the canvas keeps at least this much of the window. */
-const CANVAS_MIN = 240;
+export const CANVAS_MIN = 240;
 
 export function clampDrawerHeight(height: number, windowHeight: number): number {
 	const max = Math.max(DRAWER_MIN, windowHeight - CANVAS_MIN);

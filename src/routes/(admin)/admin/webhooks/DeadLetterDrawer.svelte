@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge, Button, Drawer, EmptyState, Pagination, Table, confirm } from '@lyeve-labs/ui-kit';
+	import { Badge, Button, Drawer, EmptyState, Pagination, Table, confirm, motion } from '@lyeve-labs/ui-kit';
 	import type { DeadLetter } from '@lyeve-labs/client';
 	import type { SubmitFunction } from '$app/forms';
 	import { untrack } from 'svelte';
@@ -144,7 +144,7 @@
 					<tbody>
 						{#each deadLetterItems as dl (dl.id)}
 							{@const outcome = deadLetterResults[dl.id]}
-							<tr>
+							<tr transition:motion.fade|global>
 								<td data-cell="nowrap" class="text-xs font-medium text-fg">{dl.webhook_name}</td>
 								<td><Badge tone={eventTone(dl.event_type)}>{dl.event_type}</Badge></td>
 								<td data-cell="nowrap" class="text-xs">{dl.schema_name}</td>

@@ -20,6 +20,14 @@ describe('TrafficBars', () => {
 		expect(bars.map((b) => b.style.height)).toEqual(['100%', '0%', '25%', '2.5%']);
 	});
 
+	it('moves each bar to its new height on the progress rung', () => {
+		const { container } = render(TrafficBars, { props: { hours } });
+		for (const bar of container.querySelectorAll<HTMLElement>('[data-requests]')) {
+			expect(bar.classList).toContain('transition-[height]');
+			expect(bar.classList).toContain('duration-progress');
+		}
+	});
+
 	it('colors an hour by its failure band and a quiet hour as a rule', () => {
 		const { container } = render(TrafficBars, { props: { hours } });
 

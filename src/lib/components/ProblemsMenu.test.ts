@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ProblemsMenu from './ProblemsMenu.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -59,5 +60,18 @@ describe('ProblemsMenu', () => {
 		await fireEvent.click(trigger);
 		await fireEvent.pointerDown(document.body);
 		expect(trigger.getAttribute('aria-expanded')).toBe('false');
+	});
+
+	it('plays the panel out when the last problem is fixed with the list open', async () => {
+		const { getByRole, getByTestId, rerender } = setup();
+		await fireEvent.click(getByRole('button', { name: '2 problems' }));
+		const panel = getByTestId('p-list');
+		const watch = watchTransitions();
+		try {
+			await rerender({ problems: [] });
+			expect(watch.left).toContain(panel);
+		} finally {
+			watch.stop();
+		}
 	});
 });

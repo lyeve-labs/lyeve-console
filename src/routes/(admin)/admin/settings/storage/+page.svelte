@@ -15,6 +15,7 @@
 		Table,
 		Textarea,
 		Toggle,
+		motion,
 		toast,
 	} from '@lyeve-labs/ui-kit';
 	import GateNotice from '#lib/components/GateNotice.svelte';
@@ -394,16 +395,24 @@
 		{/each}
 		<NumberInput id="provider-priority" name="priority" label="Priority" min={0} hint="Lower numbers receive uploads first." bind:value={priority} />
 		{#if kind === 's3' || kind === 'minio'}
-			<Toggle id="provider-ssl" label="Use TLS" hint="Talk to the endpoint over HTTPS." bind:checked={useSSL} />
-			<Toggle id="provider-path-style" label="Path-style addresses" hint="Needed by MinIO and some S3-compatible services that do not serve bucket subdomains." bind:checked={pathStyle} />
+			<div class="grid" transition:motion.collapse|global>
+				<div class="min-h-0 flex flex-col gap-4">
+					<Toggle id="provider-ssl" label="Use TLS" hint="Talk to the endpoint over HTTPS." bind:checked={useSSL} />
+					<Toggle id="provider-path-style" label="Path-style addresses" hint="Needed by MinIO and some S3-compatible services that do not serve bucket subdomains." bind:checked={pathStyle} />
+				</div>
+			</div>
 		{/if}
 		{#if kind === 'local'}
-			<Toggle
-				id="provider-public"
-				label="Unsigned public URLs"
-				hint="Serve files at the public base URL plus the key, with no signature or expiry. Use this only when a CDN serves the directory."
-				bind:checked={publicUnsigned}
-			/>
+			<div class="grid" transition:motion.collapse|global>
+				<div class="min-h-0">
+					<Toggle
+						id="provider-public"
+						label="Unsigned public URLs"
+						hint="Serve files at the public base URL plus the key, with no signature or expiry. Use this only when a CDN serves the directory."
+						bind:checked={publicUnsigned}
+					/>
+				</div>
+			</div>
 		{/if}
 		<Toggle id="provider-enabled" label="Enabled" hint="A disabled provider receives nothing and keeps its settings." bind:checked={enabled} />
 	</form>

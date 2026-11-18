@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { render, cleanup, screen } from '@testing-library/svelte';
+import { render, cleanup, fireEvent, screen } from '@testing-library/svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
@@ -7,6 +8,9 @@ vi.mock('$app/forms', () => ({ enhance: () => ({ destroy: () => {} }) }));
 import CaptchaPage from './+page.svelte';
 
 afterEach(cleanup);
+
+/** The collapse row a dependent field opens and closes in. */
+const rowOf = (field: HTMLElement) => field.closest('.grid > .min-h-0')!.parentElement!;
 
 function said(c: HTMLElement): string {
 	return (c.textContent ?? '').replace(/\s+/g, ' ');
@@ -116,5 +120,26 @@ describe('a refused captcha write', () => {
 		expect(region).not.toBeNull();
 		rerender(props(settings, {}, { error: 'Could not save the captcha settings. Try again.' }));
 		expect(region?.textContent).toContain('Could not save the captcha settings. Try again.');
+	});
+
+	it('opens and closes the score floor on its row as the provider changes', async () => {
+		render(CaptchaPage, {
+			props: props({
+				source: 'tenant',
+				tenant: { provider: 'hcaptcha', site_key: 's', has_secret: true, score_floor: null },
+				instance,
+				licensed: true,
+			}),
+		});
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(screen.getByRole('radio', { name: 'reCAPTCHA' }));
+			const row = rowOf(screen.getByLabelText('Score floor'));
+			expect(watch.entered).toContain(row);
+			await fireEvent.click(screen.getByRole('radio', { name: 'hCaptcha' }));
+			expect(watch.left).toContain(row);
+		} finally {
+			watch.stop();
+		}
 	});
 });

@@ -2,6 +2,7 @@
 import { render, cleanup } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import ExportConfigFields from './ExportConfigFields.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -44,5 +45,21 @@ describe('ExportConfigFields format and status choice', () => {
 		expect(boxes).toHaveLength(3);
 		const ticked = [...boxes].filter((b) => (b as HTMLInputElement).checked).map((b) => (b as HTMLInputElement).value);
 		expect(ticked).toEqual(['draft']);
+	});
+});
+
+describe('ExportConfigFields template', () => {
+	it('opens and closes the template field on its row as the format changes', async () => {
+		const { container, rerender } = render(ExportConfigFields, { props: { idPrefix: 'x', schemaNames: [], format: 'json' } });
+		const watch = watchTransitions();
+		try {
+			await rerender({ format: 'template' });
+			const row = container.querySelector('#x-template')!.closest('.grid > .min-h-0')!.parentElement!;
+			expect(watch.entered).toContain(row);
+			await rerender({ format: 'json' });
+			expect(watch.left).toContain(row);
+		} finally {
+			watch.stop();
+		}
 	});
 });

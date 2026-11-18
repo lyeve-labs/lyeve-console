@@ -6,7 +6,7 @@
 	 * input the action reads. The format and status groups are native inputs
 	 * and submit under their names.
 	 */
-	import { CheckboxGroup, MultiSelect, RadioGroup, Textarea, Toggle } from '@lyeve-labs/ui-kit';
+	import { CheckboxGroup, MultiSelect, RadioGroup, Textarea, Toggle, motion } from '@lyeve-labs/ui-kit';
 	import { EXPORT_ROW_CEILING, FORMATS, FORMAT_LABELS } from '#lib/api/data-export.ts';
 	import { formatCount } from '#lib/format.ts';
 
@@ -77,15 +77,19 @@
 	<RadioGroup name="format" label="Format" hint={ceilingHint} bind:value={format} options={formatOptions} />
 
 	{#if format === 'template'}
-		<Textarea
-			id="{idPrefix}-template"
-			name="template"
-			label="Template"
-			hint="Rendered once per entry. Fields: .Schema, .Slug, .Title, .Body, .Meta, .Status, .PublishedAt, .CreatedAt, .UpdatedAt."
-			rows={5}
-			bind:value={template}
-			required
-		/>
+		<div class="grid" transition:motion.collapse|global>
+			<div class="min-h-0">
+				<Textarea
+					id="{idPrefix}-template"
+					name="template"
+					label="Template"
+					hint="Rendered once per entry. Fields: .Schema, .Slug, .Title, .Body, .Meta, .Status, .PublishedAt, .CreatedAt, .UpdatedAt."
+					rows={5}
+					bind:value={template}
+					required
+				/>
+			</div>
+		</div>
 	{/if}
 
 	<CheckboxGroup

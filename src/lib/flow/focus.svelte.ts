@@ -11,12 +11,46 @@ import { useShell } from '#lib/shell.svelte.ts';
 import { readFocus, writeFocus } from './prefs';
 import { safeStorage } from '#lib/aside.ts';
 
+/** What the shell moves when focus mode changes: the sidebar's width and the header's row. */
+const SHELL_TRAVEL = new Set(['width', 'grid-template-rows']);
+
+/**
+ * The shell's frame: the nearest element that holds the sidebar and the page,
+ * and with them the header row. None on a phone, where the sidebar is not
+ * drawn and nothing travels.
+ */
+function shellFrame(): Element | null {
+	const sidebar = document.querySelector('[data-testid="app-sidebar"]');
+	let frame = sidebar?.parentElement ?? null;
+	while (frame && !frame.querySelector('#content')) frame = frame.parentElement;
+	return frame;
+}
+
+/**
+ * Resolves once the shell has stopped moving after a change. The sidebar and
+ * the header travel on the base rung, so a fit taken on the next tick reads a
+ * width that is still changing. Asking for the animations computes the new
+ * styles first, so the travel this change started is in the list. Only the
+ * shell is asked, so a width traveling in an overlay never holds the fit
+ * back. With nothing moving it resolves at once.
+ */
+async function shellSettled(): Promise<void> {
+	await tick();
+	const frame = shellFrame();
+	if (typeof frame?.getAnimations !== 'function') return;
+	const moving = frame
+		.getAnimations({ subtree: true })
+		.filter((a) => SHELL_TRAVEL.has((a as Partial<CSSTransition>).transitionProperty ?? ''));
+	await Promise.allSettled(moving.map((a) => a.finished));
+}
+
 /**
  * The editor's focus toggle. Call it while the component initializes, since
  * it reads the shell context and registers effects. `refit` runs once the
- * shell has laid out after a change: the opening fit uses the width the
- * canvas has beside the sidebar and under the header, and focus mode changes
- * both. Under a test there is no shell and no layout, so nothing refits.
+ * shell has finished moving after a change: the opening fit uses the width
+ * the canvas has beside the sidebar and under the header, and focus mode
+ * changes both. Under a test there is no shell and no layout, so nothing
+ * refits.
  */
 export function focusMode(refit: () => void): { on: boolean } {
 	const shell = useShell();
@@ -43,7 +77,14 @@ export function focusMode(refit: () => void): { on: boolean } {
 	$effect(() => {
 		void on;
 		if (!shell) return;
-		tick().then(refit);
+		// A second change before the travel ends fits once, after its own.
+		let current = true;
+		shellSettled().then(() => {
+			if (current) refit();
+		});
+		return () => {
+			current = false;
+		};
 	});
 
 	$effect(() => () => {
