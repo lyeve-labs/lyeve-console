@@ -792,8 +792,17 @@
 					</span>
 				{/snippet}
 
-				<div id="schema-rail" class={listFolded ? 'max-lg:hidden' : ''}>
-					<SchemaRail {schemas} {rowCounts} current={saved?.name} onselect={selectSchema} />
+				<!-- Folds below lg only, so the rows travel there and a folded list
+				     leaves the tab order through visibility, which turns at the
+				     end of the travel. An inert attribute would hold at lg too. -->
+				<div
+					id="schema-rail"
+					class="grid grid-rows-[1fr] transition-[grid-template-rows,visibility] duration-base ease-move
+						{listFolded ? 'max-lg:grid-rows-[0fr] max-lg:invisible' : ''}"
+				>
+					<div class="min-h-0 max-lg:overflow-hidden">
+						<SchemaRail {schemas} {rowCounts} current={saved?.name} onselect={selectSchema} />
+					</div>
 				</div>
 			</ResizableAside>
 

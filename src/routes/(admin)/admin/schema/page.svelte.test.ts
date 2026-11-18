@@ -260,19 +260,23 @@ describe('schema builder relation panel', () => {
 		expect(container.querySelector('aside')?.contains(buttons[0])).toBe(false);
 	});
 
-	it('folds the list to its header below lg once a schema is open, and brings it back', async () => {
+	it('folds the list to its header below lg once a schema is open, moving its rows, and brings it back', async () => {
 		render(SchemaPage, { props: { data: data(), form: null } });
 		expect(screen.queryByRole('button', { name: 'Show the list' })).toBeNull();
 		await fireEvent.click(screen.getByRole('button', { name: 'Posts' }));
 		const rail = document.getElementById('schema-rail') as HTMLElement;
-		expect(rail.className).toContain('max-lg:hidden');
+		const folded = () => ['max-lg:grid-rows-[0fr]', 'max-lg:invisible'].every((c) => rail.classList.contains(c));
+		for (const c of ['grid', 'transition-[grid-template-rows,visibility]', 'duration-base', 'ease-move']) expect(rail.classList).toContain(c);
+		expect(rail.className).not.toContain('max-lg:hidden');
+		expect(folded()).toBe(true);
 		const show = screen.getByRole('button', { name: 'Show the list' });
 		expect(show.getAttribute('aria-expanded')).toBe('false');
 		await fireEvent.click(show);
-		expect(rail.className).not.toContain('max-lg:hidden');
+		expect(folded()).toBe(false);
+		expect(rail.classList).toContain('grid-rows-[1fr]');
 		expect(screen.getByRole('button', { name: 'Hide the list' }).getAttribute('aria-expanded')).toBe('true');
 		await fireEvent.click(screen.getByRole('button', { name: 'Authors' }));
-		expect(rail.className).toContain('max-lg:hidden');
+		expect(folded()).toBe(true);
 	});
 
 	it('moves focus to the list toggle when a pick below lg folds the list away', async () => {
