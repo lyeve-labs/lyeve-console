@@ -479,3 +479,12 @@ describe('SchemaEditor column headings', () => {
 		expect(widths(fieldRow('title'))).toEqual(heads);
 	});
 });
+
+describe('SchemaEditor remove control', () => {
+	it('changes color on the fast rung that a color change takes', () => {
+		setup();
+		const remove = screen.getByRole('button', { name: 'Remove field title' });
+		expect(remove.classList).toContain('transition-colors');
+		expect(remove.classList).not.toContain('duration-base');
+	});
+});

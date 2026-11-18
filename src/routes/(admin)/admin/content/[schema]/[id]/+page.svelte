@@ -247,7 +247,7 @@
 					<span class="text-xs text-muted" data-testid="history-off">
 						History is off for this type.
 						{#if data.canManageHistory}
-							<a href="/admin/settings/content-history" class="underline hover:text-fg">Turn it on in settings</a>
+							<a href="/admin/settings/content-history" class="underline transition-colors hover:text-fg">Turn it on in settings</a>
 						{/if}
 					</span>
 				{/if}

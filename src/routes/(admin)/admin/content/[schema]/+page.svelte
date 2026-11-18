@@ -537,7 +537,7 @@
 		     margin, so the row grows to 44px and holds the whole area. -->
 		<a
 			href={sortHref(key)}
-			class="relative -my-1 coarse:-my-0.5 py-1 inline-flex items-center gap-1 hit-area outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-focus"
+			class="relative -my-1 coarse:-my-0.5 py-1 inline-flex items-center gap-1 hit-area outline-none transition-colors hover:text-fg focus-visible:ring-2 focus-visible:ring-focus"
 		>
 			{label}
 			{#if sortKey === key}

@@ -2,6 +2,7 @@
 import { render, cleanup, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import DashboardPage from './+page.svelte';
+import { hoverSnaps } from '#lib/transitions.test-support.ts';
 
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin') } }));
 
@@ -410,5 +411,24 @@ describe('a composed dashboard that could not be read', () => {
 	it('says nothing when the layout was read', () => {
 		render(DashboardPage, { props: { data: data({ layoutUnread: false }), form: null } });
 		expect(document.body.textContent).not.toContain(unread);
+	});
+});
+
+describe('dashboard links', () => {
+	it('eases every hover color rather than switching it in a frame', () => {
+		const { container } = render(DashboardPage, {
+			props: {
+				data: data({
+					layoutUnread: true,
+					traffic: [{ hour: '2026-09-13T10:00:00Z', requests: 10, errorRate: 0 }],
+					endpoints: [{ key: '/api/v1/content', requests: 9, errorRate: 0.1, p95: 20 }],
+					entries: [{ id: 'e1', schema: 'post', title: 'Hello', slug: 'hello', status: 'published', updated_at: '2026-09-13T00:00:00Z' }],
+				}),
+				form: null,
+			},
+		});
+		expect(container.querySelector('a[href="/admin/content/post/e1"]')).toBeTruthy();
+		expect(container.querySelector('a[href="/admin/audit-log"]')).toBeTruthy();
+		expect(hoverSnaps(container)).toEqual([]);
 	});
 });

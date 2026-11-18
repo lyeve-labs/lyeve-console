@@ -746,7 +746,7 @@
 						type="button"
 						onclick={() => removeField(schema, rowId)}
 						aria-label="Remove field {fieldLabel(field)}"
-						class="relative hit-area flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-faint transition-colors duration-base hover:bg-surface-2 hover:text-danger"
+						class="relative hit-area flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-faint transition-colors hover:bg-surface-2 hover:text-danger"
 					>
 						<Trash2 size={ICON.sm} />
 					</button>

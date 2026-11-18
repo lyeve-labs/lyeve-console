@@ -32,6 +32,7 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 }));
 
 import FlowsPage from './+page.svelte';
+import { hoverSnaps } from '#lib/transitions.test-support.ts';
 
 beforeEach(() => {
 	nav.refreshAll.mockClear();
@@ -495,3 +496,11 @@ describe('flow name link', () => {
 	});
 });
 
+
+describe('flows list links', () => {
+	it('eases the hover color of a flow name', () => {
+		const { container } = setup({ flows: [fixtureFlow] });
+		expect(container.querySelector(`a[href^="/admin/flows/${fixtureFlow.id}"]`)).toBeTruthy();
+		expect(hoverSnaps(container)).toEqual([]);
+	});
+});

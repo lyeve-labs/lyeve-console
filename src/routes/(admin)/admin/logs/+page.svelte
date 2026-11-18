@@ -125,7 +125,7 @@
 								href={levelHref(lv)}
 								aria-current={lv === data.level ? 'true' : undefined}
 								aria-label={lv === data.level ? 'Show all levels' : `Show only ${lv} entries`}
-								class={`relative -my-0.5 py-0.5 hit-area inline-flex rounded-full ring-offset-1 hover:opacity-80 ${lv === data.level ? 'ring-2 ring-brand' : ''}`}
+								class={`relative -my-0.5 py-0.5 hit-area inline-flex rounded-full ring-offset-1 transition-opacity hover:opacity-80 ${lv === data.level ? 'ring-2 ring-brand' : ''}`}
 							>
 								<Badge tone={logLevelTone(lv)}>{lv} {byLevel[lv]}</Badge>
 							</a>

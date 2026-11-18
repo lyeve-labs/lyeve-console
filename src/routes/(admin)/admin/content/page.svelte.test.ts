@@ -2,6 +2,7 @@
 import { render, cleanup } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import ContentIndex from './+page.svelte';
+import { hoverSnaps } from '#lib/transitions.test-support.ts';
 
 afterEach(cleanup);
 
@@ -183,5 +184,13 @@ describe('content index search', () => {
 		expect(form.querySelector('button[type="submit"]')).toBeNull();
 		expect(form.getAttribute('data-sveltekit-reset')).toBe('false');
 		expect((form.querySelector('input[name="q"]') as HTMLInputElement).value).toBe('po');
+	});
+});
+
+describe('content index links', () => {
+	it('eases the hover color of the sort headers, the type names and the hide link', () => {
+		const { container } = render(ContentIndex, { props: { data: data() } });
+		expect(container.querySelector('a[href*="filter=with-rows"]')).not.toBeNull();
+		expect(hoverSnaps(container)).toEqual([]);
 	});
 });

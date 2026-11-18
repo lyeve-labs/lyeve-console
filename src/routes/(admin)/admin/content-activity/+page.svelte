@@ -177,13 +177,13 @@
 								{#if !row.actor_id}
 									{NO_VALUE}
 								{:else if row.actor_kind === 'api_key'}
-									<a href={narrowHref('actor', row.actor_id)} class="underline hover:text-fg" title="Show changes by this API key">
+									<a href={narrowHref('actor', row.actor_id)} class="underline transition-colors hover:text-fg" title="Show changes by this API key">
 										API key <span class="font-mono">{shortId(row.actor_id)}</span>
 									</a>
 								{:else}
 									<a
 										href={narrowHref('actor', row.actor_id)}
-										class="underline hover:text-fg {row.actor_email ? '' : 'font-mono'}"
+										class="underline transition-colors hover:text-fg {row.actor_email ? '' : 'font-mono'}"
 										title="Show changes by this person"
 									>
 										{row.actor_email || shortId(row.actor_id)}
@@ -194,7 +194,7 @@
 								{/if}
 							</td>
 							<td data-cell="nowrap" class="text-xs {row.entry_title ? '' : 'font-mono'}">
-								<a href={narrowHref('entry_id', row.entry_id)} class="underline hover:text-fg" title="Show changes to this entry">
+								<a href={narrowHref('entry_id', row.entry_id)} class="underline transition-colors hover:text-fg" title="Show changes to this entry">
 									{row.entry_title || shortId(row.entry_id)}
 								</a>
 							</td>
@@ -206,7 +206,7 @@
 								{#if typeof row.revision_num === 'number'}
 									{@const href = editorHref(row)}
 									{#if href}
-										<a {href} class="underline hover:text-fg" title="Open the entry">Version {row.revision_num}</a>
+										<a {href} class="underline transition-colors hover:text-fg" title="Open the entry">Version {row.revision_num}</a>
 									{:else}
 										<span class="text-muted">Version {row.revision_num}</span>
 									{/if}

@@ -104,7 +104,7 @@
 		<p class="flex flex-wrap items-center gap-2 text-sm text-muted">
 			<TriangleAlert size={ICON.md} class="shrink-0 text-warn" aria-hidden="true" />
 			{couldNotLoad("this tenant's own dashboard")} Showing the standard one.
-			<a class="relative hit-area underline hover:text-fg" href="{page.url.pathname}{page.url.search}" data-sveltekit-reload>Try again</a>
+			<a class="relative hit-area underline transition-colors hover:text-fg" href="{page.url.pathname}{page.url.search}" data-sveltekit-reload>Try again</a>
 		</p>
 	{/if}
 	{#if data.welcome}
@@ -291,7 +291,7 @@
 						<SectionHeading level={3}>
 							Requests per hour
 							{#snippet actions()}
-								<a href="/admin/analytics" class="relative -my-1 py-1 hit-area text-xs text-muted hover:text-brand">Analytics</a>
+								<a href="/admin/analytics" class="relative -my-1 py-1 hit-area text-xs text-muted transition-colors hover:text-brand">Analytics</a>
 							{/snippet}
 						</SectionHeading>
 						<div class="mt-3">
@@ -337,7 +337,7 @@
 							<SectionHeading level={3}>
 								Recent entries
 								{#snippet actions()}
-									<a href="/admin/content" class="relative -my-1 py-1 hit-area text-xs text-muted hover:text-brand">All content types</a>
+									<a href="/admin/content" class="relative -my-1 py-1 hit-area text-xs text-muted transition-colors hover:text-brand">All content types</a>
 								{/snippet}
 							</SectionHeading>
 							{#if !data.entries}
@@ -351,7 +351,7 @@
 											<div class="min-w-0">
 												<a
 													href="/admin/content/{entry.schema}/{entry.id}"
-													class="relative -my-1 py-1 hit-area block text-sm font-medium text-fg hover:text-brand"
+													class="relative -my-1 py-1 hit-area block text-sm font-medium text-fg transition-colors hover:text-brand"
 												>
 													<span class="block truncate">{entry.title || entry.slug || entry.id}</span>
 												</a>
@@ -373,7 +373,7 @@
 							<SectionHeading level={3}>
 								Recent audit entries
 								{#snippet actions()}
-									<a href="/admin/audit-log" class="relative -my-1 py-1 hit-area text-xs text-muted hover:text-brand">Audit log</a>
+									<a href="/admin/audit-log" class="relative -my-1 py-1 hit-area text-xs text-muted transition-colors hover:text-brand">Audit log</a>
 								{/snippet}
 							</SectionHeading>
 							{#if !data.audit}
@@ -403,7 +403,7 @@
 							<SectionHeading level={3}>
 								Dead-lettered deliveries
 								{#snippet actions()}
-									<a href="/admin/webhooks" class="relative -my-1 py-1 hit-area text-xs text-muted hover:text-brand">Webhooks</a>
+									<a href="/admin/webhooks" class="relative -my-1 py-1 hit-area text-xs text-muted transition-colors hover:text-brand">Webhooks</a>
 								{/snippet}
 							</SectionHeading>
 							{#if !data.deadLetters}
@@ -437,7 +437,7 @@
 							<SectionHeading level={3}>
 								Recent errors, last {WINDOW_LABEL[data.window]}
 								{#snippet actions()}
-									<a href="/admin/logs?level=ERROR" class="relative -my-1 py-1 hit-area text-xs text-muted hover:text-brand">Logs</a>
+									<a href="/admin/logs?level=ERROR" class="relative -my-1 py-1 hit-area text-xs text-muted transition-colors hover:text-brand">Logs</a>
 								{/snippet}
 							</SectionHeading>
 							{#if !data.errors}

@@ -39,3 +39,21 @@ export function watchTransitions(): TransitionWatch {
 		},
 	};
 }
+
+const HOVER_NEEDS: [RegExp, string][] = [
+	[/^hover:(text|bg|border)-/, 'transition-colors'],
+	[/^hover:opacity-/, 'transition-opacity'],
+];
+
+/**
+ * Elements under `root` whose hover changes a color or the opacity with no
+ * transition for it, so the change lands in one frame. A bare `transition`
+ * covers both.
+ */
+export function hoverSnaps(root: ParentNode): Element[] {
+	return [...root.querySelectorAll('[class*="hover:"]')].filter((el) => {
+		const classes = [...el.classList];
+		if (classes.includes('transition')) return false;
+		return HOVER_NEEDS.some(([hover, needs]) => classes.some((c) => hover.test(c)) && !classes.includes(needs));
+	});
+}
