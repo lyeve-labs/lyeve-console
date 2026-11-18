@@ -488,7 +488,7 @@
 						hint={hint ??
 							(fillsFields(field.key) && fieldRows(field.key).length === 0
 								? 'No field of this content type can be filled with AI.'
-								: 'Pick a field, or type a custom one below and press Enter.')}
+								: 'Choose a field, or type a custom one below and press Enter.')}
 						{error}
 						describedBy={fillProblems(field.key).map((_, i) => `${id}-problem-${i}`).join(' ') || undefined}
 						onvaluechange={(v) => {
@@ -589,7 +589,7 @@
 							searchable
 							options={fieldRows(field.key).filter((o) => !entries(current).some(([k]) => k === o.value))}
 							value={draftKeys[field.key] ?? null}
-							placeholder="Pick a field"
+							placeholder="Choose a field"
 							class="min-w-0 flex-1"
 							onvaluechange={(v) => (draftKeys = { ...draftKeys, [field.key]: v })}
 						/>
