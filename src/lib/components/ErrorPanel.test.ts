@@ -98,15 +98,17 @@ describe('ErrorPanel', () => {
 			expect(queryByRole('link', { name: /sign in/i })).toBeNull();
 		});
 
-		it('keeps the detail block for other server failures only', () => {
-			expect(mount(503, 'The experiment could not be read').queryByText('What the engine returned')).toBeNull();
-			cleanup();
-			expect(mount(500, 'boom').getByText('What the engine returned')).toBeTruthy();
+		it("leads a server failure with the console's own sentence, and claims nothing about the engine", () => {
+			const { getByText, queryByText, queryByRole } = mount(502, 'Could not load this record.');
+			expect(getByText('Could not load this record. Reload the page to try again.')).toBeTruthy();
+			expect(queryByText(/engine returned/)).toBeNull();
+			expect(queryByRole('button', { name: /engine returned/ })).toBeNull();
 		});
 
-		it('folds the detail block shut behind a disclosure button', () => {
-			const toggle = mount(500, 'boom').getByRole('button', { name: 'What the engine returned' });
-			expect(toggle.getAttribute('aria-expanded')).toBe('false');
+		it('never shows the framework text for a failure nobody worded', () => {
+			const { getByText, queryByText } = mount(500, 'Internal Error');
+			expect(queryByText(/Internal Error/)).toBeNull();
+			expect(getByText('Reload the page to try again.')).toBeTruthy();
 		});
 
 		it('heads at the level the page asks for', () => {

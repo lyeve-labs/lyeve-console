@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge, Button, Collapsible, EmptyState } from '@lyeve-labs/ui-kit';
+	import { Badge, Button, EmptyState } from '@lyeve-labs/ui-kit';
 	import {
 		AlertTriangle,
 		ArrowLeft,
@@ -27,7 +27,7 @@
 	 */
 	interface Props {
 		status: number;
-		/** The engine's own words, when it sent any. */
+		/** The load's own words for the failure, when it gave any. */
 		message?: string;
 		/** Where "home" is: the console for a signed-in reader, the site otherwise. */
 		homeHref: string;
@@ -40,6 +40,8 @@
 	}
 
 	let { status, message = '', homeHref, homeLabel, level = 3 }: Props = $props();
+
+	const RELOAD = 'Reload the page to try again.';
 
 	/*
 	 * A 401 is a session the engine no longer honors, and signing in again is
@@ -101,6 +103,18 @@
 	 * A refusal keeps the words the load gave it, such as the role a page
 	 * needs, because that is the one thing the reader can act on.
 	 */
+	/**
+	 * A server failure leads with the console's own sentence for it. No engine
+	 * text reaches an error page, so there is nothing more to show behind it.
+	 * SvelteKit words a failure nobody worded as its own generic text, which
+	 * says nothing to the reader.
+	 */
+	const serverHint = $derived.by(() => {
+		const own = message.trim() === 'Internal Error' ? '' : message.trim();
+		if (!own) return RELOAD;
+		return /try again/i.test(own) ? own : `${own} ${RELOAD}`;
+	});
+
 	const hint = $derived(
 		{
 			'signed-out': SESSION_ENDED,
@@ -108,7 +122,7 @@
 			missing: message || 'That page or record does not exist.',
 			busy: message || BUSY.body,
 			outage: OUTAGE.body,
-			server: 'Try again. If it fails again, the details below show what the engine returned.',
+			server: serverHint,
 		}[variant],
 	);
 
@@ -127,15 +141,6 @@
 	{#snippet children()}
 		<div class="flex flex-col items-center gap-3">
 			<Badge tone={tones[variant]}>{status}</Badge>
-			{#if variant === 'server'}
-				<!-- Shut by default: a stack trace is the first thing on screen only
-				     for the reader who went looking for it. -->
-				<Collapsible label="What the engine returned" class="w-full text-left">
-					<pre
-						class="border-line bg-surface-2 text-muted max-h-32 overflow-auto rounded-lg border p-3 text-xs">{message ||
-							'No details.'}</pre>
-				</Collapsible>
-			{/if}
 		</div>
 	{/snippet}
 

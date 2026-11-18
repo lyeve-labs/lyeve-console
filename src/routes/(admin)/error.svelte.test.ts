@@ -51,11 +51,11 @@ describe('Admin error page', () => {
 		expect(queryByRole('link', { name: /sign in/i })).toBeNull();
 	});
 
-	it('keeps the server face and the detail block for 500', () => {
-		const { getByText } = renderAt(500, 'boom');
+	it("keeps the server face for 500, with the console's sentence as its description", () => {
+		const { getByText, queryByText } = renderAt(500, 'Could not load this record.');
 		expect(getByText('Could not complete the request')).toBeTruthy();
-		expect(getByText('What the engine returned')).toBeTruthy();
-		expect(getByText('boom')).toBeTruthy();
+		expect(getByText('Could not load this record. Reload the page to try again.')).toBeTruthy();
+		expect(queryByText('What the engine returned')).toBeNull();
 	});
 
 	it('renders the outage face for 503, with a retry of the same address', () => {
