@@ -70,14 +70,18 @@ describe('admin dashboard', () => {
  * true is that nothing was measured.
  */
 describe('dashboard tiles', () => {
-	it('says unknown, not zero, for a read that failed', () => {
+	it('marks a read that failed as missing, not zero, and offers one Try again on the band', () => {
 		const { container } = render(DashboardPage, { props: { data: data(), form: null } });
 
 		const text = container.textContent ?? '';
 		expect(text).toContain('analytics unavailable');
 		expect(text).toContain('jobs unavailable');
 		expect(text).toContain('webhooks unavailable');
-		expect((text.match(/unknown/g) ?? []).length).toBeGreaterThanOrEqual(4);
+		const band = [...container.querySelectorAll('section')].find((s) => s.querySelector('h2')?.textContent?.trim() === 'Right now')!;
+		expect(band.textContent).toContain('Could not load some of these figures.');
+		const retry = [...band.querySelectorAll('a')].filter((a) => a.textContent?.trim() === 'Try again');
+		expect(retry).toHaveLength(1);
+		expect(retry[0].getAttribute('href')).toBe('/admin');
 	});
 
 	it('states the numbers when the reads succeed', () => {
@@ -102,7 +106,7 @@ describe('dashboard tiles', () => {
 		expect(text).toContain('of 7 enabled');
 		expect(text).toContain('of 3, 4 dead-lettered');
 		expect(text).toContain('Grace period');
-		expect(text).not.toContain('unknown');
+		expect(text).not.toContain('Could not load some of these figures.');
 	});
 
 	it('draws no tile and no list for a plugin that does not run', () => {
@@ -142,7 +146,7 @@ describe('dashboard tiles', () => {
 		expect(text).not.toContain('Requests, 24h');
 		expect(text).not.toContain('Recent audit entries');
 		expect(text).not.toContain('Recent entries');
-		expect(text).not.toContain('unknown');
+		expect(text).not.toContain('Could not load some of these figures.');
 	});
 
 	it('shows no jobs tile to an admin, whom the scheduler does not answer', () => {
@@ -154,7 +158,7 @@ describe('dashboard tiles', () => {
 		expect(container.querySelector('a[href="/admin/jobs"]')).toBeNull();
 	});
 
-	it('keeps the dashboard and says unknown when the schemas could not be read', () => {
+	it('keeps the dashboard and marks the count missing when the schemas could not be read', () => {
 		const { container } = render(DashboardPage, {
 			props: { data: data({ schemas: { ok: false, gate: { state: 'unavailable' } } }), form: null },
 		});
@@ -358,7 +362,7 @@ describe('traffic', () => {
 
 describe('the chosen home page', () => {
 	it('says the chosen home page could not be read, with a way to try again', () => {
-		render(DashboardPage, { props: { data: data({ homePage: null, homeBlocks: [], home: { slug: 'welcome', gate: { state: 'unavailable' } } }), form: null } });
+		render(DashboardPage, { props: { data: data({ ...quiet, homePage: null, homeBlocks: [], home: { slug: 'welcome', gate: { state: 'unavailable' } } }), form: null } });
 		expect(document.body.textContent).toContain('so the home page did not load');
 		expect(screen.getByRole('link', { name: /Try again/ }).getAttribute('href')).toBe('/admin');
 	});
@@ -403,7 +407,7 @@ describe('a composed dashboard that could not be read', () => {
 	const unread = "Could not load this tenant's own dashboard. Showing the standard one.";
 
 	it('says the stock dashboard stands in for it, with a way to try again', () => {
-		render(DashboardPage, { props: { data: data({ layoutUnread: true }), form: null } });
+		render(DashboardPage, { props: { data: data({ ...quiet, layoutUnread: true }), form: null } });
 		expect(document.body.textContent).toContain(unread);
 		expect(screen.getByRole('link', { name: /Try again/ }).getAttribute('href')).toBe('/admin');
 	});
