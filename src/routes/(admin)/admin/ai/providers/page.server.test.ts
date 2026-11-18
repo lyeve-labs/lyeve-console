@@ -43,30 +43,26 @@ describe('admin/ai/providers load', () => {
 		expect(calls.some((c) => c.url.includes('/dashboard'))).toBe(false);
 	});
 
-	it.each([
-		['an unlicensed engine', { value: '720h', source: 'free_tier', editable: false }, [], true],
-		['a licensed engine', { value: '720h', source: 'config', editable: true }, [], false],
-		['a license withheld from this tenant', { value: '720h', source: 'config', editable: true }, ['ai-pro'], true],
-		['a plugin older than the free tier', undefined, [], false],
-	])('falls back to the free tier on %s when the list states no ceiling', async (_name, retention, withheld, free) => {
+	// An older plugin states no ceiling, and the page then shows none rather
+	// than guess one. A create past the plugin's ceiling still draws its refusal.
+	it('shows no ceiling when the list states none, whatever the entitlements withhold', async () => {
 		const { event } = loadEvent(
 			{ '/api/admin/ai/providers': () => json({ data: [fixtureProvider], total: 1 }), '/api/admin/ai/dashboard': () => refused(500, 'boom') },
-			{ settings: { ...fixtureSettings, transcript_retention: retention }, withheld: withheld as string[] },
+			{ settings: { ...fixtureSettings, transcript_retention: { value: '720h', source: 'fixed', editable: false } }, withheld: ['example-pro'] },
 		);
 		const out = (await load(event)) as Loaded;
-		expect(out.ceiling).toEqual({ limit: free ? 1 : 0, upgradeUrl: '' });
+		expect(out.ceiling).toEqual({ limit: 0, upgradeUrl: '' });
 	});
 
 	it.each([
-		['a free tenant', { provider_limit: 2, upgrade_url: 'https://lyeve.com/pricing?skus=plugin-ai-pro' }, { limit: 2, upgradeUrl: 'https://lyeve.com/pricing?skus=plugin-ai-pro' }],
+		['a capped tenant', { provider_limit: 2, upgrade_url: 'https://shop.example.com/pricing?skus=example-pro' }, { limit: 2, upgradeUrl: 'https://shop.example.com/pricing?skus=example-pro' }],
 		['a lifted ceiling', { provider_limit: 0 }, { limit: 0, upgradeUrl: '' }],
-	])('reads the ceiling the list states for %s, over the settings', async (_name, stated, ceiling) => {
+	])('reads the ceiling the list states for %s', async (_name, stated, ceiling) => {
 		const { event } = loadEvent(
 			{
 				'/api/admin/ai/providers': () => json({ data: [fixtureProvider], total: 1, ...stated }),
 				'/api/admin/ai/dashboard': () => refused(500, 'boom'),
 			},
-			{ settings: { ...fixtureSettings, transcript_retention: { value: '720h', source: 'free_tier', editable: false } } },
 		);
 		const out = (await load(event)) as Loaded;
 		expect(out.ceiling).toEqual(ceiling);
@@ -106,7 +102,7 @@ describe('admin/ai/providers create', () => {
 	});
 
 	it('returns the ceiling with the link the refusal carries', async () => {
-		const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro&utm_campaign=ai.providers';
+		const url = 'https://shop.example.com/pricing?skus=example-pro&utm_campaign=ai.providers';
 		const { event } = actionEvent(
 			{ '/api/admin/ai/providers': () => json({ error: 'cap_exceeded', cap: 'ai.providers', limit: 1, current: 1, upgrade_url: url }, 402) },
 			formOf({ name: 'x', kind: 'openai', api_key: 'k', modalities: 'text' })

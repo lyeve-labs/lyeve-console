@@ -100,16 +100,15 @@ describe('AI settings page', () => {
 		expect(absent.getByText('AI is not included in this build')).toBeTruthy();
 	});
 
-	it('fixes retention at 30 days on the free tier and says why, for every reader', () => {
-		const free = { ...fixtureSettings, transcript_retention: { value: '720h', source: 'free_tier', editable: false } };
+	it('shows a fixed retention window with the reason the engine gives, for every reader', () => {
+		const reason = 'Transcripts are kept for 30 days. The AI license lets you choose how long.';
+		const fixed = { ...fixtureSettings, transcript_retention: { value: '720h', source: 'fixed', editable: false, reason } };
 		for (const isSuperAdmin of [true, false]) {
-			const { getByLabelText, getByTestId, queryByText } = setup({ aiSettings: free, isSuperAdmin });
+			const { getByLabelText, getByTestId, queryByText } = setup({ aiSettings: fixed, isSuperAdmin });
 			const field = getByLabelText('Retention') as HTMLInputElement;
 			expect(field.value).toBe('30 days');
 			expect(field.hasAttribute('disabled')).toBe(true);
-			expect(getByTestId('retention-fixed').textContent).toContain(
-				'On the free tier, transcripts are kept for 30 days, and the AI license lets you choose how long.',
-			);
+			expect(getByTestId('retention-fixed').textContent).toContain(reason);
 			expect(queryByText(/Only a super admin can see and change the retention window/)).toBeNull();
 			cleanup();
 		}

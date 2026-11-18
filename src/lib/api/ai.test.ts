@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { HttpClient } from '@lyeve-labs/client';
-import { aiFreeTier, getCapabilities, listProviders, retentionDays, listTranscripts, providerKindLabel, savePromptVersion, transcriptExportPath, transcriptTotals } from './ai';
-import { fixtureProvider, fixtureSettings, fixtureTranscript } from '#lib/components/ai/test-support/fixtures.ts';
+import { getCapabilities, listProviders, retentionDays, listTranscripts, providerKindLabel, savePromptVersion, transcriptExportPath, transcriptTotals } from './ai';
+import { fixtureProvider, fixtureTranscript } from '#lib/components/ai/test-support/fixtures.ts';
 
 function client(answer: unknown) {
 	const get = vi.fn(async () => answer);
@@ -20,11 +20,11 @@ describe('ai api paths', () => {
 	});
 
 	it('reads the provider ceiling the list states, and none from an older plugin', async () => {
-		const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro';
-		const free = client({ data: [], total_count: 0, limit: 10, offset: 0, provider_limit: 1, upgrade_url: url });
-		expect((await listProviders(free.client)).ceiling).toEqual({ limit: 1, upgradeUrl: url });
-		const pro = client({ data: [], total_count: 0, limit: 10, offset: 0, provider_limit: 0 });
-		expect((await listProviders(pro.client)).ceiling).toEqual({ limit: 0, upgradeUrl: '' });
+		const url = 'https://shop.example.com/pricing?skus=example-pro';
+		const capped = client({ data: [], total_count: 0, limit: 10, offset: 0, provider_limit: 1, upgrade_url: url });
+		expect((await listProviders(capped.client)).ceiling).toEqual({ limit: 1, upgradeUrl: url });
+		const lifted = client({ data: [], total_count: 0, limit: 10, offset: 0, provider_limit: 0 });
+		expect((await listProviders(lifted.client)).ceiling).toEqual({ limit: 0, upgradeUrl: '' });
 		const older = client({ data: [], total_count: 0, limit: 10, offset: 0 });
 		expect((await listProviders(older.client)).ceiling).toBeNull();
 		const odd = client({ data: [], provider_limit: 'one' });
@@ -51,27 +51,7 @@ describe('ai api paths', () => {
 	});
 });
 
-describe('the AI free tier', () => {
-	const free = { ...fixtureSettings, transcript_retention: { value: '720h', source: 'free_tier', editable: false, reason: 'r' } };
-	const licensed = { ...fixtureSettings, transcript_retention: { value: '2160h', source: 'config', editable: true } };
-
-	it('reads the free tier from the transcript window a plugin that knows it reports', () => {
-		expect(aiFreeTier(free, [])).toBe(true);
-		expect(aiFreeTier(licensed, [])).toBe(false);
-	});
-
-	// An engine that holds the AI license can still withhold it from one tenant.
-	it('reads a license withheld from this tenant as the free tier', () => {
-		expect(aiFreeTier(licensed, ['ai-pro'])).toBe(true);
-	});
-
-	// An engine that gates AI as a whole runs a plugin with no window to
-	// report, and its tenants meet no ceiling.
-	it('reads no free tier from a plugin older than it, or from no settings at all', () => {
-		expect(aiFreeTier(fixtureSettings, ['ai-pro'])).toBe(false);
-		expect(aiFreeTier(null, [])).toBe(false);
-	});
-
+describe('the transcript window', () => {
 	it('writes a window of whole days in days', () => {
 		expect(retentionDays('720h')).toBe('30 days');
 		expect(retentionDays('24h')).toBe('1 day');

@@ -21,8 +21,8 @@
 
 	const create = submitter(() => (open = false));
 
-	// On the free tier a tenant holds one provider, disabled ones included, so
-	// the page says so before a create would be refused. The total is the
+	// Under a ceiling the list states, disabled providers count too, so the
+	// page says so before a create would be refused. The total is the
 	// engine's count, and an unknown total says nothing.
 	const ceiling = $derived<Refusal | null>(
 		data.ceiling.limit > 0 && data.total !== null && data.total >= data.ceiling.limit

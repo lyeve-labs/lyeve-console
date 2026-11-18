@@ -91,9 +91,9 @@ describe('AI providers page', () => {
 		expect(container.querySelector('table')).toBeNull();
 	});
 
-	// Without the AI license a tenant holds one provider. The page says so
-	// before a create would be refused, and the create control waits.
-	describe('the free tier', () => {
+	// Under a ceiling the list states, the page says so before a create would
+	// be refused, and the create control waits.
+	describe('the provider ceiling', () => {
 		const CEILING = "You're using 1 of 1 AI providers.";
 
 		it('shows the ceiling and holds the create control once the one provider exists', () => {
@@ -105,7 +105,7 @@ describe('AI providers page', () => {
 		});
 
 		it('links the ceiling to the plan the list names', () => {
-			const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro';
+			const url = 'https://shop.example.com/pricing?skus=example-pro';
 			const { container } = setup({ ceiling: { limit: 1, upgradeUrl: url }, providers: [fixtureProvider], total: 1 });
 			expect(container.querySelector(`a[href="${url}"]`)?.textContent).toContain('View the add-on');
 		});
@@ -135,7 +135,7 @@ describe('AI providers page', () => {
 		});
 
 		it('draws a refused create as the ceiling, with the link from the refusal', async () => {
-			const url = 'https://lyeve.com/pricing?skus=plugin-ai-pro';
+			const url = 'https://shop.example.com/pricing?skus=example-pro';
 			const refused = { kind: 'cap', cap: 'ai.providers', limit: 1, current: 1, upgradeUrl: url };
 			const { container, getAllByText } = setup({ ceiling: { limit: 0, upgradeUrl: '' } }, { error: 'x', refused });
 			await fireEvent.click(getAllByText('New provider')[0]);
