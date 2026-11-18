@@ -49,27 +49,6 @@
  */
 
 /*
- * The route progress bar's rhythm.
- *
- * A loop keeps its own period, which is the one place the motion vocabulary
- * allows a literal: this is not a transition between two states, it is a signal
- * that something is still happening, and it has no end to ease into. The curve
- * is still the theme's.
- */
-@theme {
-  --animate-route-progress: route-progress 1.1s var(--ease-move) infinite;
-}
-
-@keyframes route-progress {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(350%);
-  }
-}
-
-/*
  * A tenant's accent, one ramp per theme. The layout sets both ramps as custom
  * properties and this picks the one for the theme showing. Print keeps the
  * kit's black brand, so the rule is screen only.
