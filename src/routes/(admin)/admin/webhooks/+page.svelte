@@ -27,7 +27,7 @@
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import type { PageData, ActionData } from './$types';
 	import type { Webhook } from '@lyeve-labs/client';
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { enhance } from '#lib/enhance.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { confirmed, drawerFailure, fieldErrors, submitter } from '#lib/forms.svelte.ts';
@@ -209,6 +209,10 @@
 		Record<string, { success: boolean; status_code: number; message: string }>
 	>({});
 
+	// The result line mounts under its row, and a region created holding its
+	// text is not announced, so the result is spoken from one drawn empty.
+	let testSpoken = $state('');
+
 	// The map is read untracked: an effect that tracks the map it rewrites
 	// reruns on its own write until Svelte stops it.
 	$effect(() => {
@@ -220,8 +224,29 @@
 				message: string;
 			};
 			testResults = { ...untrack(() => testResults), [tr.id]: tr };
+			const name = untrack(() => rows.find((w) => w.id === tr.id)?.name) ?? 'the webhook';
+			const said = `Test of ${name} ${tr.success ? 'succeeded' : 'failed'}. HTTP ${tr.status_code}: ${tr.message}`;
+			// Emptied first, so a second test with the same result changes the
+			// region and is read out again.
+			testSpoken = '';
+			void tick().then(() => (testSpoken = said));
 		}
 	});
+
+	/** The webhook whose test is calling its receiver, so only its button waits. */
+	let testing = $state<string | null>(null);
+	function runTest(id: string): SubmitFunction {
+		return () => {
+			testing = id;
+			return async ({ update }) => {
+				try {
+					await update();
+				} finally {
+					testing = null;
+				}
+			};
+		};
+	}
 
 	// A row's history and the queue open from the address, so a link or a
 	// reload opens them too, and the list keeps its page under them.
@@ -294,6 +319,7 @@
 	{/snippet}
 
 	<FormErrors message={pageError} refused={pageRefusal} />
+	<div class="sr-only" aria-live="polite" aria-atomic="true" data-testid="webhook-test-live">{testSpoken}</div>
 
 	{#if data.webhooks.ok && !isSuperAdmin}
 		<Alert tone="brand">You can view and test webhooks. Only a super admin can create, change or delete them.</Alert>
@@ -396,12 +422,13 @@
 						</td>
 						<td>
 							<div class="flex items-center gap-2">
-								<form method="POST" action="?/test" use:enhance>
+								<form method="POST" action="?/test" use:enhance={runTest(wh.id)}>
 									<input type="hidden" name="id" value={wh.id} />
 									<Button
 										variant="ghost"
 										size="sm"
 										type="submit"
+										loading={testing === wh.id}
 										title="Test webhook"
 										aria-label="Test {wh.name}"
 									>
