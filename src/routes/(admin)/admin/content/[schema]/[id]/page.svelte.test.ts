@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PageData } from './$types';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 const state = vi.hoisted(() => ({ page: { url: new URL('http://localhost/admin/content/article/e1') } }));
 vi.mock('$app/state', () => state);
@@ -179,8 +180,8 @@ describe('content entry editor, revision history', () => {
 		const row = aside.parentElement as HTMLElement;
 		expect(row.classList).toContain('flex-col');
 		expect(row.classList).toContain('lg:flex-row');
-		expect(aside.classList).not.toContain('w-64');
-		expect(aside.classList).toContain('lg:w-64');
+		expect(aside.classList).not.toContain('w-69');
+		expect(aside.classList).toContain('lg:w-69');
 	});
 
 	type After = (o: { result: { type: string }; update: () => Promise<void> }) => Promise<void>;
@@ -460,5 +461,61 @@ describe('content entry editor under the reader\'s access rules', () => {
 		expect(container.querySelector('#field-summary')).toBeNull();
 		const posted = JSON.parse((container.querySelector('input[name="data"]') as HTMLInputElement).value);
 		expect(posted).not.toHaveProperty('summary');
+	});
+});
+
+describe('content entry editor, history travel', () => {
+	const two = () => ({ data: data({ revisions: [revision(2), revision(1)], revisionWindow: { hiddenOlder: 0, windowDays: null } }), form: null });
+
+	it('keeps the history shut and out of reach until it is opened, then travels it open', async () => {
+		render(EntryPage, { props: two() });
+		const toggle = screen.getByRole('button', { name: /history/i });
+		const aside = screen.getByTestId('revision-history');
+		expect(toggle.getAttribute('aria-expanded')).toBe('false');
+		expect(toggle.getAttribute('aria-controls')).toBe(aside.id);
+		expect(aside.inert).toBe(true);
+		for (const c of ['transition-[grid-template-rows,width]', 'duration-base', 'ease-move', 'grid-rows-[0fr]', 'lg:w-0']) expect(aside.classList).toContain(c);
+		await fireEvent.click(toggle);
+		expect(toggle.getAttribute('aria-expanded')).toBe('true');
+		expect(aside.inert).toBe(false);
+		expect(aside.classList).toContain('grid-rows-[1fr]');
+		expect(aside.classList).toContain('lg:w-69');
+	});
+
+	it('pads the history inside the shrinking row, so a shut history leaves no band below lg', () => {
+		render(EntryPage, { props: two() });
+		const row = screen.getByTestId('revision-history').firstElementChild!;
+		expect(row.classList).toContain('min-h-0');
+		// Padding on the grid child itself is height a 0fr row cannot take back.
+		expect([...row.classList].filter((c) => /^(lg:)?p[tlbrxy]?-/.test(c))).toEqual([]);
+	});
+
+	it('opens the Restore control under a revision on its row', async () => {
+		render(EntryPage, { props: two() });
+		await fireEvent.click(screen.getByRole('button', { name: /history/i }));
+		const [pick] = within(screen.getByTestId('revision-history')).getAllByRole('button');
+		const watch = watchTransitions();
+		try {
+			await fireEvent.click(pick);
+			const restore = screen.getByRole('button', { name: /Restore/ });
+			const row = watch.entered.find((el) => el.classList.contains('grid') && el.contains(restore));
+			expect(row).toBeTruthy();
+			await fireEvent.click(pick);
+			expect(watch.left).toContain(row);
+		} finally {
+			watch.stop();
+		}
+	});
+
+	it('opens a revision opened by number on its row', async () => {
+		const { rerender } = render(EntryPage, { props: two() });
+		const watch = watchTransitions();
+		try {
+			await rerender({ ...two(), form: { openedRevision: revision(1) } as never });
+			const opened = screen.getByTestId('opened-revision');
+			expect(watch.entered.some((el) => el.classList.contains('grid') && el.contains(opened))).toBe(true);
+		} finally {
+			watch.stop();
+		}
 	});
 });
