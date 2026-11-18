@@ -100,7 +100,7 @@
 						<!-- GraphQL answers 200 and puts the failure in the body, so a
 						     status badge alone reads as success. -->
 						<Alert tone="warn">
-							The status is 200, but the body has an `errors` array. GraphQL reports failures
+							The status is 200, but the body has an <code class="font-mono">errors</code> array. GraphQL reports failures
 							inside a successful response, so check the body, not the status.
 						</Alert>
 					{/if}

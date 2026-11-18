@@ -41,6 +41,9 @@ describe('GraphQL', () => {
 			props: props({}, { graphql: result({ path: '/api/v1/graphql', body: '{"errors":[{"message":"boom"}]}' }) }),
 		});
 		expect(said(container)).toContain('check the body, not the status');
+		const code = [...container.querySelectorAll('code')].find((c) => c.textContent === 'errors');
+		expect(code, 'the field name is set as code, not wrapped in backticks').toBeTruthy();
+		expect(said(container)).not.toContain('`errors`');
 	});
 
 	it('says nothing of the sort on a clean response', () => {
