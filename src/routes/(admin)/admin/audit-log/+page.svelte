@@ -66,9 +66,9 @@
 	}
 
 	const handlePruneSubmit: SubmitFunction = () => {
+		pruning = true;
+		error = null;
 		return async ({ result, update }) => {
-			pruning = true;
-			error = null;
 			await update();
 			pruning = false;
 			if (result.type === 'failure') {

@@ -160,6 +160,18 @@ describe('Audit log prune', () => {
 		expect(form.getAttribute('action')).toBe('?q=alice&action=user.login&offset=50&/prune');
 	});
 
+	it('shows Prune pending from the moment the delete is sent until it returns', async () => {
+		const { getByRole } = setup();
+		const prune = getByRole('button', { name: /prune/i });
+		const submit = forms.submits[forms.submits.length - 1] as unknown as () => Promise<(o: unknown) => Promise<void>>;
+		const after = await submit();
+		await tick();
+		expect(prune.getAttribute('aria-busy')).toBe('true');
+		await after({ result: { type: 'success' }, update: async () => {} });
+		await tick();
+		expect(prune.getAttribute('aria-busy')).toBeNull();
+	});
+
 	it('is withheld from an admin who cannot prune', () => {
 		const { queryByRole } = setup({ isSuperAdmin: false });
 		expect(queryByRole('button', { name: /prune/i })).toBeNull();
