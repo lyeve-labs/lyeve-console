@@ -9,12 +9,13 @@
 		Input,
 		PageShell,
 		PasswordInput,
-		SectionHeading,
 		RadioGroup,
+		SectionHeading,
 		Select,
 		Table,
 		Textarea,
 		Toggle,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { Database, MessageSquare, Pencil, PlugZap, Plus, Trash2 } from '@lucide/svelte';
 	import { enhance } from '#lib/enhance.ts';
@@ -524,7 +525,7 @@
 				<fieldset class="flex flex-col gap-2">
 					<legend class="text-xs font-semibold uppercase tracking-wide text-faint">Headers</legend>
 					{#each headers as h, i (h.id)}
-						<div class="flex items-end gap-2">
+						<div class="flex items-end gap-2" transition:motion.fade|global animate:motion.reorder>
 							<Input id="ds-header-key-{h.id}" name="header_key" label="Header" bind:value={h.key} class="min-w-0 flex-1" />
 							{#if h.secret}
 								<PasswordInput id="ds-header-value-{h.id}" name="header_value" label="Value" bind:value={h.value} class="min-w-0 flex-1" />

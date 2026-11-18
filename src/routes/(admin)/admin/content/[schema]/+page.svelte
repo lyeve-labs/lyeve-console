@@ -18,6 +18,7 @@
 		SegmentedControl,
 		Select,
 		Table,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import type { PageData, ActionData } from './$types';
 	import type { Schema, SchemaField } from '@lyeve-labs/client';
@@ -675,6 +676,7 @@
 							     column even while the row has no value. -->
 							<fieldset
 								class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:grid-cols-[minmax(0,14rem)_minmax(0,12rem)_minmax(0,1fr)_auto]"
+								transition:motion.fade|global animate:motion.reorder
 							>
 								<legend class="sr-only">Filter {i + 1}</legend>
 								<Select

@@ -12,6 +12,7 @@
 		SectionHeading,
 		Select,
 		Tag,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import { ArrowDown, ArrowUp, Plus, X } from '@lucide/svelte';
@@ -186,7 +187,7 @@
 					</p>
 					<ol class="flex flex-col gap-2" aria-label="Fallback chain">
 						{#each draft.chain as code, i (code)}
-							<li>
+							<li animate:motion.reorder>
 								<Panel pad="none">
 									<div class="flex items-center gap-2 px-3 py-2">
 										<span class="w-6 text-xs text-faint">{i + 1}.</span>

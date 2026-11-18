@@ -26,6 +26,7 @@ vi.mock('$app/navigation', () => nav);
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/admin/webhooks?offset=50&dead=1') } }));
 
 import DeadLetterDrawer from './DeadLetterDrawer.svelte';
+import { watchTransitions } from '#lib/transitions.test-support.ts';
 
 afterEach(() => {
 	cleanup();
@@ -98,6 +99,21 @@ describe('the dead letter drawer', () => {
 		await after({ result: { type: 'success' }, update: async () => {} });
 		flushSync();
 		expect(dialog()?.querySelectorAll('tbody tr')).toHaveLength(1);
+	});
+
+	it('fades a deleted entry out where it stood, still laid out as a table row', async () => {
+		render(DeadLetterDrawer, { props: props(queue([entry('a', 'pending'), entry('c', 'pending')])) });
+		const deleted = dialog()!.querySelectorAll('tbody tr')[0] as HTMLTableRowElement;
+		const watch = watchTransitions();
+		try {
+			const after = (await deleteSubmit()({ cancel: vi.fn(), formData: new FormData() })) as After;
+			await after({ result: { type: 'success' }, update: async () => {} });
+			flushSync();
+			expect(watch.left).toContain(deleted);
+			expect(deleted.style.position).toBe('');
+		} finally {
+			watch.stop();
+		}
 	});
 
 	it('keeps an entry whose delete failed', async () => {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { couldNotLoad } from '#lib/outage.ts';
-	import { Button, Drawer, Input, RadioGroup, Select, toast } from '@lyeve-labs/ui-kit';
+	import { Button, Drawer, Input, RadioGroup, Select, motion, toast } from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import { Plus, Trash2 } from '@lucide/svelte';
 	import FormErrors from '#lib/components/FormErrors.svelte';
@@ -155,7 +155,7 @@
 			{/if}
 			<div class="flex flex-col gap-3">
 				{#each rows as r, i (r.id)}
-					<div class="flex flex-col gap-2 rounded border border-line p-3">
+					<div class="flex flex-col gap-2 rounded border border-line p-3" transition:motion.fade|global animate:motion.reorder>
 						<div class="grid items-end gap-2 sm:grid-cols-[1fr_1fr_auto]">
 							<Input id="template-source-{r.id}" label="Column in the file" bind:value={r.source} />
 							<Select

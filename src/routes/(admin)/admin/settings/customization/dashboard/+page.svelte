@@ -16,12 +16,14 @@
 		Select,
 		Textarea,
 		confirm as confirmDialog,
+		motion,
 	} from '@lyeve-labs/ui-kit';
 	import { enhance } from '#lib/enhance.ts';
 	import { CONFIRM_FIELD, CONFIRMED } from '#lib/confirmation.ts';
 	import type { SubmitFunction } from '$app/forms';
 	import { ArrowDown, ArrowUp, Eye, LayoutDashboard, Plus, RotateCcw, Trash2 } from '@lucide/svelte';
 	import { ICON } from '#lib/icon.ts';
+	import { rowKeys, withRow, withoutRow } from '#lib/row-keys.ts';
 	import DashboardWidgets from '#lib/components/custom/DashboardWidgets.svelte';
 	import { ROLE_CHOICES } from '#lib/api/customization.ts';
 	import {
@@ -141,6 +143,18 @@
 	}
 	function remove(i: number) {
 		widgets = widgets.filter((_, k) => k !== i);
+	}
+
+	// A link row has no id, and a reload after a save rebuilds every object,
+	// so its key is kept beside the widget's links rather than taken from them.
+	let keptLinks = $state<Record<string, number[]>>({});
+	function addLink(w: Widget, links: number[]) {
+		keptLinks = { ...keptLinks, [w.id]: withRow(links) };
+		w.links = [...(w.links ?? []), { label: '', url: 'https://' }];
+	}
+	function removeLink(w: Widget, links: number[], j: number) {
+		keptLinks = { ...keptLinks, [w.id]: withoutRow(links, j) };
+		w.links = (w.links ?? []).filter((_, k) => k !== j);
 	}
 
 	const save: SubmitFunction = () => {
@@ -268,96 +282,99 @@
 			{:else}
 				{#each widgets as w, i (w.id)}
 					{@const kind = widgetKind(w.type)}
-					<Card pad="md">
-						{#snippet header()}
-							<div class="flex items-center justify-between gap-2">
-								<SectionHeading level={3}>{i + 1}. {kind.label}</SectionHeading>
-								<div class="flex items-center gap-1">
-									<Button variant="ghost" size="sm" type="button" aria-label="Move widget {i + 1} up" disabled={i === 0} onclick={() => move(i, -1)}>
-										<ArrowUp size={ICON.sm} />
-									</Button>
-									<Button variant="ghost" size="sm" type="button" aria-label="Move widget {i + 1} down" disabled={i === widgets.length - 1} onclick={() => move(i, 1)}>
-										<ArrowDown size={ICON.sm} />
-									</Button>
-									<Button variant="ghost" size="sm" type="button" aria-label="Remove widget {i + 1}" onclick={() => remove(i)}>
-										<Trash2 size={ICON.sm} class="text-danger" />
-									</Button>
-								</div>
-							</div>
-						{/snippet}
-						<div class="flex flex-col gap-4">
-							<p class="text-sm text-muted">
-								{kind.description}
-								{#if kind.adminData}
-									Only an admin or a super admin can see its data. An editor or a viewer sees "Could not load" in its place.
-								{/if}
-							</p>
-							<div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-								<Input id="widget-{w.id}-title" label="Heading" placeholder={kind.fallbackTitle || 'None'} bind:value={w.title} />
-								<SegmentedControl label="Width" options={widthOptions} value={w.width ?? 'half'} onchange={(v) => (w.width = v)} />
-								<CheckboxGroup label="Seen by" hint="Leave empty for everyone." orientation="horizontal" options={roleOptions} bind:value={w.roles} />
-							</div>
-
-							{#if w.type === 'entry_counts'}
-								{#if data.schemasGate.state === 'ok' && schemaOptions.length === 0}
-									<p class="text-sm text-muted">No content types to count yet.</p>
-								{:else}
-									<MultiSelect
-										id="widget-{w.id}-schemas"
-										label="Content types"
-										placeholder="Choose content types"
-										hint="Up to 12, in the order picked."
-										searchable
-										options={withOwn(w.schemas ?? [])}
-										bind:value={w.schemas}
-									/>
-								{/if}
-							{:else if w.type === 'latest_entries'}
-								<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
-									<Select id="widget-{w.id}-schema" label="Content type" searchable options={anySchema(w.schema)} bind:value={w.schema} />
-									<SegmentedControl label="Status" options={statusOptions} value={w.status ?? ''} onchange={(v) => (w.status = v as Widget['status'])} />
-									<NumberInput id="widget-{w.id}-limit" label="Entries" min={1} max={MAX_WIDGET_ROWS} bind:value={w.limit} />
-								</div>
-							{:else if w.type === 'status_breakdown'}
-								<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
-									<Select id="widget-{w.id}-schema" label="Content type" searchable options={anySchema(w.schema)} bind:value={w.schema} />
-								</div>
-							{:else if w.type === 'recent_activity'}
-								<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
-									<NumberInput id="widget-{w.id}-limit" label="Entries" min={1} max={MAX_WIDGET_ROWS} bind:value={w.limit} />
-								</div>
-							{:else if w.type === 'api_usage'}
-								<SegmentedControl label="Window" options={windowOptions} value={w.window ?? '24h'} onchange={(v) => (w.window = v)} />
-							{:else if w.type === 'text'}
-								<div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-									<div class="lg:col-span-2">
-										<Textarea id="widget-{w.id}-body" label="Text" rows={5} mono hint="Markdown: headings, lists, links, bold, italic and code." bind:value={w.body} />
-									</div>
-									<Select id="widget-{w.id}-tone" label="Style" options={toneOptions} bind:value={w.tone} />
-								</div>
-							{:else if w.type === 'links'}
-								<div class="flex flex-col gap-3">
-									{#each w.links ?? [] as link, j (j)}
-										<div class="grid grid-cols-1 items-end gap-3 sm:grid-cols-[1fr_2fr_auto]">
-											<Input id="widget-{w.id}-link-{j}-label" label="Label" bind:value={link.label} />
-											<Input id="widget-{w.id}-link-{j}-url" label="Address" mono bind:value={link.url} />
-											<div class="flex h-control items-center">
-												<Button variant="ghost" size="sm" type="button" aria-label="Remove link {j + 1}" onclick={() => (w.links = (w.links ?? []).filter((_, k) => k !== j))}>
-													<Trash2 size={ICON.sm} class="text-danger" />
-												</Button>
-											</div>
-										</div>
-									{/each}
-									<p class="text-xs text-faint">Use an https URL or an admin path starting /admin/.</p>
-									<div>
-										<Button variant="secondary" size="sm" type="button" onclick={() => (w.links = [...(w.links ?? []), { label: '', url: 'https://' }])}>
-											<Plus size={ICON.sm} /> Add link
+					<div transition:motion.toast|global animate:motion.reorder>
+						<Card pad="md">
+							{#snippet header()}
+								<div class="flex items-center justify-between gap-2">
+									<SectionHeading level={3}>{i + 1}. {kind.label}</SectionHeading>
+									<div class="flex items-center gap-1">
+										<Button variant="ghost" size="sm" type="button" aria-label="Move widget {i + 1} up" disabled={i === 0} onclick={() => move(i, -1)}>
+											<ArrowUp size={ICON.sm} />
+										</Button>
+										<Button variant="ghost" size="sm" type="button" aria-label="Move widget {i + 1} down" disabled={i === widgets.length - 1} onclick={() => move(i, 1)}>
+											<ArrowDown size={ICON.sm} />
+										</Button>
+										<Button variant="ghost" size="sm" type="button" aria-label="Remove widget {i + 1}" onclick={() => remove(i)}>
+											<Trash2 size={ICON.sm} class="text-danger" />
 										</Button>
 									</div>
 								</div>
-							{/if}
-						</div>
-					</Card>
+							{/snippet}
+							<div class="flex flex-col gap-4">
+								<p class="text-sm text-muted">
+									{kind.description}
+									{#if kind.adminData}
+										Only an admin or a super admin can see its data. An editor or a viewer sees "Could not load" in its place.
+									{/if}
+								</p>
+								<div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+									<Input id="widget-{w.id}-title" label="Heading" placeholder={kind.fallbackTitle || 'None'} bind:value={w.title} />
+									<SegmentedControl label="Width" options={widthOptions} value={w.width ?? 'half'} onchange={(v) => (w.width = v)} />
+									<CheckboxGroup label="Seen by" hint="Leave empty for everyone." orientation="horizontal" options={roleOptions} bind:value={w.roles} />
+								</div>
+
+								{#if w.type === 'entry_counts'}
+									{#if data.schemasGate.state === 'ok' && schemaOptions.length === 0}
+										<p class="text-sm text-muted">No content types to count yet.</p>
+									{:else}
+										<MultiSelect
+											id="widget-{w.id}-schemas"
+											label="Content types"
+											placeholder="Choose content types"
+											hint="Up to 12, in the order picked."
+											searchable
+											options={withOwn(w.schemas ?? [])}
+											bind:value={w.schemas}
+										/>
+									{/if}
+								{:else if w.type === 'latest_entries'}
+									<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
+										<Select id="widget-{w.id}-schema" label="Content type" searchable options={anySchema(w.schema)} bind:value={w.schema} />
+										<SegmentedControl label="Status" options={statusOptions} value={w.status ?? ''} onchange={(v) => (w.status = v as Widget['status'])} />
+										<NumberInput id="widget-{w.id}-limit" label="Entries" min={1} max={MAX_WIDGET_ROWS} bind:value={w.limit} />
+									</div>
+								{:else if w.type === 'status_breakdown'}
+									<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
+										<Select id="widget-{w.id}-schema" label="Content type" searchable options={anySchema(w.schema)} bind:value={w.schema} />
+									</div>
+								{:else if w.type === 'recent_activity'}
+									<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
+										<NumberInput id="widget-{w.id}-limit" label="Entries" min={1} max={MAX_WIDGET_ROWS} bind:value={w.limit} />
+									</div>
+								{:else if w.type === 'api_usage'}
+									<SegmentedControl label="Window" options={windowOptions} value={w.window ?? '24h'} onchange={(v) => (w.window = v)} />
+								{:else if w.type === 'text'}
+									<div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+										<div class="lg:col-span-2">
+											<Textarea id="widget-{w.id}-body" label="Text" rows={5} mono hint="Markdown: headings, lists, links, bold, italic and code." bind:value={w.body} />
+										</div>
+										<Select id="widget-{w.id}-tone" label="Style" options={toneOptions} bind:value={w.tone} />
+									</div>
+								{:else if w.type === 'links'}
+									{@const linkKeys = rowKeys(keptLinks[w.id], w.links?.length ?? 0)}
+									<div class="flex flex-col gap-3">
+										{#each w.links ?? [] as link, j (linkKeys[j])}
+											<div class="grid grid-cols-1 items-end gap-3 sm:grid-cols-[1fr_2fr_auto]" transition:motion.fade|global animate:motion.reorder>
+												<Input id="widget-{w.id}-link-{j}-label" label="Label" bind:value={link.label} />
+												<Input id="widget-{w.id}-link-{j}-url" label="Address" mono bind:value={link.url} />
+												<div class="flex h-control items-center">
+													<Button variant="ghost" size="sm" type="button" aria-label="Remove link {j + 1}" onclick={() => removeLink(w, linkKeys, j)}>
+														<Trash2 size={ICON.sm} class="text-danger" />
+													</Button>
+												</div>
+											</div>
+										{/each}
+										<p class="text-xs text-faint">Use an https URL or an admin path starting /admin/.</p>
+										<div>
+											<Button variant="secondary" size="sm" type="button" onclick={() => addLink(w, linkKeys)}>
+												<Plus size={ICON.sm} /> Add link
+											</Button>
+										</div>
+									</div>
+								{/if}
+							</div>
+						</Card>
+					</div>
 				{/each}
 			{/if}
 		</section>
