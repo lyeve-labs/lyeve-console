@@ -11,6 +11,12 @@ const body = createRawSnippet(() => ({ render: () => '<p>body</p>' }));
 const count = createRawSnippet(() => ({ render: () => '<span>12</span>' }));
 
 const KEY = 'lyeve-test-aside';
+
+/** Two drawn frames, after which the aside lets its width travel. */
+async function frames() {
+	await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+	await tick();
+}
 const BOUNDS = { width: 260, min: 200, max: 500 };
 
 type Props = Partial<{
@@ -90,6 +96,26 @@ describe('ResizableAside', () => {
 		await fireEvent.pointerMove(e, { clientX: 840, pointerId: 1 });
 		expect(end.widthOf()).toBe('320px');
 		expect(e.className).toContain('-left-1');
+	});
+
+	it('draws its first state still, then travels between the panel and the strip on its width', async () => {
+		const { aside } = setup({ collapsible: true });
+		const classes = () => aside.className.split(/\s+/);
+		// A stored width or fold lands at hydration, which is the first paint.
+		expect(classes()).toContain('xl:transition-none');
+		await frames();
+		expect(classes()).toEqual(expect.arrayContaining(['xl:transition-[width]', 'xl:duration-base', 'xl:ease-move']));
+		expect(classes()).not.toContain('xl:transition-none');
+	});
+
+	it('holds the width still while the edge is dragged, so it follows the pointer', async () => {
+		const { aside, handle } = setup();
+		await frames();
+		const h = handle() as HTMLElement;
+		await fireEvent.pointerDown(h, { button: 0, clientX: 260, pointerId: 1 });
+		expect(aside.className.split(/\s+/)).toContain('xl:transition-none');
+		await fireEvent.pointerUp(h, { clientX: 300, pointerId: 1 });
+		expect(aside.className.split(/\s+/)).toContain('xl:transition-[width]');
 	});
 
 	it('ignores a press that is not the primary button', async () => {

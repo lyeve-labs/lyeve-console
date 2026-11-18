@@ -77,9 +77,11 @@
 	// transitions there. It resets the offset with translate-none rather than a
 	// zero offset, because any translate makes the aside the containing block
 	// for a fixed popover inside it.
-	const AT: Record<Breakpoint, Record<'dock' | 'w8' | 'strip' | 'flex' | 'block' | 'hidden' | 'width' | 'noBorderB' | 'borderR' | 'borderL' | 'flexNone' | 'maxHNone', string>> = {
+	const AT: Record<Breakpoint, Record<'dock' | 'travel' | 'still' | 'w8' | 'strip' | 'flex' | 'block' | 'hidden' | 'width' | 'noBorderB' | 'borderR' | 'borderL' | 'flexNone' | 'maxHNone', string>> = {
 		md: {
-			dock: 'md:static md:z-auto md:visible md:translate-none md:opacity-100 md:transition-none',
+			dock: 'md:static md:z-auto md:visible md:translate-none md:opacity-100',
+			travel: 'md:transition-[width] md:duration-base md:ease-move',
+			still: 'md:transition-none',
 			w8: 'md:w-8',
 			strip: 'md:flex',
 			flex: 'md:flex',
@@ -93,7 +95,9 @@
 			maxHNone: 'md:max-h-none',
 		},
 		lg: {
-			dock: 'lg:static lg:z-auto lg:visible lg:translate-none lg:opacity-100 lg:transition-none',
+			dock: 'lg:static lg:z-auto lg:visible lg:translate-none lg:opacity-100',
+			travel: 'lg:transition-[width] lg:duration-base lg:ease-move',
+			still: 'lg:transition-none',
 			w8: 'lg:w-8',
 			strip: 'lg:flex',
 			flex: 'lg:flex',
@@ -107,7 +111,9 @@
 			maxHNone: 'lg:max-h-none',
 		},
 		xl: {
-			dock: 'xl:static xl:z-auto xl:visible xl:translate-none xl:opacity-100 xl:transition-none',
+			dock: 'xl:static xl:z-auto xl:visible xl:translate-none xl:opacity-100',
+			travel: 'xl:transition-[width] xl:duration-base xl:ease-move',
+			still: 'xl:transition-none',
 			w8: 'xl:w-8',
 			strip: 'xl:flex',
 			flex: 'xl:flex',
@@ -233,6 +239,24 @@
 	const edge = $derived(side === 'start' ? at.borderR : at.borderL);
 
 	/**
+	 * Docked, the width travels between the panel and the strip on the base
+	 * rung, as the app's sidebar does. A drag turns it off, or the edge would
+	 * trail the pointer. It also waits until the first state has drawn: the
+	 * server renders the default width and fold, so a stored one lands at
+	 * hydration, which is the first paint and not a travel. One frame is not
+	 * enough, because the first frame's callbacks run before any style is
+	 * computed, so the change and the transition would land together.
+	 */
+	let settled = $state(false);
+	$effect(() => {
+		let frame = requestAnimationFrame(() => {
+			frame = requestAnimationFrame(() => (settled = true));
+		});
+		return () => cancelAnimationFrame(frame);
+	});
+	const travel = $derived(drag || !settled ? at.still : at.travel);
+
+	/**
 	 * The overlay's motion under the breakpoint. It is CSS because the overlay
 	 * stays mounted at every width, so what the reader typed in it survives a
 	 * close and a resize. Closed, it sits off its own edge, transparent and
@@ -251,10 +275,10 @@
 		if (below === 'overlay') {
 			// Floating under the breakpoint at the panel's own width. Only the
 			// docked variant folds to the strip.
-			return `absolute inset-y-0 z-20 w-(--panel-w) max-w-full shrink-0 border-line bg-surface ${slide} ${at.dock} ${folded ? at.w8 : ''} ${side === 'start' ? 'left-0 border-r' : 'right-0 border-l'}`;
+			return `absolute inset-y-0 z-20 w-(--panel-w) max-w-full shrink-0 border-line bg-surface ${slide} ${at.dock} ${travel} ${folded ? at.w8 : ''} ${side === 'start' ? 'left-0 border-r' : 'right-0 border-l'}`;
 		}
 		const shown = below === 'hidden' ? `hidden ${at.flex}` : `flex border-b ${at.noBorderB} ${at.flexNone} ${at.maxHNone}`;
-		return `${shown} min-h-0 flex-col border-line bg-surface ${folded ? at.w8 : at.width} ${edge} ${klass}`;
+		return `${shown} min-h-0 flex-col border-line bg-surface ${folded ? at.w8 : at.width} ${travel} ${edge} ${klass}`;
 	});
 </script>
 
