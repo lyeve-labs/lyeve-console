@@ -283,8 +283,8 @@ export const actions: Actions = {
 	// Creates an API key that reads what a site's server needs, binds it to
 	// the site as its server key and shows it once. A key the bind refuses is
 	// deleted, so no unbound key is left behind with the refusal scope. The
-	// key the bind replaced still holds its other read scopes, so it is
-	// deleted too.
+	// key the bind replaced keeps its other read scopes, so a site that reads
+	// content with it stays up until its server is deployed with the new key.
 	createServerKey: asked(
 		{ question: 'Create a new server key for this site?', detail: SERVER_KEY_SAID.detail, label: SERVER_KEY_SAID.label },
 		async (event) => {
@@ -324,16 +324,7 @@ export const actions: Actions = {
 				if (e.status === 405) return fail(405, { serverKeyError: SERVER_KEY_SAID.tooOld });
 				return fail(e.status, { serverKeyError: refusalSentence(e, SERVER_KEY_SAID.failed) });
 			}
-			let previousKept = false;
-			if (previous && previous !== created.id) {
-				try {
-					const old = (await namedServerKeys(client)).find((k) => k.id === previous);
-					if (old) await deleteAPIKey(old.id, client);
-				} catch (e) {
-					previousKept = !(e instanceof ApiError && e.status === 404);
-				}
-			}
-			return { serverKeyCreated: { site, name: created.name, raw_key: created.raw_key, previousKept } };
+			return { serverKeyCreated: { site, name: created.name, raw_key: created.raw_key, replaced: !!previous } };
 		},
 		(form) => !!String(form.get('site') ?? '').trim(),
 	),
