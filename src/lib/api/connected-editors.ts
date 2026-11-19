@@ -9,11 +9,12 @@
  * listed: anyone can start one, so only the person holding its code brings it
  * up.
  */
-import { ApiError, type HttpClient } from '@lyeve-labs/client';
+import { ApiError, type APIKey, type HttpClient } from '@lyeve-labs/client';
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import { gateOf, type Gate } from './gate';
 import { errorCodeOf } from './limits';
-import { totalOf, type ListEnvelope } from './list';
+import { rowsOf, totalOf, type ListEnvelope } from './list';
+import { listKeys } from './api-keys';
 import { couldNotLoad } from '../outage';
 
 const CONNECTIONS_URL = '/api/admin/builder/connections';
@@ -156,8 +157,19 @@ export const SERVER_KEY_SCOPES = [
 	'builder.sheet:read',
 ] as const;
 
+const SERVER_KEY_PREFIX = 'Server key: ';
+
 /** The name a site's server key carries in the API keys list. */
-export const serverKeyName = (site: string): string => `Server key: ${site}`;
+export const serverKeyName = (site: string): string => `${SERVER_KEY_PREFIX}${site}`;
+
+/**
+ * The API keys named as server keys, `active` ones only when asked. One page
+ * of 500, the most the list returns, holds the server keys of 500 sites.
+ */
+export async function namedServerKeys(client: HttpClient, status?: 'active'): Promise<APIKey[]> {
+	const res = await listKeys(client, 500, 0, { q: SERVER_KEY_PREFIX.trim(), status });
+	return rowsOf(res).filter((k) => k.name.startsWith(SERVER_KEY_PREFIX));
+}
 
 /** Every site's server key in the tenant. */
 export async function listServerKeys(client: HttpClient): Promise<ServerKey[]> {
@@ -177,7 +189,9 @@ export const SERVER_KEY_SAID = {
 	failed: 'Could not create the server key. Try again.',
 	unconfirmed: 'Check whether the server key was created, then try again.',
 	bindUnconfirmed: 'Could not confirm the site uses the new server key. Create the key again, then delete any unused server key on the API keys page.',
-	detail: "The site's current server key stops reading refused form posts immediately. Set the new key on the site's server and deploy it.",
+	detail: "If the site has a server key, it stops working immediately. Set the new key on the site's server and deploy it.",
+	replaces: "The site's current server key stops working immediately. Set the new key on the site's server and deploy it.",
+	first: "Set the new key on the site's server and deploy it.",
 	label: 'Create server key',
 } as const;
 

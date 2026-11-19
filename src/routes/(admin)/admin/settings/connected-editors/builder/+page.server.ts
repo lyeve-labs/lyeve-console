@@ -34,6 +34,7 @@ import {
 	SITE_NOT_FOUND,
 	bindServerKey,
 	listServerKeys,
+	namedServerKeys,
 	revokePreviousFormKey,
 	serverKeyName,
 	getSettings,
@@ -268,7 +269,9 @@ export const actions: Actions = {
 
 	// Creates an API key that reads what a site's server needs, binds it to
 	// the site as its server key and shows it once. A key the bind refuses is
-	// deleted, so no unbound key is left behind with the refusal scope.
+	// deleted, so no unbound key is left behind with the refusal scope. The
+	// key the bind replaced still holds its other read scopes, so it is
+	// deleted too.
 	createServerKey: asked(
 		{ question: 'Create a new server key for this site?', detail: SERVER_KEY_SAID.detail, label: SERVER_KEY_SAID.label },
 		async (event) => {
@@ -276,9 +279,16 @@ export const actions: Actions = {
 			if (!site) return fail(400, { serverKeyError: SERVER_KEY_SAID.chooseSite });
 			const client = authedClient(event);
 			let created: { id: string; raw_key: string; name: string };
+			let previous: string | undefined;
 			try {
 				const name = (await listSites(client)).find((s) => s.id === site)?.name;
 				if (!name) return fail(404, { serverKeyError: FORM_KEY_SAID.siteGone });
+				const bound = await listServerKeys(client).catch((e: unknown) => {
+					if (e instanceof ApiError && (e.status === 404 || e.status === 405)) return null;
+					throw e;
+				});
+				if (!bound) return fail(404, { serverKeyError: SERVER_KEY_SAID.tooOld });
+				previous = bound.find((k) => k.site === site)?.key_id;
 				created = await createKey(client, { name: serverKeyName(name), roles: [], schemas: [], scopes: [...SERVER_KEY_SCOPES], expires_at: null });
 			} catch (e) {
 				if (isOutage(e)) return fail(503, { serverKeyError: SERVER_KEY_SAID.unconfirmed });
@@ -301,7 +311,16 @@ export const actions: Actions = {
 				if (e.status === 405) return fail(405, { serverKeyError: SERVER_KEY_SAID.tooOld });
 				return fail(e.status, { serverKeyError: refusalSentence(e, SERVER_KEY_SAID.failed) });
 			}
-			return { serverKeyCreated: { site, name: created.name, raw_key: created.raw_key } };
+			let previousKept = false;
+			if (previous && previous !== created.id) {
+				try {
+					const old = (await namedServerKeys(client)).find((k) => k.id === previous);
+					if (old) await deleteAPIKey(old.id, client);
+				} catch (e) {
+					previousKept = !(e instanceof ApiError && e.status === 404);
+				}
+			}
+			return { serverKeyCreated: { site, name: created.name, raw_key: created.raw_key, previousKept } };
 		},
 		(form) => !!String(form.get('site') ?? '').trim(),
 	),

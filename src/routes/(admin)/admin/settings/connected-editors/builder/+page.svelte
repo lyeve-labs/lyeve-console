@@ -43,7 +43,7 @@
 		presetCreated?: boolean;
 		formKeyRevoked?: { site: string; status: 'revoked' | 'none' };
 		formKeyError?: string;
-		serverKeyCreated?: { site: string; name: string; raw_key: string };
+		serverKeyCreated?: { site: string; name: string; raw_key: string; previousKept?: boolean };
 		serverKeyError?: string;
 	}
 
@@ -154,7 +154,8 @@
 	const createServerKey = tracked((input) => {
 		const site = String(input.formData.get('site') ?? '');
 		if (!site) return;
-		return confirmed(`Create a new server key for ${siteName(site)}?`, SERVER_KEY_SAID.detail, {
+		const detail = serverKeyOf(site) ? SERVER_KEY_SAID.replaces : SERVER_KEY_SAID.first;
+		return confirmed(`Create a new server key for ${siteName(site)}?`, detail, {
 			confirmLabel: SERVER_KEY_SAID.label,
 		})(input);
 	});
@@ -516,7 +517,13 @@
 						received the post can read it, so each site needs its own.
 					</p>
 					{#if answer.serverKeyCreated}
-						<Alert tone="success">Server key of {siteName(answer.serverKeyCreated.site)} created.</Alert>
+						{#if answer.serverKeyCreated.previousKept}
+							<Alert tone="warn">
+								Server key of {siteName(answer.serverKeyCreated.site)} created, but the previous one still works. Delete it on the API keys page.
+							</Alert>
+						{:else}
+							<Alert tone="success">Server key of {siteName(answer.serverKeyCreated.site)} created.</Alert>
+						{/if}
 						<CopyField
 							id="server-key-value"
 							label="Server key"

@@ -477,14 +477,24 @@ describe('previous form signing key', () => {
 describe('server keys', () => {
 	const SITE = '0a9e2c4e-1d4b-4c9a-9f3e-5b1c2d3e4f50';
 	const BIND = `PUT ${BASE}/sites/${SITE}/server-key`;
+	const BOUND = json({ site: SITE, key_id: 'k9', bound_at: '2026-11-18T09:00:00Z' });
 	const sites: Routes = {
 		'GET /api/admin/content': json({ data: [{ id: SITE, title: '', body: { name: 'Agency' } }], total_count: 1 }),
+		[`GET ${BASE}/server-keys`]: json({ server_keys: [] }),
 		'POST /api/admin/api-keys': json({ id: 'k9', name: 'Server key: Agency', raw_key: 'lyeve_secret', roles: [], scopes: [] }, 201),
+	};
+	const replacing: Routes = {
+		...sites,
+		[`GET ${BASE}/server-keys`]: json({ server_keys: [{ site: SITE, key_id: 'k1', bound_at: '2026-11-01T09:00:00Z' }] }),
+		'GET /api/admin/api-keys': json({ data: [{ id: 'k1', name: 'Server key: Agency' }, { id: 'k9', name: 'Server key: Agency' }], total_count: 2 }),
+		[BIND]: BOUND,
 	};
 
 	it('creates a key with the server scopes, binds it to the site and shows it once', async () => {
-		const { event, calls } = act({ site: SITE, confirmed: 'yes' }, { ...sites, [BIND]: json({ site: SITE, key_id: 'k9', bound_at: '2026-11-18T09:00:00Z' }) });
-		expect(await actions.createServerKey(event)).toEqual({ serverKeyCreated: { site: SITE, name: 'Server key: Agency', raw_key: 'lyeve_secret' } });
+		const { event, calls } = act({ site: SITE, confirmed: 'yes' }, { ...sites, [BIND]: BOUND });
+		expect(await actions.createServerKey(event)).toEqual({
+			serverKeyCreated: { site: SITE, name: 'Server key: Agency', raw_key: 'lyeve_secret', previousKept: false },
+		});
 		const created = calls.find((c) => c.method === 'POST');
 		expect(created?.body).toEqual({ name: 'Server key: Agency', roles: [], schemas: [], scopes: [...SERVER_KEY_SCOPES], expires_at: null });
 		expect(calls.find((c) => c.method === 'PUT')).toEqual({ method: 'PUT', path: `${BASE}/sites/${SITE}/server-key`, body: { key_id: 'k9' } });
@@ -505,6 +515,33 @@ describe('server keys', () => {
 		expect(calls.some((c) => c.method === 'DELETE' && c.path === '/api/admin/api-keys/k9')).toBe(true);
 	});
 
+	it('says a plugin from before server keys is too old, and creates no key', async () => {
+		const { [`GET ${BASE}/server-keys`]: _, ...old } = sites;
+		const { event, calls } = act({ site: SITE, confirmed: 'yes' }, old);
+		expect(await actions.createServerKey(event)).toMatchObject({ status: 404, data: { serverKeyError: SERVER_KEY_SAID.tooOld } });
+		expect(calls.some((c) => c.method === 'POST')).toBe(false);
+	});
+
+	it('deletes the server key the new one replaces', async () => {
+		const { event, calls } = act({ site: SITE, confirmed: 'yes' }, { ...replacing, 'DELETE /api/admin/api-keys/k1': new Response(null, { status: 204 }) });
+		expect(await actions.createServerKey(event)).toMatchObject({ serverKeyCreated: { raw_key: 'lyeve_secret', previousKept: false } });
+		expect(calls.filter((c) => c.method === 'DELETE').map((c) => c.path)).toEqual(['/api/admin/api-keys/k1']);
+	});
+
+	it('says the replaced server key still works when it cannot be deleted', async () => {
+		const { event } = act({ site: SITE, confirmed: 'yes' }, { ...replacing, 'DELETE /api/admin/api-keys/k1': json({ error: 'down' }, 503) });
+		expect(await actions.createServerKey(event)).toMatchObject({ serverKeyCreated: { raw_key: 'lyeve_secret', previousKept: true } });
+	});
+
+	it('leaves a replaced key alone when it is not named as a server key', async () => {
+		const { event, calls } = act(
+			{ site: SITE, confirmed: 'yes' },
+			{ ...replacing, 'GET /api/admin/api-keys': json({ data: [{ id: 'k1', name: 'Shop reader' }], total_count: 1 }) },
+		);
+		expect(await actions.createServerKey(event)).toMatchObject({ serverKeyCreated: { previousKept: false } });
+		expect(calls.some((c) => c.method === 'DELETE')).toBe(false);
+	});
+
 	it.each([
 		['a 503', () => json({ error: 'down' }, 503)],
 		['a dropped connection', () => {
@@ -514,15 +551,6 @@ describe('server keys', () => {
 		const { event, calls } = act({ site: SITE, confirmed: 'yes' }, { ...sites, [BIND]: answer });
 		expect(await actions.createServerKey(event)).toMatchObject({ status: 503, data: { serverKeyError: SERVER_KEY_SAID.bindUnconfirmed } });
 		expect(calls.some((c) => c.method === 'DELETE')).toBe(false);
-	});
-
-	it('says a plugin from before server keys is too old, and leaves no key behind', async () => {
-		const { event, calls } = act(
-			{ site: SITE, confirmed: 'yes' },
-			{ ...sites, 'DELETE /api/admin/api-keys/k9': new Response(null, { status: 204 }) },
-		);
-		expect(await actions.createServerKey(event)).toMatchObject({ status: 404, data: { serverKeyError: SERVER_KEY_SAID.tooOld } });
-		expect(calls.some((c) => c.method === 'DELETE')).toBe(true);
 	});
 
 	it('creates nothing for a site the tenant does not hold', async () => {

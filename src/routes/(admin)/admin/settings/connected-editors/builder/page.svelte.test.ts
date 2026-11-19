@@ -558,8 +558,16 @@ describe('server keys', () => {
 		formData.set('site', A);
 		const cancel = vi.fn();
 		await forms.submits.get('?/createServerKey')!({ formData, cancel, action: new URL('http://admin'), formElement: card(), controller: new AbortController(), submitter: null });
-		expect(kit.confirm).toHaveBeenCalledWith('Create a new server key for Agency?', SERVER_KEY_SAID.detail, { confirmLabel: SERVER_KEY_SAID.label });
+		expect(kit.confirm).toHaveBeenCalledWith('Create a new server key for Agency?', SERVER_KEY_SAID.replaces, { confirmLabel: SERVER_KEY_SAID.label });
 		expect(cancel).toHaveBeenCalled();
+	});
+
+	it('names no current server key for a site that has none', async () => {
+		render(Page, { props: props({ sites: SITES, serverKeys: KEYS }) });
+		const formData = new FormData();
+		formData.set('site', B);
+		await forms.submits.get('?/createServerKey')!({ formData, cancel: vi.fn(), action: new URL('http://admin'), formElement: card(), controller: new AbortController(), submitter: null });
+		expect(kit.confirm).toHaveBeenCalledWith('Create a new server key for Shop?', SERVER_KEY_SAID.first, { confirmLabel: SERVER_KEY_SAID.label });
 	});
 
 	it('shows the new key once, with where to set it', () => {
@@ -567,6 +575,15 @@ describe('server keys', () => {
 		expect(card().textContent).toContain('Server key of Agency created.');
 		expect((card().querySelector('#server-key-value') as HTMLInputElement | HTMLTextAreaElement).value).toBe('lyeve_secret');
 		expect(card().textContent).toContain('LYEVE_API_KEY');
+	});
+
+	it('says the previous server key still works when it could not be deleted', () => {
+		render(Page, {
+			props: props({ sites: SITES, serverKeys: KEYS }, { serverKeyCreated: { site: A, name: 'Server key: Agency', raw_key: 'lyeve_secret', previousKept: true } }),
+		});
+		expect(card().textContent).toContain('Server key of Agency created, but the previous one still works. Delete it on the API keys page.');
+		expect(card().textContent).not.toContain('Server key of Agency created.');
+		expect((card().querySelector('#server-key-value') as HTMLInputElement | HTMLTextAreaElement).value).toBe('lyeve_secret');
 	});
 
 	it('says a plugin from before server keys is too old instead of offering the button', () => {
