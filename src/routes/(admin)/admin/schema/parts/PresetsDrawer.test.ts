@@ -130,7 +130,7 @@ describe('PresetsDrawer import file', () => {
 		return update;
 	}
 
-	it('offers a file field and the Import file button to a writer only', () => {
+	it('offers a file field, a paste field and the Import button to a writer only', () => {
 		setup();
 		const form = screen.getByTestId('preset-import');
 		expect(form.getAttribute('action')).toBe('?/importPreset');
@@ -138,11 +138,27 @@ describe('PresetsDrawer import file', () => {
 		const input = form.querySelector('input[type="file"]') as HTMLInputElement;
 		expect(input.name).toBe('file');
 		expect(input.accept).toContain('.yaml');
-		expect(screen.getByRole('button', { name: 'Import file' })).toBeTruthy();
+		const paste = screen.getByLabelText('Or paste the preset') as HTMLTextAreaElement;
+		expect(paste.tagName).toBe('TEXTAREA');
+		expect(paste.name).toBe('text');
+		expect(form.contains(paste)).toBe(true);
+		const button = screen.getByRole('button', { name: 'Import' });
+		expect(form.contains(button)).toBe(true);
 		cleanup();
 		setup({ canWrite: false });
 		expect(screen.queryByTestId('preset-import')).toBeNull();
-		expect(screen.queryByRole('button', { name: 'Import file' })).toBeNull();
+		expect(screen.queryByLabelText('Or paste the preset')).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Import' })).toBeNull();
+	});
+
+	it('puts a refusal of the paste under the paste field', async () => {
+		setup();
+		await importAnswer({ type: 'failure', status: 413, data: { importError: 'Paste a preset of 1 MB or less.', importField: 'text' } });
+		const message = await screen.findByText('Paste a preset of 1 MB or less.');
+		const paste = screen.getByLabelText('Or paste the preset');
+		expect(paste.getAttribute('aria-invalid')).toBe('true');
+		expect(document.getElementById(String(paste.getAttribute('aria-describedby')))?.contains(message)).toBe(true);
+		expect(screen.getByLabelText('Preset file').getAttribute('aria-invalid')).toBeNull();
 	});
 
 	it('says the content types were created and reloads them', async () => {

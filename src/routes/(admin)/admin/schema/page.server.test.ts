@@ -578,10 +578,11 @@ describe('admin/schema saved presets', () => {
 	});
 });
 
-function fileEvent(routes: Record<string, Route>, file?: File) {
+function fileEvent(routes: Record<string, Route>, file?: File, text?: string) {
 	const { fetch, calls } = fetchFor(routes);
 	const form = new FormData();
 	if (file) form.set('file', file);
+	if (text !== undefined) form.set('text', text);
 	return {
 		calls,
 		event: {
@@ -636,9 +637,38 @@ describe('admin/schema preset import', () => {
 
 	it('refuses no file and a file over 1 MB before asking the engine', async () => {
 		const none = fileEvent({});
-		expect(await actions.importPreset(none.event)).toMatchObject({ status: 400, data: { importError: 'Choose a file.', importField: 'file' } });
+		expect(await actions.importPreset(none.event)).toMatchObject({ status: 400, data: { importError: 'Paste a preset or choose a file.', importField: '' } });
+		const blank = fileEvent({}, undefined, '  \n ');
+		expect(await actions.importPreset(blank.event)).toMatchObject({ status: 400, data: { importError: 'Paste a preset or choose a file.' } });
 		const big = fileEvent({}, new File([new Uint8Array(1024 * 1024 + 1)], 'big.json'));
-		expect(await actions.importPreset(big.event)).toMatchObject({ status: 413, data: { importField: 'file' } });
-		expect([...none.calls, ...big.calls].filter((c) => c.url.includes('/presets'))).toEqual([]);
+		expect(await actions.importPreset(big.event)).toMatchObject({ status: 413, data: { importError: 'Choose a file of 1 MB or less.', importField: 'file' } });
+		expect([...none.calls, ...blank.calls, ...big.calls].filter((c) => c.url.includes('/presets'))).toEqual([]);
+	});
+
+	it('sends a pasted preset trimmed and puts its refusal on the paste field', async () => {
+		const { event, calls } = fileEvent({ [IMPORT]: () => json({ created: ['notes'] }, 201) }, undefined, '\n{"id":"notes"}\n  ');
+		expect(await actions.importPreset(event)).toEqual({ importedPreset: ['notes'] });
+		const post = calls.find((c) => c.url.endsWith(IMPORT));
+		expect(JSON.parse(String(post?.init?.body))).toEqual({ document: '{"id":"notes"}' });
+		const clash = fileEvent({ [IMPORT]: () => json({ error: 'content type "notes" already exists', code: 'conflict' }, 409) }, undefined, 'id: notes\n');
+		expect(await actions.importPreset(clash.event)).toMatchObject({
+			status: 409,
+			data: { importError: 'content type "notes" already exists', importField: 'text' },
+		});
+	});
+
+	it('sends the file and ignores the paste when both are sent', async () => {
+		const { event, calls } = fileEvent({ [IMPORT]: () => json({ created: ['notes'] }, 201) }, yaml, 'id: pasted\n');
+		expect(await actions.importPreset(event)).toEqual({ importedPreset: ['notes'] });
+		const post = calls.find((c) => c.url.endsWith(IMPORT));
+		expect(JSON.parse(String(post?.init?.body))).toEqual({ document: 'id: notes\nschemas:\n  - name: notes\n' });
+	});
+
+	it('measures a paste in bytes and refuses one over 1 MB before asking the engine', async () => {
+		// Each é is two bytes in UTF-8, so this paste is under the limit in
+		// characters and over it in bytes.
+		const big = fileEvent({}, undefined, 'é'.repeat(512 * 1024 + 1));
+		expect(await actions.importPreset(big.event)).toMatchObject({ status: 413, data: { importError: 'Paste a preset of 1 MB or less.', importField: 'text' } });
+		expect(big.calls.filter((c) => c.url.includes('/presets'))).toEqual([]);
 	});
 });
