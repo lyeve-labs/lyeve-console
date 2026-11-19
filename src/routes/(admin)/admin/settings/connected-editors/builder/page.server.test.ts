@@ -505,6 +505,17 @@ describe('server keys', () => {
 		expect(calls.some((c) => c.method === 'DELETE' && c.path === '/api/admin/api-keys/k9')).toBe(true);
 	});
 
+	it.each([
+		['a 503', () => json({ error: 'down' }, 503)],
+		['a dropped connection', () => {
+			throw new TypeError('fetch failed');
+		}],
+	])('keeps the new key after %s on the bind, which may have landed', async (_, answer) => {
+		const { event, calls } = act({ site: SITE, confirmed: 'yes' }, { ...sites, [BIND]: answer });
+		expect(await actions.createServerKey(event)).toMatchObject({ status: 503, data: { serverKeyError: SERVER_KEY_SAID.bindUnconfirmed } });
+		expect(calls.some((c) => c.method === 'DELETE')).toBe(false);
+	});
+
 	it('says a plugin from before server keys is too old, and leaves no key behind', async () => {
 		const { event, calls } = act(
 			{ site: SITE, confirmed: 'yes' },

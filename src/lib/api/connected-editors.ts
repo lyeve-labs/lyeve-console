@@ -176,6 +176,7 @@ export const SERVER_KEY_SAID = {
 	chooseSite: 'Choose a site first.',
 	failed: 'Could not create the server key. Try again.',
 	unconfirmed: 'Check whether the server key was created, then try again.',
+	bindUnconfirmed: 'Could not confirm the site uses the new server key. Create the key again, then delete any unused server key on the API keys page.',
 	detail: "The site's current server key stops reading refused form posts immediately. Set the new key on the site's server and deploy it.",
 	label: 'Create server key',
 } as const;

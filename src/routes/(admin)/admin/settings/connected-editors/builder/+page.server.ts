@@ -287,14 +287,19 @@ export const actions: Actions = {
 			try {
 				await bindServerKey(client, site, created.id);
 			} catch (e) {
+				// After an outage the bind may have landed, and deleting the new key
+				// would leave the site bound to a key that no longer exists. An
+				// unbound key cannot read refused form posts, so it stays.
+				if (!(e instanceof ApiError) || e.status >= 500) {
+					return fail(e instanceof ApiError ? e.status : 503, { serverKeyError: SERVER_KEY_SAID.bindUnconfirmed });
+				}
 				await deleteAPIKey(created.id, client).catch(() => undefined);
-				if (e instanceof ApiError && e.status === 404) {
+				if (e.status === 404) {
 					const gone = errorCodeOf(e) === SITE_NOT_FOUND;
 					return fail(404, { serverKeyError: gone ? FORM_KEY_SAID.siteGone : SERVER_KEY_SAID.tooOld });
 				}
-				if (e instanceof ApiError && e.status === 405) return fail(405, { serverKeyError: SERVER_KEY_SAID.tooOld });
-				if (isOutage(e)) return fail(503, { serverKeyError: SERVER_KEY_SAID.unconfirmed });
-				return fail(e instanceof ApiError ? e.status : 400, { serverKeyError: refusalSentence(e, SERVER_KEY_SAID.failed) });
+				if (e.status === 405) return fail(405, { serverKeyError: SERVER_KEY_SAID.tooOld });
+				return fail(e.status, { serverKeyError: refusalSentence(e, SERVER_KEY_SAID.failed) });
 			}
 			return { serverKeyCreated: { site, name: created.name, raw_key: created.raw_key } };
 		},
