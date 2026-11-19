@@ -43,7 +43,7 @@
 		presetCreated?: boolean;
 		formKeyRevoked?: { site: string; status: 'revoked' | 'none' };
 		formKeyError?: string;
-		serverKeyCreated?: { site: string; name: string; raw_key: string; previousKept?: boolean };
+		serverKeyCreated?: { site: string; name: string; raw_key: string; replaced?: boolean };
 		serverKeyError?: string;
 	}
 
@@ -517,13 +517,9 @@
 						received the post can read it, so each site needs its own.
 					</p>
 					{#if answer.serverKeyCreated}
-						{#if answer.serverKeyCreated.previousKept}
-							<Alert tone="warn">
-								Server key of {siteName(answer.serverKeyCreated.site)} created, but the previous one still works. Delete it on the API keys page.
-							</Alert>
-						{:else}
-							<Alert tone="success">Server key of {siteName(answer.serverKeyCreated.site)} created.</Alert>
-						{/if}
+						<Alert tone="success">
+							Server key of {siteName(answer.serverKeyCreated.site)} created.{answer.serverKeyCreated.replaced ? ` ${SERVER_KEY_SAID.replaced}` : ''}
+						</Alert>
 						<CopyField
 							id="server-key-value"
 							label="Server key"

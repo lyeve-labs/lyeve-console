@@ -552,13 +552,17 @@ describe('server keys', () => {
 		expect(buttons).toEqual([SERVER_KEY_SAID.label]);
 	});
 
-	it('asks first, naming the site and what stops working', async () => {
+	it('asks first, naming the site and how long its current key keeps working', async () => {
 		render(Page, { props: props({ sites: SITES, serverKeys: KEYS }) });
 		const formData = new FormData();
 		formData.set('site', A);
 		const cancel = vi.fn();
 		await forms.submits.get('?/createServerKey')!({ formData, cancel, action: new URL('http://admin'), formElement: card(), controller: new AbortController(), submitter: null });
-		expect(kit.confirm).toHaveBeenCalledWith('Create a new server key for Agency?', SERVER_KEY_SAID.replaces, { confirmLabel: SERVER_KEY_SAID.label });
+		expect(kit.confirm).toHaveBeenCalledWith(
+			'Create a new server key for Agency?',
+			'The current server key keeps working until you delete it on the API keys page, so you can deploy the new key first. Only the new key can read refused form posts.',
+			{ confirmLabel: SERVER_KEY_SAID.label },
+		);
 		expect(cancel).toHaveBeenCalled();
 	});
 
@@ -576,14 +580,16 @@ describe('server keys', () => {
 		expect((card().querySelector('#server-key-value') as HTMLInputElement | HTMLTextAreaElement).value).toBe('lyeve_secret');
 		expect(card().textContent).toContain('LYEVE_API_KEY');
 		expect(card().textContent).toContain("Set it as LYEVE_API_KEY on the site's server now, because it is not shown again.");
+		expect(card().textContent).not.toContain(SERVER_KEY_SAID.replaced);
 	});
 
-	it('says the previous server key still works when it could not be deleted', () => {
+	it('says the previous key keeps working until it is deleted, so the new key is deployed first', () => {
 		render(Page, {
-			props: props({ sites: SITES, serverKeys: KEYS }, { serverKeyCreated: { site: A, name: 'Server key: Agency', raw_key: 'lyeve_secret', previousKept: true } }),
+			props: props({ sites: SITES, serverKeys: KEYS }, { serverKeyCreated: { site: A, name: 'Server key: Agency', raw_key: 'lyeve_secret', replaced: true } }),
 		});
-		expect(card().textContent).toContain('Server key of Agency created, but the previous one still works. Delete it on the API keys page.');
-		expect(card().textContent).not.toContain('Server key of Agency created.');
+		expect(card().textContent).toContain(
+			'Server key of Agency created. The previous key keeps working until you delete it on the API keys page, so deploy the new key first.',
+		);
 		expect((card().querySelector('#server-key-value') as HTMLInputElement | HTMLTextAreaElement).value).toBe('lyeve_secret');
 	});
 

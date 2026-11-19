@@ -189,8 +189,9 @@ export const SERVER_KEY_SAID = {
 	failed: 'Could not create the server key. Try again.',
 	unconfirmed: 'Check whether the server key was created, then try again.',
 	bindUnconfirmed: 'Could not confirm the site uses the new server key. Create the key again, then delete any unused server key on the API keys page.',
-	detail: "If the site has a server key, it stops working immediately. Set the new key on the site's server and deploy it.",
-	replaces: "The site's current server key stops working immediately. Set the new key on the site's server and deploy it.",
+	detail: "If the site has a server key, it keeps working until you delete it on the API keys page, so you can deploy the new key first.",
+	replaces: 'The current server key keeps working until you delete it on the API keys page, so you can deploy the new key first. Only the new key can read refused form posts.',
+	replaced: 'The previous key keeps working until you delete it on the API keys page, so deploy the new key first.',
 	first: "Set the new key on the site's server and deploy it.",
 	label: 'Create server key',
 } as const;

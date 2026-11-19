@@ -493,7 +493,7 @@ describe('server keys', () => {
 	it('creates a key with the server scopes, binds it to the site and shows it once', async () => {
 		const { event, calls } = act({ site: SITE, confirmed: 'yes' }, { ...sites, [BIND]: BOUND });
 		expect(await actions.createServerKey(event)).toEqual({
-			serverKeyCreated: { site: SITE, name: 'Server key: Agency', raw_key: 'lyeve_secret', previousKept: false },
+			serverKeyCreated: { site: SITE, name: 'Server key: Agency', raw_key: 'lyeve_secret', replaced: false },
 		});
 		const created = calls.find((c) => c.method === 'POST');
 		expect(created?.body).toEqual({ name: 'Server key: Agency', roles: [], schemas: [], scopes: [...SERVER_KEY_SCOPES], expires_at: null });
@@ -522,23 +522,12 @@ describe('server keys', () => {
 		expect(calls.some((c) => c.method === 'POST')).toBe(false);
 	});
 
-	it('deletes the server key the new one replaces', async () => {
+	it('keeps the server key the new one replaces, so the site reads content until it is deployed with the new key', async () => {
 		const { event, calls } = act({ site: SITE, confirmed: 'yes' }, { ...replacing, 'DELETE /api/admin/api-keys/k1': new Response(null, { status: 204 }) });
-		expect(await actions.createServerKey(event)).toMatchObject({ serverKeyCreated: { raw_key: 'lyeve_secret', previousKept: false } });
-		expect(calls.filter((c) => c.method === 'DELETE').map((c) => c.path)).toEqual(['/api/admin/api-keys/k1']);
-	});
-
-	it('says the replaced server key still works when it cannot be deleted', async () => {
-		const { event } = act({ site: SITE, confirmed: 'yes' }, { ...replacing, 'DELETE /api/admin/api-keys/k1': json({ error: 'down' }, 503) });
-		expect(await actions.createServerKey(event)).toMatchObject({ serverKeyCreated: { raw_key: 'lyeve_secret', previousKept: true } });
-	});
-
-	it('leaves a replaced key alone when it is not named as a server key', async () => {
-		const { event, calls } = act(
-			{ site: SITE, confirmed: 'yes' },
-			{ ...replacing, 'GET /api/admin/api-keys': json({ data: [{ id: 'k1', name: 'Shop reader' }], total_count: 1 }) },
-		);
-		expect(await actions.createServerKey(event)).toMatchObject({ serverKeyCreated: { previousKept: false } });
+		expect(await actions.createServerKey(event)).toEqual({
+			serverKeyCreated: { site: SITE, name: 'Server key: Agency', raw_key: 'lyeve_secret', replaced: true },
+		});
+		expect(calls.find((c) => c.method === 'PUT')).toEqual({ method: 'PUT', path: `${BASE}/sites/${SITE}/server-key`, body: { key_id: 'k9' } });
 		expect(calls.some((c) => c.method === 'DELETE')).toBe(false);
 	});
 
