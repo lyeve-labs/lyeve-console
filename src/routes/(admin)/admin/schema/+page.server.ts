@@ -21,7 +21,7 @@ export const ssr = false;
 /** Every schema write the engine serves takes one of these. */
 const WRITERS = ['admin', 'super_admin'];
 
-/** The most a preset file may hold. The engine refuses a larger body. */
+/** The most a preset file or paste may hold, in bytes. The engine refuses a larger body. */
 const PRESET_FILE_LIMIT = 1024 * 1024;
 
 /**
@@ -470,23 +470,34 @@ export const actions: Actions = {
 	},
 
 	/**
-	 * Applies a preset file once without saving it. The file is read here and
-	 * sent as text, so the engine takes JSON and YAML alike. A refusal is
-	 * about the file and lands on its field. A 5xx or a dropped connection
-	 * may follow a write that landed, so that sentence claims nothing.
+	 * Applies a preset once without saving it, from the file when one was
+	 * chosen and the paste otherwise. Either is sent as text, so the engine
+	 * takes JSON and YAML alike. A refusal is about the document and lands on
+	 * the field it came from. A 5xx or a dropped connection may follow a write
+	 * that landed, so that sentence claims nothing.
 	 */
 	importPreset: async (event) => {
 		await requireRole(event, WRITERS);
 		const client = authedClient(event);
-		const file = (await event.request.formData()).get('file');
-		if (!(file instanceof File) || file.size === 0) return fail(400, { importError: 'Choose a file.', importField: 'file' });
-		if (file.size > PRESET_FILE_LIMIT) return fail(413, { importError: 'Choose a file of 1 MB or less.', importField: 'file' });
+		const body = await readImportForm(await event.request.formData());
+		if (!body) return fail(400, { importError: 'Paste a preset or choose a file.', importField: '' });
+		let document: string;
+		if ('file' in body) {
+			if (body.file.size > PRESET_FILE_LIMIT) return fail(413, { importError: 'Choose a file of 1 MB or less.', importField: 'file' });
+			document = await body.file.text();
+		} else {
+			if (new TextEncoder().encode(body.content).byteLength > PRESET_FILE_LIMIT) {
+				return fail(413, { importError: 'Paste a preset of 1 MB or less.', importField: 'text' });
+			}
+			document = body.content;
+		}
+		const field = 'file' in body ? 'file' : 'text';
 		try {
-			const result = await importSchemaPreset(client, await file.text());
+			const result = await importSchemaPreset(client, document);
 			return { importedPreset: result.created ?? [] };
 		} catch (err) {
 			if (err instanceof ApiError && err.status < 500) {
-				return fail(err.status, { importError: actionError(err, 'Could not import the preset. Try again.'), importField: 'file' });
+				return fail(err.status, { importError: actionError(err, 'Could not import the preset. Try again.'), importField: field });
 			}
 			return fail(502, { importError: 'Could not import the preset. Check whether its content types were created, then try again.', importField: '' });
 		}

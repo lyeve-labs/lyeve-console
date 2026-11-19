@@ -79,9 +79,9 @@
 		};
 	};
 
-	// A preset file applied once and not kept: its content types are created
-	// and the list behind the drawer reloads. The outcome stays in the drawer
-	// beside the file it was about.
+	// A preset file or paste applied once and not kept: its content types are
+	// created and the list behind the drawer reloads. The outcome stays in the
+	// drawer beside the field it was about.
 	let importError = $state('');
 	let importField = $state('');
 	let importing = $state(false);
@@ -142,17 +142,26 @@
 				{#if imported}
 					<Alert tone="success" autoDismiss>Content types created.</Alert>
 				{/if}
-				<FormErrors message={importError && importField !== 'file' ? importError : undefined} />
+				<FormErrors message={importError && importField !== 'file' && importField !== 'text' ? importError : undefined} />
 				<FileInput
 					id="preset-import-file"
 					name="file"
 					label="Preset file"
 					accept=".json,.yaml,.yml,application/json,application/yaml"
-					hint="A JSON or YAML file up to 1 MB, applied once without saving the preset."
+					hint="Choose a JSON or YAML file up to 1 MB, or paste the document below. The preset is applied once and not saved."
 					error={importField === 'file' ? importError : undefined}
 				/>
+				<Textarea
+					id="preset-import-text"
+					name="text"
+					label="Or paste the preset"
+					rows={6}
+					class="[&_textarea]:text-xs"
+					mono
+					error={importField === 'text' ? importError : undefined}
+				/>
 				<div class="flex justify-end">
-					<Button variant="secondary" type="submit" loading={importing}>Import file</Button>
+					<Button variant="secondary" type="submit" loading={importing}>Import</Button>
 				</div>
 			</form>
 			{#if canSavePresets}
