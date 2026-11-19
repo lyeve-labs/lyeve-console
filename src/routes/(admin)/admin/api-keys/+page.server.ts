@@ -97,15 +97,16 @@ export const load: PageServerLoad = async (event) => {
 		section(fetchKeyScopeCatalog(client), couldNotLoad('the route catalog')),
 		section(listSchemaNames(client), couldNotLoad('the content types')),
 	]);
-	// A key bound to a site as its server key shows the site's name. A read
-	// that fails leaves every key unmarked, as on an engine without the builder.
+	// A key bound to a site as its server key shows the site's name, or no
+	// name when the sites cannot be read. A failed read of the server keys
+	// leaves every key unmarked, as on an engine without the builder.
 	const serverKeySites: Record<string, string> = {};
 	const { plugins } = await event.parent();
 	if (rows.length > 0 && runs(plugins, PLUGIN.builder)) {
 		const [bound, sites] = await Promise.all([section(listServerKeys(client), ''), section(listSites(client), '')]);
 		if (bound.ok) {
 			const names = new Map(sites.ok ? sites.value.map((s) => [s.id, s.name]) : []);
-			for (const k of bound.value) serverKeySites[k.key_id] = names.get(k.site) ?? 'a site';
+			for (const k of bound.value) serverKeySites[k.key_id] = names.get(k.site) ?? '';
 		}
 	}
 	const catalog = catalogRead.ok ? catalogRead.value : null;

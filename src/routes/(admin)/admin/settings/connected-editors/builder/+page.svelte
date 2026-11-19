@@ -531,7 +531,7 @@
 							mono
 							wrap
 							copyLabel="Copy key"
-							hint="Copy it now, because it is not shown again. Set it as LYEVE_API_KEY on the site's server, then deploy."
+							hint="Set it as LYEVE_API_KEY on the site's server now, because it is not shown again."
 							class="w-full max-w-xl"
 						/>
 					{/if}

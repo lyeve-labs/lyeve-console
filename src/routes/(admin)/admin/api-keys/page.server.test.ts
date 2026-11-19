@@ -227,6 +227,17 @@ describe('API keys of sites', () => {
 		expect(out.serverKeySites).toEqual({ k1: 'Agency' });
 	});
 
+	it('marks a server key with no site name when the sites cannot be read', async () => {
+		const answer = (path: string) => {
+			if (path.startsWith('/api/admin/api-keys?')) return json({ data: [key], total_count: 1 });
+			if (path.startsWith('/api/admin/builder/server-keys')) return json({ server_keys: [{ site: 's1', key_id: 'k1', bound_at: '2026-11-18T09:00:00Z' }] });
+			if (path.startsWith('/api/admin/content?')) return json({ error: 'down' }, 503);
+			return json([]);
+		};
+		const out = (await load(event(answer, '', { state: 'named', running: ['builder'], withheld: [] }))) as Loaded;
+		expect(out.serverKeySites).toEqual({ k1: '' });
+	});
+
 	it('marks no key when the builder does not run', async () => {
 		const calls: string[] = [];
 		const answer = (path: string) => {

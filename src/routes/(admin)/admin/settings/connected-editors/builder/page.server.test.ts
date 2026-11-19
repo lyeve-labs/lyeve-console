@@ -561,7 +561,31 @@ describe('server keys', () => {
 
 	it('loads each site\'s server key', async () => {
 		const keys = [{ site: SITE, key_id: 'k9', bound_at: '2026-11-18T09:00:00Z' }];
-		const { event } = loadEvent({ ...LISTED, [`GET ${BASE}/server-keys`]: json({ server_keys: keys }) });
+		const { event } = loadEvent({
+			...LISTED,
+			[`GET ${BASE}/server-keys`]: json({ server_keys: keys }),
+			'GET /api/admin/api-keys': json({ data: [{ id: 'k9', name: 'Server key: Agency' }], total_count: 1 }),
+		});
+		const out = (await load(event)) as Record<string, unknown>;
+		expect(out.serverKeys).toEqual({ ok: true, value: keys });
+	});
+
+	it('lists no server key for a site whose bound key was deleted', async () => {
+		const keys = [{ site: SITE, key_id: 'k9', bound_at: '2026-11-18T09:00:00Z' }];
+		const { event, calls } = loadEvent({
+			...LISTED,
+			[`GET ${BASE}/server-keys`]: json({ server_keys: keys }),
+			'GET /api/admin/api-keys': json({ data: [], total_count: 0 }),
+		});
+		const out = (await load(event)) as Record<string, unknown>;
+		expect(out.serverKeys).toEqual({ ok: true, value: [] });
+		const read = new URL(calls.find((c) => c.path.startsWith('/api/admin/api-keys'))!.path, 'http://x').searchParams;
+		expect(read.get('status')).toBe('active');
+	});
+
+	it('lists every bound key when the API keys cannot be read', async () => {
+		const keys = [{ site: SITE, key_id: 'k9', bound_at: '2026-11-18T09:00:00Z' }];
+		const { event } = loadEvent({ ...LISTED, [`GET ${BASE}/server-keys`]: json({ server_keys: keys }), 'GET /api/admin/api-keys': json({ error: 'down' }, 503) });
 		const out = (await load(event)) as Record<string, unknown>;
 		expect(out.serverKeys).toEqual({ ok: true, value: keys });
 	});

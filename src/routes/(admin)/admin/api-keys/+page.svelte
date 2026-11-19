@@ -304,8 +304,9 @@
 					<tr>
 						<td data-cell="nowrap" class="font-medium">
 							{key.name}
-							{#if data.serverKeySites?.[key.id]}
-								<Badge tone="brand" size="sm">Server key of {data.serverKeySites[key.id]}</Badge>
+							{#if data.serverKeySites && key.id in data.serverKeySites}
+								{@const site = data.serverKeySites[key.id]}
+								<Badge tone="brand" size="sm">{site ? `Server key of ${site}` : 'Server key'}</Badge>
 							{/if}
 						</td>
 						<td data-cell="nowrap">

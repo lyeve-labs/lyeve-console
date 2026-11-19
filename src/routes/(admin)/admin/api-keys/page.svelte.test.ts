@@ -330,3 +330,14 @@ describe('the action checkboxes of a new key under a finger', () => {
 		expect(spaced(getByRole('group', { name: 'Actions on Flows' }))).toBe(true);
 	});
 });
+
+describe('server key badges', () => {
+	it('names the site of a server key, and says only Server key when the site name is unknown', () => {
+		setup([key({ id: 'k1', name: 'Server key: Agency' }), key({ id: 'k2', name: 'Server key: Shop' }), key({ id: 'k3', name: 'deploy' })], {
+			serverKeySites: { k1: 'Agency', k2: '' },
+		});
+		const badges = [...document.querySelectorAll('td')].map((td) => td.textContent?.replace(/\s+/g, ' ').trim()).filter((t) => t?.startsWith('Server key:'));
+		expect(badges).toEqual(['Server key: Agency Server key of Agency', 'Server key: Shop Server key']);
+		expect(document.body.textContent).not.toContain('a site');
+	});
+});

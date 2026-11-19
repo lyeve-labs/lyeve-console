@@ -117,7 +117,20 @@ export const load: PageServerLoad = async (event) => {
 			)
 		: null;
 	const sites = section(listSites(client), 'Could not load sites. The static sites saved before stay as they are.');
-	const serverKeys = section(listServerKeys(client), 'Could not load server keys.');
+	// A bound key deleted or revoked on the API keys page no longer works, so
+	// the site is listed as having none. When the keys cannot be read, every
+	// bound key is listed.
+	const serverKeys = section(
+		listServerKeys(client).then(async (bound) => {
+			if (bound.length === 0) return bound;
+			const live = await namedServerKeys(client, 'active').then(
+				(keys) => new Set(keys.map((k) => k.id)),
+				() => null,
+			);
+			return live ? bound.filter((k) => live.has(k.key_id)) : bound;
+		}),
+		'Could not load server keys.',
+	);
 	const read = await section(getSettings(client), settingsGate);
 	const schemaList = await schemas;
 	// A tenant the plugin is withheld from is the page's gate, and every other

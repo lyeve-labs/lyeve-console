@@ -575,6 +575,7 @@ describe('server keys', () => {
 		expect(card().textContent).toContain('Server key of Agency created.');
 		expect((card().querySelector('#server-key-value') as HTMLInputElement | HTMLTextAreaElement).value).toBe('lyeve_secret');
 		expect(card().textContent).toContain('LYEVE_API_KEY');
+		expect(card().textContent).toContain("Set it as LYEVE_API_KEY on the site's server now, because it is not shown again.");
 	});
 
 	it('says the previous server key still works when it could not be deleted', () => {
