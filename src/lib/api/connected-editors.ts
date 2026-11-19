@@ -9,11 +9,12 @@
  * listed: anyone can start one, so only the person holding its code brings it
  * up.
  */
-import { ApiError, type HttpClient } from '@lyeve-labs/client';
+import { ApiError, type APIKey, type HttpClient } from '@lyeve-labs/client';
 import type { StatusTone } from '@lyeve-labs/ui-kit';
 import { gateOf, type Gate } from './gate';
 import { errorCodeOf } from './limits';
-import { totalOf, type ListEnvelope } from './list';
+import { rowsOf, totalOf, type ListEnvelope } from './list';
+import { listKeys } from './api-keys';
 import { couldNotLoad } from '../outage';
 
 const CONNECTIONS_URL = '/api/admin/builder/connections';
@@ -133,6 +134,65 @@ export const FORM_KEY_SAID = {
 	failed: 'Could not revoke the previous form signing key. Try again.',
 	detail: "Forms on pages opened before the site's last production build stop working. This cannot be undone.",
 	label: 'Revoke previous key',
+} as const;
+
+/** A site's server key: the API key its server reads refused form posts back with. */
+export interface ServerKey {
+	site: string;
+	key_id: string;
+	bound_at: string;
+}
+
+/**
+ * The scopes of a site's server key: what a server that draws pages on
+ * request reads, and the refused form posts of its own site. A refused post
+ * answers only the key bound to the site that collected it.
+ */
+export const SERVER_KEY_SCOPES = [
+	'content.lyeve_builder_sites:read',
+	'content.lyeve_builder_pages:read',
+	'content.lyeve_builder_sections:read',
+	'content.lyeve_builder_themes:read',
+	'builder.form_refusals:read',
+	'builder.sheet:read',
+] as const;
+
+const SERVER_KEY_PREFIX = 'Server key: ';
+
+/** The name a site's server key carries in the API keys list. */
+export const serverKeyName = (site: string): string => `${SERVER_KEY_PREFIX}${site}`;
+
+/**
+ * The API keys named as server keys, `active` ones only when asked. One page
+ * of 500, the most the list returns, holds the server keys of 500 sites.
+ */
+export async function namedServerKeys(client: HttpClient, status?: 'active'): Promise<APIKey[]> {
+	const res = await listKeys(client, 500, 0, { q: SERVER_KEY_PREFIX.trim(), status });
+	return rowsOf(res).filter((k) => k.name.startsWith(SERVER_KEY_PREFIX));
+}
+
+/** Every site's server key in the tenant. */
+export async function listServerKeys(client: HttpClient): Promise<ServerKey[]> {
+	const res = await client.get<{ server_keys?: ServerKey[] }>('/api/admin/builder/server-keys');
+	return res.server_keys ?? [];
+}
+
+/** Binds the API key `keyId` to `site` as its server key, in place of the site's earlier one. */
+export function bindServerKey(client: HttpClient, site: string, keyId: string): Promise<ServerKey> {
+	return client.put<ServerKey>(`/api/admin/builder/sites/${encodeURIComponent(site)}/server-key`, { key_id: keyId });
+}
+
+/** What the server key card says. */
+export const SERVER_KEY_SAID = {
+	tooOld: 'Server keys need a newer version of the builder plugin.',
+	chooseSite: 'Choose a site first.',
+	failed: 'Could not create the server key. Try again.',
+	unconfirmed: 'Check whether the server key was created, then try again.',
+	bindUnconfirmed: 'Could not confirm the site uses the new server key. Create the key again, then delete any unused server key on the API keys page.',
+	detail: "If the site has a server key, it stops working immediately. Set the new key on the site's server and deploy it.",
+	replaces: "The site's current server key stops working immediately. Set the new key on the site's server and deploy it.",
+	first: "Set the new key on the site's server and deploy it.",
+	label: 'Create server key',
 } as const;
 
 /** What the static sites field says when the engine refuses the list. */

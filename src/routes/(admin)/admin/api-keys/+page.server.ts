@@ -21,6 +21,9 @@ import { section, type Section } from '#lib/api/gate.ts';
 import { rolesInWords } from '#lib/roles.ts';
 import { couldNotLoad } from '#lib/outage.ts';
 import { asked } from '#lib/server/asked.ts';
+import { listServerKeys, listSites } from '#lib/api/connected-editors.ts';
+import { PLUGIN } from '#lib/plugin-names.ts';
+import { runs } from '#lib/plugins.ts';
 
 /**
  * A failed write tagged with the action that made it. Every action answers
@@ -94,6 +97,18 @@ export const load: PageServerLoad = async (event) => {
 		section(fetchKeyScopeCatalog(client), couldNotLoad('the route catalog')),
 		section(listSchemaNames(client), couldNotLoad('the content types')),
 	]);
+	// A key bound to a site as its server key shows the site's name, or no
+	// name when the sites cannot be read. A failed read of the server keys
+	// leaves every key unmarked, as on an engine without the builder.
+	const serverKeySites: Record<string, string> = {};
+	const { plugins } = await event.parent();
+	if (rows.length > 0 && runs(plugins, PLUGIN.builder)) {
+		const [bound, sites] = await Promise.all([section(listServerKeys(client), ''), section(listSites(client), '')]);
+		if (bound.ok) {
+			const names = new Map(sites.ok ? sites.value.map((s) => [s.id, s.name]) : []);
+			for (const k of bound.value) serverKeySites[k.key_id] = names.get(k.site) ?? '';
+		}
+	}
 	const catalog = catalogRead.ok ? catalogRead.value : null;
 	const schemaNames = schemaRead.ok ? schemaRead.value : [];
 
@@ -101,6 +116,7 @@ export const load: PageServerLoad = async (event) => {
 		keys,
 		usageMap,
 		usageUnknown,
+		serverKeySites,
 		month,
 		total,
 		limit,
