@@ -119,6 +119,21 @@ describe('FieldCell', () => {
 		expect(getByText('Hello World')).toBeTruthy();
 	});
 
+	it('shows the text of a rich_text field stored as a document', () => {
+		const value = { document: { type: 'doc', content: [] }, html: '<h2>Launch</h2><p>pasted <em>styled</em></p>' };
+		const { container, getByText } = render(FieldCell, {
+			props: { field: field('rich_text'), value },
+		});
+		expect(getByText('Launchpasted styled')).toBeTruthy();
+		expect(container.textContent).not.toContain('[object Object]');
+	});
+
+	it('marks a document with no text as not set', () => {
+		const value = { document: { type: 'doc', content: [{ type: 'paragraph' }] }, html: '<p></p>' };
+		const { getByText } = render(FieldCell, { props: { field: field('rich_text'), value } });
+		expect(getByText(EMPTY)).toBeTruthy();
+	});
+
 	it('renders an item count badge for a has_many relation array', () => {
 		const { getByText } = render(FieldCell, {
 			props: { field: field('relation'), value: ['id-1', 'id-2'] },

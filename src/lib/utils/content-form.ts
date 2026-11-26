@@ -139,6 +139,23 @@ function formatUtcInstant(dt: Date): string {
 	return `${date}T${time}.${pad(dt.getUTCMilliseconds(), 3)}Z`;
 }
 
+/** A rich_text value stored as a document, as the API reads it back. */
+type RichTextDocument = { document: unknown; html: string };
+
+function isRichTextDocument(v: unknown): v is RichTextDocument {
+	return v !== null && typeof v === 'object' && 'document' in v && typeof (v as { html?: unknown }).html === 'string';
+}
+
+/**
+ * The HTML of a rich_text value. A field with format document reads as an
+ * object holding the document and the HTML drawn from it. Any other field
+ * reads as the HTML itself.
+ */
+export function richTextHtml(v: unknown): string {
+	if (isRichTextDocument(v)) return v.html;
+	return v === null || v === undefined ? '' : String(v);
+}
+
 /**
  * Returns the key used in formValues for a field.
  * For belongs_to relation fields the FK column is {name}_id.
@@ -181,6 +198,7 @@ export function buildFromData(
 				const key = fieldKey(f);
 				const v = data[key] ?? data[f.name];
 				if (f.field_type === 'boolean') return [key, Boolean(v)];
+				if (f.field_type === 'rich_text') return [key, richTextHtml(v)];
 				if (f.field_type === 'datetime' && v) {
 					// The control reads its value as local time with no zone, so a UTC
 					// wall clock would shift the stored instant on every save. A value
@@ -246,10 +264,13 @@ function integerValue(val: unknown): unknown {
  * Handles number coercion, boolean casting, JSON parsing, and the local wall
  * clock of a datetime field back to the UTC instant the API stores.
  * many_to_many / has_many fields are excluded (handled via the relations endpoint).
+ * `stored` is the entry as it was read, so a document field left unedited
+ * goes back as its stored document.
  */
 export function serialize(
 	fields: SchemaField[],
 	formValues: Record<string, unknown>,
+	stored: Record<string, unknown> = {},
 ): string {
 	const out: Record<string, unknown> = {};
 	for (const f of fields) {
@@ -261,7 +282,13 @@ export function serialize(
 		if (f.field_type === 'relation' && (f.relation_type === 'has_one' || f.relation_type === 'has_many' || f.relation_type === 'many_to_many')) continue;
 		const key = fieldKey(f);
 		const val = formValues[key];
-		if (f.field_type === 'integer') {
+		const kept = stored[key];
+		if (f.field_type === 'rich_text' && isRichTextDocument(kept) && val === kept.html) {
+			// The editor shows only the HTML. The stored document can hold what
+			// HTML cannot carry, so an unedited field sends the document back
+			// rather than HTML the engine would read into a new one.
+			out[key] = kept;
+		} else if (f.field_type === 'integer') {
 			out[key] = integerValue(val);
 		} else if (f.field_type === 'decimal') {
 			// A decimal is exact digits as a string, sent as typed less the

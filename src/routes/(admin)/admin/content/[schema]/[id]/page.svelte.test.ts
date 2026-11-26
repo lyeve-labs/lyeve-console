@@ -19,6 +19,12 @@ vi.mock('@lyeve-labs/ui-kit', async (importOriginal) => ({
 	confirm: forms.confirm,
 }));
 
+// TipTap builds its editor after mount, which jsdom cannot drive, so the
+// kit's Textarea stands in for it and shows the value the form hands over.
+vi.mock('#lib/components/RichTextEditor.svelte', async () => ({
+	default: (await import('@lyeve-labs/ui-kit')).Textarea,
+}));
+
 import EntryPage from './+page.svelte';
 
 afterEach(() => {
@@ -517,5 +523,45 @@ describe('content entry editor, history travel', () => {
 		} finally {
 			watch.stop();
 		}
+	});
+});
+
+describe('content entry editor, a rich text field stored as a document', () => {
+	const schemaDef = {
+		name: 'article',
+		display_name: 'Articles',
+		fields: [
+			{ name: 'title', field_type: 'text' },
+			{ name: 'doc', field_type: 'rich_text' },
+		],
+	};
+	const stored = {
+		document: { type: 'doc', content: [{ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Pasted heading' }] }] },
+		html: '<h2>Pasted heading</h2>',
+	};
+	const page = () =>
+		render(EntryPage, {
+			props: { data: data({ schemaDef, item: { ...data().item, data: { title: 'One', doc: stored } } }), form: null },
+		});
+	const posted = (container: HTMLElement) =>
+		JSON.parse((container.querySelector('input[name="data"]') as HTMLInputElement).value);
+
+	it('opens the field on its stored content', () => {
+		const { container } = page();
+		const editor = container.querySelector('#field-doc') as HTMLTextAreaElement;
+		expect(editor.value).toBe('<h2>Pasted heading</h2>');
+	});
+
+	it('keeps the stored document when the field is not edited', async () => {
+		const { container } = page();
+		await fireEvent.input(screen.getByLabelText('Title'), { target: { value: 'Two' } });
+		expect(posted(container)).toMatchObject({ title: 'Two', doc: stored });
+	});
+
+	it('saves an edit as the whole HTML, the stored content included', async () => {
+		const { container } = page();
+		const editor = container.querySelector('#field-doc') as HTMLTextAreaElement;
+		await fireEvent.input(editor, { target: { value: `${editor.value}<p>added</p>` } });
+		expect(posted(container).doc).toBe('<h2>Pasted heading</h2><p>added</p>');
 	});
 });
