@@ -3,6 +3,7 @@
 	import type { SchemaField } from '@lyeve-labs/client';
 	import { formatDate, formatDateTime, plural } from '#lib/format.ts';
 	import { shortId } from '#lib/utils/entry-identity.ts';
+	import { richTextHtml } from '#lib/utils/content-form.ts';
 
 	let { field, value }: { field: SchemaField; value: unknown } = $props();
 
@@ -51,7 +52,7 @@
 	let empty = $derived.by((): boolean => {
 		if (isBlank(value)) return true;
 		// Markup with no text strips to nothing, so the cell would paint blank.
-		if (field.field_type === 'rich_text') return stripHtml(String(value)) === '';
+		if (field.field_type === 'rich_text') return stripHtml(richTextHtml(value)) === '';
 		return false;
 	});
 
@@ -62,7 +63,7 @@
 			case 'boolean':
 				return '';
 			case 'rich_text':
-				return stripHtml(String(value)).slice(0, 120);
+				return stripHtml(richTextHtml(value)).slice(0, 120);
 			case 'date':
 				return cellDate(value);
 			case 'datetime':

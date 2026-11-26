@@ -284,6 +284,31 @@ describe('serialize - boolean coercion', () => {
 	});
 });
 
+describe('rich_text stored as a document', () => {
+	const doc = field({ name: 'doc', field_type: 'rich_text' });
+	const stored = {
+		doc: {
+			document: { type: 'doc', content: [{ type: 'callout', attrs: { tone: 'note' }, content: [] }] },
+			html: '<h2>Pasted heading</h2><ul><li><p>one</p></li></ul>',
+		},
+	};
+
+	it('opens the editor on the HTML beside the document', () => {
+		expect(buildFromData([doc], stored).doc).toBe(stored.doc.html);
+	});
+
+	it('sends the stored document back when the HTML was not edited', () => {
+		const posted = JSON.parse(serialize([doc], buildFromData([doc], stored), stored));
+		expect(posted.doc).toEqual(stored.doc);
+	});
+
+	it('sends the edited HTML, which the engine reads into a document', () => {
+		const edited = '<h2>Pasted heading</h2><ul><li><p>one</p></li></ul><p>added</p>';
+		const posted = JSON.parse(serialize([doc], { doc: edited }, stored));
+		expect(posted.doc).toBe(edited);
+	});
+});
+
 describe('validate - rich_text', () => {
 	it('reports an error when rich_text contains only empty markup', () => {
 		const errors = validate(

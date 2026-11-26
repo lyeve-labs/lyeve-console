@@ -55,7 +55,7 @@
 
 	// What the form held when the entry was read, so a restore can tell
 	// whether it would throw away edits nobody saved.
-	const pristine = $derived(serialize(userFields, buildFromData(data.schemaDef?.fields ?? [], data.item?.data ?? {})));
+	const pristine = $derived(serialize(userFields, buildFromData(data.schemaDef?.fields ?? [], data.item?.data ?? {}), data.item?.data));
 	const restore = tracked(async ({ cancel, formData }) => {
 		if (serialized === pristine) return;
 		const revision = String(formData.get('rev_num') ?? '');
@@ -65,7 +65,7 @@
 	});
 	const restored = $derived(form && 'restored' in form ? Number(form.restored) : null);
 
-	let serialized = $derived(serialize(userFields, formValues));
+	let serialized = $derived(serialize(userFields, formValues, data.item?.data));
 	// A field whose links could not be read opened empty, and posting it would
 	// delete every link it holds, so the save leaves it out.
 	let m2mRelations = $derived(
